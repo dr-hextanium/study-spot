@@ -84,7 +84,10 @@ export const BundleSpot = z.object({
   outdoor: z.boolean(),
   seasonal: z.boolean(),
   hours_unconfirmed: z.boolean(),
-  verified: z.partialRecord(AttributeGroup, IsoDateTime),
+  /** Every spot shows a last-verified date, so at least one group must be verified. */
+  verified: z
+    .partialRecord(AttributeGroup, IsoDateTime)
+    .refine((v) => Object.keys(v).length > 0, "at least one verified date is required"),
   photos: z.array(z.object({ url: z.httpUrl(), taken_at: IsoDateTime, is_cover: z.boolean() })),
 });
 export type BundleSpot = z.infer<typeof BundleSpot>;

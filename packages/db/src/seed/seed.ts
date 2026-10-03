@@ -26,7 +26,7 @@ export type SeedSpotSlug =
 
 export type SeedIds = { adminId: string; spotIds: Record<SeedSpotSlug, string> };
 
-const VERIFIED_AT = new Date("2026-10-05T15:00:00Z");
+const VERIFIED_AT = new Date("2026-10-01T15:00:00Z");
 const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
 function weekHours(spotId: string, opens: string, closes: string) {
@@ -187,22 +187,24 @@ export async function seed(db: Db): Promise<SeedIds> {
     await tx.insert(spot_table_config).values({ spot_id: crr, config: "large_shared" });
     await tx.insert(spot_amenity).values({ spot_id: crr, amenity: "bathroom", walk_minutes: 1 });
 
-    await tx.insert(spot_verification).values([
-      {
-        spot_id: crr,
-        attribute_group: "identity",
-        last_verified_at: VERIFIED_AT,
-        source: "survey",
-        confidence: "measured",
-      },
-      {
-        spot_id: crr,
-        attribute_group: "hours",
-        last_verified_at: VERIFIED_AT,
-        source: "official",
-        confidence: "measured",
-      },
-    ]);
+    // Sample data is not official: every row is an estimated survey verification.
+    const published: SeedSpotSlug[] = [
+      "central-reading-room",
+      "north-reading-room",
+      "sac-lounge",
+      "kelly-rcc",
+    ];
+    await tx.insert(spot_verification).values(
+      published.flatMap((slug) =>
+        (["identity", "hours"] as const).map((attribute_group) => ({
+          spot_id: spotIds[slug],
+          attribute_group,
+          last_verified_at: VERIFIED_AT,
+          source: "survey" as const,
+          confidence: "estimated" as const,
+        })),
+      ),
+    );
 
     await tx.insert(spot_photo).values([
       {

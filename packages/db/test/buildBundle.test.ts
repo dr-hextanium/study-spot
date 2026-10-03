@@ -99,7 +99,7 @@ test("an incomplete published spot is skipped with a warning", async () => {
   const { bundle, warnings } = await buildBundle(db, "sbu", NOW);
   expect(bundle.spots.some((s) => s.slug === "union-draft")).toBe(false);
   expect(warnings).toEqual([
-    "skipped union-draft: missing directions, eligibility, seat_count, outlet_coverage_pct, group_work_ok, food_policy",
+    "skipped union-draft: missing directions, eligibility, seat_count, outlet_coverage_pct, group_work_ok, food_policy, last_verified",
   ]);
 });
 

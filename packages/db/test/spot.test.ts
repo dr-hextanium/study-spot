@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { BundleSpot } from "@study-spot/core";
-import type { SpotRow } from "../src/bundle/spot.ts";
+import type { SpotRow, VerificationRow } from "../src/bundle/spot.ts";
 import { toBundleSpot } from "../src/bundle/spot.ts";
 
 const base: SpotRow = {
@@ -52,11 +52,19 @@ const base: SpotRow = {
   updated_at: new Date("2026-10-01T00:00:00Z"),
 };
 
+const identity: VerificationRow = {
+  spot_id: base.id,
+  attribute_group: "identity",
+  last_verified_at: new Date("2026-10-01T15:00:00Z"),
+  source: "survey",
+  confidence: "estimated",
+};
+
 const empty = {
   seatTypes: [],
   tableConfigs: [],
   amenities: [],
-  verifications: [],
+  verifications: [identity],
   approvedPhotos: [],
   hoursUnconfirmed: false,
 };
@@ -73,6 +81,11 @@ test("missing v0-required fields are reported, not thrown", () => {
     ...empty,
   });
   expect(r).toEqual({ ok: false, missing: ["directions", "seat_count", "food_policy"] });
+});
+
+test("a spot with no verification rows is missing last_verified", () => {
+  const r = toBundleSpot({ row: { ...base, directions: null }, ...empty, verifications: [] });
+  expect(r).toEqual({ ok: false, missing: ["directions", "last_verified"] });
 });
 
 test("verification dates and photos are included, cover first", () => {

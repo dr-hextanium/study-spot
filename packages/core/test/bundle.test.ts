@@ -125,3 +125,14 @@ test("only http(s) urls are allowed for reservations and photos", () => {
     }).ok,
   ).toBe(false);
 });
+
+test("every spot needs at least one verified date", () => {
+  const b = makeBundleFixture();
+  const spots = b.spots as Array<Record<string, unknown>>;
+  const first = spots[0];
+  if (!first) throw new Error("fixture missing spot");
+  first.verified = {};
+  const r = parseBundle(b);
+  expect(r.ok).toBe(false);
+  expect(r.ok === false && r.detail).toContain("verified");
+});

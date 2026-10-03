@@ -36,13 +36,15 @@ export function toBundleSpot(input: SpotAssemblyInput): SpotAssemblyResult {
   if (r.outlet_coverage_pct === null) missing.push("outlet_coverage_pct");
   if (r.group_work_ok === null) missing.push("group_work_ok");
   if (r.food_policy === null) missing.push("food_policy");
+  if (input.verifications.length === 0) missing.push("last_verified");
   if (
     r.directions === null ||
     r.eligibility === null ||
     r.seat_count === null ||
     r.outlet_coverage_pct === null ||
     r.group_work_ok === null ||
-    r.food_policy === null
+    r.food_policy === null ||
+    input.verifications.length === 0
   ) {
     return { ok: false, missing };
   }
