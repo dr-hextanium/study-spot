@@ -140,7 +140,11 @@ export const Bundle = z
     const issue = (message: string): void => {
       ctx.addIssue({ code: "custom", message });
     };
-    const buildingIds = new Set(b.buildings.map((x) => x.id));
+    const buildingIds = new Set<string>();
+    for (const x of b.buildings) {
+      if (buildingIds.has(x.id)) issue(`duplicate building id ${x.id}`);
+      buildingIds.add(x.id);
+    }
     const n = b.walk.building_ids.length;
 
     if (n !== buildingIds.size || !b.walk.building_ids.every((id) => buildingIds.has(id))) {
@@ -160,6 +164,7 @@ export const Bundle = z
         issue(`spot ${s.slug} has unknown building ${s.building_id}`);
       if (slugs.has(s.slug)) issue(`duplicate slug ${s.slug}`);
       slugs.add(s.slug);
+      if (spotIds.has(s.id)) issue(`duplicate spot id ${s.id}`);
       spotIds.add(s.id);
       if (!b.busyness[s.id]) issue(`spot ${s.slug} has no busyness entry`);
     }

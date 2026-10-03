@@ -82,3 +82,25 @@ test("pointer schema", () => {
     }).success,
   ).toBe(true);
 });
+
+test("duplicate building ids are rejected", () => {
+  const b = makeBundleFixture();
+  const buildings = b.buildings as Array<Record<string, unknown>>;
+  const first = buildings[0];
+  if (!first) throw new Error("fixture missing building");
+  buildings.push({ ...first });
+  const r = parseBundle(b);
+  expect(r.ok).toBe(false);
+  expect(r.ok === false && r.detail).toContain("duplicate building id melville-library");
+});
+
+test("duplicate spot ids are rejected", () => {
+  const b = makeBundleFixture();
+  const spots = b.spots as Array<Record<string, unknown>>;
+  const first = spots[0];
+  if (!first) throw new Error("fixture missing spot");
+  spots.push({ ...first, slug: "another-room" });
+  const r = parseBundle(b);
+  expect(r.ok).toBe(false);
+  expect(r.ok === false && r.detail).toContain("duplicate spot id");
+});
