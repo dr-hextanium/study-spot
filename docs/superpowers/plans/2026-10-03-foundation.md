@@ -888,7 +888,9 @@ export function makeBundleFixture(): Record<string, unknown> {
         seasonal: false,
         hours_unconfirmed: false,
         verified: { identity: "2026-10-05T15:00:00.000Z", hours: "2026-10-05T15:00:00.000Z" },
-        photos: [{ url: "https://example.org/p/1.jpg", taken_at: "2026-10-05T15:00:00.000Z" }],
+        photos: [
+          { url: "https://example.org/p/1.jpg", taken_at: "2026-10-05T15:00:00.000Z", is_cover: true },
+        ],
       },
     ],
     hours: [
@@ -1102,7 +1104,7 @@ export const BundleSpot = z.object({
   seasonal: z.boolean(),
   hours_unconfirmed: z.boolean(),
   verified: z.partialRecord(AttributeGroup, IsoDateTime),
-  photos: z.array(z.object({ url: z.url(), taken_at: IsoDateTime })),
+  photos: z.array(z.object({ url: z.url(), taken_at: IsoDateTime, is_cover: z.boolean() })),
 });
 export type BundleSpot = z.infer<typeof BundleSpot>;
 
@@ -1264,7 +1266,15 @@ git commit -m "feat(core): add versioned campus bundle schema"
 ```ts
 import { expect, test } from "bun:test";
 import { sql } from "drizzle-orm";
-import { building, campus, spot, spot_hours, spotSelectSchema, term } from "../src/index.ts";
+import {
+  building,
+  campus,
+  spot,
+  spot_hours,
+  spot_photo,
+  spotSelectSchema,
+  term,
+} from "../src/index.ts";
 import { createTestDb } from "../src/testing.ts";
 
 async function withSpot() {
@@ -1317,6 +1327,14 @@ test("spot_hours accepts valid rows and rejects bad day or time", async () => {
   await db.insert(spot_hours).values({ ...base, day_of_week: 1, closes: "24:00" });
   await expect(db.insert(spot_hours).values({ ...base, day_of_week: 7 })).rejects.toThrow();
   await expect(db.insert(spot_hours).values({ ...base, day_of_week: 2, opens: "8:00" })).rejects.toThrow();
+});
+
+test("a spot has at most one cover photo", async () => {
+  const { db, row } = await withSpot();
+  const photo = { spot_id: row.id, url: "https://example.org/a.jpg", r2_key: "a.jpg", taken_at: new Date() };
+  await db.insert(spot_photo).values({ ...photo, is_cover: true });
+  await db.insert(spot_photo).values({ ...photo, is_cover: false });
+  await expect(db.insert(spot_photo).values({ ...photo, is_cover: true })).rejects.toThrow();
 });
 ```
 
@@ -1443,6 +1461,7 @@ import {
   smallint,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import { building, term } from "./campus.ts";
@@ -1600,18 +1619,24 @@ export const spot_amenity = pgTable(
   (t) => [primaryKey({ columns: [t.spot_id, t.amenity] })],
 );
 
-export const spot_photo = pgTable("spot_photo", {
-  id: uuid().primaryKey().defaultRandom(),
-  spot_id: uuid()
-    .notNull()
-    .references(() => spot.id, { onDelete: "cascade" }),
-  url: text().notNull(),
-  r2_key: text().notNull(),
-  taken_at: timestamp({ withTimezone: true }).notNull(),
-  uploaded_by: uuid().references(() => surveyor.id),
-  approved_by: uuid().references(() => surveyor.id),
-  approved_at: timestamp({ withTimezone: true }),
-});
+/** is_cover marks the postcard front photo; at most one per spot. */
+export const spot_photo = pgTable(
+  "spot_photo",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    spot_id: uuid()
+      .notNull()
+      .references(() => spot.id, { onDelete: "cascade" }),
+    url: text().notNull(),
+    r2_key: text().notNull(),
+    taken_at: timestamp({ withTimezone: true }).notNull(),
+    is_cover: boolean().notNull().default(false),
+    uploaded_by: uuid().references(() => surveyor.id),
+    approved_by: uuid().references(() => surveyor.id),
+    approved_at: timestamp({ withTimezone: true }),
+  },
+  (t) => [uniqueIndex("spot_photo_one_cover").on(t.spot_id).where(sql`${t.is_cover}`)],
+);
 
 export const spot_verification = pgTable(
   "spot_verification",
@@ -2315,6 +2340,7 @@ export async function seed(db: Db): Promise<SeedIds> {
         url: "https://example.org/sample/crr-1.jpg",
         r2_key: "sample/crr-1.jpg",
         taken_at: VERIFIED_AT,
+        is_cover: true,
         uploaded_by: admin.id,
         approved_by: admin.id,
         approved_at: VERIFIED_AT,
@@ -2624,7 +2650,7 @@ test("missing v0-required fields are reported, not thrown", () => {
   expect(r).toEqual({ ok: false, missing: ["directions", "seat_count", "food_policy"] });
 });
 
-test("verification dates and photos are included", () => {
+test("verification dates and photos are included, cover first", () => {
   const at = new Date("2026-10-05T15:00:00Z");
   const r = toBundleSpot({
     row: base,
@@ -2634,11 +2660,23 @@ test("verification dates and photos are included", () => {
     ],
     approvedPhotos: [
       {
-        id: "p",
+        id: "p1",
         spot_id: base.id,
         url: "https://example.org/a.jpg",
         r2_key: "a.jpg",
         taken_at: at,
+        is_cover: false,
+        uploaded_by: null,
+        approved_by: "s",
+        approved_at: at,
+      },
+      {
+        id: "p2",
+        spot_id: base.id,
+        url: "https://example.org/cover.jpg",
+        r2_key: "cover.jpg",
+        taken_at: at,
+        is_cover: true,
         uploaded_by: null,
         approved_by: "s",
         approved_at: at,
@@ -2647,7 +2685,11 @@ test("verification dates and photos are included", () => {
   });
   if (!r.ok) throw new Error("expected ok");
   expect(r.spot.verified).toEqual({ hours: "2026-10-05T15:00:00.000Z" });
-  expect(r.spot.photos).toEqual([{ url: "https://example.org/a.jpg", taken_at: "2026-10-05T15:00:00.000Z" }]);
+  expect(r.spot.photos.map((p) => p.url)).toEqual([
+    "https://example.org/cover.jpg",
+    "https://example.org/a.jpg",
+  ]);
+  expect(r.spot.photos[0]?.is_cover).toBe(true);
 });
 ```
 
@@ -2879,7 +2921,9 @@ export function toBundleSpot(input: SpotAssemblyInput): SpotAssemblyResult {
       seasonal: r.seasonal,
       hours_unconfirmed: input.hoursUnconfirmed,
       verified,
-      photos: input.approvedPhotos.map((p) => ({ url: p.url, taken_at: p.taken_at.toISOString() })),
+      photos: [...input.approvedPhotos]
+        .sort((a, b) => Number(b.is_cover) - Number(a.is_cover))
+        .map((p) => ({ url: p.url, taken_at: p.taken_at.toISOString(), is_cover: p.is_cover })),
     },
   };
 }
@@ -2967,6 +3011,7 @@ test("bundle holds no surveyor ids and no unapproved photos", async () => {
   expect(json).not.toContain("unapproved");
   const crr = bundle.spots.find((s) => s.slug === "central-reading-room");
   expect(crr?.photos).toHaveLength(1);
+  expect(crr?.photos[0]?.is_cover).toBe(true);
 });
 
 test("busyness uses measured, estimated, then none", async () => {
