@@ -5,7 +5,7 @@
  */
 
 /** Synchronous small key-value store (localStorage, MMKV). */
-export interface Storage {
+export interface KeyValueStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
   removeItem(key: string): void;
@@ -23,7 +23,7 @@ export interface Clock {
 
 export type LatLngFix = { lat: number; lng: number; accuracyMeters: number };
 
-export interface Geolocation {
+export interface GeolocationAdapter {
   /** Resolves null when permission is denied or no fix is available. */
   current(): Promise<LatLngFix | null>;
 }
