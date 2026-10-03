@@ -46,3 +46,44 @@ jobs:
 
       - name: Secret scan
         run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest git /repo --no-banner --redact
+
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: perch
+          POSTGRES_PASSWORD: perch
+          POSTGRES_DB: perch
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U perch"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://perch:perch@localhost:5432/perch
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Migrate
+        run: bun run db:migrate
+
+      - name: Seed
+        run: bun run db:seed
+
+      - name: Smoke (postgres.js on Node)
+        run: node packages/db/scripts/smoke-postgres.ts
