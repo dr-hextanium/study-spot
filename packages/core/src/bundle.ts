@@ -95,7 +95,8 @@ export type BundleSpot = z.infer<typeof BundleSpot>;
 export const BundleHours = z.object({
   spot_id: z.uuid(),
   day_of_week: z.number().int().min(0).max(6),
-  opens: TimeOfDay,
+  /** A spot cannot open at the end of the day, matching the database check. */
+  opens: TimeOfDay.refine((t) => t !== "24:00", "opens cannot be 24:00"),
   closes: TimeOfDay,
   last_entry: TimeOfDay.nullable(),
   is_exam: z.boolean(),

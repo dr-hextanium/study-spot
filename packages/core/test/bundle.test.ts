@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { BundlePointer, parseBundle, TimeOfDay } from "../src/index.ts";
+import { BundleHours, BundlePointer, parseBundle, TimeOfDay } from "../src/index.ts";
 import { FIXTURE_SPOT_ID, makeBundleFixture } from "./fixtures/bundle-v1.ts";
 
 test("schema version 1 fixture parses", () => {
@@ -135,4 +135,17 @@ test("every spot needs at least one verified date", () => {
   const r = parseBundle(b);
   expect(r.ok).toBe(false);
   expect(r.ok === false && r.detail).toContain("verified");
+});
+
+test("hours may close at 24:00 but never open at 24:00", () => {
+  const row = {
+    spot_id: FIXTURE_SPOT_ID,
+    day_of_week: 0,
+    opens: "00:00",
+    closes: "24:00",
+    last_entry: "24:00",
+    is_exam: false,
+  };
+  expect(BundleHours.safeParse(row).success).toBe(true);
+  expect(BundleHours.safeParse({ ...row, opens: "24:00" }).success).toBe(false);
 });
