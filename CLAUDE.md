@@ -53,7 +53,7 @@ Commit automatically while working. Do not wait to be asked.
 
 ## HANDOFF PROTOCOL
 
-When instructed to hand off, overwrite HANDOFF.md with:
+When instructed to hand off or refresh the handoff, overwrite HANDOFF.md with:
 
 - Goal: one sentence, the overall objective
 - State: what is done, verified, and committed (with commit hashes)
@@ -63,4 +63,4 @@ When instructed to hand off, overwrite HANDOFF.md with:
 - Gotchas: failing tests, env quirks, commands that must be run
 - Verify: command(s) that prove the work is correct
 
-Write it for an agent with zero context. No narrative. HANDOFF.md is gitignored; never commit it. When all Next steps are done and verified, delete HANDOFF.md.
+Write it for an agent with zero context. No narrative. HANDOFF.md is gitignored; never commit it. Writing the handoff does not mean stopping: keep working on the task unless told to stop. When all Next steps are done and verified, delete HANDOFF.md.
