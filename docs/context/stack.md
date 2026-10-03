@@ -5,6 +5,7 @@
 ### Repository layout (monorepo, Bun workspaces)
 ```
 packages/core     Zod schemas, inferred types, scoring, forecasting, live-blend math, API client. Pure TS, no runtime-specific APIs, unit tested.
+packages/ui-logic Shared React hooks, presenters, UI copy, design tokens, platform adapter interfaces. No DOM, no React Native. Reused by apps/web and apps/mobile.
 packages/db       Drizzle schema, migrations (drizzle-kit), drizzle-zod generated schemas, typed query helpers.
 apps/server       Fastify API, scheduled jobs.
 apps/web          React + Vite PWA (vite-plugin-pwa).

@@ -48,6 +48,7 @@ Hosting notes (checked October 2026): Fly.io has no free tier for new users. Ren
 ### Units
 
 - **`packages/core`:** Zod schemas (API and bundle, the contract between server and client), scoring, forecast fit, estimate blending, time handling. Pure TS, no I/O.
+- **`packages/ui-logic`:** platform-agnostic React layer shared by the PWA and a future Expo app (see section 3a). React only, no DOM, no React Native.
 - **`packages/db`:** Drizzle schema, migrations, drizzle-zod schemas, queries, including `buildBundle(db, campusId)`.
 - **`apps/server`:** surveyor write API, surveyor auth, admin endpoints, pick ping, maintenance endpoint, `publishBundle()` behind a `BundlePublisher` interface (Cloudflare implementation and a filesystem implementation for VPS and tests).
 - **`apps/web`:** one PWA, two modes. Student mode is static and reads only the bundle. Surveyor mode is behind an authenticated route and talks to the API.
@@ -59,6 +60,22 @@ Hosting notes (checked October 2026): Fly.io has no free tier for new users. Ren
 - The bundle contains only aggregates and forecasts: no raw headcounts, no surveyor IDs.
 - v1 adds a `/live` endpoint; the client blends it into bundle forecasts with the same `packages/core` function.
 - Bundle URLs are per campus from day one, so v3 multi-campus needs no URL change.
+
+## 3a. Cross-platform reuse (`packages/ui-logic`)
+
+Goal: a v1 Expo app rewrites only screens and platform adapters. Everything else is shared.
+
+- **Hooks (view models):** `useQuickPick` (inputs, scoring via core, reroll history, display-ready results), `useBrowse` (filters, sort, time scrubber), `useSpot(slug)`, `useSurveyOutbox`, `useSpotForm`.
+- **Presenters and copy:** all user-facing strings and formatting (busyness words, confidence labels, "closes in 40 min", eligibility labels, why-this-spot line, walk times). Copy lives here once.
+- **State:** access profile, presets, last "From" building, persisted through adapters and parsed with Zod.
+- **Bundle client:** fetch, schema check, last-good fallback, data age.
+- **Outbox engine:** queue, retry, idempotency, conflict detection, driven by adapters.
+- **Design tokens:** TS values (color, spacing, type scale). Web emits CSS variables; native would use them in StyleSheet. Values are set when `DESIGN.md` is created.
+- **Adapter interfaces:** `Storage`, `KeyValueCache`, `Clock`, `Geolocation`, `Share`, `NetworkStatus`, `Fetch`. `apps/web` implements them with localStorage, IndexedDB, and browser APIs; Expo would use AsyncStorage, expo-location, and similar.
+
+Enforcement: `packages/core` and `packages/ui-logic` compile with no `DOM` lib, so browser globals fail typecheck. Biome blocks `react-dom` and `react-native` imports in both. Hooks are tested with fake adapters and a non-DOM React test renderer.
+
+Screens in `apps/web` stay thin: render hook output, wire events, no business logic.
 
 ## 4. Data model additions
 
@@ -252,7 +269,7 @@ Never picked. In browse, greyed with a lock and label ("Residents of Kelly Quad"
 ### Repo
 
 ```
-packages/core  packages/db  apps/server  apps/web  scripts/walk-matrix
+packages/core  packages/ui-logic  packages/db  apps/server  apps/web  scripts/walk-matrix
 docs/context/  docs/superpowers/specs/
 docs/ops.md  docs/data-policy.md  docs/surveyor-guide.md  docs/sprint-runbook.md
 LICENSE (MIT)  DATA-LICENSE (CC BY-SA 4.0)
