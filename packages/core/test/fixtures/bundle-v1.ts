@@ -1,0 +1,108 @@
+const SPOT_ID = "8d0f7c1e-2b7a-4c39-9a51-3f6f4f0f2a11";
+
+export function makeBundleFixture(): Record<string, unknown> {
+  return {
+    schema_version: 1,
+    generated_at: "2026-10-13T18:00:00.000Z",
+    campus: { id: "sbu", name: "Stony Brook University", tz: "America/New_York" },
+    term: {
+      id: "2026-fall",
+      name: "Fall 2026",
+      starts: "2026-08-24",
+      ends: "2026-12-19",
+      exam_starts: "2026-12-10",
+      exam_ends: "2026-12-18",
+    },
+    buildings: [
+      { id: "melville-library", name: "Melville Library", lat: 40.9154, lng: -73.1222 },
+      { id: "sac", name: "Student Activities Center", lat: 40.9145, lng: -73.1243 },
+    ],
+    walk: {
+      building_ids: ["melville-library", "sac"],
+      minutes: [
+        [0, 4],
+        [4, 0],
+      ],
+      estimated_pairs: [],
+    },
+    spots: [
+      {
+        id: SPOT_ID,
+        slug: "central-reading-room",
+        building_id: "melville-library",
+        floor: "3",
+        official_name: "Central Reading Room",
+        common_name: null,
+        lat: 40.9155,
+        lng: -73.1221,
+        directions: "Main entrance, stairs to floor 3, straight ahead.",
+        eligibility: "all_students",
+        eligibility_scope: null,
+        eligibility_verified: true,
+        entry_method: "open",
+        reservable: false,
+        reservation_system: null,
+        reservation_url: null,
+        seat_count: 120,
+        seat_types: [{ type: "table_chair", count: 120 }],
+        table_configs: ["large_shared"],
+        effective_capacity: null,
+        max_group_size: 1,
+        spread_out_room: true,
+        outlet_coverage_pct: 0.6,
+        usb_outlets: false,
+        wifi_mbps: null,
+        cell_signal: "ok",
+        noise_policy: "silent",
+        natural_light: true,
+        lighting: "bright",
+        temperature: null,
+        temperature_consistent: null,
+        windows_view: true,
+        calls_ok: "not_allowed",
+        group_work_ok: false,
+        whiteboard: false,
+        food_policy: "covered_drinks",
+        amenities: [{ amenity: "bathroom", walk_minutes: 1 }],
+        step_free: true,
+        elevator: true,
+        accessible_seating: null,
+        open_past_midnight: false,
+        staffed_late: null,
+        lit_route_to_residences: null,
+        outdoor: false,
+        seasonal: false,
+        hours_unconfirmed: false,
+        verified: { identity: "2026-10-05T15:00:00.000Z", hours: "2026-10-05T15:00:00.000Z" },
+        photos: [
+          {
+            url: "https://example.org/p/1.jpg",
+            taken_at: "2026-10-05T15:00:00.000Z",
+            is_cover: true,
+          },
+        ],
+      },
+    ],
+    hours: [
+      {
+        spot_id: SPOT_ID,
+        day_of_week: 0,
+        opens: "08:00",
+        closes: "02:00",
+        last_entry: null,
+        is_exam: false,
+      },
+    ],
+    busyness: {
+      [SPOT_ID]: {
+        regular: Array.from({ length: 168 }, () => 0.35),
+        exam: null,
+        confidence: Array.from({ length: 168 }, () => "none"),
+      },
+    },
+    data_license: "CC BY-SA 4.0",
+    attribution: "Perch surveyors",
+  };
+}
+
+export const FIXTURE_SPOT_ID = SPOT_ID;
