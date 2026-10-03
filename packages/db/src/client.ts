@@ -10,7 +10,13 @@ export type Schema = typeof schema;
 export type Db = PgDatabase<PgQueryResultHKT, Schema>;
 
 export function createDb(url: string): Db {
-  return drizzle(postgres(url), { schema });
+  return openDb(url).db;
+}
+
+/** Like createDb, plus a close function that ends the postgres.js connection pool. */
+export function openDb(url: string): { db: Db; close: () => Promise<void> } {
+  const client = postgres(url);
+  return { db: drizzle(client, { schema }), close: () => client.end() };
 }
 
 export const spotSelectSchema = createSelectSchema(schema.spot);
