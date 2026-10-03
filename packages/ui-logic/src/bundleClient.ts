@@ -2,21 +2,30 @@ import { BUNDLE_SCHEMA_MAJOR, type Bundle, BundlePointer, parseBundle } from "@s
 import { z } from "zod";
 import type { Clock, Fetch, KeyValueCache } from "./adapters.ts";
 
-export const LAST_GOOD_KEY = "bundle:last-good";
+/** Cache key for the last good bundle, one per campus base URL. */
+export function lastGoodKey(baseUrl: string): string {
+  return `bundle:last-good:${baseUrl}`;
+}
 const DAY_MS = 86_400_000;
 
 export type BundleClientDeps = { fetch: Fetch; cache: KeyValueCache; clock: Clock };
 
 export type BundleLoad =
-  | { status: "fresh" | "cached"; bundle: Bundle; ageDays: number }
+  | {
+      status: "fresh" | "cached";
+      bundle: Bundle;
+      ageDays: number;
+      /** True when the server publishes a newer schema major than this app reads. */
+      updateAvailable: boolean;
+    }
   | { status: "unavailable"; reason: "offline_no_cache" | "update_required" };
 
 const CacheEntry = z.object({ hash: z.string(), json: z.string() });
 type Cached = { hash: string; bundle: Bundle };
 
-async function readCache(cache: KeyValueCache): Promise<Cached | null> {
+async function readCache(cache: KeyValueCache, key: string): Promise<Cached | null> {
   try {
-    const raw = await cache.get(LAST_GOOD_KEY);
+    const raw = await cache.get(key);
     if (raw === null) return null;
     const entry = CacheEntry.safeParse(JSON.parse(raw));
     if (!entry.success) return null;
@@ -46,10 +55,16 @@ function ageDays(bundle: Bundle, clock: Clock): number {
  * failure. Never throws.
  */
 export async function loadBundle(deps: BundleClientDeps, baseUrl: string): Promise<BundleLoad> {
-  const cached = await readCache(deps.cache);
-  const fromCache = (): BundleLoad =>
+  const key = lastGoodKey(baseUrl);
+  const cached = await readCache(deps.cache, key);
+  const fromCache = (updateAvailable = false): BundleLoad =>
     cached
-      ? { status: "cached", bundle: cached.bundle, ageDays: ageDays(cached.bundle, deps.clock) }
+      ? {
+          status: "cached",
+          bundle: cached.bundle,
+          ageDays: ageDays(cached.bundle, deps.clock),
+          updateAvailable,
+        }
       : { status: "unavailable", reason: "offline_no_cache" };
 
   let pointer: BundlePointer;
@@ -62,14 +77,21 @@ export async function loadBundle(deps: BundleClientDeps, baseUrl: string): Promi
   }
 
   if (pointer.schema_version !== BUNDLE_SCHEMA_MAJOR) {
-    return cached ? fromCache() : { status: "unavailable", reason: "update_required" };
+    if (!cached) return { status: "unavailable", reason: "update_required" };
+    // Only a newer major means this app is out of date.
+    return fromCache(pointer.schema_version > BUNDLE_SCHEMA_MAJOR);
   }
 
   // Tie the fetched path to the content hash: no "..", query strings, or absolute URLs.
   if (pointer.url !== `bundle.${pointer.hash}.json`) return fromCache();
 
   if (cached && cached.hash === pointer.hash) {
-    return { status: "fresh", bundle: cached.bundle, ageDays: ageDays(cached.bundle, deps.clock) };
+    return {
+      status: "fresh",
+      bundle: cached.bundle,
+      ageDays: ageDays(cached.bundle, deps.clock),
+      updateAvailable: false,
+    };
   }
 
   try {
@@ -77,14 +99,16 @@ export async function loadBundle(deps: BundleClientDeps, baseUrl: string): Promi
     const parsed = parseBundle(raw);
     if (!parsed.ok) return fromCache();
     try {
-      await deps.cache.set(
-        LAST_GOOD_KEY,
-        JSON.stringify({ hash: pointer.hash, json: JSON.stringify(raw) }),
-      );
+      await deps.cache.set(key, JSON.stringify({ hash: pointer.hash, json: JSON.stringify(raw) }));
     } catch {
       // A failed cache write must not discard a valid fresh bundle.
     }
-    return { status: "fresh", bundle: parsed.bundle, ageDays: ageDays(parsed.bundle, deps.clock) };
+    return {
+      status: "fresh",
+      bundle: parsed.bundle,
+      ageDays: ageDays(parsed.bundle, deps.clock),
+      updateAvailable: false,
+    };
   } catch {
     return fromCache();
   }

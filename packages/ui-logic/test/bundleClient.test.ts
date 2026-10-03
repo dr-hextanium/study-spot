@@ -1,6 +1,6 @@
 import { beforeEach, expect, test } from "bun:test";
 import { makeBundleFixture } from "../../core/test/fixtures/bundle-v1.ts";
-import { LAST_GOOD_KEY, loadBundle } from "../src/index.ts";
+import { lastGoodKey, loadBundle } from "../src/index.ts";
 import { FailingCache, FakeFetch, fixedClock, MemoryCache } from "./fakes.ts";
 
 const BASE = "https://cdn.example/data/sbu";
@@ -30,8 +30,11 @@ test("fresh load fetches pointer then bundle and caches it", async () => {
   );
   const r = await loadBundle({ fetch, cache, clock }, BASE);
   expect(r.status).toBe("fresh");
-  if (r.status !== "unavailable") expect(r.ageDays).toBe(3);
-  expect(await cache.get(LAST_GOOD_KEY)).not.toBeNull();
+  if (r.status !== "unavailable") {
+    expect(r.ageDays).toBe(3);
+    expect(r.updateAvailable).toBe(false);
+  }
+  expect(await cache.get(lastGoodKey(BASE))).not.toBeNull();
 });
 
 test("same hash as cache skips the bundle download", async () => {
@@ -56,6 +59,7 @@ test("offline with a cached bundle returns it as cached", async () => {
   offline.offline = true;
   const r = await loadBundle({ fetch: offline, cache, clock }, BASE);
   expect(r.status).toBe("cached");
+  if (r.status !== "unavailable") expect(r.updateAvailable).toBe(false);
 });
 
 test("offline with no cache is unavailable", async () => {
@@ -86,10 +90,34 @@ test("newer major version with a cache keeps using the cache", async () => {
   );
   const r = await loadBundle({ fetch: v2, cache, clock }, BASE);
   expect(r.status).toBe("cached");
+  if (r.status !== "unavailable") expect(r.updateAvailable).toBe(true);
+});
+
+test("an older major version with a cache keeps the cache without an update flag", async () => {
+  await loadBundle({ fetch: new FakeFetch(goodRoutes()), cache, clock }, BASE);
+  const v0 = new FakeFetch(
+    new Map([[`${BASE}/bundle-latest.json`, ok(pointer(0, "ffffffffffffffff"))]]),
+  );
+  const r = await loadBundle({ fetch: v0, cache, clock }, BASE);
+  expect(r.status).toBe("cached");
+  if (r.status !== "unavailable") expect(r.updateAvailable).toBe(false);
+});
+
+test("the cache is keyed per campus base url", async () => {
+  await loadBundle({ fetch: new FakeFetch(goodRoutes()), cache, clock }, BASE);
+  expect(lastGoodKey(BASE)).toBe(`bundle:last-good:${BASE}`);
+  expect(await cache.get(lastGoodKey(BASE))).not.toBeNull();
+  const other = "https://cdn.example/data/other";
+  const offline = new FakeFetch(new Map());
+  offline.offline = true;
+  expect(await loadBundle({ fetch: offline, cache, clock }, other)).toEqual({
+    status: "unavailable",
+    reason: "offline_no_cache",
+  });
 });
 
 test("corrupt cache and corrupt download are both ignored", async () => {
-  await cache.set(LAST_GOOD_KEY, "{not json");
+  await cache.set(lastGoodKey(BASE), "{not json");
   const fetch = new FakeFetch(
     new Map([
       [`${BASE}/bundle-latest.json`, ok(pointer())],
