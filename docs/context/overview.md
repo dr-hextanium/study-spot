@@ -63,3 +63,4 @@ Items marked DECIDED were confirmed by the project owner. Items marked PROPOSED 
     - Map is lazy-loaded behind a tab; list-first browse.
     - Privacy-safe pick counts (spot and hour only, no device ID) collected in v0.
 11. Stay PWA for v0; Expo remains gated to v1. Added `packages/ui-logic` (shared hooks, copy, tokens, adapters, no DOM) to maximize reuse for the future native app.
+12. Postcard concept adopted (2026-10-03): spots presented as postcards (postmark = last verified, stamp = noise policy, address = location, message = directions). Shareable postcards with optional selfie ship in v0, rendered on device, never uploaded.

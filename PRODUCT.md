@@ -32,6 +32,7 @@ It ranks by the probability that the right kind of seat is free when you get the
 
 ## Capabilities and Constraints
 - v0: quick pick, browse (map + list, filters, forecast heatmap, time scrubber), spot pages, eligibility profile, presets, surveyor mode.
+- v0 also includes shareable postcards: a user makes a postcard of a spot, optionally with a selfie, rendered on device and shared to social media. Photos are never uploaded.
 - v1: sessions (check-in, minimal timer, check-out), ask flow, arrival feedback, tips, exam mode.
 - No hardware, no Wi-Fi/BLE sniffing, no scraping behind login, no university SSO (Stony Brook email magic links instead).
 - Eligibility is self-declared and modeled per spot. Ineligible spots are hidden or shown locked.

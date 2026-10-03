@@ -26,6 +26,8 @@ This spec covers the v0 "finals edition" release: directory, quick pick on forec
 | D9 | License | MIT for code, CC BY-SA 4.0 for spot data and photos. |
 | D10 | Map | List-first browse. MapLibre lazy-loaded behind a Map tab. Spot pages use a static map image. |
 | D11 | Usage signal | Privacy-safe pick pings: spot and hour only, no device ID, rolled up nightly, raw rows deleted. |
+| D12 | Visual concept | Postcards: every spot is presented as a postcard (front photo, back details, stamp, postmark). Brief for the student app visual world (section 7a). |
+| D13 | Postcard sharing | Ships in v0. Users make a shareable postcard of a spot, optionally with a selfie, composited on device and shared via the share sheet. |
 
 Hosting notes (checked October 2026): Fly.io has no free tier for new users. Render free sleeps after 15 minutes idle with a 30 to 60 second cold start; acceptable because only surveyors hit the server. Koyeb free (always on, card required) is the fallback if cold starts hurt. Neon chosen over Supabase because Supabase pauses free projects after a week of inactivity. Cloudflare Workers rejected because Fastify expects a long-running server.
 
@@ -107,7 +109,7 @@ pick_daily(spot_id, day, count)
 Changes to existing tables:
 
 - `spot`: add `version int` (edit conflict detection), `status` (`draft | published | archived`), `eligibility_verified bool`.
-- `spot_photo`: add `r2_key`, `approved_by`, `approved_at`. Only approved photos are published.
+- `spot_photo`: add `r2_key`, `approved_by`, `approved_at`, `is_cover` (at most one per spot). Only approved photos are published; the cover is listed first.
 - `spot_verification`: gains an `hours` attribute group.
 - Building creation requires walk matrix rows. Publish validates that every building pair has a time; the fallback is straight-line distance times 1.3, flagged in the bundle.
 
@@ -123,7 +125,7 @@ Retention: `pick_ping` deleted after the nightly rollup. `magic_link` deleted 1 
   buildings: [{ id, name, lat, lng }],
   walk: { building_ids: string[], minutes: number[][], estimated_pairs: [i, j][] },
   spots: [{ ...v0 fields, slug, eligibility, eligibility_scope, eligibility_verified,
-            hours_unconfirmed, verified: { [group]: date }, photos: [{ url, taken_at }] }],
+            hours_unconfirmed, verified: { [group]: date }, photos: [{ url, taken_at, is_cover }] }],
   hours: [{ spot_id, dow, opens, closes, last_entry, is_exam }],
   busyness: { [spot_id]: { regular: number[168], exam: number[168] | null,
                            confidence: ("measured" | "estimated" | "none")[168] } },
@@ -234,6 +236,49 @@ Access profile (residence building or quad, grad toggle) and presets in localSto
 
 Never picked. In browse, greyed with a lock and label ("Residents of Kelly Quad"), hidden when "show locked" is off.
 
+## 7a. Postcards
+
+### Concept
+
+Every spot is a place, and a postcard is how you send someone a place. The postcard is the visual identity of the directory and the spot page. It is a brief for Impeccable's new-work step in build step 5, not a finished visual design.
+
+Mapping postcard parts to real data:
+
+| Postcard part | Data |
+|---|---|
+| Front image | The spot's cover photo with a consistent print treatment (duotone, halftone, or similar, chosen in `DESIGN.md`) |
+| Front lettering | "Greetings from" plus the spot's common or official name |
+| Address block | Spot name, building, floor |
+| Message area | Directions text |
+| Stamp | Noise policy (one stamp design per policy) |
+| Postmark | Last-verified date. Older verification reads as an older, fainter postmark. |
+| Flip | Front to back on the spot page: glance to details |
+
+Rules:
+
+- Home is Operate mode. The pick card may use a compact postcard style, but busyness, confidence, and walk time stay the most legible things on it. No decoration that slows quick pick.
+- No university logos, seals, or marks. Stamps and postmarks are original designs.
+- Busyness honesty rules still apply on postcards. In v1, a live report may appear as a fresh stamp or note, always distinct from the forecast.
+- No stamp collecting or visit tracking in v0. It implies location history and gamification.
+
+### Share flow
+
+1. "Send a postcard" on the spot page and on a pick card.
+2. Optional: take or choose a selfie. Without one, the postcard uses the cover photo.
+3. Optional short note (60 characters).
+4. The postcard renders on device to a canvas: frame, photo, stamp, postmark with today's date, "Perched at <spot name>", small Perch wordmark and URL to the spot page.
+5. Share via Web Share API with a PNG file; fallback is download.
+
+Privacy: the selfie and the rendered image never leave the device unless the user shares them. Nothing is uploaded to our servers. No face detection or processing.
+
+Implementation: `packages/ui-logic` owns the postcard layout model (positions, text, stamp choice, postmark date) as pure data; `apps/web` renders it with Canvas 2D; a future Expo app renders the same model natively. Estimate: about 3 days within build step 5.
+
+### Photos
+
+- `spot_photo.is_cover`: one cover photo per spot (partial unique index), used for the postcard front.
+- Surveyor guide adds a "postcard shot" checklist: landscape, wide enough to show the space, daylight or full lighting, no identifiable people, no university logos as the subject.
+- Before launch, every v0 spot needs an approved cover photo. Spots without one fall back to an illustrated placeholder card, never a broken image.
+
 ## 8. Risk fixes adopted
 
 | # | Risk | Fix |
@@ -314,9 +359,9 @@ Each step gets its own implementation plan.
 2. **Surveyor tooling:** auth, spot form, outbox, headcounts, estimates, routes, publishing, admin. About 2 weeks. Surveying starts when this works, target October 20.
 3. **Scoring core** (parallel with step 2): forecast fit, filters, P(seat), score, reroll, time handling. About 1 week.
 4. **Walk matrix.** 2 to 3 days.
-5. **Student app:** visual direction via Intent and Impeccable, then quick pick, browse, spot pages, PWA, prerender. About 3 weeks.
+5. **Student app:** visual direction via Intent and Impeccable using the postcard brief (section 7a), then quick pick, browse, spot pages, postcard sharing, PWA, prerender. About 3 weeks.
 6. **Launch hardening:** data policy, accessibility audit, real device testing on iOS and Android, bundle CDN check. Release in the first week of December 2026.
 
 ## 11. Out of scope for v0
 
-Sessions, live reports, the ask flow, arrival feedback, tips, exam mode automation, student accounts, push notifications, friend presence, group finder, library and DoIT data integrations, the Expo app.
+Stamp collecting or visit history, sessions, live reports, the ask flow, arrival feedback, tips, exam mode automation, student accounts, push notifications, friend presence, group finder, library and DoIT data integrations, the Expo app.
