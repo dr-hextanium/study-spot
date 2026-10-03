@@ -53,7 +53,7 @@ export const BundleSpot = z.object({
   entry_method: EntryMethod.nullable(),
   reservable: z.boolean(),
   reservation_system: z.string().nullable(),
-  reservation_url: z.url().nullable(),
+  reservation_url: z.httpUrl().nullable(),
   seat_count: z.number().int().positive(),
   seat_types: z.array(z.object({ type: SeatType, count: z.number().int().nonnegative() })),
   table_configs: z.array(TableConfig),
@@ -85,7 +85,7 @@ export const BundleSpot = z.object({
   seasonal: z.boolean(),
   hours_unconfirmed: z.boolean(),
   verified: z.partialRecord(AttributeGroup, IsoDateTime),
-  photos: z.array(z.object({ url: z.url(), taken_at: IsoDateTime, is_cover: z.boolean() })),
+  photos: z.array(z.object({ url: z.httpUrl(), taken_at: IsoDateTime, is_cover: z.boolean() })),
 });
 export type BundleSpot = z.infer<typeof BundleSpot>;
 

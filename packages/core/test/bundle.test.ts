@@ -104,3 +104,24 @@ test("duplicate spot ids are rejected", () => {
   expect(r.ok).toBe(false);
   expect(r.ok === false && r.detail).toContain("duplicate spot id");
 });
+
+test("only http(s) urls are allowed for reservations and photos", () => {
+  const withSpot = (patch: Record<string, unknown>) => {
+    const b = makeBundleFixture();
+    const spots = b.spots as Array<Record<string, unknown>>;
+    const first = spots[0];
+    if (!first) throw new Error("fixture missing spot");
+    Object.assign(first, patch);
+    return parseBundle(b);
+  };
+  expect(withSpot({ reservation_url: "https://libcal.example.org/x" }).ok).toBe(true);
+  expect(withSpot({ reservation_url: "javascript:alert(1)" }).ok).toBe(false);
+  expect(withSpot({ reservation_url: "libcal.example.org/x" }).ok).toBe(false);
+  expect(
+    withSpot({
+      photos: [
+        { url: "javascript:alert(1)", taken_at: "2026-10-05T15:00:00.000Z", is_cover: true },
+      ],
+    }).ok,
+  ).toBe(false);
+});
