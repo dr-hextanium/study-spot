@@ -50,3 +50,17 @@ Commit automatically while working. Do not wait to be asked.
 - Keep messages short: subject line in imperative mood, lowercase, no trailing period, 72 characters or fewer (aim for 50). Add a body only when the why is not obvious, wrapped at 72.
 - No attribution or co-author lines in commit messages or PR descriptions.
 - Never commit secrets, `.env` files, or per-developer config (see `.gitignore`).
+
+## HANDOFF PROTOCOL
+
+When instructed to hand off, overwrite HANDOFF.md with:
+
+- Goal: one sentence, the overall objective
+- State: what is done, verified, and committed (with commit hashes)
+- In progress: exact file/function being changed and its current condition
+- Next steps: ordered, concrete, each independently executable
+- Decisions: choices made and why, including rejected approaches
+- Gotchas: failing tests, env quirks, commands that must be run
+- Verify: command(s) that prove the work is correct
+
+Write it for an agent with zero context. No narrative. HANDOFF.md is gitignored; never commit it. When all Next steps are done and verified, delete HANDOFF.md.
