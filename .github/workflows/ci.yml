@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Test
+        run: bun test
+
+      - name: Smoke (Node)
+        run: bun run smoke:node
+
+      - name: Smoke (Bun)
+        run: bun packages/db/scripts/smoke-bundle.ts
+
+      - name: Migrations are up to date
+        run: |
+          bun run db:generate
+          git diff --exit-code packages/db/drizzle || (echo "Schema changed without a migration. Run bun run db:generate." && exit 1)
+
+      - name: Secret scan
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest git /repo --no-banner --redact

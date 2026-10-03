@@ -23,6 +23,14 @@ Detailed context is split into files under `docs/context/`. Read the ones that m
 
 When a decision changes, update the relevant context file and append to the decision log in `overview.md`.
 
+## Commands
+
+- `bun install`: install workspaces (also installs the lefthook pre-commit hook)
+- `bun run typecheck`, `bun run lint`, `bun run fix`, `bun test`
+- `bun run smoke:node`: build the seed bundle under Node to prove the fallback runtime works
+- `bun run db:generate`: create a migration after changing `packages/db/src/schema`
+- `bun run db:migrate`, `bun run db:seed`: apply to `DATABASE_URL` (see `.env.example`)
+
 ## Hard rules (always apply)
 
 - No hardware, no Wi-Fi/BLE/AP sniffing, no scraping behind login, no university SSO.
