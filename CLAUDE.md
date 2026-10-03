@@ -35,3 +35,18 @@ When a decision changes, update the relevant context file and append to the deci
 
 - Never use em-dashes in UI copy, docs, comments, or commit messages. Use commas or colons.
 - UI copy is short and literal. No hype. Voice is dry and student-made.
+
+## Git workflow
+
+Commit automatically while working. Do not wait to be asked.
+
+- Follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/): `type(scope): description`.
+  - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+  - Scopes match workspaces where useful: `core`, `db`, `server`, `web`, `scripts`, `docs`.
+  - Breaking changes use `!` after the type/scope, plus a `BREAKING CHANGE:` footer.
+- Atomic commits: one logical change per commit. Do not mix unrelated changes.
+- Commit often: after each working step, not at the end of a task.
+- Every commit must work: typecheck, lint, and tests pass at that commit. Never commit a broken state to "fix in the next commit".
+- Keep messages short: subject line in imperative mood, lowercase, no trailing period, 72 characters or fewer (aim for 50). Add a body only when the why is not obvious, wrapped at 72.
+- No attribution or co-author lines in commit messages or PR descriptions.
+- Never commit secrets, `.env` files, or per-developer config (see `.gitignore`).
