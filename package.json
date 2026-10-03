@@ -1,0 +1,31 @@
+{
+  "name": "study-spot",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "typecheck": "tsc -b",
+    "lint": "biome check .",
+    "fix": "biome check --write .",
+    "test": "bun test",
+    "smoke:node": "node packages/db/scripts/smoke-bundle.ts",
+    "db:generate": "cd packages/db && drizzle-kit generate",
+    "db:migrate": "node packages/db/scripts/migrate.ts",
+    "db:seed": "node packages/db/scripts/seed.ts",
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@types/bun": "^1.4.2",
+    "@types/node": "^24.0.0",
+    "lefthook": "^2.1.16",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=24",
+    "bun": ">=1.3.14"
+  }
+}

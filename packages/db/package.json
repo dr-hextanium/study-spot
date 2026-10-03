@@ -1,0 +1,21 @@
+{
+  "name": "@study-spot/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@study-spot/core": "workspace:*",
+    "drizzle-orm": "^0.45.3",
+    "drizzle-zod": "^0.8.3",
+    "postgres": "^3.4.9",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.11"
+  }
+}

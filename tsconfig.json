@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/core/test" },
+    { "path": "packages/ui-logic" },
+    { "path": "packages/ui-logic/test" },
+    { "path": "packages/db" },
+    { "path": "packages/db/test" }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!**/dist",
+      "!.claude",
+      "!.impeccable",
+      "!.idea",
+      "!**/dist-test",
+      "!**/drizzle/meta"
+    ]
+  },
+  "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
+  "linter": {
+    "rules": {
+      "recommended": true,
+      "suspicious": { "noExplicitAny": "error" },
+      "style": { "noNonNullAssertion": "error" }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["packages/core/**", "packages/ui-logic/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "react-dom": "Platform code belongs in apps/*, not shared packages.",
+                  "react-native": "Platform code belongs in apps/*, not shared packages."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

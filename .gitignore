@@ -17,3 +17,6 @@ coverage/
 
 # Session handoff notes (per-developer, see HANDOFF PROTOCOL in CLAUDE.md)
 HANDOFF.md
+
+dist-test/
+*.tsbuildinfo
