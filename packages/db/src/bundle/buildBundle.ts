@@ -92,6 +92,7 @@ export async function buildBundle(db: Db, campusId: string, now: Date): Promise<
             .select()
             .from(spot_photo)
             .where(and(inArray(spot_photo.spot_id, spotIds), isNotNull(spot_photo.approved_at)))
+            .orderBy(spot_photo.taken_at, spot_photo.id)
         : [],
       has
         ? db
@@ -161,6 +162,12 @@ export async function buildBundle(db: Db, campusId: string, now: Date): Promise<
     spots,
     hours: hours
       .filter((h) => includedIds.has(h.spot_id))
+      .sort(
+        (a, b) =>
+          a.spot_id.localeCompare(b.spot_id) ||
+          a.day_of_week - b.day_of_week ||
+          Number(a.is_exam) - Number(b.is_exam),
+      )
       .map((h) => ({
         spot_id: h.spot_id,
         day_of_week: h.day_of_week,

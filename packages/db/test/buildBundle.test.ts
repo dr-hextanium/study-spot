@@ -63,7 +63,12 @@ test("hours include only the current term, past-midnight closes survive", async 
   const { bundle } = await buildBundle(db, "sbu", NOW);
   const crrHours = bundle.hours.filter((h) => h.spot_id === ids.spotIds["central-reading-room"]);
   expect(crrHours).toHaveLength(7);
-  expect(crrHours[0]?.closes).toBe("02:00");
+  expect(crrHours.find((h) => h.day_of_week === 0)?.closes).toBe("02:00");
+
+  const key = (h: (typeof bundle.hours)[number]) =>
+    `${h.spot_id}|${h.day_of_week}|${h.is_exam ? 1 : 0}`;
+  const sorted = [...bundle.hours].sort((a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0));
+  expect(bundle.hours).toEqual(sorted);
 });
 
 test("a spot with no hours this term is marked hours_unconfirmed", async () => {
