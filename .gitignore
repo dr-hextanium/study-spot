@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+*.log
+coverage/
+
+# Impeccable per-developer state
+.impeccable/config.local.json
+.impeccable/hook.cache.json
+
+# Claude Code per-developer settings
+.claude/settings.local.json
