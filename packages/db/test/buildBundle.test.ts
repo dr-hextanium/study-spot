@@ -2,7 +2,16 @@ import { expect, test } from "bun:test";
 import { parseBundle, slotIndex } from "@study-spot/core";
 import { and, eq, sql } from "drizzle-orm";
 import { buildBundle, NoTermError } from "../src/bundle/buildBundle.ts";
-import { spot, spot_hours, spot_seat_type, term, walk_matrix } from "../src/index.ts";
+import {
+  spot,
+  spot_amenity,
+  spot_hours,
+  spot_seat_type,
+  spot_table_config,
+  spot_verification,
+  term,
+  walk_matrix,
+} from "../src/index.ts";
 import { seed } from "../src/seed/seed.ts";
 import { createTestDb } from "../src/testing.ts";
 
@@ -172,4 +181,48 @@ test("an invalid hours row is skipped, and a spot left with none is unconfirmed"
   ).toBe(true);
   expect(warnings.filter((w) => w.startsWith("skipped kelly-rcc hours day"))).toHaveLength(7);
   expect(warnings).toHaveLength(8);
+});
+
+test("the serialized bundle does not depend on row insertion order", async () => {
+  const { db, ids } = await seeded();
+  const crr = ids.spotIds["central-reading-room"];
+  await db.insert(spot_seat_type).values([
+    { spot_id: crr, type: "soft", count: 4 },
+    { spot_id: crr, type: "carrel", count: 10 },
+  ]);
+  await db.insert(spot_table_config).values([
+    { spot_id: crr, config: "individual" },
+    { spot_id: crr, config: "small_2_4" },
+  ]);
+  await db.insert(spot_amenity).values([
+    { spot_id: crr, amenity: "water", walk_minutes: 2 },
+    { spot_id: crr, amenity: "printer", walk_minutes: 3 },
+  ]);
+  await db.insert(spot_verification).values({
+    spot_id: crr,
+    attribute_group: "access",
+    last_verified_at: new Date("2026-10-01T15:00:00Z"),
+    source: "survey",
+    confidence: "estimated",
+  });
+  const first = JSON.stringify((await buildBundle(db, "sbu", NOW)).bundle);
+
+  const seats = await db.select().from(spot_seat_type);
+  const tables = await db.select().from(spot_table_config);
+  const amenities = await db.select().from(spot_amenity);
+  const verifications = await db.select().from(spot_verification);
+  const hours = await db.select().from(spot_hours);
+  await db.delete(spot_seat_type);
+  await db.delete(spot_table_config);
+  await db.delete(spot_amenity);
+  await db.delete(spot_verification);
+  await db.delete(spot_hours);
+  await db.insert(spot_seat_type).values(seats.reverse());
+  await db.insert(spot_table_config).values(tables.reverse());
+  await db.insert(spot_amenity).values(amenities.reverse());
+  await db.insert(spot_verification).values(verifications.reverse());
+  await db.insert(spot_hours).values(hours.reverse());
+
+  const second = JSON.stringify((await buildBundle(db, "sbu", NOW)).bundle);
+  expect(second).toBe(first);
 });

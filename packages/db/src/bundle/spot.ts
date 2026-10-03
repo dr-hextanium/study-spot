@@ -1,4 +1,11 @@
-import type { AttributeGroup, BundleSpot } from "@study-spot/core";
+import {
+  AMENITY,
+  ATTRIBUTE_GROUP,
+  type AttributeGroup,
+  type BundleSpot,
+  SEAT_TYPE,
+  TABLE_CONFIG,
+} from "@study-spot/core";
 import type {
   spot,
   spot_amenity,
@@ -25,6 +32,11 @@ export type SpotAssemblyInput = {
   hoursUnconfirmed: boolean;
 };
 
+/** Sorts by position in an enum value array so output order never depends on row order. */
+function byEnumOrder<T, K extends string>(order: readonly K[], key: (item: T) => K) {
+  return (a: T, b: T): number => order.indexOf(key(a)) - order.indexOf(key(b));
+}
+
 export type SpotAssemblyResult = { ok: true; spot: BundleSpot } | { ok: false; missing: string[] };
 
 export function toBundleSpot(input: SpotAssemblyInput): SpotAssemblyResult {
@@ -49,9 +61,12 @@ export function toBundleSpot(input: SpotAssemblyInput): SpotAssemblyResult {
     return { ok: false, missing };
   }
 
+  // Insert keys in ATTRIBUTE_GROUP order so the serialized bundle is byte-stable.
   const verified: Partial<Record<AttributeGroup, string>> = {};
-  for (const v of input.verifications)
-    verified[v.attribute_group] = v.last_verified_at.toISOString();
+  for (const group of ATTRIBUTE_GROUP) {
+    const v = input.verifications.find((x) => x.attribute_group === group);
+    if (v) verified[group] = v.last_verified_at.toISOString();
+  }
 
   return {
     ok: true,
@@ -73,8 +88,12 @@ export function toBundleSpot(input: SpotAssemblyInput): SpotAssemblyResult {
       reservation_system: r.reservation_system,
       reservation_url: r.reservation_url,
       seat_count: r.seat_count,
-      seat_types: input.seatTypes.map((s) => ({ type: s.type, count: s.count })),
-      table_configs: input.tableConfigs.map((t) => t.config),
+      seat_types: [...input.seatTypes]
+        .sort(byEnumOrder(SEAT_TYPE, (s) => s.type))
+        .map((s) => ({ type: s.type, count: s.count })),
+      table_configs: input.tableConfigs
+        .map((t) => t.config)
+        .sort(byEnumOrder(TABLE_CONFIG, (c) => c)),
       effective_capacity: r.effective_capacity,
       max_group_size: r.max_group_size,
       spread_out_room: r.spread_out_room,
@@ -92,7 +111,9 @@ export function toBundleSpot(input: SpotAssemblyInput): SpotAssemblyResult {
       group_work_ok: r.group_work_ok,
       whiteboard: r.whiteboard,
       food_policy: r.food_policy,
-      amenities: input.amenities.map((a) => ({ amenity: a.amenity, walk_minutes: a.walk_minutes })),
+      amenities: [...input.amenities]
+        .sort(byEnumOrder(AMENITY, (a) => a.amenity))
+        .map((a) => ({ amenity: a.amenity, walk_minutes: a.walk_minutes })),
       step_free: r.step_free,
       elevator: r.elevator,
       accessible_seating: r.accessible_seating,
