@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { parseBundle, slotIndex } from "@study-spot/core";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { buildBundle, NoTermError } from "../src/bundle/buildBundle.ts";
-import { spot, spot_hours, term, walk_matrix } from "../src/index.ts";
+import { spot, spot_hours, spot_seat_type, term, walk_matrix } from "../src/index.ts";
 import { seed } from "../src/seed/seed.ts";
 import { createTestDb } from "../src/testing.ts";
 
@@ -114,4 +114,62 @@ test("between terms the next term is used; after all terms it throws", async () 
   await expect(buildBundle(db, "sbu", new Date("2027-01-05T17:00:00Z"))).rejects.toThrow(
     NoTermError,
   );
+});
+
+test("a spot with a scheme-less reservation url is skipped with a warning", async () => {
+  const { db, ids } = await seeded();
+  await db
+    .update(spot)
+    .set({ reservable: true, reservation_url: "libcal.stonybrook.edu/x" })
+    .where(eq(spot.id, ids.spotIds["north-reading-room"]));
+  const { bundle, warnings } = await buildBundle(db, "sbu", NOW);
+  expect(parseBundle(bundle).ok).toBe(true);
+  expect(bundle.spots.some((s) => s.slug === "north-reading-room")).toBe(false);
+  expect(bundle.hours.some((h) => h.spot_id === ids.spotIds["north-reading-room"])).toBe(false);
+  expect(ids.spotIds["north-reading-room"] in bundle.busyness).toBe(false);
+  expect(warnings).toEqual(["skipped north-reading-room: invalid reservation_url: Invalid URL"]);
+});
+
+test("a spot with a negative seat type count is skipped with a warning", async () => {
+  const { db, ids } = await seeded();
+  // Simulate a row written before the check constraint existed.
+  await db.execute(
+    sql`alter table spot_seat_type drop constraint if exists spot_seat_type_count_nonnegative`,
+  );
+  await db
+    .insert(spot_seat_type)
+    .values({ spot_id: ids.spotIds["sac-lounge"], type: "soft", count: -1 });
+  const { bundle, warnings } = await buildBundle(db, "sbu", NOW);
+  expect(parseBundle(bundle).ok).toBe(true);
+  expect(bundle.spots.some((s) => s.slug === "sac-lounge")).toBe(false);
+  expect(warnings).toHaveLength(1);
+  expect(warnings[0]).toStartWith("skipped sac-lounge: invalid seat_types.0.count:");
+});
+
+test("an invalid hours row is skipped, and a spot left with none is unconfirmed", async () => {
+  const { db, ids } = await seeded();
+  // Simulate rows written before the check constraint existed.
+  await db.execute(
+    sql`alter table spot_hours drop constraint if exists spot_hours_last_entry_format`,
+  );
+  const sac = ids.spotIds["sac-lounge"];
+  await db
+    .update(spot_hours)
+    .set({ last_entry: "9pm" })
+    .where(and(eq(spot_hours.spot_id, sac), eq(spot_hours.day_of_week, 2)));
+  const kelly = ids.spotIds["kelly-rcc"];
+  await db.update(spot_hours).set({ last_entry: "9pm" }).where(eq(spot_hours.spot_id, kelly));
+
+  const { bundle, warnings } = await buildBundle(db, "sbu", NOW);
+  expect(parseBundle(bundle).ok).toBe(true);
+  const sacHours = bundle.hours.filter((h) => h.spot_id === sac);
+  expect(sacHours.map((h) => h.day_of_week)).toEqual([0, 1, 3, 4, 5, 6]);
+  expect(bundle.spots.find((s) => s.slug === "sac-lounge")?.hours_unconfirmed).toBe(false);
+  expect(bundle.spots.find((s) => s.slug === "kelly-rcc")?.hours_unconfirmed).toBe(true);
+  expect(bundle.hours.some((h) => h.spot_id === kelly)).toBe(false);
+  expect(
+    warnings.some((w) => w.startsWith("skipped sac-lounge hours day 2: invalid last_entry:")),
+  ).toBe(true);
+  expect(warnings.filter((w) => w.startsWith("skipped kelly-rcc hours day"))).toHaveLength(7);
+  expect(warnings).toHaveLength(8);
 });

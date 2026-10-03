@@ -2,12 +2,14 @@ import {
   BUNDLE_SCHEMA_MAJOR,
   Bundle,
   type BundleBusyness,
-  type BundleSpot,
+  BundleHours,
+  BundleSpot,
   campusDate,
   DATA_ATTRIBUTION,
   DATA_LICENSE,
 } from "@study-spot/core";
 import { and, eq, inArray, isNotNull } from "drizzle-orm";
+import type { z } from "zod";
 import type { Db } from "../client.ts";
 import {
   building,
@@ -47,6 +49,18 @@ function groupBy<T>(rows: T[], key: (row: T) => string): Map<string, T[]> {
     else map.set(k, [row]);
   }
   return map;
+}
+
+/** Plain code-unit string order, independent of locale. */
+function cmp(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+function firstIssue(error: z.ZodError): string {
+  const issue = error.issues[0];
+  if (!issue) return "unknown issue";
+  const path = issue.path.map(String).join(".");
+  return path ? `${path}: ${issue.message}` : issue.message;
 }
 
 export async function buildBundle(db: Db, campusId: string, now: Date): Promise<BuildBundleResult> {
@@ -118,10 +132,29 @@ export async function buildBundle(db: Db, campusId: string, now: Date): Promise<
 
   const warnings: string[] = [];
   const spots: BundleSpot[] = [];
+  const validHours: BundleHours[] = [];
   const busyness: Record<string, BundleBusyness> = {};
-  const includedIds = new Set<string>();
 
-  for (const row of [...spotRows].sort((a, b) => (a.slug < b.slug ? -1 : 1))) {
+  for (const row of [...spotRows].sort((a, b) => cmp(a.slug, b.slug))) {
+    // Validate per row so one bad record skips one spot or row, not the whole publish.
+    const rowWarnings: string[] = [];
+    const spotHours: BundleHours[] = [];
+    for (const h of hoursMap.get(row.id) ?? []) {
+      const parsed = BundleHours.safeParse({
+        spot_id: h.spot_id,
+        day_of_week: h.day_of_week,
+        opens: h.opens,
+        closes: h.closes,
+        last_entry: h.last_entry,
+        is_exam: h.is_exam,
+      });
+      if (parsed.success) spotHours.push(parsed.data);
+      else
+        rowWarnings.push(
+          `skipped ${row.slug} hours day ${h.day_of_week}: invalid ${firstIssue(parsed.error)}`,
+        );
+    }
+
     const result = toBundleSpot({
       row,
       seatTypes: seatMap.get(row.id) ?? [],
@@ -129,20 +162,28 @@ export async function buildBundle(db: Db, campusId: string, now: Date): Promise<
       amenities: amenityMap.get(row.id) ?? [],
       verifications: verifyMap.get(row.id) ?? [],
       approvedPhotos: photoMap.get(row.id) ?? [],
-      hoursUnconfirmed: (hoursMap.get(row.id) ?? []).length === 0,
+      hoursUnconfirmed: spotHours.length === 0,
     });
     if (!result.ok) {
       warnings.push(`skipped ${row.slug}: missing ${result.missing.join(", ")}`);
       continue;
     }
-    spots.push(result.spot);
-    includedIds.add(row.id);
+    const parsedSpot = BundleSpot.safeParse(result.spot);
+    if (!parsedSpot.success) {
+      warnings.push(`skipped ${row.slug}: invalid ${firstIssue(parsedSpot.error)}`);
+      continue;
+    }
+    warnings.push(...rowWarnings);
+    spots.push(parsedSpot.data);
+    validHours.push(...spotHours);
     busyness[row.id] = assembleBusyness(
       forecastMap.get(row.id) ?? [],
       estimateMap.get(row.id) ?? [],
     );
   }
 
+  // Final invariant check: per-spot problems were filtered above, so this only
+  // fails on campus-level bugs (buildings, walk matrix, term).
   const bundle = Bundle.parse({
     schema_version: BUNDLE_SCHEMA_MAJOR,
     generated_at: now.toISOString(),
@@ -156,26 +197,17 @@ export async function buildBundle(db: Db, campusId: string, now: Date): Promise<
       exam_ends: currentTerm.exam_ends,
     },
     buildings: [...buildings]
-      .sort((a, b) => (a.id < b.id ? -1 : 1))
+      .sort((a, b) => cmp(a.id, b.id))
       .map((b) => ({ id: b.id, name: b.name, lat: b.lat, lng: b.lng })),
     walk: assembleWalk(buildings, walkRows),
     spots,
-    hours: hours
-      .filter((h) => includedIds.has(h.spot_id))
-      .sort(
-        (a, b) =>
-          a.spot_id.localeCompare(b.spot_id) ||
-          a.day_of_week - b.day_of_week ||
-          Number(a.is_exam) - Number(b.is_exam),
-      )
-      .map((h) => ({
-        spot_id: h.spot_id,
-        day_of_week: h.day_of_week,
-        opens: h.opens,
-        closes: h.closes,
-        last_entry: h.last_entry,
-        is_exam: h.is_exam,
-      })),
+    hours: validHours.sort(
+      (a, b) =>
+        cmp(a.spot_id, b.spot_id) ||
+        a.day_of_week - b.day_of_week ||
+        Number(a.is_exam) - Number(b.is_exam) ||
+        cmp(a.opens, b.opens),
+    ),
     busyness,
     data_license: DATA_LICENSE,
     attribution: DATA_ATTRIBUTION,
