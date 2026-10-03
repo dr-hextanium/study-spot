@@ -15,9 +15,9 @@ const CacheEntry = z.object({ hash: z.string(), json: z.string() });
 type Cached = { hash: string; bundle: Bundle };
 
 async function readCache(cache: KeyValueCache): Promise<Cached | null> {
-  const raw = await cache.get(LAST_GOOD_KEY);
-  if (raw === null) return null;
   try {
+    const raw = await cache.get(LAST_GOOD_KEY);
+    if (raw === null) return null;
     const entry = CacheEntry.safeParse(JSON.parse(raw));
     if (!entry.success) return null;
     const parsed = parseBundle(JSON.parse(entry.data.json));
@@ -34,7 +34,10 @@ async function getJson(fetch: Fetch, url: string): Promise<unknown> {
 }
 
 function ageDays(bundle: Bundle, clock: Clock): number {
-  return Math.floor((clock.now().getTime() - Date.parse(bundle.generated_at)) / DAY_MS);
+  return Math.max(
+    0,
+    Math.floor((clock.now().getTime() - Date.parse(bundle.generated_at)) / DAY_MS),
+  );
 }
 
 /**
@@ -62,6 +65,9 @@ export async function loadBundle(deps: BundleClientDeps, baseUrl: string): Promi
     return cached ? fromCache() : { status: "unavailable", reason: "update_required" };
   }
 
+  // Tie the fetched path to the content hash: no "..", query strings, or absolute URLs.
+  if (pointer.url !== `bundle.${pointer.hash}.json`) return fromCache();
+
   if (cached && cached.hash === pointer.hash) {
     return { status: "fresh", bundle: cached.bundle, ageDays: ageDays(cached.bundle, deps.clock) };
   }
@@ -70,10 +76,14 @@ export async function loadBundle(deps: BundleClientDeps, baseUrl: string): Promi
     const raw = await getJson(deps.fetch, `${baseUrl}/${pointer.url}`);
     const parsed = parseBundle(raw);
     if (!parsed.ok) return fromCache();
-    await deps.cache.set(
-      LAST_GOOD_KEY,
-      JSON.stringify({ hash: pointer.hash, json: JSON.stringify(raw) }),
-    );
+    try {
+      await deps.cache.set(
+        LAST_GOOD_KEY,
+        JSON.stringify({ hash: pointer.hash, json: JSON.stringify(raw) }),
+      );
+    } catch {
+      // A failed cache write must not discard a valid fresh bundle.
+    }
     return { status: "fresh", bundle: parsed.bundle, ageDays: ageDays(parsed.bundle, deps.clock) };
   } catch {
     return fromCache();

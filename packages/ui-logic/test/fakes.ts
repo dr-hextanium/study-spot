@@ -30,3 +30,20 @@ export class FakeFetch implements Fetch {
     return r;
   }
 }
+
+/** Cache whose reads and/or writes reject, like a failing IndexedDB. */
+export class FailingCache implements KeyValueCache {
+  readonly failGet: boolean;
+  readonly failSet: boolean;
+  constructor(failGet: boolean, failSet: boolean) {
+    this.failGet = failGet;
+    this.failSet = failSet;
+  }
+  async get(_key: string): Promise<string | null> {
+    if (this.failGet) throw new Error("cache read failed");
+    return null;
+  }
+  async set(_key: string, _value: string): Promise<void> {
+    if (this.failSet) throw new Error("quota exceeded");
+  }
+}

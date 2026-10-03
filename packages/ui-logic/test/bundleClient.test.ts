@@ -1,7 +1,7 @@
 import { beforeEach, expect, test } from "bun:test";
 import { makeBundleFixture } from "../../core/test/fixtures/bundle-v1.ts";
 import { LAST_GOOD_KEY, loadBundle } from "../src/index.ts";
-import { FakeFetch, fixedClock, MemoryCache } from "./fakes.ts";
+import { FailingCache, FakeFetch, fixedClock, MemoryCache } from "./fakes.ts";
 
 const BASE = "https://cdn.example/data/sbu";
 const HASH = "a1b2c3d4e5f60718";
@@ -105,4 +105,50 @@ test("corrupt cache and corrupt download are both ignored", async () => {
 test("http error status is treated like a network failure", async () => {
   const fetch = new FakeFetch(new Map([[`${BASE}/bundle-latest.json`, { status: 503, text: "" }]]));
   expect((await loadBundle({ fetch, cache, clock }, BASE)).status).toBe("unavailable");
+});
+
+const goodRoutes = () =>
+  new Map([
+    [`${BASE}/bundle-latest.json`, ok(pointer())],
+    [`${BASE}/bundle.${HASH}.json`, ok(JSON.stringify(makeBundleFixture()))],
+  ]);
+
+test("a cache whose get rejects is treated as a miss", async () => {
+  const r = await loadBundle(
+    { fetch: new FakeFetch(goodRoutes()), cache: new FailingCache(true, false), clock },
+    BASE,
+  );
+  expect(r.status).toBe("fresh");
+});
+
+test("a cache whose set rejects still returns the downloaded bundle", async () => {
+  const r = await loadBundle(
+    { fetch: new FakeFetch(goodRoutes()), cache: new FailingCache(false, true), clock },
+    BASE,
+  );
+  expect(r.status).toBe("fresh");
+  if (r.status !== "unavailable")
+    expect(r.bundle.generated_at).toBe(String(makeBundleFixture().generated_at));
+});
+
+test("a pointer url that does not match its hash is never fetched", async () => {
+  const bad = JSON.stringify({
+    schema_version: 1,
+    hash: HASH,
+    url: "../evil.json",
+    generated_at: "2026-10-13T18:00:00.000Z",
+  });
+  const fetch = new FakeFetch(new Map([[`${BASE}/bundle-latest.json`, ok(bad)]]));
+  expect(await loadBundle({ fetch, cache, clock }, BASE)).toEqual({
+    status: "unavailable",
+    reason: "offline_no_cache",
+  });
+  expect(fetch.calls).toEqual([`${BASE}/bundle-latest.json`]);
+});
+
+test("a clock behind generated_at reports age 0", async () => {
+  const early = fixedClock("2026-01-01T00:00:00Z");
+  const r = await loadBundle({ fetch: new FakeFetch(goodRoutes()), cache, clock: early }, BASE);
+  expect(r.status).toBe("fresh");
+  if (r.status !== "unavailable") expect(r.ageDays).toBe(0);
 });
