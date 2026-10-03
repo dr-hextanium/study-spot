@@ -108,7 +108,10 @@ export const spot_seat_type = pgTable(
     type: seat_type().notNull(),
     count: integer().notNull(),
   },
-  (t) => [primaryKey({ columns: [t.spot_id, t.type] })],
+  (t) => [
+    primaryKey({ columns: [t.spot_id, t.type] }),
+    check("spot_seat_type_count_nonnegative", sql`${t.count} >= 0`),
+  ],
 );
 
 export const spot_table_config = pgTable(
@@ -122,15 +125,24 @@ export const spot_table_config = pgTable(
   (t) => [primaryKey({ columns: [t.spot_id, t.config] })],
 );
 
-export const spot_room = pgTable("spot_room", {
-  id: uuid().primaryKey().defaultRandom(),
-  spot_id: uuid()
-    .notNull()
-    .references(() => spot.id, { onDelete: "cascade" }),
-  name: text().notNull(),
-  capacity: integer(),
-  reservable: boolean().notNull().default(false),
-});
+export const spot_room = pgTable(
+  "spot_room",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    spot_id: uuid()
+      .notNull()
+      .references(() => spot.id, { onDelete: "cascade" }),
+    name: text().notNull(),
+    capacity: integer(),
+    reservable: boolean().notNull().default(false),
+  },
+  // A null capacity passes: SQL checks treat unknown as satisfied.
+  (t) => [check("spot_room_capacity_nonnegative", sql`${t.capacity} >= 0`)],
+);
+
+/** "24:00" is allowed for closes and last_entry (end of day), never for opens. */
+const OPENS_PATTERN = "^([01][0-9]|2[0-3]):[0-5][0-9]$";
+const TIME_PATTERN = "^([01][0-9]|2[0-3]):[0-5][0-9]$|^24:00$";
 
 /** Times are "HH:MM" campus local. closes < opens means the spot closes after midnight. */
 export const spot_hours = pgTable(
@@ -151,8 +163,16 @@ export const spot_hours = pgTable(
   },
   (t) => [
     check("spot_hours_dow_range", sql`${t.day_of_week} between 0 and 6`),
-    check("spot_hours_opens_format", sql`${t.opens} ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$|^24:00$'`),
-    check("spot_hours_closes_format", sql`${t.closes} ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$|^24:00$'`),
+    check("spot_hours_opens_format", sql`${t.opens} ~ ${sql.raw(`'${OPENS_PATTERN}'`)}`),
+    check("spot_hours_closes_format", sql`${t.closes} ~ ${sql.raw(`'${TIME_PATTERN}'`)}`),
+    check("spot_hours_last_entry_format", sql`${t.last_entry} ~ ${sql.raw(`'${TIME_PATTERN}'`)}`),
+    uniqueIndex("spot_hours_slot_unique").on(
+      t.spot_id,
+      t.term_id,
+      t.day_of_week,
+      t.is_exam,
+      t.opens,
+    ),
   ],
 );
 
@@ -165,7 +185,10 @@ export const spot_amenity = pgTable(
     amenity: amenity().notNull(),
     walk_minutes: integer().notNull(),
   },
-  (t) => [primaryKey({ columns: [t.spot_id, t.amenity] })],
+  (t) => [
+    primaryKey({ columns: [t.spot_id, t.amenity] }),
+    check("spot_amenity_walk_minutes_nonnegative", sql`${t.walk_minutes} >= 0`),
+  ],
 );
 
 /** is_cover marks the postcard front photo; at most one per spot. */

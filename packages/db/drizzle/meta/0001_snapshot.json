@@ -1,0 +1,2399 @@
+{
+  "id": "3611f388-e3eb-4186-9f65-3461e55704d2",
+  "prevId": "4125f805-5113-4607-a179-abb692d251a9",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.building": {
+      "name": "building",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "campus_id": {
+          "name": "campus_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lat": {
+          "name": "lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lng": {
+          "name": "lng",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "building_campus_id_campus_id_fk": {
+          "name": "building_campus_id_campus_id_fk",
+          "tableFrom": "building",
+          "tableTo": "campus",
+          "columnsFrom": [
+            "campus_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.campus": {
+      "name": "campus",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tz": {
+          "name": "tz",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.term": {
+      "name": "term",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "campus_id": {
+          "name": "campus_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "starts": {
+          "name": "starts",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ends": {
+          "name": "ends",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "exam_starts": {
+          "name": "exam_starts",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "exam_ends": {
+          "name": "exam_ends",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "term_campus_id_campus_id_fk": {
+          "name": "term_campus_id_campus_id_fk",
+          "tableFrom": "term",
+          "tableTo": "campus",
+          "columnsFrom": [
+            "campus_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.walk_matrix": {
+      "name": "walk_matrix",
+      "schema": "",
+      "columns": {
+        "from_building_id": {
+          "name": "from_building_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "to_building_id": {
+          "name": "to_building_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "minutes": {
+          "name": "minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "walk_matrix_from_building_id_building_id_fk": {
+          "name": "walk_matrix_from_building_id_building_id_fk",
+          "tableFrom": "walk_matrix",
+          "tableTo": "building",
+          "columnsFrom": [
+            "from_building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "walk_matrix_to_building_id_building_id_fk": {
+          "name": "walk_matrix_to_building_id_building_id_fk",
+          "tableFrom": "walk_matrix",
+          "tableTo": "building",
+          "columnsFrom": [
+            "to_building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "walk_matrix_from_building_id_to_building_id_pk": {
+          "name": "walk_matrix_from_building_id_to_building_id_pk",
+          "columns": [
+            "from_building_id",
+            "to_building_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "walk_matrix_minutes_nonnegative": {
+          "name": "walk_matrix_minutes_nonnegative",
+          "value": "\"walk_matrix\".\"minutes\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.forecast": {
+      "name": "forecast",
+      "schema": "",
+      "columns": {
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "profile": {
+          "name": "profile",
+          "type": "forecast_profile",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "day_of_week": {
+          "name": "day_of_week",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hour": {
+          "name": "hour",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ratio": {
+          "name": "ratio",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "forecast_spot_id_spot_id_fk": {
+          "name": "forecast_spot_id_spot_id_fk",
+          "tableFrom": "forecast",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "forecast_spot_id_profile_day_of_week_hour_pk": {
+          "name": "forecast_spot_id_profile_day_of_week_hour_pk",
+          "columns": [
+            "spot_id",
+            "profile",
+            "day_of_week",
+            "hour"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "forecast_dow_range": {
+          "name": "forecast_dow_range",
+          "value": "\"forecast\".\"day_of_week\" between 0 and 6"
+        },
+        "forecast_hour_range": {
+          "name": "forecast_hour_range",
+          "value": "\"forecast\".\"hour\" between 0 and 23"
+        },
+        "forecast_ratio_range": {
+          "name": "forecast_ratio_range",
+          "value": "\"forecast\".\"ratio\" between 0 and 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.headcount": {
+      "name": "headcount",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "observed_at": {
+          "name": "observed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "surveyor_id": {
+          "name": "surveyor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "headcount_spot_id_spot_id_fk": {
+          "name": "headcount_spot_id_spot_id_fk",
+          "tableFrom": "headcount",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "headcount_surveyor_id_surveyor_id_fk": {
+          "name": "headcount_surveyor_id_surveyor_id_fk",
+          "tableFrom": "headcount",
+          "tableTo": "surveyor",
+          "columnsFrom": [
+            "surveyor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "headcount_count_nonnegative": {
+          "name": "headcount_count_nonnegative",
+          "value": "\"headcount\".\"count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.noise_sample": {
+      "name": "noise_sample",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "observed_at": {
+          "name": "observed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bucket": {
+          "name": "bucket",
+          "type": "noise_bucket",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "noise_sample_source",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "noise_sample_spot_id_spot_id_fk": {
+          "name": "noise_sample_spot_id_spot_id_fk",
+          "tableFrom": "noise_sample",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.spot_estimate": {
+      "name": "spot_estimate",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "day_type": {
+          "name": "day_type",
+          "type": "day_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "block": {
+          "name": "block",
+          "type": "time_block",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bucket": {
+          "name": "bucket",
+          "type": "fullness",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "surveyor_id": {
+          "name": "surveyor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "spot_estimate_spot_id_spot_id_fk": {
+          "name": "spot_estimate_spot_id_spot_id_fk",
+          "tableFrom": "spot_estimate",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "spot_estimate_surveyor_id_surveyor_id_fk": {
+          "name": "spot_estimate_surveyor_id_surveyor_id_fk",
+          "tableFrom": "spot_estimate",
+          "tableTo": "surveyor",
+          "columnsFrom": [
+            "surveyor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.bundle_state": {
+      "name": "bundle_state",
+      "schema": "",
+      "columns": {
+        "campus_id": {
+          "name": "campus_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "dirty": {
+          "name": "dirty",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "last_published_at": {
+          "name": "last_published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_hash": {
+          "name": "last_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_deploy_hook_at": {
+          "name": "last_deploy_hook_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "bundle_state_campus_id_campus_id_fk": {
+          "name": "bundle_state_campus_id_campus_id_fk",
+          "tableFrom": "bundle_state",
+          "tableTo": "campus",
+          "columnsFrom": [
+            "campus_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.pick_daily": {
+      "name": "pick_daily",
+      "schema": "",
+      "columns": {
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "day": {
+          "name": "day",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "pick_daily_spot_id_spot_id_fk": {
+          "name": "pick_daily_spot_id_spot_id_fk",
+          "tableFrom": "pick_daily",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "pick_daily_spot_id_day_pk": {
+          "name": "pick_daily_spot_id_day_pk",
+          "columns": [
+            "spot_id",
+            "day"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "pick_daily_count_nonnegative": {
+          "name": "pick_daily_count_nonnegative",
+          "value": "\"pick_daily\".\"count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.pick_ping": {
+      "name": "pick_ping",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "day": {
+          "name": "day",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hour_bucket": {
+          "name": "hour_bucket",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "pick_ping_spot_id_spot_id_fk": {
+          "name": "pick_ping_spot_id_spot_id_fk",
+          "tableFrom": "pick_ping",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "pick_ping_hour_bucket_range": {
+          "name": "pick_ping_hour_bucket_range",
+          "value": "\"pick_ping\".\"hour_bucket\" between 0 and 23"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.spot": {
+      "name": "spot",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "floor": {
+          "name": "floor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "official_name": {
+          "name": "official_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "common_name": {
+          "name": "common_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lat": {
+          "name": "lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lng": {
+          "name": "lng",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "directions": {
+          "name": "directions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "spot_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "eligibility": {
+          "name": "eligibility",
+          "type": "eligibility",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "eligibility_scope": {
+          "name": "eligibility_scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "eligibility_verified": {
+          "name": "eligibility_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "entry_method": {
+          "name": "entry_method",
+          "type": "entry_method",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reservable": {
+          "name": "reservable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "reservation_system": {
+          "name": "reservation_system",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reservation_url": {
+          "name": "reservation_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "seat_count": {
+          "name": "seat_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "effective_capacity": {
+          "name": "effective_capacity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "max_group_size": {
+          "name": "max_group_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "spread_out_room": {
+          "name": "spread_out_room",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "outlet_coverage_pct": {
+          "name": "outlet_coverage_pct",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "usb_outlets": {
+          "name": "usb_outlets",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wifi_mbps": {
+          "name": "wifi_mbps",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cell_signal": {
+          "name": "cell_signal",
+          "type": "cell_signal",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "noise_policy": {
+          "name": "noise_policy",
+          "type": "noise_policy",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "natural_light": {
+          "name": "natural_light",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lighting": {
+          "name": "lighting",
+          "type": "lighting",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "temperature": {
+          "name": "temperature",
+          "type": "temperature",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "temperature_consistent": {
+          "name": "temperature_consistent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "windows_view": {
+          "name": "windows_view",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calls_ok": {
+          "name": "calls_ok",
+          "type": "calls_ok",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "group_work_ok": {
+          "name": "group_work_ok",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "whiteboard": {
+          "name": "whiteboard",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "food_policy": {
+          "name": "food_policy",
+          "type": "food_policy",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "step_free": {
+          "name": "step_free",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "elevator": {
+          "name": "elevator",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accessible_seating": {
+          "name": "accessible_seating",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "open_past_midnight": {
+          "name": "open_past_midnight",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "staffed_late": {
+          "name": "staffed_late",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lit_route_to_residences": {
+          "name": "lit_route_to_residences",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "outdoor": {
+          "name": "outdoor",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "seasonal": {
+          "name": "seasonal",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "spot_building_id_building_id_fk": {
+          "name": "spot_building_id_building_id_fk",
+          "tableFrom": "spot",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "spot_slug_unique": {
+          "name": "spot_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "spot_outlet_pct_range": {
+          "name": "spot_outlet_pct_range",
+          "value": "\"spot\".\"outlet_coverage_pct\" between 0 and 1"
+        },
+        "spot_seat_count_positive": {
+          "name": "spot_seat_count_positive",
+          "value": "\"spot\".\"seat_count\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.spot_amenity": {
+      "name": "spot_amenity",
+      "schema": "",
+      "columns": {
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amenity": {
+          "name": "amenity",
+          "type": "amenity",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "walk_minutes": {
+          "name": "walk_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "spot_amenity_spot_id_spot_id_fk": {
+          "name": "spot_amenity_spot_id_spot_id_fk",
+          "tableFrom": "spot_amenity",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "spot_amenity_spot_id_amenity_pk": {
+          "name": "spot_amenity_spot_id_amenity_pk",
+          "columns": [
+            "spot_id",
+            "amenity"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "spot_amenity_walk_minutes_nonnegative": {
+          "name": "spot_amenity_walk_minutes_nonnegative",
+          "value": "\"spot_amenity\".\"walk_minutes\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.spot_hours": {
+      "name": "spot_hours",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "term_id": {
+          "name": "term_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "day_of_week": {
+          "name": "day_of_week",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opens": {
+          "name": "opens",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "closes": {
+          "name": "closes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_entry": {
+          "name": "last_entry",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_exam": {
+          "name": "is_exam",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {
+        "spot_hours_slot_unique": {
+          "name": "spot_hours_slot_unique",
+          "columns": [
+            {
+              "expression": "spot_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "term_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "day_of_week",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "is_exam",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "opens",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "spot_hours_spot_id_spot_id_fk": {
+          "name": "spot_hours_spot_id_spot_id_fk",
+          "tableFrom": "spot_hours",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "spot_hours_term_id_term_id_fk": {
+          "name": "spot_hours_term_id_term_id_fk",
+          "tableFrom": "spot_hours",
+          "tableTo": "term",
+          "columnsFrom": [
+            "term_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "spot_hours_dow_range": {
+          "name": "spot_hours_dow_range",
+          "value": "\"spot_hours\".\"day_of_week\" between 0 and 6"
+        },
+        "spot_hours_opens_format": {
+          "name": "spot_hours_opens_format",
+          "value": "\"spot_hours\".\"opens\" ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'"
+        },
+        "spot_hours_closes_format": {
+          "name": "spot_hours_closes_format",
+          "value": "\"spot_hours\".\"closes\" ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$|^24:00$'"
+        },
+        "spot_hours_last_entry_format": {
+          "name": "spot_hours_last_entry_format",
+          "value": "\"spot_hours\".\"last_entry\" ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$|^24:00$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.spot_linked_building": {
+      "name": "spot_linked_building",
+      "schema": "",
+      "columns": {
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "spot_linked_building_spot_id_spot_id_fk": {
+          "name": "spot_linked_building_spot_id_spot_id_fk",
+          "tableFrom": "spot_linked_building",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "spot_linked_building_building_id_building_id_fk": {
+          "name": "spot_linked_building_building_id_building_id_fk",
+          "tableFrom": "spot_linked_building",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "spot_linked_building_spot_id_building_id_pk": {
+          "name": "spot_linked_building_spot_id_building_id_pk",
+          "columns": [
+            "spot_id",
+            "building_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.spot_photo": {
+      "name": "spot_photo",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "r2_key": {
+          "name": "r2_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "taken_at": {
+          "name": "taken_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_cover": {
+          "name": "is_cover",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "uploaded_by": {
+          "name": "uploaded_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_by": {
+          "name": "approved_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_at": {
+          "name": "approved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "spot_photo_one_cover": {
+          "name": "spot_photo_one_cover",
+          "columns": [
+            {
+              "expression": "spot_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"spot_photo\".\"is_cover\"",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "spot_photo_spot_id_spot_id_fk": {
+          "name": "spot_photo_spot_id_spot_id_fk",
+          "tableFrom": "spot_photo",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "spot_photo_uploaded_by_surveyor_id_fk": {
+          "name": "spot_photo_uploaded_by_surveyor_id_fk",
+          "tableFrom": "spot_photo",
+          "tableTo": "surveyor",
+          "columnsFrom": [
+            "uploaded_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "spot_photo_approved_by_surveyor_id_fk": {
+          "name": "spot_photo_approved_by_surveyor_id_fk",
+          "tableFrom": "spot_photo",
+          "tableTo": "surveyor",
+          "columnsFrom": [
+            "approved_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.spot_room": {
+      "name": "spot_room",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "capacity": {
+          "name": "capacity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reservable": {
+          "name": "reservable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "spot_room_spot_id_spot_id_fk": {
+          "name": "spot_room_spot_id_spot_id_fk",
+          "tableFrom": "spot_room",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "spot_room_capacity_nonnegative": {
+          "name": "spot_room_capacity_nonnegative",
+          "value": "\"spot_room\".\"capacity\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.spot_seat_type": {
+      "name": "spot_seat_type",
+      "schema": "",
+      "columns": {
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "seat_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "spot_seat_type_spot_id_spot_id_fk": {
+          "name": "spot_seat_type_spot_id_spot_id_fk",
+          "tableFrom": "spot_seat_type",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "spot_seat_type_spot_id_type_pk": {
+          "name": "spot_seat_type_spot_id_type_pk",
+          "columns": [
+            "spot_id",
+            "type"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "spot_seat_type_count_nonnegative": {
+          "name": "spot_seat_type_count_nonnegative",
+          "value": "\"spot_seat_type\".\"count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.spot_table_config": {
+      "name": "spot_table_config",
+      "schema": "",
+      "columns": {
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "config": {
+          "name": "config",
+          "type": "table_config",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "spot_table_config_spot_id_spot_id_fk": {
+          "name": "spot_table_config_spot_id_spot_id_fk",
+          "tableFrom": "spot_table_config",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "spot_table_config_spot_id_config_pk": {
+          "name": "spot_table_config_spot_id_config_pk",
+          "columns": [
+            "spot_id",
+            "config"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.spot_verification": {
+      "name": "spot_verification",
+      "schema": "",
+      "columns": {
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attribute_group": {
+          "name": "attribute_group",
+          "type": "attribute_group",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_verified_at": {
+          "name": "last_verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "verification_source",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confidence": {
+          "name": "confidence",
+          "type": "confidence",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "spot_verification_spot_id_spot_id_fk": {
+          "name": "spot_verification_spot_id_spot_id_fk",
+          "tableFrom": "spot_verification",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "spot_verification_spot_id_attribute_group_pk": {
+          "name": "spot_verification_spot_id_attribute_group_pk",
+          "columns": [
+            "spot_id",
+            "attribute_group"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.audit_log": {
+      "name": "audit_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "surveyor_id": {
+          "name": "surveyor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity": {
+          "name": "entity",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "before_json": {
+          "name": "before_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "after_json": {
+          "name": "after_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "at": {
+          "name": "at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "audit_log_surveyor_id_surveyor_id_fk": {
+          "name": "audit_log_surveyor_id_surveyor_id_fk",
+          "tableFrom": "audit_log",
+          "tableTo": "surveyor",
+          "columnsFrom": [
+            "surveyor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.auth_session": {
+      "name": "auth_session",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "surveyor_id": {
+          "name": "surveyor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "auth_session_surveyor_id_surveyor_id_fk": {
+          "name": "auth_session_surveyor_id_surveyor_id_fk",
+          "tableFrom": "auth_session",
+          "tableTo": "surveyor",
+          "columnsFrom": [
+            "surveyor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.magic_link": {
+      "name": "magic_link",
+      "schema": "",
+      "columns": {
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "surveyor_id": {
+          "name": "surveyor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "used_at": {
+          "name": "used_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "magic_link_surveyor_id_surveyor_id_fk": {
+          "name": "magic_link_surveyor_id_surveyor_id_fk",
+          "tableFrom": "magic_link",
+          "tableTo": "surveyor",
+          "columnsFrom": [
+            "surveyor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.route": {
+      "name": "route",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "campus_id": {
+          "name": "campus_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "route_campus_id_campus_id_fk": {
+          "name": "route_campus_id_campus_id_fk",
+          "tableFrom": "route",
+          "tableTo": "campus",
+          "columnsFrom": [
+            "campus_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.route_slot": {
+      "name": "route_slot",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "route_id": {
+          "name": "route_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "claimed_by": {
+          "name": "claimed_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "route_slot_route_id_route_id_fk": {
+          "name": "route_slot_route_id_route_id_fk",
+          "tableFrom": "route_slot",
+          "tableTo": "route",
+          "columnsFrom": [
+            "route_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "route_slot_claimed_by_surveyor_id_fk": {
+          "name": "route_slot_claimed_by_surveyor_id_fk",
+          "tableFrom": "route_slot",
+          "tableTo": "surveyor",
+          "columnsFrom": [
+            "claimed_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.route_spot": {
+      "name": "route_spot",
+      "schema": "",
+      "columns": {
+        "route_id": {
+          "name": "route_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "spot_id": {
+          "name": "spot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "route_spot_route_id_route_id_fk": {
+          "name": "route_spot_route_id_route_id_fk",
+          "tableFrom": "route_spot",
+          "tableTo": "route",
+          "columnsFrom": [
+            "route_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "route_spot_spot_id_spot_id_fk": {
+          "name": "route_spot_spot_id_spot_id_fk",
+          "tableFrom": "route_spot",
+          "tableTo": "spot",
+          "columnsFrom": [
+            "spot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "route_spot_route_id_position_pk": {
+          "name": "route_spot_route_id_position_pk",
+          "columns": [
+            "route_id",
+            "position"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.surveyor": {
+      "name": "surveyor",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "surveyor_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'surveyor'"
+        },
+        "invited_by": {
+          "name": "invited_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "surveyor_invited_by_surveyor_id_fk": {
+          "name": "surveyor_invited_by_surveyor_id_fk",
+          "tableFrom": "surveyor",
+          "tableTo": "surveyor",
+          "columnsFrom": [
+            "invited_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "surveyor_email_unique": {
+          "name": "surveyor_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.write_receipt": {
+      "name": "write_receipt",
+      "schema": "",
+      "columns": {
+        "client_write_id": {
+          "name": "client_write_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "surveyor_id": {
+          "name": "surveyor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "write_receipt_surveyor_id_surveyor_id_fk": {
+          "name": "write_receipt_surveyor_id_surveyor_id_fk",
+          "tableFrom": "write_receipt",
+          "tableTo": "surveyor",
+          "columnsFrom": [
+            "surveyor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.amenity": {
+      "name": "amenity",
+      "schema": "public",
+      "values": [
+        "bathroom",
+        "water",
+        "coffee_food",
+        "printer",
+        "microwave",
+        "late_food"
+      ]
+    },
+    "public.attribute_group": {
+      "name": "attribute_group",
+      "schema": "public",
+      "values": [
+        "identity",
+        "access",
+        "hours",
+        "seating",
+        "power",
+        "environment",
+        "use_fit",
+        "amenities",
+        "accessibility",
+        "late_night"
+      ]
+    },
+    "public.calls_ok": {
+      "name": "calls_ok",
+      "schema": "public",
+      "values": [
+        "not_allowed",
+        "allowed_impractical",
+        "allowed"
+      ]
+    },
+    "public.cell_signal": {
+      "name": "cell_signal",
+      "schema": "public",
+      "values": [
+        "poor",
+        "ok",
+        "good"
+      ]
+    },
+    "public.confidence": {
+      "name": "confidence",
+      "schema": "public",
+      "values": [
+        "measured",
+        "estimated",
+        "reported"
+      ]
+    },
+    "public.day_type": {
+      "name": "day_type",
+      "schema": "public",
+      "values": [
+        "weekday",
+        "weekend"
+      ]
+    },
+    "public.eligibility": {
+      "name": "eligibility",
+      "schema": "public",
+      "values": [
+        "all_students",
+        "residents_building",
+        "residents_quad",
+        "grad_only",
+        "department",
+        "public"
+      ]
+    },
+    "public.entry_method": {
+      "name": "entry_method",
+      "schema": "public",
+      "values": [
+        "open",
+        "card_swipe",
+        "staffed_desk"
+      ]
+    },
+    "public.food_policy": {
+      "name": "food_policy",
+      "schema": "public",
+      "values": [
+        "none",
+        "covered_drinks",
+        "food_ok"
+      ]
+    },
+    "public.forecast_profile": {
+      "name": "forecast_profile",
+      "schema": "public",
+      "values": [
+        "regular",
+        "exam"
+      ]
+    },
+    "public.fullness": {
+      "name": "fullness",
+      "schema": "public",
+      "values": [
+        "empty",
+        "some",
+        "filling",
+        "nearly_full",
+        "full"
+      ]
+    },
+    "public.lighting": {
+      "name": "lighting",
+      "schema": "public",
+      "values": [
+        "dim",
+        "moderate",
+        "bright"
+      ]
+    },
+    "public.noise_bucket": {
+      "name": "noise_bucket",
+      "schema": "public",
+      "values": [
+        "silent",
+        "quiet",
+        "conversational",
+        "loud"
+      ]
+    },
+    "public.noise_policy": {
+      "name": "noise_policy",
+      "schema": "public",
+      "values": [
+        "silent",
+        "quiet",
+        "conversational",
+        "group_friendly"
+      ]
+    },
+    "public.noise_sample_source": {
+      "name": "noise_sample_source",
+      "schema": "public",
+      "values": [
+        "survey",
+        "user"
+      ]
+    },
+    "public.seat_type": {
+      "name": "seat_type",
+      "schema": "public",
+      "values": [
+        "table_chair",
+        "carrel",
+        "soft",
+        "booth",
+        "standing"
+      ]
+    },
+    "public.spot_status": {
+      "name": "spot_status",
+      "schema": "public",
+      "values": [
+        "draft",
+        "published",
+        "archived"
+      ]
+    },
+    "public.surveyor_role": {
+      "name": "surveyor_role",
+      "schema": "public",
+      "values": [
+        "surveyor",
+        "admin"
+      ]
+    },
+    "public.table_config": {
+      "name": "table_config",
+      "schema": "public",
+      "values": [
+        "large_shared",
+        "small_2_4",
+        "individual"
+      ]
+    },
+    "public.temperature": {
+      "name": "temperature",
+      "schema": "public",
+      "values": [
+        "cold",
+        "neutral",
+        "warm"
+      ]
+    },
+    "public.time_block": {
+      "name": "time_block",
+      "schema": "public",
+      "values": [
+        "morning",
+        "afternoon",
+        "evening",
+        "night"
+      ]
+    },
+    "public.verification_source": {
+      "name": "verification_source",
+      "schema": "public",
+      "values": [
+        "survey",
+        "official",
+        "user"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

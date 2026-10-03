@@ -6,6 +6,8 @@ import {
   spot,
   spot_hours,
   spot_photo,
+  spot_room,
+  spot_seat_type,
   spotSelectSchema,
   term,
 } from "../src/index.ts";
@@ -87,5 +89,47 @@ test("a spot has at most one cover photo", async () => {
   await db.insert(spot_photo).values({ ...photo, is_cover: false });
   await expect(
     Promise.resolve(db.insert(spot_photo).values({ ...photo, is_cover: true })),
+  ).rejects.toThrow();
+});
+
+test("spot_hours rejects opens at 24:00, bad last_entry, and duplicate slots", async () => {
+  const { db, row } = await withSpot();
+  const base = { spot_id: row.id, term_id: "2026-fall", opens: "08:00", closes: "24:00" };
+  await db.insert(spot_hours).values({ ...base, day_of_week: 0, last_entry: "23:30" });
+  await expect(
+    Promise.resolve(db.insert(spot_hours).values({ ...base, day_of_week: 1, opens: "24:00" })),
+  ).rejects.toThrow();
+  await expect(
+    Promise.resolve(db.insert(spot_hours).values({ ...base, day_of_week: 1, last_entry: "9pm" })),
+  ).rejects.toThrow();
+  await expect(
+    Promise.resolve(db.insert(spot_hours).values({ ...base, day_of_week: 0 })),
+  ).rejects.toThrow();
+  // A second block on the same day with a different opening time is allowed.
+  await db.insert(spot_hours).values({ ...base, day_of_week: 0, opens: "18:00" });
+});
+
+test("counts and capacities cannot be negative", async () => {
+  const { db, row } = await withSpot();
+  await expect(
+    Promise.resolve(db.insert(spot_seat_type).values({ spot_id: row.id, type: "soft", count: -1 })),
+  ).rejects.toThrow();
+  await expect(
+    Promise.resolve(db.insert(spot_room).values({ spot_id: row.id, name: "A", capacity: -1 })),
+  ).rejects.toThrow();
+  await db.insert(spot_room).values({ spot_id: row.id, name: "B", capacity: null });
+});
+
+test("pick_ping hour bucket stays within a day", async () => {
+  const { db, row } = await withSpot();
+  await db.execute(
+    sql`insert into pick_ping (spot_id, day, hour_bucket) values (${row.id}, '2026-10-13', 23)`,
+  );
+  await expect(
+    Promise.resolve(
+      db.execute(
+        sql`insert into pick_ping (spot_id, day, hour_bucket) values (${row.id}, '2026-10-13', 24)`,
+      ),
+    ),
   ).rejects.toThrow();
 });

@@ -22,17 +22,21 @@ import { surveyor } from "./survey.ts";
 
 const ts = () => timestamp({ withTimezone: true });
 
-export const headcount = pgTable("headcount", {
-  id: uuid().primaryKey().defaultRandom(),
-  spot_id: uuid()
-    .notNull()
-    .references(() => spot.id),
-  observed_at: ts().notNull(),
-  count: integer().notNull(),
-  surveyor_id: uuid()
-    .notNull()
-    .references(() => surveyor.id),
-});
+export const headcount = pgTable(
+  "headcount",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    spot_id: uuid()
+      .notNull()
+      .references(() => spot.id),
+    observed_at: ts().notNull(),
+    count: integer().notNull(),
+    surveyor_id: uuid()
+      .notNull()
+      .references(() => surveyor.id),
+  },
+  (t) => [check("headcount_count_nonnegative", sql`${t.count} >= 0`)],
+);
 
 export const noise_sample = pgTable("noise_sample", {
   id: uuid().primaryKey().defaultRandom(),

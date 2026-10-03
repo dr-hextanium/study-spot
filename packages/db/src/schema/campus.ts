@@ -1,4 +1,13 @@
-import { date, doublePrecision, integer, pgTable, primaryKey, text } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+  check,
+  date,
+  doublePrecision,
+  integer,
+  pgTable,
+  primaryKey,
+  text,
+} from "drizzle-orm/pg-core";
 
 export const campus = pgTable("campus", {
   id: text().primaryKey(),
@@ -39,5 +48,8 @@ export const walk_matrix = pgTable(
       .references(() => building.id),
     minutes: integer().notNull(),
   },
-  (t) => [primaryKey({ columns: [t.from_building_id, t.to_building_id] })],
+  (t) => [
+    primaryKey({ columns: [t.from_building_id, t.to_building_id] }),
+    check("walk_matrix_minutes_nonnegative", sql`${t.minutes} >= 0`),
+  ],
 );
