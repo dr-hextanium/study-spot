@@ -145,10 +145,15 @@ test("keep theirs drops the write, adopts the server spot, and later writes chai
   t.network.set(true);
   await box.idle();
   const adopted: SurveySpot[] = [];
-  box.onApplied((spot) => adopted.push(spot));
+  const writes: unknown[] = [];
+  box.onApplied((spot, _fromLocal, write) => {
+    adopted.push(spot);
+    writes.push(write);
+  });
   await box.resolveConflict(first, "theirs");
   await box.idle();
   expect(adopted[0]).toEqual(theirs);
+  expect(writes[0]).toBeNull();
   expect(t.sent().at(-1)).toBe(`PUT /survey/spots/${SPOT_A}/seating`);
   expect(t.bases().at(-1)).toBe(4);
 });
@@ -735,4 +740,24 @@ test("a section re-saved while its first copy is in flight folds into one confli
   ]);
   expect(t.server.spot(SPOT_A).version).toBe(5);
   expect(box.getSnapshot().records).toEqual([]);
+});
+
+test("onApplied names the write the server applied", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const saved = await box.enqueue(power(SPOT_A), 3);
+  const checked = await box.enqueue(
+    { kind: "spot.verify", spot_id: SPOT_A, payload: { groups: ["power"] } },
+    3,
+  );
+  const seen: unknown[] = [];
+  box.onApplied((spot, _fromLocal, write) => seen.push([spot.version, write]));
+  t.network.set(true);
+  await box.idle();
+  expect(seen).toEqual([
+    [4, { client_write_id: saved, kind: "spot.section" }],
+    [4, { client_write_id: checked, kind: "spot.verify" }],
+  ]);
 });

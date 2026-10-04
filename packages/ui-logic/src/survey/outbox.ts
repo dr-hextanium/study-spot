@@ -20,6 +20,7 @@ import {
   rewriteSpotIds,
   VERSIONED_KINDS,
   type WriteError,
+  type WriteKind,
   type WriteRecord,
 } from "./writes.ts";
 
@@ -58,7 +59,17 @@ export type OutboxSnapshot = {
 /** Writes a caller may queue for an existing spot (creates and photos have their own calls). */
 export type SpotWrite = Exclude<NewWrite, { kind: "spot.create" } | { kind: "photo.upload" }>;
 export type ConflictChoice = "mine" | "theirs";
-type AppliedListener = (spot: SurveySpot, fromLocalId: string | null) => void;
+/** The queued write whose server answer is being reported. */
+export type AppliedWrite = { client_write_id: string; kind: WriteKind };
+/**
+ * `write` is the write the server applied, so the UI can tie a toast to it. It is
+ * null when no write applied: Keep theirs adopting the server's copy.
+ */
+export type AppliedListener = (
+  spot: SurveySpot,
+  fromLocalId: string | null,
+  write: AppliedWrite | null,
+) => void;
 type SendResult =
   | ApiResult<SurveySpot>
   | { kind: "local"; code: "photo_missing" | "no_base_version" };
@@ -197,8 +208,9 @@ export function createOutbox(deps: OutboxDeps) {
     return true;
   }
 
-  function notify(spot: SurveySpot, fromLocal: string | null): void {
-    for (const l of applied) l(spot, fromLocal);
+  function notify(spot: SurveySpot, fromLocal: string | null, r: WriteRecord | null): void {
+    const write = r === null ? null : { client_write_id: r.client_write_id, kind: r.kind };
+    for (const l of applied) l(spot, fromLocal, write);
   }
 
   /** Order matters for a crash at any step: id map, version, rewrite, then delete. */
@@ -212,7 +224,7 @@ export function createOutbox(deps: OutboxDeps) {
       }
     }
     await store.remove(r.client_write_id);
-    if (fresh) notify(spot, fromLocal);
+    if (fresh) notify(spot, fromLocal, r);
   }
 
   async function fail(r: WriteRecord, error: WriteError): Promise<void> {
@@ -288,7 +300,7 @@ export function createOutbox(deps: OutboxDeps) {
             (await raiseVersion(result.value.id, result.value.version))
           ) {
             // Discarded in flight but applied anyway: later writes must chain from it.
-            notify(result.value, null);
+            notify(result.value, null, sent);
           }
           return "next";
         case "conflict":
@@ -520,7 +532,7 @@ export function createOutbox(deps: OutboxDeps) {
               : { ...r, ...again },
           );
         } else if (fresh) {
-          notify(current, null);
+          notify(current, null, null);
         }
         await store.remove(r.client_write_id);
       }),
