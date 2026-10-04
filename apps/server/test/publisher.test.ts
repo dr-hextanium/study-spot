@@ -2,9 +2,9 @@ import { expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { BundlePointer, PublishStatus, parseBundle, SurveySpot } from "@study-spot/core";
-import { bundle_state, spot_photo } from "@study-spot/db";
+import { building, bundle_state, campus, spot, spot_photo } from "@study-spot/db";
 import { eq } from "drizzle-orm";
-import { sha256Hex } from "../src/photos/store.ts";
+import { postgresPhotoStore, sha256Hex } from "../src/photos/store.ts";
 import { fsTarget } from "../src/publish/fsTarget.ts";
 import type { PublishFile, PublishTarget } from "../src/publish/target.ts";
 import {
@@ -333,4 +333,60 @@ test("an unapproved cover photo never reaches the bundle or the uploaded files",
   const parsed = parseBundle(JSON.parse(raw));
   if (!parsed.ok) throw new Error(parsed.detail);
   expect(parsed.bundle.spots.find((s) => s.id === spotId)?.photos).toEqual([]);
+});
+
+test("the photo url rewrite touches only the publishing campus", async () => {
+  const ctx = await setup();
+  const mine = new Uint8Array([0xff, 0xd8, 0xff, 0x11, 0xff, 0xd9]);
+  const theirs = new Uint8Array([0xff, 0xd8, 0xff, 0x22, 0xff, 0xd9]);
+  const store = postgresPhotoStore(ctx.db);
+  for (const bytes of [mine, theirs]) {
+    await store.put({ sha256: sha256Hex(bytes), bytes, contentType: "image/jpeg" });
+  }
+  await ctx.db.insert(campus).values({ id: "other", name: "Other", tz: "America/New_York" });
+  await ctx.db
+    .insert(building)
+    .values({ id: "other-hall", campus_id: "other", name: "Other Hall", lat: 1, lng: 1 });
+  const [otherSpot] = await ctx.db
+    .insert(spot)
+    .values({
+      slug: "other-lounge",
+      building_id: "other-hall",
+      floor: "1",
+      official_name: "Other Lounge",
+      lat: 1,
+      lng: 1,
+      status: "published",
+    })
+    .returning({ id: spot.id });
+  if (!otherSpot) throw new Error("spot insert returned nothing");
+  const otherUrl = `https://other.example/photos/${sha256Hex(theirs)}.jpg`;
+  await ctx.db.insert(spot_photo).values({
+    spot_id: otherSpot.id,
+    blob_sha256: sha256Hex(theirs),
+    url: otherUrl,
+    taken_at: NOW,
+    approved_at: NOW,
+  });
+  await ctx.db.insert(spot_photo).values({
+    spot_id: ctx.ids.spotIds["sac-lounge"],
+    blob_sha256: sha256Hex(mine),
+    taken_at: NOW,
+    approved_at: NOW,
+  });
+
+  const outcome = await ctx.publisher.runNow();
+  if (!outcome.ok) throw new Error(outcome.error);
+  const [other] = await ctx.db
+    .select()
+    .from(spot_photo)
+    .where(eq(spot_photo.spot_id, otherSpot.id));
+  expect(other?.url).toBe(otherUrl);
+  const [own] = await ctx.db
+    .select()
+    .from(spot_photo)
+    .where(eq(spot_photo.blob_sha256, sha256Hex(mine)));
+  expect(own?.url).toBe(`${DATA_BASE_URL}/photos/${sha256Hex(mine)}.jpg`);
+  expect(outcome.uploaded).toContain(`photos/${sha256Hex(mine)}.jpg`);
+  expect(outcome.uploaded).not.toContain(`photos/${sha256Hex(theirs)}.jpg`);
 });

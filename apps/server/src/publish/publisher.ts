@@ -1,6 +1,6 @@
 import { BUNDLE_SCHEMA_MAJOR, BundlePointer, type PublishStatus } from "@study-spot/core";
-import { buildBundle, bundle_state, type Db, spot_photo } from "@study-spot/db";
-import { and, eq, isNotNull, sql } from "drizzle-orm";
+import { buildBundle, building, bundle_state, type Db, spot, spot_photo } from "@study-spot/db";
+import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Clock } from "../clock.ts";
 import { type PhotoStore, sha256Hex } from "../photos/store.ts";
@@ -73,11 +73,27 @@ export function createPublisher(deps: PublisherDeps): Publisher {
     try {
       seq = (await readState())?.write_seq ?? 0;
 
-      // Approved blob-backed photos get their absolute data-site URL before the build.
+      // Approved blob-backed photos of this campus get their absolute data-site URL before
+      // the build. Other campuses share the database but publish to their own data site.
+      const target = sql<string>`${photoPrefix} || ${spot_photo.blob_sha256} || '.jpg'`;
       await deps.db
         .update(spot_photo)
-        .set({ url: sql`${photoPrefix} || ${spot_photo.blob_sha256} || '.jpg'` })
-        .where(and(isNotNull(spot_photo.blob_sha256), isNotNull(spot_photo.approved_at)));
+        .set({ url: target })
+        .where(
+          and(
+            isNotNull(spot_photo.blob_sha256),
+            isNotNull(spot_photo.approved_at),
+            sql`${spot_photo.url} is distinct from ${target}`,
+            inArray(
+              spot_photo.spot_id,
+              deps.db
+                .select({ id: spot.id })
+                .from(spot)
+                .innerJoin(building, eq(spot.building_id, building.id))
+                .where(eq(building.campus_id, deps.campusId)),
+            ),
+          ),
+        );
 
       const { bundle, warnings } = await buildBundle(deps.db, deps.campusId, startedAt);
       const json = JSON.stringify(bundle);
