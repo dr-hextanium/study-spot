@@ -147,9 +147,14 @@ export function toBundleSpot(input: SpotAssemblyInput): SpotAssemblyResult {
       seasonal: r.seasonal,
       hours_unconfirmed: input.hoursUnconfirmed,
       verified,
+      // A photo without a url has not been through a publish yet, so it is left out.
       photos: [...input.approvedPhotos]
         .sort((a, b) => Number(b.is_cover) - Number(a.is_cover))
-        .map((p) => ({ url: p.url, taken_at: p.taken_at.toISOString(), is_cover: p.is_cover })),
+        .flatMap((p) =>
+          p.url === null
+            ? []
+            : [{ url: p.url, taken_at: p.taken_at.toISOString(), is_cover: p.is_cover }],
+        ),
     },
   };
 }

@@ -17,7 +17,8 @@ const ts = () => timestamp({ withTimezone: true });
 
 export const surveyor = pgTable("surveyor", {
   id: uuid().primaryKey().defaultRandom(),
-  email: text().notNull().unique(),
+  /** Optional: invite-based surveyors have no email in v0. */
+  email: text().unique(),
   display_name: text().notNull(),
   role: surveyor_role().notNull().default("surveyor"),
   invited_by: uuid().references((): AnyPgColumn => surveyor.id),
@@ -25,15 +26,22 @@ export const surveyor = pgTable("surveyor", {
   created_at: ts().notNull().defaultNow(),
 });
 
-export const magic_link = pgTable("magic_link", {
+/**
+ * Single-use invite link. Only the SHA-256 of the token is stored. surveyor_id set
+ * means a re-login link for that surveyor; null means a new surveyor. created_by is
+ * null for the bootstrap admin invite.
+ */
+export const invite = pgTable("invite", {
   token_hash: text().primaryKey(),
-  surveyor_id: uuid()
-    .notNull()
-    .references(() => surveyor.id),
+  role: surveyor_role().notNull(),
+  surveyor_id: uuid().references(() => surveyor.id),
+  created_by: uuid().references(() => surveyor.id),
+  created_at: ts().notNull().defaultNow(),
   expires_at: ts().notNull(),
   used_at: ts(),
 });
 
+/** id is the SHA-256 hex of the bearer token. */
 export const auth_session = pgTable("auth_session", {
   id: text().primaryKey(),
   surveyor_id: uuid()
@@ -62,6 +70,8 @@ export const write_receipt = pgTable("write_receipt", {
     .notNull()
     .references(() => surveyor.id),
   received_at: ts().notNull().defaultNow(),
+  /** {kind, status, body} of the first successful response, replayed on retries. */
+  response_json: jsonb(),
 });
 
 export const route = pgTable("route", {

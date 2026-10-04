@@ -25,6 +25,7 @@ import {
   food_policy,
   lighting,
   noise_policy,
+  review_state,
   seat_type,
   spot_status,
   table_config,
@@ -32,14 +33,15 @@ import {
   verification_source,
 } from "./enums.ts";
 import { surveyor } from "./survey.ts";
+import { bytea } from "./types.ts";
 
 const createdAt = () => timestamp({ withTimezone: true }).notNull().defaultNow();
 
 /**
  * v0-required fields beyond identity (directions, eligibility, seat_count,
- * outlet_coverage_pct, food_policy, group_work_ok) are nullable here so a
- * surveyor can save a draft section by section. Completeness is checked when
- * building the bundle.
+ * outlet_coverage_pct, noise_policy, food_policy, group_work_ok) are nullable
+ * here so a surveyor can save a draft section by section. Completeness is
+ * checked by missingV0Fields on publish and when building the bundle.
  */
 export const spot = pgTable(
   "spot",
@@ -56,7 +58,10 @@ export const spot = pgTable(
     lng: doublePrecision().notNull(),
     directions: text(),
     status: spot_status().notNull().default("draft"),
+    review_state: review_state().notNull().default("unreviewed"),
+    reviewed_by: uuid().references(() => surveyor.id),
     version: integer().notNull().default(1),
+    last_edited_by: uuid().references(() => surveyor.id),
     eligibility: eligibility(),
     eligibility_scope: text(),
     eligibility_verified: boolean().notNull().default(false),
@@ -72,7 +77,7 @@ export const spot = pgTable(
     usb_outlets: boolean(),
     wifi_mbps: real(),
     cell_signal: cell_signal(),
-    noise_policy: noise_policy().notNull(),
+    noise_policy: noise_policy(),
     natural_light: boolean(),
     lighting: lighting(),
     temperature: temperature(),
@@ -191,7 +196,19 @@ export const spot_amenity = pgTable(
   ],
 );
 
-/** is_cover marks the postcard front photo; at most one per spot. */
+/** Photo bytes keyed by content hash. Published as photos/<sha256>.jpg on the data site. */
+export const photo_blob = pgTable("photo_blob", {
+  sha256: text().primaryKey(),
+  bytes: bytea().notNull(),
+  content_type: text().notNull(),
+  byte_size: integer().notNull(),
+  created_at: createdAt(),
+});
+
+/**
+ * is_cover marks the postcard front photo; at most one per spot. url is the
+ * absolute data-site URL, set by the publisher, null before the first publish.
+ */
 export const spot_photo = pgTable(
   "spot_photo",
   {
@@ -199,8 +216,8 @@ export const spot_photo = pgTable(
     spot_id: uuid()
       .notNull()
       .references(() => spot.id, { onDelete: "cascade" }),
-    url: text().notNull(),
-    r2_key: text().notNull(),
+    url: text(),
+    blob_sha256: text().references(() => photo_blob.sha256),
     taken_at: timestamp({ withTimezone: true }).notNull(),
     is_cover: boolean().notNull().default(false),
     uploaded_by: uuid().references(() => surveyor.id),

@@ -210,7 +210,6 @@ export async function seed(db: Db): Promise<SeedIds> {
       {
         spot_id: crr,
         url: "https://example.org/sample/crr-1.jpg",
-        r2_key: "sample/crr-1.jpg",
         taken_at: VERIFIED_AT,
         is_cover: true,
         uploaded_by: admin.id,
@@ -220,7 +219,6 @@ export async function seed(db: Db): Promise<SeedIds> {
       {
         spot_id: crr,
         url: "https://example.org/sample/crr-2-unapproved.jpg",
-        r2_key: "sample/crr-2-unapproved.jpg",
         taken_at: VERIFIED_AT,
         uploaded_by: admin.id,
       },

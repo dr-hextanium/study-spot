@@ -4,6 +4,7 @@ import {
   check,
   date,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   smallint,
@@ -16,14 +17,22 @@ import { spot } from "./spot.ts";
 
 const ts = () => timestamp({ withTimezone: true });
 
+/**
+ * Publish state per campus. write_seq increases on every data write so a publish
+ * only clears dirty when no write landed while it ran.
+ */
 export const bundle_state = pgTable("bundle_state", {
   campus_id: text()
     .primaryKey()
     .references(() => campus.id),
   dirty: boolean().notNull().default(false),
+  write_seq: integer().notNull().default(0),
   last_published_at: ts(),
   last_hash: text(),
   last_deploy_hook_at: ts(),
+  last_attempt_at: ts(),
+  last_warnings: jsonb(),
+  last_error: text(),
 });
 
 /** Anonymous pick event: spot, day, hour only. No device or IP. Rolled up nightly then deleted. */
