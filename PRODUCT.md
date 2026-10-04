@@ -34,7 +34,7 @@ It ranks by the probability that the right kind of seat is free when you get the
 - v0: quick pick, browse (map + list, filters, forecast heatmap, time scrubber), spot pages, eligibility profile, presets, surveyor mode.
 - v0 also includes shareable postcards: a user makes a postcard of a spot, optionally with a selfie, rendered on device and shared to social media. Photos are never uploaded.
 - v1: sessions (check-in, minimal timer, check-out), ask flow, arrival feedback, tips, exam mode.
-- No hardware, no Wi-Fi/BLE sniffing, no scraping behind login, no university SSO (Stony Brook email magic links instead).
+- No hardware, no Wi-Fi/BLE sniffing, no scraping behind login, no university SSO. Surveyors sign in with admin-generated invite links; students have no accounts in v0.
 - Eligibility is self-declared and modeled per spot. Ineligible spots are hidden or shown locked.
 - Terminology: spot, building, floor, preset, quick pick, alternates, live vs forecast, last verified, session, tip (not review).
 - Undecided: final name (Perch is the working name pending trademark and store checks; fallback OpenSeat).
