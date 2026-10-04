@@ -219,21 +219,29 @@ export function createOutbox(deps: OutboxDeps) {
     await store.put({ ...r, state: "failed", error });
   }
 
-  /** Marks the write, and any later unsent write of the same section, as a conflict. */
+  /**
+   * Marks the write as a conflict. A section write replaces the whole section,
+   * so later unsent copies of the same section fold into this one conflict,
+   * which carries the newest payload. Otherwise Keep mine on each copy would send
+   * a stale one and the last would conflict with its own sibling.
+   */
   async function conflict(r: WriteRecord, current: SurveySpot): Promise<void> {
-    await store.put({ ...r, state: "conflict", current });
-    if (r.kind !== "spot.section") return;
-    for (const later of await store.list()) {
-      if (
-        later.seq > r.seq &&
-        later.spot_id === r.spot_id &&
-        later.kind === "spot.section" &&
-        later.payload.section === r.payload.section &&
-        later.state === "pending"
-      ) {
-        await store.put({ ...later, state: "conflict", current });
-      }
+    if (r.kind !== "spot.section") {
+      await store.put({ ...r, state: "conflict", current });
+      return;
     }
+    const later = (await store.list()).filter(
+      (x) =>
+        x.seq > r.seq &&
+        x.spot_id === r.spot_id &&
+        x.kind === "spot.section" &&
+        x.payload.section === r.payload.section &&
+        x.state === "pending",
+    );
+    const newest = later.at(-1);
+    const payload = newest?.kind === "spot.section" ? newest.payload : r.payload;
+    await store.put({ ...r, payload, state: "conflict", current });
+    for (const x of later) await store.remove(x.client_write_id);
   }
 
   /**

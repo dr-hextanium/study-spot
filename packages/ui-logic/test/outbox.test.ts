@@ -707,3 +707,32 @@ test("a write this tab left mid-send after a storage error is sent again", async
   expect(t.server.requests).toHaveLength(2);
   expect(t.server.executed).toHaveLength(1);
 });
+
+test("a section re-saved while its first copy is in flight folds into one conflict", async () => {
+  const t = setup();
+  const box = t.make();
+  await box.start();
+  t.server.bump(SPOT_A, { last_edited_by_name: "Bo" });
+  const newer = { ...POWER, data: { ...POWER.data, outlet_coverage_pct: 0.9 } };
+  const gate = t.server.holdNext();
+  const first = await box.enqueue(power(SPOT_A), 3);
+  await gate.arrived;
+  await box.enqueue({ kind: "spot.section", spot_id: SPOT_A, payload: newer }, 3);
+  gate.release();
+  await box.idle();
+
+  const held = box.getSnapshot().records;
+  expect(held.map((r) => [r.client_write_id, r.state, r.payload])).toEqual([
+    [first, "conflict", newer],
+  ]);
+  expect(held[0]?.current?.version).toBe(4);
+
+  await box.resolveConflict(first, "mine");
+  await box.idle();
+  expect(t.server.requests.map((r) => [r.body.base_version, r.body.data])).toEqual([
+    [3, POWER.data],
+    [4, newer.data],
+  ]);
+  expect(t.server.spot(SPOT_A).version).toBe(5);
+  expect(box.getSnapshot().records).toEqual([]);
+});
