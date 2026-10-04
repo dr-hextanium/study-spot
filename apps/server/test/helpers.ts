@@ -24,15 +24,40 @@ export function testClock(start: Date = NOW): TestClock {
   };
 }
 
-export type TestContext = { app: App; db: Db; ids: SeedIds; clock: TestClock };
+/** Counts schedule() calls instead of publishing. */
+export type FakePublisher = { schedule(): void; scheduled: number };
+
+export function fakePublisher(): FakePublisher {
+  const fake = {
+    scheduled: 0,
+    schedule: () => {
+      fake.scheduled += 1;
+    },
+  };
+  return fake;
+}
+
+export type TestContext = {
+  app: App;
+  db: Db;
+  ids: SeedIds;
+  clock: TestClock;
+  publisher: FakePublisher;
+};
 
 /** Seeded PGlite database plus an app on a controllable clock. */
 export async function setup(): Promise<TestContext> {
   const db = await createTestDb();
   const ids = await seed(db);
   const clock = testClock();
-  const app = await buildApp({ db, clock, config: { webOrigin: WEB_ORIGIN, campusId: "sbu" } });
-  return { app, db, ids, clock };
+  const publisher = fakePublisher();
+  const app = await buildApp({
+    db,
+    clock,
+    config: { webOrigin: WEB_ORIGIN, campusId: "sbu" },
+    publisher,
+  });
+  return { app, db, ids, clock, publisher };
 }
 
 export type SignedIn = { id: string; token: string; headers: { authorization: string } };

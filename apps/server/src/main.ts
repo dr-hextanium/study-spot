@@ -16,6 +16,8 @@ const app = await buildApp({
   db,
   clock: systemClock,
   config: { webOrigin: env.WEB_ORIGIN, campusId: env.CAMPUS_ID },
+  // Replaced by the real Publisher in Task 8.
+  publisher: { schedule: () => {} },
   logger: true,
 });
 

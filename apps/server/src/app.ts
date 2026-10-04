@@ -12,6 +12,7 @@ import { HttpError } from "./http.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { authRoutes } from "./routes/auth.ts";
 import { healthRoutes } from "./routes/health.ts";
+import type { PublishQueue } from "./writes/withWrite.ts";
 
 export type AppConfig = {
   /** The PWA origin, the only origin CORS allows. */
@@ -23,6 +24,7 @@ export type AppDeps = {
   db: Db;
   clock: Clock;
   config: AppConfig;
+  publisher: PublishQueue;
   logger?: boolean;
 };
 
