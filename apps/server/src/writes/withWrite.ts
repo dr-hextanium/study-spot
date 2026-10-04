@@ -87,6 +87,9 @@ export async function withWrite<T>(
     }
 
     const outcome = await fn(tx);
+    // Parse once so the first response and every replay carry the same value.
+    // A body that fails the schema throws here and rolls the whole write back.
+    const body = info.schema.parse(outcome.body);
     if (outcome.audit) {
       await tx.insert(audit_log).values({
         surveyor_id: info.surveyorId,
@@ -99,7 +102,7 @@ export async function withWrite<T>(
     }
     await tx
       .update(write_receipt)
-      .set({ response_json: { kind: info.kind, status: outcome.status, body: outcome.body } })
+      .set({ response_json: { kind: info.kind, status: outcome.status, body } })
       .where(eq(write_receipt.client_write_id, info.clientWriteId));
     if (outcome.dirty) {
       await tx
@@ -110,7 +113,7 @@ export async function withWrite<T>(
           set: { dirty: true, write_seq: sql`${bundle_state.write_seq} + 1` },
         });
     }
-    return { status: outcome.status, body: outcome.body, replayed: false, dirty: outcome.dirty };
+    return { status: outcome.status, body, replayed: false, dirty: outcome.dirty };
   });
 
   if (result.dirty) deps.publisher.schedule();

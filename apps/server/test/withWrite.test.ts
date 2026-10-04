@@ -37,6 +37,10 @@ function rename(
   return { fn, calls: () => calls };
 }
 
+async function bundleRows(ctx: TestContext) {
+  return await ctx.db.select().from(bundle_state);
+}
+
 async function draftName(ctx: TestContext): Promise<string | undefined> {
   const [row] = await ctx.db.select().from(spot).where(eq(spot.id, ctx.ids.spotIds["union-draft"]));
   return row?.official_name;
@@ -74,9 +78,12 @@ test("a crash mid-transaction leaves no receipt, audit, or partial data", async 
   const ctx = await setup();
   const me = await signIn(ctx);
   const info = { surveyorId: me.id, clientWriteId: writeId(), kind: "test.rename", schema: Body };
+  const bundleBefore = await bundleRows(ctx);
   await expect(
-    withWrite(deps(ctx), info, rename(ctx, "Half", { failAfter: true }).fn),
+    withWrite(deps(ctx), info, rename(ctx, "Half", { failAfter: true, dirty: true }).fn),
   ).rejects.toThrow("crash after a partial write");
+  expect(await bundleRows(ctx)).toEqual(bundleBefore);
+  expect(ctx.publisher.scheduled).toBe(0);
   expect(await draftName(ctx)).toBe("Union Lobby Tables");
   expect(await ctx.db.select().from(write_receipt)).toEqual([]);
   expect(await ctx.db.select().from(audit_log)).toEqual([]);
@@ -157,4 +164,48 @@ test("two concurrent sends of the same id run the write once", async () => {
   expect(a.calls() + b.calls()).toBe(1);
   expect(ra.body).toEqual(rb.body);
   expect([ra.replayed, rb.replayed].sort()).toEqual([false, true]);
+});
+
+test("the first response and the replay are the same schema-parsed body", async () => {
+  const ctx = await setup();
+  const me = await signIn(ctx);
+  const info = { surveyorId: me.id, clientWriteId: writeId(), kind: "test.rename", schema: Body };
+  const withExtra = async (): Promise<WriteOutcome<Body>> => ({
+    status: 201,
+    // Zod strips the unknown key; the cast stands in for a handler returning extra data.
+    body: { name: "X", extra: 1 } as Body,
+    audit: null,
+    dirty: false,
+  });
+  const first = await withWrite(deps(ctx), info, withExtra);
+  const replay = await withWrite(deps(ctx), info, withExtra);
+  expect(first.body).toEqual({ name: "X" });
+  expect(first.body).not.toHaveProperty("extra");
+  expect(replay.body).toEqual(first.body);
+  expect(replay.replayed).toBe(true);
+});
+
+test("a body that fails the schema rolls everything back", async () => {
+  const ctx = await setup();
+  const me = await signIn(ctx);
+  const info = { surveyorId: me.id, clientWriteId: writeId(), kind: "test.rename", schema: Body };
+  const bundleBefore = await bundleRows(ctx);
+  const bad = async (tx: Tx): Promise<WriteOutcome<Body>> => {
+    await tx
+      .update(spot)
+      .set({ official_name: "Bad" })
+      .where(eq(spot.id, ctx.ids.spotIds["union-draft"]));
+    return {
+      status: 201,
+      body: { name: 5 } as unknown as Body,
+      audit: { entity: "spot", entity_id: "x", action: "rename", before: null, after: null },
+      dirty: true,
+    };
+  };
+  await expect(withWrite(deps(ctx), info, bad)).rejects.toThrow();
+  expect(await ctx.db.select().from(write_receipt)).toEqual([]);
+  expect(await ctx.db.select().from(audit_log)).toEqual([]);
+  expect(await draftName(ctx)).toBe("Union Lobby Tables");
+  expect(await bundleRows(ctx)).toEqual(bundleBefore);
+  expect(ctx.publisher.scheduled).toBe(0);
 });
