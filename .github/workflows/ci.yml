@@ -109,3 +109,6 @@ jobs:
 
       - name: Server smoke against Postgres (Node)
         run: bun run smoke:server node
+
+      - name: Write and publish smoke against Postgres (Node)
+        run: node apps/server/scripts/smoke-publish.ts

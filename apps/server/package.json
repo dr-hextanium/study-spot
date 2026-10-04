@@ -9,6 +9,7 @@
   "dependencies": {
     "@fastify/cors": "^11.3.0",
     "@fastify/multipart": "^10.1.2",
+    "@noble/hashes": "^2.4.0",
     "@study-spot/core": "workspace:*",
     "@study-spot/db": "workspace:*",
     "drizzle-orm": "^0.45.3",

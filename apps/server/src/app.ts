@@ -10,12 +10,13 @@ import {
 import type { Clock } from "./clock.ts";
 import { HttpError } from "./http.ts";
 import type { PhotoStore } from "./photos/store.ts";
+import type { Publisher } from "./publish/publisher.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { authRoutes } from "./routes/auth.ts";
 import { healthRoutes } from "./routes/health.ts";
 import { photoRoutes } from "./routes/photos.ts";
+import { publishRoutes } from "./routes/publish.ts";
 import { spotRoutes } from "./routes/spots.ts";
-import type { PublishQueue } from "./writes/withWrite.ts";
 
 export type AppConfig = {
   /** The PWA origin, the only origin CORS allows. */
@@ -27,7 +28,7 @@ export type AppDeps = {
   db: Db;
   clock: Clock;
   config: AppConfig;
-  publisher: PublishQueue;
+  publisher: Publisher;
   photos: PhotoStore;
   logger?: boolean;
 };
@@ -73,6 +74,7 @@ export async function buildApp(deps: AppDeps) {
   await app.register(adminRoutes(deps));
   await app.register(spotRoutes(deps));
   await app.register(photoRoutes(deps));
+  await app.register(publishRoutes(deps));
   return app;
 }
 
