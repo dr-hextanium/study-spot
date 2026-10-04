@@ -78,6 +78,29 @@ const DRAFT_OF: { [S in SurveySection]: (spot: SurveySpot) => SectionDraft<S> } 
   }),
 };
 
+/**
+ * A stable string for a value: object keys sorted, and arrays sorted by their
+ * elements' canonical form. Every array in a section payload is a collection
+ * (hours rows, seat types, table configs, amenities, estimate cells) whose
+ * order carries no meaning, so the server may return them in any order.
+ */
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).sort().join(",")}]`;
+  if (typeof value === "object" && value !== null) {
+    const entries = Object.entries(value)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`);
+    return `{${entries.join(",")}}`;
+  }
+  return JSON.stringify(value) ?? "undefined";
+}
+
+/** Deep equality that ignores object key order and collection order. */
+function sameValue(a: unknown, b: unknown): boolean {
+  return canonical(a) === canonical(b);
+}
+
 /** The editor's starting values for one section of a spot (use the SpotView's merged spot). */
 export function draftOf<S extends SurveySection>(section: S, spot: SurveySpot): SectionDraft<S> {
   return DRAFT_OF[section](spot);
@@ -108,7 +131,7 @@ export function setField<S extends SurveySection, K extends keyof SectionDraft<S
     ...form,
     values,
     errors,
-    dirty: JSON.stringify(values) !== JSON.stringify(form.initial),
+    dirty: !sameValue(values, form.initial),
   };
 }
 
@@ -140,7 +163,7 @@ export function conflictDiff(record: WriteRecord): FieldDiff[] {
   const yours: Record<string, unknown> = record.payload.data;
   const theirs: Record<string, unknown> = draftOf(record.payload.section, record.current);
   return Object.keys(yours).flatMap((field) =>
-    JSON.stringify(yours[field]) === JSON.stringify(theirs[field])
+    sameValue(yours[field], theirs[field])
       ? []
       : [{ field, yours: yours[field], theirs: theirs[field] }],
   );
