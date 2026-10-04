@@ -10,7 +10,6 @@ Parked during the foundation build (branch feat/foundation). Pick these up in th
 ## Surveyor and publisher plan
 - `spot.updated_at` and `spot.version` have no DB-side update behavior; the server must set them.
 - `scripts/seed.ts` has no guard against a production `DATABASE_URL` (campus primary key limits damage).
-- Verify on the first CI run that the gitleaks Docker step scans more than 0 commits and the postgres job passes; neither could run locally.
 - Bundle client: a malformed pointer with no cache reports `offline_no_cache`; cached hash is not verified against content.
 
 ## Test hardening (any time)
