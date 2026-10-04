@@ -40,19 +40,27 @@ export function createOutboxStore(deps: {
   clock: Clock;
 }) {
   const { cache, blobs } = deps;
-  async function list(): Promise<WriteRecord[]> {
-    const keys = await cache.keys(WRITE);
+  async function scan(): Promise<{ records: WriteRecord[]; unreadable: string[] }> {
     const records: WriteRecord[] = [];
-    for (const key of keys) {
+    const unreadable: string[] = [];
+    for (const key of await cache.keys(WRITE)) {
       const r = await readJson(cache, key, WriteRecord);
       if (r) records.push(r);
+      else if ((await cache.get(key)) !== null) unreadable.push(key);
     }
-    return records.sort(bySeq);
+    return { records: records.sort(bySeq), unreadable };
+  }
+  async function list(): Promise<WriteRecord[]> {
+    return (await scan()).records;
   }
   let seqChain: Promise<void> = Promise.resolve();
   return {
     /** Every readable record in queue order. Unreadable records are skipped, not deleted. */
     list,
+    /** Storage keys of records that failed to parse. They stay in storage. */
+    async unreadable(): Promise<string[]> {
+      return (await scan()).unreadable;
+    },
     async put(record: WriteRecord): Promise<void> {
       await cache.set(`${WRITE}${record.client_write_id}`, JSON.stringify(record));
     },

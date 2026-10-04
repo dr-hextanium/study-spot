@@ -165,3 +165,20 @@ test("concurrent nextSeq calls get distinct, increasing values", async () => {
   expect(a).toBeLessThan(b);
   expect(b).toBeLessThan(c);
 });
+
+test("unreadable records are reported, kept in storage, and left out of list", async () => {
+  const cache = new MemoryCache();
+  const store = createOutboxStore({
+    cache,
+    blobs: new MemoryBinary(),
+    clock: mutableClock("2026-10-05T16:00:00Z"),
+  });
+  const ok = section(SPOT_A, POWER);
+  await store.put(ok);
+  await cache.set("outbox:w:bad-json", "{not json");
+  await cache.set("outbox:w:bad-schema", JSON.stringify({ kind: "spot.section" }));
+  expect(await store.list()).toEqual([ok]);
+  expect((await store.unreadable()).sort()).toEqual(["outbox:w:bad-json", "outbox:w:bad-schema"]);
+  expect(cache.data.has("outbox:w:bad-json")).toBe(true);
+  expect(cache.data.has("outbox:w:bad-schema")).toBe(true);
+});
