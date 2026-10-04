@@ -5,9 +5,11 @@ import type {
   Foreground,
   Ids,
   KeyValueCache,
+  Lock,
   NetworkStatus,
   Timers,
 } from "../adapters.ts";
+import { createLocalLock } from "../lock.ts";
 import type { ApiResult, SurveyApi } from "./api.ts";
 import { createOutboxStore } from "./outboxStore.ts";
 import {
@@ -16,6 +18,7 @@ import {
   nextToSend,
   planEnqueue,
   rewriteSpotIds,
+  VERSIONED_KINDS,
   type WriteError,
   type WriteRecord,
 } from "./writes.ts";
@@ -32,6 +35,11 @@ export type OutboxDeps = {
   timers: Timers;
   network: NetworkStatus;
   foreground: Foreground;
+  /**
+   * Guards every read-modify-write of the queue. Defaults to an in-process lock;
+   * apps/web passes a Web Locks one so tabs sharing storage take turns too.
+   */
+  lock?: Lock;
 };
 
 export type OutboxSnapshot = {
@@ -54,6 +62,10 @@ type AppliedListener = (spot: SurveySpot, fromLocalId: string | null) => void;
 type SendResult =
   | ApiResult<SurveySpot>
   | { kind: "local"; code: "photo_missing" | "no_base_version" };
+type Step = "next" | "stop";
+
+/** Lock name for the outbox's critical sections. */
+export const OUTBOX_LOCK = "study-spot:outbox";
 
 export type Outbox = ReturnType<typeof createOutbox>;
 
@@ -64,6 +76,9 @@ export type Outbox = ReturnType<typeof createOutbox>;
  */
 export function createOutbox(deps: OutboxDeps) {
   const store = createOutboxStore(deps);
+  const lock = deps.lock ?? createLocalLock();
+  /** Queue changes, the pick of the next write, and its result write never interleave. */
+  const locked = <T>(fn: () => Promise<T>): Promise<T> => lock.run(OUTBOX_LOCK, fn);
   const listeners = new Set<() => void>();
   const applied = new Set<AppliedListener>();
   let snapshot: OutboxSnapshot = {
@@ -99,22 +114,26 @@ export function createOutbox(deps: OutboxDeps) {
     serverVersion: number | null,
     bytes: Uint8Array | null = null,
   ): Promise<string> {
-    const meta = {
-      client_write_id: deps.ids.uuid(),
-      seq: await store.nextSeq(),
-      created_at: deps.clock.now().toISOString(),
-    };
-    if (bytes !== null) await store.putPhoto(meta.client_write_id, bytes);
-    const plan = planEnqueue(await store.list(), write, serverVersion, meta);
-    for (const r of plan.put) await store.put(r);
-    for (const id of plan.remove) await store.remove(id);
-    if (plan.seedVersion !== null) await store.setVersion(write.spot_id, plan.seedVersion);
+    const id = await locked(async () => {
+      const meta = {
+        client_write_id: deps.ids.uuid(),
+        seq: await store.nextSeq(),
+        created_at: deps.clock.now().toISOString(),
+      };
+      if (bytes !== null) await store.putPhoto(meta.client_write_id, bytes);
+      const plan = planEnqueue(await store.list(), write, serverVersion, meta);
+      for (const r of plan.put) await store.put(r);
+      for (const removed of plan.remove) await store.remove(removed);
+      if (plan.seedVersion !== null) await store.setVersion(write.spot_id, plan.seedVersion);
+      return plan.put[0]?.client_write_id ?? meta.client_write_id;
+    });
     await refresh();
     void sync();
-    return plan.put[0]?.client_write_id ?? meta.client_write_id;
+    return id;
   }
 
-  async function send(r: WriteRecord): Promise<SendResult> {
+  /** Sends one picked write. `base` is the base_version resolved when it was picked. */
+  async function send(r: WriteRecord, base: number | null): Promise<SendResult> {
     const { api } = deps;
     const client_write_id = r.client_write_id;
     switch (r.kind) {
@@ -133,16 +152,22 @@ export function createOutbox(deps: OutboxDeps) {
         );
       }
     }
-    // Version chaining: a write queued behind another takes that write's response version.
-    const base_version = r.base_version ?? (await store.version(r.spot_id));
-    if (base_version === null) return { kind: "local", code: "no_base_version" };
+    if (base === null) return { kind: "local", code: "no_base_version" };
     switch (r.kind) {
       case "spot.section":
-        return api.writeSection(r.spot_id, { client_write_id, base_version, write: r.payload });
+        return api.writeSection(r.spot_id, {
+          client_write_id,
+          base_version: base,
+          write: r.payload,
+        });
       case "spot.verify":
-        return api.verify(r.spot_id, { client_write_id, base_version, groups: r.payload.groups });
+        return api.verify(r.spot_id, {
+          client_write_id,
+          base_version: base,
+          groups: r.payload.groups,
+        });
       case "spot.review":
-        return api.review(r.spot_id, { client_write_id, base_version });
+        return api.review(r.spot_id, { client_write_id, base_version: base });
     }
   }
 
@@ -182,54 +207,85 @@ export function createOutbox(deps: OutboxDeps) {
     }
   }
 
-  /** Sends one write. Returns false when the pass should stop. */
-  async function sendOne(r: WriteRecord): Promise<boolean> {
-    const sending: WriteRecord = { ...r, state: "syncing", attempts: r.attempts + 1 };
-    await store.put(sending);
-    await refresh();
-    const result = await send(sending);
-    switch (result.kind) {
-      case "ok":
-        await applyOk(sending, result.value);
-        return true;
-      case "conflict":
-        await conflict(sending, result.current);
-        return true;
-      case "invalid":
-        await fail(sending, {
-          status: result.status,
-          code: result.code,
-          message: result.message,
-          missing: result.missing,
-        });
-        return true;
-      case "gone":
-        await fail(sending, { status: 410, code: result.code, message: null, missing: [] });
-        return true;
-      case "local":
-        await fail(sending, { status: 0, code: result.code, message: null, missing: [] });
-        return true;
-      case "unauthorized":
-        await store.put({ ...sending, state: "pending", attempts: r.attempts });
-        emit({ signedOut: true });
-        return false;
-      case "server":
-        if (result.reason === "bad_response") {
-          // The server stored this answer, so a plain resend would replay it forever.
-          await fail(sending, {
-            status: result.status,
-            code: "bad_response",
-            message: null,
-            missing: [],
-          });
-          return true;
-        }
-        await store.put({ ...sending, state: "pending" });
-        return false;
-      case "network":
-        await store.put({ ...sending, state: "pending" });
-        return false;
-    }
+  /**
+   * Under the lock: picks the next write, marks it as sending, and resolves its
+   * base_version (version chaining: a write queued behind another takes that
+   * write's response version). A spot with a write already in flight (another
+   * tab's) is skipped, so two tabs never send the same write or race its followers.
+   */
+  function pick(): Promise<{ record: WriteRecord; base: number | null } | null> {
+    return locked(async () => {
+      const all = await store.list();
+      const busy = new Set(all.filter((r) => r.state === "syncing").map((r) => r.spot_id));
+      const next = nextToSend(all.filter((r) => !busy.has(r.spot_id)));
+      if (next === null) return null;
+      const record: WriteRecord = { ...next, state: "syncing", attempts: next.attempts + 1 };
+      const versioned = VERSIONED_KINDS.includes(record.kind);
+      const base = versioned
+        ? (record.base_version ?? (await store.version(record.spot_id)))
+        : null;
+      await store.put(record);
+      return { record, base };
+    });
+  }
+
+  /**
+   * Under the lock: records the answer for a sent write. If the write was
+   * discarded or reset while in flight, it is left alone (never resurrected).
+   */
+  function settle(sent: WriteRecord, result: SendResult): Promise<Step> {
+    return locked(async () => {
+      const now = (await store.list()).find((x) => x.client_write_id === sent.client_write_id);
+      const ours = now?.state === "syncing" && now.attempts === sent.attempts;
+      switch (result.kind) {
+        case "ok":
+          if (ours) await applyOk(sent, result.value);
+          return "next";
+        case "conflict":
+          if (ours) await conflict(sent, result.current);
+          return "next";
+        case "invalid":
+          if (ours) {
+            await fail(sent, {
+              status: result.status,
+              code: result.code,
+              message: result.message,
+              missing: result.missing,
+            });
+          }
+          return "next";
+        case "gone":
+          if (ours) {
+            await fail(sent, { status: 410, code: result.code, message: null, missing: [] });
+          }
+          return "next";
+        case "local":
+          if (ours) await fail(sent, { status: 0, code: result.code, message: null, missing: [] });
+          return "next";
+        case "unauthorized":
+          if (ours) await store.put({ ...sent, state: "pending", attempts: sent.attempts - 1 });
+          emit({ signedOut: true });
+          return "stop";
+        case "server":
+          if (result.reason === "bad_response") {
+            // The server stored this answer, so a plain resend would replay it forever.
+            if (ours) {
+              await fail(sent, {
+                status: result.status,
+                code: "bad_response",
+                message: null,
+                missing: [],
+              });
+            }
+            return "next";
+          }
+          if (ours) await store.put({ ...sent, state: "pending" });
+          return "stop";
+        case "network":
+          if (ours) await store.put({ ...sent, state: "pending" });
+          return "stop";
+      }
+    });
   }
 
   function schedule(delay: number): void {
@@ -245,13 +301,16 @@ export function createOutbox(deps: OutboxDeps) {
     emit({ syncing: true });
     try {
       for (;;) {
-        const next = nextToSend(await store.list());
-        if (next === null) {
+        const picked = await pick();
+        if (picked === null) {
           cancelTimer?.();
           cancelTimer = null;
           return;
         }
-        if (!(await sendOne(next))) {
+        await refresh();
+        // The network call runs outside the lock, so saves and discards are never blocked by it.
+        const result = await send(picked.record, picked.base);
+        if ((await settle(picked.record, result)) === "stop") {
           if (!snapshot.signedOut) {
             schedule(backoff);
             backoff = Math.min(backoff * 2, BACKOFF_MAX_MS);
@@ -288,8 +347,10 @@ export function createOutbox(deps: OutboxDeps) {
   }
 
   async function update(clientWriteId: string, fn: (r: WriteRecord) => Promise<void>) {
-    const r = (await store.list()).find((x) => x.client_write_id === clientWriteId);
-    if (r) await fn(r);
+    await locked(async () => {
+      const r = (await store.list()).find((x) => x.client_write_id === clientWriteId);
+      if (r) await fn(r);
+    });
     await refresh();
     void sync();
   }
@@ -298,13 +359,14 @@ export function createOutbox(deps: OutboxDeps) {
     /** Loads the queue, resets writes cut off mid-send, and starts listening for triggers. */
     async start(): Promise<void> {
       stopped = false;
-      const records = await store.list();
-      for (const r of records) {
-        if (r.state === "syncing") await store.put({ ...r, state: "pending" });
-      }
-      for (const moved of rewriteSpotIds(await store.list(), await store.idMap())) {
-        await store.put(moved);
-      }
+      await locked(async () => {
+        for (const r of await store.list()) {
+          if (r.state === "syncing") await store.put({ ...r, state: "pending" });
+        }
+        for (const moved of rewriteSpotIds(await store.list(), await store.idMap())) {
+          await store.put(moved);
+        }
+      });
       unsubscribe = [
         deps.network.subscribe((online) => {
           emit({ online });

@@ -29,6 +29,8 @@ export class FakeSurveyServer implements Http {
   signedOut = false;
   /** Runs the next request, then drops its answer like a connection cut mid-reply. */
   dropNextResponse = false;
+  private hold: Promise<void> | null = null;
+  private arrive: (() => void) | null = null;
   private readonly receipts = new Map<string, FetchResponse>();
   private readonly ids = sequentialIds("b000");
 
@@ -42,6 +44,21 @@ export class FakeSurveyServer implements Http {
     const next = SurveySpot.parse({ ...s, ...patch, version: s.version + 1 });
     this.spots.set(id, next);
     return next;
+  }
+
+  /**
+   * Holds the next request in flight: `arrived` resolves once it reaches the
+   * server, and it is answered (as the server is then) after `release()`.
+   */
+  holdNext(): { arrived: Promise<void>; release: () => void } {
+    let release = () => {};
+    this.hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const arrived = new Promise<void>((resolve) => {
+      this.arrive = resolve;
+    });
+    return { arrived, release };
   }
 
   spot(id: string): SurveySpot {
@@ -60,6 +77,12 @@ export class FakeSurveyServer implements Http {
           : {},
     );
     this.requests.push({ method: req.method, path, body });
+    if (this.hold) {
+      const hold = this.hold;
+      this.hold = null;
+      this.arrive?.();
+      await hold;
+    }
     if (this.offline) throw new Error("network down");
     const status = this.failWith.shift();
     if (status !== undefined) return reply(status, { error: "internal" });

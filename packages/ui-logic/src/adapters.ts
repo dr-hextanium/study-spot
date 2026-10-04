@@ -42,6 +42,15 @@ export interface Foreground {
   subscribe(listener: () => void): () => void;
 }
 
+/**
+ * Mutual exclusion by name. `run` waits for the lock, runs `fn`, and releases
+ * when `fn` settles. `createLocalLock` covers one JS context (one tab); apps/web
+ * backs this with the Web Locks API so tabs sharing storage also take turns.
+ */
+export interface Lock {
+  run<T>(name: string, fn: () => Promise<T>): Promise<T>;
+}
+
 export interface Clock {
   now(): Date;
 }

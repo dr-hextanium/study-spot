@@ -9,9 +9,11 @@ import type {
   Ids,
   KeyValueCache,
   KeyValueStorage,
+  Lock,
   NetworkStatus,
   Timers,
 } from "../src/index.ts";
+import { createLocalLock } from "../src/index.ts";
 
 export class MemoryCache implements KeyValueCache {
   readonly data = new Map<string, string>();
@@ -195,5 +197,24 @@ export class ScriptedHttp implements Http {
     const reply = this.replies.shift();
     if (reply === undefined || reply === "offline") throw new Error("network down");
     return reply;
+  }
+}
+
+/** An in-process lock that records every hold and fails if two holds overlap. */
+export class RecordingLock implements Lock {
+  readonly names: string[] = [];
+  private inner = createLocalLock();
+  private held = false;
+  run<T>(name: string, fn: () => Promise<T>): Promise<T> {
+    return this.inner.run(name, async () => {
+      if (this.held) throw new Error("lock held twice");
+      this.held = true;
+      this.names.push(name);
+      try {
+        return await fn();
+      } finally {
+        this.held = false;
+      }
+    });
   }
 }

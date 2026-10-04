@@ -17,6 +17,7 @@ import {
   MemoryBinary,
   MemoryCache,
   mutableClock,
+  RecordingLock,
   sequentialIds,
 } from "./fakes.ts";
 
@@ -26,6 +27,12 @@ const seating = (spot_id: string) => ({ kind: "spot.section", spot_id, payload: 
 
 class CrashingCache extends MemoryCache {
   failDeletes = false;
+  /** Runs before a write lands, so a test can interleave another call there. */
+  beforeSet: ((key: string, value: string) => Promise<void>) | null = null;
+  override async set(key: string, value: string): Promise<void> {
+    await this.beforeSet?.(key, value);
+    await super.set(key, value);
+  }
   override async delete(key: string): Promise<void> {
     if (this.failDeletes) throw new Error("killed");
     await super.delete(key);
@@ -41,15 +48,17 @@ function setup(spots: SurveySpot[] = [surveySpotFixture({ id: SPOT_A, version: 3
   const foreground = new FakeForeground();
   const clock = mutableClock("2026-10-05T16:00:00Z");
   const api = createSurveyApi({ http: server, baseUrl: API, token: () => TOKEN });
+  // One lock for every tab, like Web Locks across tabs on one origin.
+  const lock = new RecordingLock();
   let tab = 0;
   const make = () => {
     tab += 1;
     const ids = sequentialIds(`80${tab.toString().padStart(2, "0")}`);
-    return createOutbox({ cache, blobs, api, clock, ids, timers, network, foreground });
+    return createOutbox({ cache, blobs, api, clock, ids, timers, network, foreground, lock });
   };
   const sent = () => server.requests.map((r) => `${r.method} ${r.path}`);
   const bases = () => server.requests.map((r) => r.body.base_version);
-  return { server, cache, blobs, network, timers, foreground, clock, make, sent, bases };
+  return { server, cache, blobs, network, timers, foreground, clock, lock, make, sent, bases };
 }
 
 test("a spot created offline syncs its create, then photos, then text, under the real id", async () => {
@@ -438,5 +447,87 @@ test("re-saving a conflicted section rebases it, and held writes chain from the 
     `PUT /survey/spots/${SPOT_A}/power`,
   ]);
   expect(t.bases().slice(1)).toEqual([4, 5]);
+  expect(box.getSnapshot().records).toEqual([]);
+});
+
+/** Lets every pending microtask and storage call run. */
+const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+const NEWER = { ...POWER, data: { ...POWER.data, outlet_coverage_pct: 0.9 } };
+const powerData = (t: ReturnType<typeof setup>) =>
+  t.server.requests.map(
+    (r) => (r.body.data as { outlet_coverage_pct?: number } | undefined)?.outlet_coverage_pct,
+  );
+
+test("a re-save landing while sync picks the write is sent too, not lost", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  await box.enqueue(power(SPOT_A), 3);
+  let resaved: Promise<string> | null = null;
+  t.cache.beforeSet = async (_key, value) => {
+    if (resaved !== null || !value.includes('"state":"syncing"')) return;
+    resaved = box.enqueue({ kind: "spot.section", spot_id: SPOT_A, payload: NEWER }, 3);
+    await settle();
+  };
+  t.network.set(true);
+  await box.idle();
+  await resaved;
+  await box.idle();
+  expect(powerData(t)).toEqual([0.5, 0.9]);
+  expect(t.server.spot(SPOT_A).outlet_coverage_pct).toBe(0.9);
+  expect(box.getSnapshot().records).toEqual([]);
+  expect(t.lock.names.length).toBeGreaterThan(0);
+});
+
+test("a re-save while the write is in flight is queued behind it and sent", async () => {
+  const t = setup();
+  const box = t.make();
+  await box.start();
+  const gate = t.server.holdNext();
+  await box.enqueue(power(SPOT_A), 3);
+  await gate.arrived;
+  await box.enqueue({ kind: "spot.section", spot_id: SPOT_A, payload: NEWER }, 3);
+  gate.release();
+  await box.idle();
+  expect(powerData(t)).toEqual([0.5, 0.9]);
+  expect(t.bases()).toEqual([3, 4]);
+  expect(box.getSnapshot().records).toEqual([]);
+});
+
+test("a write discarded while in flight stays gone after a network error", async () => {
+  const t = setup();
+  const box = t.make();
+  await box.start();
+  const gate = t.server.holdNext();
+  const id = await box.enqueue(power(SPOT_A), 3);
+  await gate.arrived;
+  await box.discard(id);
+  t.server.offline = true;
+  gate.release();
+  await box.idle();
+  expect(box.getSnapshot().records).toEqual([]);
+  t.server.offline = false;
+  await box.syncNow();
+  t.timers.advance(BACKOFF_MAX_MS);
+  await box.idle();
+  expect(t.server.requests).toHaveLength(1);
+  expect(t.server.executed).toEqual([]);
+  expect(box.getSnapshot().records).toEqual([]);
+});
+
+test("a write discarded while in flight does not come back as a conflict", async () => {
+  const t = setup();
+  const box = t.make();
+  await box.start();
+  const gate = t.server.holdNext();
+  const id = await box.enqueue(power(SPOT_A), 3);
+  await gate.arrived;
+  await box.discard(id);
+  t.server.bump(SPOT_A);
+  gate.release();
+  await box.idle();
+  await box.syncNow();
+  expect(t.server.requests).toHaveLength(1);
   expect(box.getSnapshot().records).toEqual([]);
 });
