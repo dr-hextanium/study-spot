@@ -134,3 +134,40 @@ test("the session store round-trips and rejects corrupt or old data", () => {
   sessions.clear();
   expect(storage.getItem(SESSION_KEY)).toBeNull();
 });
+
+test("logout accepts a 204 with an empty body", async () => {
+  const { http, api } = setup();
+  http.replies.push(reply(204));
+  expect(await api.logout()).toEqual({ kind: "ok", value: null });
+  expect(http.requests[0]?.method).toBe("POST");
+  expect(http.requests[0]?.url).toBe(`${BASE}/auth/logout`);
+  expect(http.requests[0]?.headers.authorization).toBe(`Bearer ${TOKEN}`);
+});
+
+test("photo upload returns the parsed spot, sends auth, and sends taken_at only when given", async () => {
+  const { http, api } = setup();
+  http.replies.push(reply(201, spot), reply(201, spot));
+  const bytes = new Uint8Array([0xff, 0xd8, 0xff]);
+  const taken_at = "2026-10-04T12:00:00.000Z";
+  const withTaken = await api.uploadPhoto(
+    { spot_id: spot.id, client_write_id: WID, taken_at },
+    bytes,
+  );
+  expect(withTaken).toEqual({ kind: "ok", value: spot });
+  const first = http.requests[0];
+  expect(first?.method).toBe("POST");
+  expect(first?.url).toBe(`${BASE}/survey/photos`);
+  expect(first?.headers.authorization).toBe(`Bearer ${TOKEN}`);
+  expect(first?.body).toEqual({
+    kind: "multipart",
+    fields: { spot_id: spot.id, client_write_id: WID, taken_at },
+    file: { field: "file", filename: "photo.jpg", contentType: "image/jpeg", bytes },
+  });
+  const without = await api.uploadPhoto({ spot_id: spot.id, client_write_id: WID }, bytes);
+  expect(without).toEqual({ kind: "ok", value: spot });
+  const body = http.requests[1]?.body;
+  expect(body?.kind === "multipart" ? Object.keys(body.fields).sort() : null).toEqual([
+    "client_write_id",
+    "spot_id",
+  ]);
+});
