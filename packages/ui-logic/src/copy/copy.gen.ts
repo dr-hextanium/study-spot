@@ -1,4 +1,5 @@
-// Generated from docs/design/surveyor-copy.md by `bun run copy:gen`. Do not edit.
+// Generated from docs/design/surveyor-copy.md by `bun run copy:gen`, which
+// then formats it with Biome so lint stays clean. Do not edit.
 
 export const COPY = {
   "app.name": "Perch",

@@ -20,7 +20,8 @@ export function renderCopyModule(rows: readonly CopyRow[]): string {
   const text = rows.map((r) => `  ${JSON.stringify(r.id)}: ${JSON.stringify(r.text)},`);
   const max = rows.map((r) => `  ${JSON.stringify(r.id)}: ${r.max},`);
   return [
-    "// Generated from docs/design/surveyor-copy.md by `bun run copy:gen`. Do not edit.",
+    "// Generated from docs/design/surveyor-copy.md by `bun run copy:gen`, which",
+    "// then formats it with Biome so lint stays clean. Do not edit.",
     "",
     "export const COPY = {",
     ...text,
