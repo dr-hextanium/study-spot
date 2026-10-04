@@ -10,7 +10,7 @@ import {
   spot_hours,
   write_receipt,
 } from "@study-spot/db";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { HttpError } from "../src/http.ts";
 import { currentTerm } from "../src/spots/load.ts";
 import { reviewSpot } from "../src/spots/write.ts";
@@ -544,4 +544,65 @@ test("a spot in another campus is a 404 for every route and leaves its bundle st
     .where(eq(bundle_state.campus_id, "other"));
   expect(state).toMatchObject({ dirty: false, write_seq: 0 });
   expect(ctx.publisher.scheduled).toBe(0);
+});
+
+test("review and verify with a stale base_version are 409", async () => {
+  const ctx = await setup();
+  const ana = await signIn(ctx, "surveyor", "Ana");
+  const bo = await signIn(ctx, "surveyor", "Bo");
+  const draft = await newDraft(ctx, ana);
+  const access = COMPLETING_SECTIONS[0];
+  if (!access) throw new Error("fixture missing");
+  await put(ctx, ana, draft.id, 1, access);
+  const review = await post(ctx, bo, `/survey/spots/${draft.id}/review`, {
+    client_write_id: writeId(),
+    base_version: 1,
+  });
+  expect(review.statusCode).toBe(409);
+  const verify = await post(ctx, bo, `/survey/spots/${draft.id}/verify`, {
+    client_write_id: writeId(),
+    base_version: 1,
+    groups: ["power"],
+  });
+  expect(verify.statusCode).toBe(409);
+});
+
+test("review's update is guarded by version against a write between read and update", async () => {
+  const ctx = await setup();
+  const ana = await signIn(ctx, "surveyor", "Ana");
+  const bo = await signIn(ctx, "surveyor", "Bo");
+  const draft = await newDraft(ctx, ana);
+  const term = await currentTerm(ctx.db, "sbu", ctx.clock.now());
+  const sctx = {
+    surveyorId: bo.id,
+    role: "surveyor" as const,
+    now: ctx.clock.now(),
+    campusId: "sbu",
+    term,
+  };
+  // Simulates a section write committing after the version check: bump the
+  // version just before the guarded UPDATE runs.
+  const racing = new Proxy(ctx.db, {
+    get(target, prop, receiver) {
+      if (prop !== "update") return Reflect.get(target, prop, receiver);
+      return (table: Parameters<typeof target.update>[0]) => ({
+        set: (values: never) => ({
+          where: (cond: never) => ({
+            returning: async (fields: never) => {
+              await target
+                .update(spot)
+                .set({ version: sql`${spot.version} + 1` })
+                .where(eq(spot.id, draft.id));
+              return target.update(table).set(values).where(cond).returning(fields);
+            },
+          }),
+        }),
+      });
+    },
+  });
+  const err = await reviewSpot(racing, sctx, draft.id, 1).catch((e: unknown) => e);
+  expect(err).toBeInstanceOf(HttpError);
+  expect(err).toMatchObject({ status: 409 });
+  const [row] = await ctx.db.select().from(spot).where(eq(spot.id, draft.id));
+  expect(row?.review_state).toBe("unreviewed");
 });

@@ -274,6 +274,14 @@ export async function verifyGroups(
 ): Promise<WriteOutcome<SurveySpot>> {
   const before = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   checkVersion(before, baseVersion);
+  // No-op update that locks the row and re-checks the version, so a section
+  // write committing since the read causes a 409 instead of a stale stamp.
+  const locked = await db
+    .update(spot)
+    .set({ version: sql`${spot.version}` })
+    .where(and(eq(spot.id, spotId), eq(spot.version, baseVersion)))
+    .returning({ id: spot.id });
+  if (locked.length === 0) await conflict(db, ctx, spotId);
   await stampVerified(db, spotId, groups, ctx.now);
   const after = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   return {
@@ -334,10 +342,12 @@ export async function reviewSpot(
   if (ctx.role !== "admin" && before.last_edited_by === ctx.surveyorId) {
     throw new HttpError(403, { error: "forbidden", message: "someone else reviews your edits" });
   }
-  await db
+  const reviewed = await db
     .update(spot)
     .set({ review_state: "reviewed", reviewed_by: ctx.surveyorId })
-    .where(eq(spot.id, spotId));
+    .where(and(eq(spot.id, spotId), eq(spot.version, baseVersion)))
+    .returning({ id: spot.id });
+  if (reviewed.length === 0) await conflict(db, ctx, spotId);
   const after = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   return {
     status: 200,
