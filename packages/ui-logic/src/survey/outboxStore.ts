@@ -61,6 +61,16 @@ export function createOutboxStore(deps: {
     async unreadable(): Promise<string[]> {
       return (await scan()).unreadable;
     },
+    /**
+     * Deletes an unreadable record and any photo bytes stored under its id. A key
+     * that is missing or holds a readable record is left alone. True if deleted.
+     */
+    async removeUnreadable(key: string): Promise<boolean> {
+      if (!(await scan()).unreadable.includes(key)) return false;
+      await cache.delete(key);
+      await blobs.delete(photoKey(key.slice(WRITE.length)));
+      return true;
+    },
     async put(record: WriteRecord): Promise<void> {
       await cache.set(`${WRITE}${record.client_write_id}`, JSON.stringify(record));
     },

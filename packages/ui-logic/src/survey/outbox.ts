@@ -52,7 +52,7 @@ export type OutboxSnapshot = {
   /** True after a 401 until `resume()`; writes are kept. */
   signedOut: boolean;
   online: boolean;
-  /** Stored records that fail to parse. They are never sent or deleted. */
+  /** Stored records that fail to parse. Never sent; deleted only by `discardUnreadable`. */
   unreadable: number;
 };
 
@@ -536,6 +536,16 @@ export function createOutbox(deps: OutboxDeps) {
         }
         await store.remove(r.client_write_id);
       }),
+    /** Storage keys of records that fail to parse (counted in `unreadable`), for the UI to list. */
+    unreadableKeys: (): Promise<string[]> => store.unreadable(),
+    /**
+     * Deletes one unreadable record (a key from `unreadableKeys`) and its photo
+     * bytes. Readable records are untouched: use `discard` for those.
+     */
+    async discardUnreadable(key: string): Promise<void> {
+      await locked(() => store.removeUnreadable(key));
+      await refresh();
+    },
     /** After signing in again on this phone. */
     resume(): void {
       emit({ signedOut: false });

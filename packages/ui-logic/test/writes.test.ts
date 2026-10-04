@@ -6,7 +6,7 @@ import {
   photoKey,
   planEnqueue,
   rewriteSpotIds,
-  type WriteRecord,
+  WriteRecord,
 } from "../src/index.ts";
 import {
   create,
@@ -195,4 +195,12 @@ test("re-saving a conflicted section rebases on the server version and seeds it"
   const alone = planEnqueue([conflict], powerWrite, 3, meta(2));
   expect(alone.seedVersion).toBe(7);
   expect(alone.put[0]?.base_version).toBe(7);
+});
+
+test("new records carry schema version 1; records without one still read as version 1", () => {
+  const [made] = planEnqueue([], powerWrite, 3, meta(1)).put;
+  expect(made?.v).toBe(1);
+  const { v: _v, ...legacy } = section(SPOT_A, POWER);
+  expect(WriteRecord.safeParse(legacy).success).toBe(true);
+  expect(WriteRecord.safeParse({ ...legacy, v: 2 }).success).toBe(false);
 });

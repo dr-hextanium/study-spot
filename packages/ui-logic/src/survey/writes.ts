@@ -35,7 +35,15 @@ export const WriteError = z.object({
 });
 export type WriteError = z.infer<typeof WriteError>;
 
+/** Record shape version. Absent on records stored before it existed; those are version 1. */
+export const WRITE_RECORD_VERSION = 1;
+
 const Common = {
+  /**
+   * Shape version, so a later release can migrate stored records. A record from a
+   * newer shape fails to parse and is kept as unreadable, never sent or lost.
+   */
+  v: z.literal(WRITE_RECORD_VERSION).optional(),
   client_write_id: ClientWriteId,
   spot_id: SpotRef,
   /** Queue order. Monotonic, so a clock moving backwards never reorders writes. */
@@ -193,6 +201,7 @@ export function planEnqueue(
   const record = WriteRecord.parse({
     ...write,
     ...meta,
+    v: WRITE_RECORD_VERSION,
     base_version: base,
     attempts: 0,
     state: "pending",

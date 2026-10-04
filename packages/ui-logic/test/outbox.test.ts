@@ -761,3 +761,26 @@ test("onApplied names the write the server applied", async () => {
     [4, { client_write_id: checked, kind: "spot.verify" }],
   ]);
 });
+
+test("the UI can list unreadable records and discard them, and only them", async () => {
+  const t = setup();
+  const garbage = "outbox:w:00000000-0000-4000-9999-000000000001";
+  await t.cache.set(garbage, "{not json");
+  await t.blobs.set("photo:00000000-0000-4000-9999-000000000001", JPEG);
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const id = await box.enqueue(power(SPOT_A), 3);
+  expect(await box.unreadableKeys()).toEqual([garbage]);
+
+  // A readable record's key is not discarded this way.
+  await box.discardUnreadable(`outbox:w:${id}`);
+  expect(box.getSnapshot().records).toHaveLength(1);
+
+  await box.discardUnreadable(garbage);
+  expect(await box.unreadableKeys()).toEqual([]);
+  expect(box.getSnapshot().unreadable).toBe(0);
+  expect(t.cache.data.has(garbage)).toBe(false);
+  expect(t.blobs.data.size).toBe(0);
+  expect(box.getSnapshot().records).toHaveLength(1);
+});
