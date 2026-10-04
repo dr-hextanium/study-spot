@@ -13,7 +13,17 @@ import {
   surveyHome,
   syncHeader,
 } from "../src/index.ts";
-import { create, LOCAL, photo, rec, SEATING, SPOT_A, SPOT_B, section } from "./builders.ts";
+import {
+  create,
+  identity,
+  LOCAL,
+  photo,
+  rec,
+  SEATING,
+  SPOT_A,
+  SPOT_B,
+  section,
+} from "./builders.ts";
 
 const TERM = { id: "2026-fall", name: "Fall 2026" };
 const ME: SurveyorPublic = {
@@ -222,4 +232,38 @@ test("home: attention by urgency, oldest checks first, drafts with part counts",
 test("home counts stored records that could not be read", () => {
   expect(surveyHome(null, [], ME, new Map()).unreadable).toBe(0);
   expect(surveyHome(null, [], ME, new Map(), 2).unreadable).toBe(2);
+});
+
+test("failed and conflict writes show but do not count toward readiness or checks", () => {
+  for (const state of ["failed", "conflict"] as const) {
+    const v = view([section(SPOT_A, SEATING, { state })]);
+    expect(v.spot.seat_count).toBe(40);
+    expect(v.spot.missing).toEqual(["seat_count"]);
+    expect(v.spot.verified.seating).toBeUndefined();
+    expect(publishReadiness(v).kind).toBe("blocked");
+    const seating = sectionStatuses(v, NY).find((s) => s.section === "seating");
+    expect(seating).toMatchObject({
+      fill: "missing",
+      sync: state,
+      verifiedAt: null,
+      checkedToday: false,
+    });
+  }
+});
+
+test("a conflicted publish or review is not reported as queued", () => {
+  for (const kind of ["spot.publish", "spot.review"] as const) {
+    for (const state of ["failed", "conflict"] as const) {
+      const v = view([rec({ kind, spot_id: SPOT_A, payload: {} }, { state })], {
+        seat_count: 40,
+        missing: [],
+      });
+      expect(v.publishQueued).toBe(false);
+      expect(v.reviewQueued).toBe(false);
+    }
+  }
+  const live = view([
+    rec({ kind: "spot.publish", spot_id: SPOT_A, payload: {} }, { state: "syncing" }),
+  ]);
+  expect(live.publishQueued).toBe(true);
 });

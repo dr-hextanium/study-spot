@@ -106,6 +106,11 @@ export function draftSpot(
   };
 }
 
+/** Still on its way to the server: pending or mid-send. */
+function isLive(r: WriteRecord): boolean {
+  return r.state === "pending" || r.state === "syncing";
+}
+
 function applyWrite(spot: SurveySpot, r: WriteRecord): SurveySpot {
   const stamp = (groups: readonly AttributeGroup[]) => {
     const verified = { ...spot.verified };
@@ -154,20 +159,30 @@ export function buildSpotView(
 ): SpotView | null {
   const records = allRecords.filter((r) => r.spot_id === spotId);
   const create = records.find((r) => r.kind === "spot.create");
-  let spot =
+  const base =
     server ??
     (create?.kind === "spot.create"
       ? draftSpot(spotId, create.payload.identity, create.created_at, term)
       : null);
-  if (spot === null) return null;
+  if (base === null) return null;
+  // The user's values show whatever the write's state, so nothing they typed vanishes.
+  let spot = base;
   for (const r of records) spot = applyWrite(spot, r);
-  spot = { ...spot, missing: missingV0Fields(v0InputOf(spot)) };
+  // Readiness and check dates count only writes that can still land. A failed or
+  // conflicted write is shown (its section's `sync` says so) but is not "done" to the server.
+  let landing = base;
+  for (const r of records) if (isLive(r)) landing = applyWrite(landing, r);
+  spot = {
+    ...spot,
+    verified: landing.verified,
+    missing: missingV0Fields(v0InputOf(landing)),
+  };
   return {
     spot,
     serverVersion: server?.version ?? null,
     localOnly: server === null,
-    publishQueued: records.some((r) => r.kind === "spot.publish" && r.state !== "failed"),
-    reviewQueued: records.some((r) => r.kind === "spot.review" && r.state !== "failed"),
+    publishQueued: records.some((r) => r.kind === "spot.publish" && isLive(r)),
+    reviewQueued: records.some((r) => r.kind === "spot.review" && isLive(r)),
     pendingPhotos: records.flatMap((r) =>
       r.kind === "photo.upload"
         ? [{ client_write_id: r.client_write_id, taken_at: r.payload.taken_at, state: r.state }]
