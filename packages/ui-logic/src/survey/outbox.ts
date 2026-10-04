@@ -108,13 +108,20 @@ export function createOutbox(deps: OutboxDeps) {
     return records;
   }
 
-  /** Photo bytes are stored first, so a queued upload always had them once. */
+  /**
+   * Photo bytes are stored first, so a queued upload always had them once. A
+   * local id whose create already applied is mapped to the real id first, since
+   * a screen can still hold the local id.
+   */
   async function enqueue(
-    write: NewWrite,
+    queued: NewWrite,
     serverVersion: number | null,
     bytes: Uint8Array | null = null,
   ): Promise<string> {
     const id = await locked(async () => {
+      const real =
+        queued.kind === "spot.create" ? undefined : (await store.idMap())[queued.spot_id];
+      const write: NewWrite = real === undefined ? queued : { ...queued, spot_id: real };
       const meta = {
         client_write_id: deps.ids.uuid(),
         seq: await store.nextSeq(),

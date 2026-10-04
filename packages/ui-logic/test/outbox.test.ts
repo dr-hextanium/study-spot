@@ -531,3 +531,25 @@ test("a write discarded while in flight does not come back as a conflict", async
   expect(t.server.requests).toHaveLength(1);
   expect(box.getSnapshot().records).toEqual([]);
 });
+
+test("writes queued under a local id after its create applied go out under the real id", async () => {
+  const t = setup([]);
+  const box = t.make();
+  await box.start();
+  const local = await box.createSpot(identity());
+  await box.idle();
+  const real = box.getSnapshot().idMap[local];
+  expect(real).toBeDefined();
+
+  await box.enqueue(power(local), null);
+  await box.addPhoto(local, null, JPEG, new Date("2026-10-05T15:59:00Z"));
+  await box.idle();
+  expect(t.sent()).toEqual([
+    "POST /survey/spots",
+    `PUT /survey/spots/${real}/power`,
+    "POST /survey/photos",
+  ]);
+  expect(t.server.requests.at(-1)?.body.spot_id).toBe(real);
+  expect(t.bases().at(1)).toBe(1);
+  expect(box.getSnapshot().records).toEqual([]);
+});
