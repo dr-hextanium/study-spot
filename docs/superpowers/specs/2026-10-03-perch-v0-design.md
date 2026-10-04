@@ -1,6 +1,6 @@
 # Perch v0 design
 
-Date: 2026-10-03. Status: approved in brainstorm, pending written review.
+Date: 2026-10-03. Status: approved. Section 6 (surveyor tooling) is refined and partly overridden by `docs/superpowers/specs/2026-10-04-surveyor-tooling-design.md`: invite links instead of magic links, bearer tokens, photos in Postgres instead of R2.
 
 This spec covers the v0 "finals edition" release: directory, quick pick on forecasts and surveyor estimates, browse, spot pages, and surveyor tooling. Project-wide context lives in `docs/context/`; this document records the decisions and design made on top of it.
 
@@ -18,7 +18,7 @@ This spec covers the v0 "finals edition" release: directory, quick pick on forec
 | D1 | Survey labor | Crew of 3 to 5, solo worst case. Route-based headcount sprints. If the crew falls through, sprint covers top 10 spots at peak hours only. |
 | D2 | Busyness before sprint data | Surveyor estimates per day type and time block, labeled "estimate". Replaced per slot once 2 or more real headcounts exist. |
 | D3 | v0 coverage | Top 25 to 30 spots, fully surveyed and verified. |
-| D4 | Student accounts | None in v0. Eligibility and presets stored on device. Magic links for surveyors only. |
+| D4 | Student accounts | None in v0. Eligibility and presets stored on device. Surveyors sign in with admin-generated invite links and a bearer token (see surveyor tooling spec, S1 and S2). |
 | D5 | Where scoring runs | On device, from a static versioned campus bundle. Server never sees student picks except the anonymous pick ping. |
 | D6 | Home interaction | Ranked pick plus 2 alternates, with a weighted "something else" reroll. |
 | D7 | Location input | "From" building chooser, remembered. Optional GPS, snapped to nearest building; coordinates are never stored. |
