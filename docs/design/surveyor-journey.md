@@ -61,7 +61,7 @@ Why this screen exists: the link is the only credential, so the screen must conf
 ### D. Review a teammate's spot (under 1 minute)
 
 1. **`/survey` home**, Needs attention list shows "Unreviewed, edited by {name}".
-2. Open, scan the overview and photos, tap "Looks right". The button is absent on spots the surveyor last edited.
+2. Open, scan the overview and photos, tap "Looks right". For non-admins the button is replaced by a note on spots they edited last; admins can always review, so a solo founder can still clear the queue.
 
 ### E. Admin: invite and publish (under 1 minute each)
 

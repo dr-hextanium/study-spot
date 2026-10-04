@@ -36,3 +36,7 @@ Stamping: when a section is saved or checked, its postmark ring lands with a 160
 ## Unresolved
 
 Student mode surfaces (postcard fronts, stamps for noise policy) are designed in build step 5 within this world.
+
+## Components to derive in the web UI plan
+
+Built inside this contract, documented into DESIGN.md at finish: button (ink primary, outline secondary, stamp-red destructive), field (label in small caps on the rule, value in ballpoint blue, borderStrong outline when focused or editable), segmented control, stepper with keypad entry, sheet (the only element with elevation: one soft shadow), ruled list row (44 px), status stamp chip (outlined by default; filled uses the on* tokens), toast, postmark ring (solid, dashed, struck). Header band content uses onShell and focusOnShell only.

@@ -20,7 +20,7 @@ Parent spec: `docs/superpowers/specs/2026-10-03-perch-v0-design.md` (section 6 a
 |---|---|---|
 | S1 | Surveyor login | Admin-generated single-use invite links, no email in v0. Overrides the parent spec's magic links. |
 | S2 | Session transport | Bearer token stored on device, sent in `Authorization`. Not a cookie: the API (`*.onrender.com`) and PWA (`*.pages.dev`) are different sites and Safari blocks third-party cookies. |
-| S3 | Visual design | Establish `DESIGN.md` (postcard world) now, before building surveyor screens. Survey mode is a plain, high-contrast variant of the same system. |
+| S3 | Visual design | Choose the postcard direction now, before building surveyor screens (chosen: "The Divided Back", contract in `apps/web/.impeccable/surfaces/apps-web.md`; tokens in `packages/ui-logic/src/tokens.ts`). `DESIGN.md` is written from the built screens at the end of the web UI plan. Survey mode is a plain, high-contrast variant of the same system. |
 | S4 | Web libraries | TanStack Router, TanStack Query, form logic as hooks in `packages/ui-logic` validated by Zod, `idb` for IndexedDB. |
 | S5 | Photo storage | Card-free: photo bytes in Postgres (`photo_blob`), published as hashed static files next to the bundle. Behind a `PhotoStore` interface so R2 can replace it. Overrides the parent spec's R2. |
 | S6 | Publishing target | Cloudflare Pages direct upload to a dedicated data project (`study-spot-data`). The PWA is a separate Pages project (`study-spot`). |

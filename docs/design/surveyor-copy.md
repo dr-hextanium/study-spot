@@ -149,11 +149,11 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | spot.publish | Publish | 12 | primary for drafts |
 | spot.publish.blocked.title | Can't publish yet | 20 | |
 | spot.publish.blocked.item | Missing: {field} | 40 | one per missing field, links to section |
-| spot.publish.queued | Published. Students will see it after the next sync. | 64 | toast; offline-honest |
+| spot.publish.queued | Publish queued. It goes live after this phone syncs. | 60 | toast when offline; never claim it is live |
 | spot.publish.done | Published | 12 | toast when online |
 | spot.review | Looks right | 14 | primary for unreviewed by someone else |
 | spot.review.done | Marked reviewed | 18 | toast |
-| spot.review.own | You edited this last, so someone else reviews it. | 60 | shown instead of the button |
+| spot.review.own | You edited this last, so someone else reviews it. | 60 | non-admins only, shown instead of the button; admins always see spot.review |
 | spot.unpublish | Unpublish | 12 | admin |
 | spot.unpublish.confirm.title | Unpublish {name}? | 36 | |
 | spot.unpublish.confirm.body | Students won't see it after the next publish. The data stays. | 70 | |
@@ -394,7 +394,8 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | id | text | max chars | notes |
 |---|---|---|---|
 | conflict.title | Two versions of {section} | 32 | |
-| conflict.body | {name} changed this while your edit was waiting. Pick one for each field. | 80 | name = other surveyor |
+| conflict.body | {name} changed this while your edit was waiting. Pick which version to keep. | 80 | name = last editor from the 409 body |
+| conflict.body_unknown | Someone else changed this while your edit was waiting. Pick which version to keep. | 84 | when the last editor's name is unavailable |
 | conflict.yours | Yours | 8 | |
 | conflict.theirs | On the server | 14 | |
 | conflict.keep_mine | Keep mine | 12 | |

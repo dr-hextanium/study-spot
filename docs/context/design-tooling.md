@@ -5,7 +5,7 @@
 Two design plugins are installed. Use them for UI and UX work instead of improvising.
 
 ### Impeccable (visual design and frontend craft)
-- Product context lives in `PRODUCT.md` (written by `/impeccable init`). Read it before any UI work. `DESIGN.md` does not exist yet; it is created when the first surface establishes a visual world.
+- Product context lives in `PRODUCT.md` (written by `/impeccable init`). Read it before any UI work. `DESIGN.md` does not exist yet; it is written from the built surveyor screens at the end of the web UI plan. Until then the direction contract (`apps/web/.impeccable/surfaces/apps-web.md`) and `packages/ui-logic/src/tokens.ts` are the visual authority.
 - Common commands: `/impeccable shape <surface>` to plan a screen, then build it; `critique`, `audit`, `polish`, `harden`, `adapt`, `clarify` for refinement. Run `/impeccable` with no argument for the menu.
 - Design detector hook is enabled (`.impeccable/config.json`). It runs after edits to UI files and on session stop. Fix real findings; only add ignores through `impeccable hooks ignore-value`, never by hand.
 - Owns: visual world, typography, color, layout, motion, component craft.
