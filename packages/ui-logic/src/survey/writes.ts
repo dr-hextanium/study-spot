@@ -185,10 +185,11 @@ export function planEnqueue(
   const others = sameSpot.filter((r) => r !== replaced);
   const chained = others.length > 0;
   const versioned = VERSIONED_KINDS.includes(write.kind);
-  let base: number | null = versioned && !chained ? serverVersion : null;
-  if (versioned && replaced?.state === "conflict" && replaced.current) {
-    base = replaced.current.version;
-  }
+  // A re-saved conflict rebases on the server's version; later writes chain from it.
+  const rebase =
+    versioned && replaced?.state === "conflict" ? (replaced.current?.version ?? null) : null;
+  const seed = rebase ?? serverVersion;
+  const base: number | null = versioned && !chained ? seed : null;
   const record = WriteRecord.parse({
     ...write,
     ...meta,
@@ -201,7 +202,7 @@ export function planEnqueue(
   return {
     put: [record],
     remove: replaced ? [replaced.client_write_id] : [],
-    seedVersion: chained ? null : serverVersion,
+    seedVersion: rebase !== null ? rebase : chained ? null : serverVersion,
   };
 }
 

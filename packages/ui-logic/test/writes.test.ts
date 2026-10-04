@@ -182,3 +182,17 @@ test("unreadable records are reported, kept in storage, and left out of list", a
   expect(cache.data.has("outbox:w:bad-json")).toBe(true);
   expect(cache.data.has("outbox:w:bad-schema")).toBe(true);
 });
+
+test("re-saving a conflicted section rebases on the server version and seeds it", () => {
+  const current = surveySpotFixture({ version: 7 });
+  const conflict = section(SPOT_A, POWER, { state: "conflict", attempts: 1, current });
+  const behind = section(SPOT_A, SEATING, { base_version: null });
+  const plan = planEnqueue([conflict, behind], powerWrite, 3, meta(1));
+  expect(plan.remove).toEqual([conflict.client_write_id]);
+  expect(plan.seedVersion).toBe(7);
+  expect(plan.put[0]?.base_version).toBeNull();
+
+  const alone = planEnqueue([conflict], powerWrite, 3, meta(2));
+  expect(alone.seedVersion).toBe(7);
+  expect(alone.put[0]?.base_version).toBe(7);
+});
