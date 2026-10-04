@@ -32,8 +32,13 @@ export type SpotWriteContext = {
 };
 
 /** Loads a spot or throws 404. */
-export async function spotOr404(db: Db, id: string, termRow: TermRow | null): Promise<SurveySpot> {
-  const found = await loadSurveySpot(db, id, termRow);
+export async function spotOr404(
+  db: Db,
+  id: string,
+  campusId: string,
+  termRow: TermRow | null,
+): Promise<SurveySpot> {
+  const found = await loadSurveySpot(db, id, campusId, termRow);
   if (!found) throw new HttpError(404, { error: "not_found" });
   return found;
 }
@@ -43,6 +48,14 @@ export function checkVersion(current: SurveySpot, baseVersion: number): void {
   if (current.version !== baseVersion) {
     throw new HttpError(409, { error: "version_conflict", current });
   }
+}
+
+/** Another write committed between our read and update: 409 with the current spot. */
+async function conflict(db: Db, ctx: SpotWriteContext, spotId: string): Promise<never> {
+  throw new HttpError(409, {
+    error: "version_conflict",
+    current: await spotOr404(db, spotId, ctx.campusId, ctx.term),
+  });
 }
 
 async function checkIdentity(
@@ -118,7 +131,7 @@ export async function createDraft(
     .returning({ id: spot.id });
   if (!created) throw new Error("spot insert returned nothing");
   await stampVerified(db, created.id, ["identity"], ctx.now);
-  const after = await spotOr404(db, created.id, ctx.term);
+  const after = await spotOr404(db, created.id, ctx.campusId, ctx.term);
   return {
     status: 201,
     body: after,
@@ -138,7 +151,7 @@ export async function writeSection(
   baseVersion: number,
   write: SectionWrite,
 ): Promise<WriteOutcome<SurveySpot>> {
-  const before = await spotOr404(db, spotId, ctx.term);
+  const before = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   checkVersion(before, baseVersion);
 
   let columns: Partial<typeof spot.$inferInsert> = {};
@@ -189,13 +202,7 @@ export async function writeSection(
     })
     .where(and(eq(spot.id, spotId), eq(spot.version, baseVersion)))
     .returning({ id: spot.id });
-  if (bumped.length === 0) {
-    // Another write committed between our read and update.
-    throw new HttpError(409, {
-      error: "version_conflict",
-      current: await spotOr404(db, spotId, ctx.term),
-    });
-  }
+  if (bumped.length === 0) await conflict(db, ctx, spotId);
 
   switch (write.section) {
     case "hours":
@@ -248,7 +255,7 @@ export async function writeSection(
 
   if (write.section !== "estimates") await stampVerified(db, spotId, [write.section], ctx.now);
 
-  const after = await spotOr404(db, spotId, ctx.term);
+  const after = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   return {
     status: 200,
     body: after,
@@ -265,10 +272,10 @@ export async function verifyGroups(
   baseVersion: number,
   groups: readonly AttributeGroup[],
 ): Promise<WriteOutcome<SurveySpot>> {
-  const before = await spotOr404(db, spotId, ctx.term);
+  const before = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   checkVersion(before, baseVersion);
   await stampVerified(db, spotId, groups, ctx.now);
-  const after = await spotOr404(db, spotId, ctx.term);
+  const after = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   return {
     status: 200,
     body: after,
@@ -283,12 +290,12 @@ export async function publishSpot(
   ctx: SpotWriteContext,
   spotId: string,
 ): Promise<WriteOutcome<SurveySpot>> {
-  const before = await spotOr404(db, spotId, ctx.term);
+  const before = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   if (before.missing.length > 0) {
     throw new HttpError(422, { error: "incomplete", missing: before.missing });
   }
   await db.update(spot).set({ status: "published" }).where(eq(spot.id, spotId));
-  const after = await spotOr404(db, spotId, ctx.term);
+  const after = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   return {
     status: 200,
     body: after,
@@ -304,9 +311,9 @@ export async function unpublishSpot(
   spotId: string,
 ): Promise<WriteOutcome<SurveySpot>> {
   if (ctx.role !== "admin") throw new HttpError(403, { error: "forbidden" });
-  const before = await spotOr404(db, spotId, ctx.term);
+  const before = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   await db.update(spot).set({ status: "draft" }).where(eq(spot.id, spotId));
-  const after = await spotOr404(db, spotId, ctx.term);
+  const after = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   return {
     status: 200,
     body: after,
@@ -322,7 +329,7 @@ export async function reviewSpot(
   spotId: string,
   baseVersion: number,
 ): Promise<WriteOutcome<SurveySpot>> {
-  const before = await spotOr404(db, spotId, ctx.term);
+  const before = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   checkVersion(before, baseVersion);
   if (ctx.role !== "admin" && before.last_edited_by === ctx.surveyorId) {
     throw new HttpError(403, { error: "forbidden", message: "someone else reviews your edits" });
@@ -331,7 +338,7 @@ export async function reviewSpot(
     .update(spot)
     .set({ review_state: "reviewed", reviewed_by: ctx.surveyorId })
     .where(eq(spot.id, spotId));
-  const after = await spotOr404(db, spotId, ctx.term);
+  const after = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   return {
     status: 200,
     body: after,

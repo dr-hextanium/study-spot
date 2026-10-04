@@ -49,10 +49,16 @@ async function namesOf(db: Db, ids: (string | null)[]): Promise<Map<string, stri
 export async function loadSurveySpot(
   db: Db,
   id: string,
+  campusId: string,
   currentTermRow: TermRow | null,
 ): Promise<SurveySpot | null> {
-  const [row] = await db.select().from(spot).where(eq(spot.id, id));
-  if (!row) return null;
+  const [found] = await db
+    .select({ spot })
+    .from(spot)
+    .innerJoin(building, eq(building.id, spot.building_id))
+    .where(and(eq(spot.id, id), eq(building.campus_id, campusId)));
+  if (!found) return null;
+  const row = found.spot;
 
   const [seatTypes, tableConfigs, amenities, verifications, photos, hours, estimates, names] =
     await Promise.all([

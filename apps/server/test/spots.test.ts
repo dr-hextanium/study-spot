@@ -3,12 +3,17 @@ import { type SectionWrite, SpotList, SurveySpot, VersionConflict } from "@study
 import {
   audit_log,
   buildBundle,
+  building,
   bundle_state,
+  campus,
   spot,
   spot_hours,
   write_receipt,
 } from "@study-spot/db";
 import { and, eq } from "drizzle-orm";
+import { HttpError } from "../src/http.ts";
+import { currentTerm } from "../src/spots/load.ts";
+import { reviewSpot } from "../src/spots/write.ts";
 import { COMPLETING_SECTIONS, identity } from "./fixtures.ts";
 import { body, NOW, type SignedIn, setup, signIn, type TestContext, writeId } from "./helpers.ts";
 
@@ -486,4 +491,57 @@ test("review: not your own edit, another surveyor can, an admin always can", asy
   });
   expect((await review(admin, 2)).statusCode).toBe(200);
   expect((await review(bo, 1)).statusCode).toBe(409);
+});
+
+test("a spot in another campus is a 404 for every route and leaves its bundle state alone", async () => {
+  const ctx = await setup();
+  const me = await signIn(ctx);
+  const admin = await signIn(ctx, "admin", "Admin");
+  await ctx.db.insert(campus).values({ id: "other", name: "Other", tz: "America/New_York" });
+  await ctx.db
+    .insert(building)
+    .values({ id: "other-hall", campus_id: "other", name: "Other Hall", lat: 1, lng: 1 });
+  await ctx.db.insert(bundle_state).values({ campus_id: "other", dirty: false, write_seq: 0 });
+  const [foreign] = await ctx.db
+    .insert(spot)
+    .values({
+      slug: "other-spot",
+      building_id: "other-hall",
+      floor: "1",
+      official_name: "Other Spot",
+      lat: 1,
+      lng: 1,
+    })
+    .returning({ id: spot.id });
+  if (!foreign) throw new Error("insert returned nothing");
+  const base = `/survey/spots/${foreign.id}`;
+  const access = COMPLETING_SECTIONS[0];
+  if (!access) throw new Error("fixture missing");
+
+  expect((await ctx.app.inject({ method: "GET", url: base, headers: me.headers })).statusCode).toBe(
+    404,
+  );
+  expect((await put(ctx, me, foreign.id, 1, access)).statusCode).toBe(404);
+  const verify = await post(ctx, me, `${base}/verify`, {
+    client_write_id: writeId(),
+    base_version: 1,
+    groups: ["power"],
+  });
+  expect(verify.statusCode).toBe(404);
+  const publish = await post(ctx, me, `${base}/publish`, { client_write_id: writeId() });
+  expect(publish.statusCode).toBe(404);
+  const unpublish = await post(ctx, admin, `${base}/unpublish`, { client_write_id: writeId() });
+  expect(unpublish.statusCode).toBe(404);
+  const review = await post(ctx, admin, `${base}/review`, {
+    client_write_id: writeId(),
+    base_version: 1,
+  });
+  expect(review.statusCode).toBe(404);
+
+  const [state] = await ctx.db
+    .select()
+    .from(bundle_state)
+    .where(eq(bundle_state.campus_id, "other"));
+  expect(state).toMatchObject({ dirty: false, write_seq: 0 });
+  expect(ctx.publisher.scheduled).toBe(0);
 });

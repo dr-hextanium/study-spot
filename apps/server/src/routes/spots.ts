@@ -42,7 +42,7 @@ export function spotRoutes(deps: AppDeps): FastifyPluginAsyncZod {
       async (req) => {
         await requireSurveyor(deps, req);
         const term = await currentTerm(deps.db, deps.config.campusId, deps.clock.now());
-        return spotOr404(deps.db, req.params.id, term);
+        return spotOr404(deps.db, req.params.id, deps.config.campusId, term);
       },
     );
 
