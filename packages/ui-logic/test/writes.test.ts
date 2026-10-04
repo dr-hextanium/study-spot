@@ -140,3 +140,28 @@ test("the store skips unreadable records and removes photo bytes with a record",
   expect(blobs.data.has(photoKey(p.client_write_id))).toBe(false);
   expect(await store.list()).toEqual([]);
 });
+
+test("nextSeq stays above queued records when the seq key is evicted and the clock is behind", async () => {
+  const cache = new MemoryCache();
+  const store = createOutboxStore({
+    cache,
+    blobs: new MemoryBinary(),
+    clock: mutableClock("2026-10-05T15:00:00Z"),
+  });
+  const ahead = Date.parse("2026-10-05T16:00:00Z");
+  const queued = section(SPOT_A, POWER, { seq: ahead });
+  await store.put(queued);
+  await cache.delete("outbox:seq");
+  expect(await store.nextSeq()).toBeGreaterThan(ahead);
+});
+
+test("concurrent nextSeq calls get distinct, increasing values", async () => {
+  const store = createOutboxStore({
+    cache: new MemoryCache(),
+    blobs: new MemoryBinary(),
+    clock: mutableClock("2026-10-05T16:00:00Z"),
+  });
+  const [a, b, c] = await Promise.all([store.nextSeq(), store.nextSeq(), store.nextSeq()]);
+  expect(a).toBeLessThan(b);
+  expect(b).toBeLessThan(c);
+});

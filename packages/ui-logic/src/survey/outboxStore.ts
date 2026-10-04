@@ -40,17 +40,19 @@ export function createOutboxStore(deps: {
   clock: Clock;
 }) {
   const { cache, blobs } = deps;
+  async function list(): Promise<WriteRecord[]> {
+    const keys = await cache.keys(WRITE);
+    const records: WriteRecord[] = [];
+    for (const key of keys) {
+      const r = await readJson(cache, key, WriteRecord);
+      if (r) records.push(r);
+    }
+    return records.sort(bySeq);
+  }
+  let seqChain: Promise<void> = Promise.resolve();
   return {
     /** Every readable record in queue order. Unreadable records are skipped, not deleted. */
-    async list(): Promise<WriteRecord[]> {
-      const keys = await cache.keys(WRITE);
-      const records: WriteRecord[] = [];
-      for (const key of keys) {
-        const r = await readJson(cache, key, WriteRecord);
-        if (r) records.push(r);
-      }
-      return records.sort(bySeq);
-    },
+    list,
     async put(record: WriteRecord): Promise<void> {
       await cache.set(`${WRITE}${record.client_write_id}`, JSON.stringify(record));
     },
@@ -59,12 +61,25 @@ export function createOutboxStore(deps: {
       await cache.delete(`${WRITE}${clientWriteId}`);
       await blobs.delete(photoKey(clientWriteId));
     },
-    /** Next queue position: the clock in ms, but always after the last one handed out. */
-    async nextSeq(): Promise<number> {
-      const last = (await readJson(cache, SEQ, Seq)) ?? 0;
-      const seq = Math.max(deps.clock.now().getTime(), last + 1);
-      await cache.set(SEQ, JSON.stringify(seq));
-      return seq;
+    /**
+     * Next queue position: the clock in ms, but always after the last one handed out
+     * and after every queued record, even if the stored counter was evicted. Calls are
+     * serialized in this process. Across tabs this is not atomic (KeyValueCache has no
+     * compare-and-set), so two tabs can in rare cases draw the same value.
+     */
+    nextSeq(): Promise<number> {
+      const run = seqChain.then(async () => {
+        const stored = (await readJson(cache, SEQ, Seq)) ?? 0;
+        const queued = (await list()).reduce((max, r) => Math.max(max, r.seq), 0);
+        const seq = Math.max(deps.clock.now().getTime(), stored + 1, queued + 1);
+        await cache.set(SEQ, JSON.stringify(seq));
+        return seq;
+      });
+      seqChain = run.then(
+        () => undefined,
+        () => undefined,
+      );
+      return run;
     },
     async idMap(): Promise<Record<string, string>> {
       const map: Record<string, string> = {};
