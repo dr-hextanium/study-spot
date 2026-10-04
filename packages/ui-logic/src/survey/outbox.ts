@@ -62,7 +62,8 @@ type AppliedListener = (spot: SurveySpot, fromLocalId: string | null) => void;
 type SendResult =
   | ApiResult<SurveySpot>
   | { kind: "local"; code: "photo_missing" | "no_base_version" };
-type Step = "next" | "stop";
+/** After a write: go on, hold that spot for the rest of the pass, or end the pass. */
+type Step = "next" | "skip" | "stop";
 
 /** Lock name for the outbox's critical sections. */
 export const OUTBOX_LOCK = "study-spot:outbox";
@@ -205,7 +206,6 @@ export function createOutbox(deps: OutboxDeps) {
       }
     }
     await store.remove(r.client_write_id);
-    backoff = BACKOFF_START_MS;
     if (fresh) notify(spot, fromLocal);
   }
 
@@ -236,10 +236,13 @@ export function createOutbox(deps: OutboxDeps) {
    * write's response version). A spot with a write already in flight (another
    * tab's) is skipped, so two tabs never send the same write or race its followers.
    */
-  function pick(): Promise<{ record: WriteRecord; base: number | null } | null> {
+  function pick(
+    skipped: ReadonlySet<string>,
+  ): Promise<{ record: WriteRecord; base: number | null } | null> {
     return locked(async () => {
       const all = await store.list();
-      const busy = new Set(all.filter((r) => r.state === "syncing").map((r) => r.spot_id));
+      const busy = new Set(skipped);
+      for (const r of all) if (r.state === "syncing") busy.add(r.spot_id);
       const next = nextToSend(all.filter((r) => !busy.has(r.spot_id)));
       if (next === null) return null;
       const record: WriteRecord = { ...next, state: "syncing", attempts: next.attempts + 1 };
@@ -309,8 +312,9 @@ export function createOutbox(deps: OutboxDeps) {
             }
             return "next";
           }
+          // The server is up but failing for this write; other spots can still go.
           if (ours) await store.put({ ...sent, state: "pending" });
-          return "stop";
+          return "skip";
         case "network":
           if (ours) await store.put({ ...sent, state: "pending" });
           return "stop";
@@ -326,27 +330,40 @@ export function createOutbox(deps: OutboxDeps) {
     });
   }
 
+  function retryLater(): void {
+    schedule(backoff);
+    backoff = Math.min(backoff * 2, BACKOFF_MAX_MS);
+  }
+
+  /**
+   * Sends writes until none is left. A 5xx holds that spot for the rest of the
+   * pass; a network error or 401 ends it. The backoff starts over only after a
+   * pass that ends with nothing held.
+   */
   async function pass(): Promise<void> {
     if (stopped || snapshot.signedOut || !deps.network.online()) return;
     emit({ syncing: true });
+    const skipped = new Set<string>();
     try {
       for (;;) {
-        const picked = await pick();
-        if (picked === null) {
-          cancelTimer?.();
-          cancelTimer = null;
-          return;
-        }
+        const picked = await pick(skipped);
+        if (picked === null) break;
         await refresh();
         // The network call runs outside the lock, so saves and discards are never blocked by it.
         const result = await send(picked.record, picked.base);
-        if ((await settle(picked.record, result)) === "stop") {
-          if (!snapshot.signedOut) {
-            schedule(backoff);
-            backoff = Math.min(backoff * 2, BACKOFF_MAX_MS);
-          }
+        const step = await settle(picked.record, result);
+        if (step === "skip") skipped.add(picked.record.spot_id);
+        if (step === "stop") {
+          if (!snapshot.signedOut) retryLater();
           return;
         }
+      }
+      if (skipped.size > 0) {
+        retryLater();
+      } else {
+        cancelTimer?.();
+        cancelTimer = null;
+        backoff = BACKOFF_START_MS;
       }
     } catch {
       // Storage failed mid-pass; everything is still on disk, so try again later.

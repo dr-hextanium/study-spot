@@ -615,3 +615,79 @@ test("a write discarded in flight that the server applied still raises the store
   expect(box.getSnapshot().records).toEqual([]);
   expect(await store.version(SPOT_A)).toBe(4);
 });
+
+test("a 5xx on one spot holds only that spot; the pass goes on with the others", async () => {
+  const t = setup([
+    surveySpotFixture({ id: SPOT_A, version: 3 }),
+    surveySpotFixture({ id: SPOT_B, slug: "b", version: 1 }),
+  ]);
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  await box.enqueue(power(SPOT_A), 3);
+  await box.enqueue(seating(SPOT_A), 3);
+  await box.enqueue(power(SPOT_B), 1);
+  await box.enqueue(seating(SPOT_B), 1);
+  t.server.failFor.add(SPOT_A);
+  t.network.set(true);
+  await box.idle();
+  expect(t.sent()).toEqual([
+    `PUT /survey/spots/${SPOT_A}/power`,
+    `PUT /survey/spots/${SPOT_B}/power`,
+    `PUT /survey/spots/${SPOT_B}/seating`,
+  ]);
+  expect(box.getSnapshot().records.map((r) => [r.spot_id, r.state, r.attempts])).toEqual([
+    [SPOT_A, "pending", 1],
+    [SPOT_A, "pending", 0],
+  ]);
+  expect(t.timers.scheduled()).toEqual([BACKOFF_START_MS]);
+
+  // A new write on spot B retries spot A too; B succeeding does not reset A's backoff.
+  await box.enqueue(power(SPOT_B), 3);
+  await box.idle();
+  expect(t.server.spot(SPOT_B).version).toBe(4);
+  expect(t.timers.scheduled()).toEqual([60_000]);
+
+  t.server.failFor.clear();
+  t.timers.advance(60_000);
+  await box.idle();
+  expect(box.getSnapshot().records).toEqual([]);
+  expect(t.timers.scheduled()).toEqual([]);
+});
+
+test("a network error still ends the pass for every spot", async () => {
+  const t = setup([
+    surveySpotFixture({ id: SPOT_A, version: 3 }),
+    surveySpotFixture({ id: SPOT_B, slug: "b", version: 1 }),
+  ]);
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  await box.enqueue(power(SPOT_A), 3);
+  await box.enqueue(power(SPOT_B), 1);
+  t.server.offline = true;
+  t.network.set(true);
+  await box.idle();
+  expect(t.server.requests).toHaveLength(1);
+  expect(t.timers.scheduled()).toEqual([BACKOFF_START_MS]);
+});
+
+test("the backoff starts again at 30 s after a success", async () => {
+  const t = setup();
+  t.server.failWith.push(503, 503);
+  const box = t.make();
+  await box.start();
+  await box.enqueue(power(SPOT_A), 3);
+  await box.idle();
+  t.timers.advance(BACKOFF_START_MS);
+  await box.idle();
+  expect(t.timers.scheduled()).toEqual([60_000]);
+  t.timers.advance(60_000);
+  await box.idle();
+  expect(box.getSnapshot().records).toEqual([]);
+
+  t.server.failWith.push(503);
+  await box.enqueue(seating(SPOT_A), 4);
+  await box.idle();
+  expect(t.timers.scheduled()).toEqual([BACKOFF_START_MS]);
+});

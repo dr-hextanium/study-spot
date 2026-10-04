@@ -25,6 +25,8 @@ export class FakeSurveyServer implements Http {
   readonly executed: string[] = [];
   /** Statuses answered, in order, before any handling. */
   readonly failWith: number[] = [];
+  /** Spot ids whose requests answer 500 until removed. */
+  readonly failFor = new Set<string>();
   offline = false;
   signedOut = false;
   /** Runs the next request, then drops its answer like a connection cut mid-reply. */
@@ -86,6 +88,9 @@ export class FakeSurveyServer implements Http {
     if (this.offline) throw new Error("network down");
     const status = this.failWith.shift();
     if (status !== undefined) return reply(status, { error: "internal" });
+    if ([...this.failFor].some((id) => path.includes(id) || body.spot_id === id)) {
+      return reply(500, { error: "internal" });
+    }
     if (this.signedOut) return reply(401, { error: "unauthorized" });
     const writeId = typeof body.client_write_id === "string" ? body.client_write_id : null;
     const prior = writeId === null ? undefined : this.receipts.get(writeId);
