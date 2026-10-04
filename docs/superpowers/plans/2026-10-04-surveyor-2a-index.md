@@ -14,7 +14,7 @@ Phase 2a spans five subsystems, so it is split into five plans. Each produces wo
 | D. Web UI (`apps/web`) | `2026-10-04-surveyor-2a-web.md` (written after C) | B and C | after B and C |
 | E. Deploy and ops | `2026-10-04-surveyor-2a-deploy.md` | A, D | after A; final steps after D |
 
-Plan D is written once C has produced `DESIGN.md`, the surveyor journey, and the surveyor copy deck, because its component and screen code depends on them. Writing it earlier would mean placeholder styling.
+Plan D is written once C has produced the direction contract, the surveyor journey, the copy deck, and the typed tokens, because its component and screen code depends on them. Writing it earlier would mean placeholder styling. `DESIGN.md` itself is written at the end of plan D by the Impeccable documenter, from the built screens (Impeccable's own process for a new visual world).
 
 ## Execution order
 
@@ -26,3 +26,5 @@ Plan D is written once C has produced `DESIGN.md`, the surveyor journey, and the
 ## Shared contract
 
 `packages/core/src/survey/` (created in plan A, Task 2) is the single source for every survey request and response shape, section payloads, and `missingV0Fields`. Plans B and D import from it and never redefine shapes.
+
+Design track complete: direction "The Divided Back" in `apps/web/.impeccable/surfaces/apps-web.md`, `docs/design/surveyor-journey.md`, `docs/design/surveyor-copy.md`, `packages/ui-logic/src/tokens.ts`. Plan D can be written. `DESIGN.md` follows at the end of plan D.
