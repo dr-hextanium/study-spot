@@ -87,10 +87,10 @@ export async function acceptInvite(
 
     let who: SurveyorPublic | undefined;
     if (inv.surveyor_id !== null) {
-      // Re-login link: an admin issued it after any revoke, so it reactivates.
+      // Re-login link: an admin issued it after any revoke, so it reactivates. The role stays.
       [who] = await tx
         .update(surveyor)
-        .set({ active: true, role: inv.role })
+        .set({ active: true })
         .where(eq(surveyor.id, inv.surveyor_id))
         .returning(publicColumns);
     } else {

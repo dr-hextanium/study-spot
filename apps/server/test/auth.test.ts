@@ -242,3 +242,26 @@ test("revoke also voids unused invites the surveyor created", async () => {
   expect(body(again)).toEqual({ error: "invite_invalid" });
   expect(await ctx.db.select().from(surveyor)).toHaveLength(before);
 });
+
+test("a re-login link keeps the role, a new-surveyor invite applies its role", async () => {
+  const ctx = await setup();
+  const boss = await signIn(ctx, "admin", "Boss");
+  const inv = await createInvite(ctx.db, {
+    role: "surveyor",
+    surveyorId: boss.id,
+    createdBy: ctx.ids.adminId,
+    now: ctx.clock.now(),
+    webOrigin: WEB_ORIGIN,
+  });
+  const res = await accept(ctx, inv.token);
+  expect(AcceptInviteResponse.parse(body(res)).surveyor).toMatchObject({
+    id: boss.id,
+    role: "admin",
+  });
+  const [row] = await ctx.db.select().from(surveyor).where(eq(surveyor.id, boss.id));
+  expect(row?.role).toBe("admin");
+
+  const fresh = await newInvite(ctx, "admin");
+  const made = await accept(ctx, fresh.token, "New Admin");
+  expect(AcceptInviteResponse.parse(body(made)).surveyor.role).toBe("admin");
+});
