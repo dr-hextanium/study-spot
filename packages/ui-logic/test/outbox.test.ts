@@ -553,3 +553,65 @@ test("writes queued under a local id after its create applied go out under the r
   expect(t.bases().at(1)).toBe(1);
   expect(box.getSnapshot().records).toEqual([]);
 });
+
+test("a replayed older answer never lowers the stored version or reaches onApplied", async () => {
+  const t = setup();
+  const box = t.make();
+  await box.start();
+  const store = createOutboxStore({ cache: t.cache, blobs: t.blobs, clock: t.clock });
+  // The server applies power (version 4) but the answer is lost.
+  t.server.dropNextResponse = true;
+  await box.enqueue(power(SPOT_A), 3);
+  await box.idle();
+  const [old] = await store.list();
+  if (!old) throw new Error("record lost");
+  // Set it aside; a later write lands on top (version 5).
+  await store.remove(old.client_write_id);
+  await box.enqueue(seating(SPOT_A), 4);
+  await box.idle();
+  expect(await store.version(SPOT_A)).toBe(5);
+
+  // The old write comes back (another tab, a restore) and the server replays version 4.
+  const seen: number[] = [];
+  box.onApplied((spot) => seen.push(spot.version));
+  await store.put(old);
+  await box.syncNow();
+  expect(t.server.executed).toHaveLength(2);
+  expect(box.getSnapshot().records).toEqual([]);
+  expect(await store.version(SPOT_A)).toBe(5);
+  expect(seen).toEqual([]);
+});
+
+test("keep theirs never lowers the stored version below a newer one", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const store = createOutboxStore({ cache: t.cache, blobs: t.blobs, clock: t.clock });
+  const id = await box.enqueue(power(SPOT_A), 3);
+  t.server.bump(SPOT_A);
+  t.network.set(true);
+  await box.idle();
+  // Meanwhile another tab learned version 7.
+  await store.setVersion(SPOT_A, 7);
+  const seen: number[] = [];
+  box.onApplied((spot) => seen.push(spot.version));
+  await box.resolveConflict(id, "theirs");
+  expect(await store.version(SPOT_A)).toBe(7);
+  expect(seen).toEqual([]);
+});
+
+test("a write discarded in flight that the server applied still raises the stored version", async () => {
+  const t = setup();
+  const box = t.make();
+  await box.start();
+  const store = createOutboxStore({ cache: t.cache, blobs: t.blobs, clock: t.clock });
+  const gate = t.server.holdNext();
+  const id = await box.enqueue(power(SPOT_A), 3);
+  await gate.arrived;
+  await box.discard(id);
+  gate.release();
+  await box.idle();
+  expect(box.getSnapshot().records).toEqual([]);
+  expect(await store.version(SPOT_A)).toBe(4);
+});

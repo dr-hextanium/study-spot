@@ -131,7 +131,7 @@ export function createOutbox(deps: OutboxDeps) {
       const plan = planEnqueue(await store.list(), write, serverVersion, meta);
       for (const r of plan.put) await store.put(r);
       for (const removed of plan.remove) await store.remove(removed);
-      if (plan.seedVersion !== null) await store.setVersion(write.spot_id, plan.seedVersion);
+      if (plan.seedVersion !== null) await raiseVersion(write.spot_id, plan.seedVersion);
       return plan.put[0]?.client_write_id ?? meta.client_write_id;
     });
     await refresh();
@@ -178,11 +178,27 @@ export function createOutbox(deps: OutboxDeps) {
     }
   }
 
+  /**
+   * Stores `version` unless a newer one is already known (a late replay, another
+   * tab). Returns false when the stored version is newer, so the caller can skip
+   * pushing a stale spot to onApplied.
+   */
+  async function raiseVersion(spotId: string, version: number): Promise<boolean> {
+    const stored = await store.version(spotId);
+    if (stored !== null && stored > version) return false;
+    if (stored !== version) await store.setVersion(spotId, version);
+    return true;
+  }
+
+  function notify(spot: SurveySpot, fromLocal: string | null): void {
+    for (const l of applied) l(spot, fromLocal);
+  }
+
   /** Order matters for a crash at any step: id map, version, rewrite, then delete. */
   async function applyOk(r: WriteRecord, spot: SurveySpot): Promise<void> {
     const fromLocal = r.kind === "spot.create" ? r.spot_id : null;
     if (fromLocal !== null) await store.mapId(fromLocal, spot.id);
-    await store.setVersion(spot.id, spot.version);
+    const fresh = await raiseVersion(spot.id, spot.version);
     if (fromLocal !== null) {
       for (const moved of rewriteSpotIds(await store.list(), { [fromLocal]: spot.id })) {
         await store.put(moved);
@@ -190,7 +206,7 @@ export function createOutbox(deps: OutboxDeps) {
     }
     await store.remove(r.client_write_id);
     backoff = BACKOFF_START_MS;
-    for (const l of applied) l(spot, fromLocal);
+    if (fresh) notify(spot, fromLocal);
   }
 
   async function fail(r: WriteRecord, error: WriteError): Promise<void> {
@@ -247,6 +263,13 @@ export function createOutbox(deps: OutboxDeps) {
       switch (result.kind) {
         case "ok":
           if (ours) await applyOk(sent, result.value);
+          else if (
+            sent.kind !== "spot.create" &&
+            (await raiseVersion(result.value.id, result.value.version))
+          ) {
+            // Discarded in flight but applied anyway: later writes must chain from it.
+            notify(result.value, null);
+          }
           return "next";
         case "conflict":
           if (ours) await conflict(sent, result.current);
@@ -446,7 +469,7 @@ export function createOutbox(deps: OutboxDeps) {
       update(clientWriteId, async (r) => {
         if (r.state !== "conflict" || r.current === null) return;
         const current = r.current;
-        await store.setVersion(current.id, current.version);
+        const fresh = await raiseVersion(current.id, current.version);
         if (choice === "mine") {
           const again = {
             client_write_id: deps.ids.uuid(),
@@ -461,8 +484,8 @@ export function createOutbox(deps: OutboxDeps) {
               ? { ...r, ...again, base_version: current.version }
               : { ...r, ...again },
           );
-        } else {
-          for (const l of applied) l(current, null);
+        } else if (fresh) {
+          notify(current, null);
         }
         await store.remove(r.client_write_id);
       }),
