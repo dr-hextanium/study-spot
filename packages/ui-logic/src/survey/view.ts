@@ -332,6 +332,7 @@ export function reviewAction(view: SpotView, me: SurveyorPublic): "button" | "ow
 export type SyncHeader =
   | { kind: "signed_out" }
   | { kind: "failed"; count: number }
+  | { kind: "unreadable"; count: number }
   | { kind: "offline" }
   | { kind: "syncing"; count: number }
   | { kind: "pending"; count: number }
@@ -342,6 +343,7 @@ export function syncHeader(s: OutboxSnapshot): SyncHeader {
   if (s.signedOut) return { kind: "signed_out" };
   const stuck = s.records.filter((r) => r.state === "failed" || r.state === "conflict").length;
   if (stuck > 0) return { kind: "failed", count: stuck };
+  if (s.unreadable > 0) return { kind: "unreadable", count: s.unreadable };
   if (!s.online) return { kind: "offline" };
   const waiting = s.records.length;
   if (waiting === 0) return { kind: "all_synced" };

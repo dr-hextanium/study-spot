@@ -285,3 +285,15 @@ test("queued writes overlay in seq order, whatever order they are passed in", ()
   const home = surveyHome(null, [made, renamed].reverse(), ME, new Map());
   expect(home.drafts.map((d) => d.name)).toEqual(["New"]);
 });
+test("the sync header never says all synced while unreadable writes exist", () => {
+  const base: OutboxSnapshot = {
+    records: [],
+    idMap: {},
+    syncing: false,
+    signedOut: false,
+    online: true,
+    unreadable: 2,
+  };
+  expect(syncHeader(base)).toEqual({ kind: "unreadable", count: 2 });
+  expect(syncHeader({ ...base, online: false })).toEqual({ kind: "unreadable", count: 2 });
+});
