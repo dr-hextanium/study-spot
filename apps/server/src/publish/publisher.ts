@@ -8,6 +8,10 @@ import type { PublishQueue } from "../writes/withWrite.ts";
 import { DATA_HEADERS, type PublishFile, type PublishTarget } from "./target.ts";
 
 export const PUBLISH_DEBOUNCE_MS = 30_000;
+/** A debounced run fires no later than this after the first pending write. */
+export const PUBLISH_MAX_WAIT_MS = 60_000;
+/** Retry delays after consecutive failures; the last repeats until a run succeeds. */
+export const PUBLISH_RETRY_MS: readonly number[] = [60_000, 120_000, 300_000];
 
 /** Scheduling seam: real timers in production, a manual fake in tests. */
 export type Timers = { after(ms: number, fn: () => void): () => void };
@@ -30,6 +34,8 @@ export type PublisherDeps = {
   clock: Clock;
   timers?: Timers;
   debounceMs?: number;
+  maxWaitMs?: number;
+  retryMs?: readonly number[];
   log?: (message: string, error?: unknown) => void;
 };
 
@@ -52,12 +58,23 @@ const utf8 = (s: string): Uint8Array => new TextEncoder().encode(s);
 export function createPublisher(deps: PublisherDeps): Publisher {
   const timers = deps.timers ?? realTimers;
   const debounceMs = deps.debounceMs ?? PUBLISH_DEBOUNCE_MS;
+  const maxWaitMs = deps.maxWaitMs ?? PUBLISH_MAX_WAIT_MS;
+  const retryMs = deps.retryMs ?? PUBLISH_RETRY_MS;
   const log = deps.log ?? (() => {});
   const photoPrefix = `${deps.dataBaseUrl}/photos/`;
   let cancelTimer: (() => void) | null = null;
+  let cancelRetry: (() => void) | null = null;
+  /** When the oldest write still waiting for a debounced run was scheduled. */
+  let firstPendingAt: number | null = null;
+  let failures = 0;
   let inFlight: Promise<PublishOutcome> | null = null;
   let queued: Promise<PublishOutcome> | null = null;
   let closed = false;
+
+  function clearRetry(): void {
+    cancelRetry?.();
+    cancelRetry = null;
+  }
 
   async function readState() {
     const [row] = await deps.db
@@ -70,6 +87,11 @@ export function createPublisher(deps: PublisherDeps): Publisher {
   async function runOnce(): Promise<PublishOutcome> {
     const startedAt = deps.clock.now();
     let seq = 0;
+    // This run covers everything written so far; later writes schedule their own timers.
+    cancelTimer?.();
+    cancelTimer = null;
+    clearRetry();
+    firstPendingAt = null;
     try {
       seq = (await readState())?.write_seq ?? 0;
 
@@ -161,6 +183,7 @@ export function createPublisher(deps: PublisherDeps): Publisher {
       } else if (after.dirty) {
         publisher.schedule();
       }
+      failures = 0;
       return { ok: true, hash, warnings, uploaded };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -181,6 +204,15 @@ export function createPublisher(deps: PublisherDeps): Publisher {
       } catch (stateErr) {
         log("could not record publish failure", stateErr);
       }
+      if (!closed) {
+        const delay = retryMs[Math.min(failures, retryMs.length - 1)] ?? PUBLISH_MAX_WAIT_MS;
+        failures += 1;
+        clearRetry();
+        cancelRetry = timers.after(delay, () => {
+          cancelRetry = null;
+          void publisher.runNow();
+        });
+      }
       return { ok: false, error: message };
     }
   }
@@ -189,7 +221,10 @@ export function createPublisher(deps: PublisherDeps): Publisher {
     schedule() {
       if (closed) return;
       cancelTimer?.();
-      cancelTimer = timers.after(debounceMs, () => {
+      const now = deps.clock.now().getTime();
+      firstPendingAt ??= now;
+      const remaining = Math.max(0, firstPendingAt + maxWaitMs - now);
+      cancelTimer = timers.after(Math.min(debounceMs, remaining), () => {
         cancelTimer = null;
         void publisher.runNow();
       });
@@ -237,6 +272,7 @@ export function createPublisher(deps: PublisherDeps): Publisher {
       closed = true;
       cancelTimer?.();
       cancelTimer = null;
+      clearRetry();
     },
   };
   return publisher;

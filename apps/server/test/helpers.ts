@@ -32,24 +32,49 @@ export function testClock(start: Date = NOW): TestClock {
   };
 }
 
-/** Timers that only fire when the test says so. */
-export type ManualTimers = Timers & { pending(): number; fire(): void };
+/**
+ * Timers that only fire when the test says so. `fire()` runs every live timer now;
+ * `advance(ms)` moves virtual time and runs timers that come due, in order.
+ */
+export type ManualTimers = Timers & {
+  pending(): number;
+  /** Delays (ms, as requested) of the live timers, oldest first. */
+  delays(): number[];
+  fire(): void;
+  advance(ms: number): void;
+};
 
 export function manualTimers(): ManualTimers {
-  let queue: { fn: () => void; live: boolean }[] = [];
+  let now = 0;
+  let queue: { fn: () => void; ms: number; due: number; live: boolean }[] = [];
   return {
-    after(_ms, fn) {
-      const entry = { fn, live: true };
+    after(ms, fn) {
+      const entry = { fn, ms, due: now + ms, live: true };
       queue.push(entry);
       return () => {
         entry.live = false;
       };
     },
     pending: () => queue.filter((e) => e.live).length,
+    delays: () => queue.filter((e) => e.live).map((e) => e.ms),
     fire() {
       const due = queue.filter((e) => e.live);
       queue = [];
       for (const e of due) e.fn();
+    },
+    advance(ms) {
+      const target = now + ms;
+      for (;;) {
+        const next = queue
+          .filter((e) => e.live && e.due <= target)
+          .sort((x, y) => x.due - y.due)[0];
+        if (!next) break;
+        now = Math.max(now, next.due);
+        next.live = false;
+        next.fn();
+      }
+      now = target;
+      queue = queue.filter((e) => e.live);
     },
   };
 }

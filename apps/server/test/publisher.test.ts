@@ -390,3 +390,90 @@ test("the photo url rewrite touches only the publishing campus", async () => {
   expect(outcome.uploaded).toContain(`photos/${sha256Hex(mine)}.jpg`);
   expect(outcome.uploaded).not.toContain(`photos/${sha256Hex(theirs)}.jpg`);
 });
+
+/** Moves the test clock and the manual timers together, letting async runs settle. */
+async function tick(ctx: TestContext, ms: number): Promise<void> {
+  ctx.clock.advance(ms);
+  ctx.timers.advance(ms);
+  await new Promise((resolve) => setTimeout(resolve, 20));
+}
+
+function flakyTarget(inner: PublishTarget, failures: number) {
+  let calls = 0;
+  const target: PublishTarget = {
+    async deploy(files: readonly PublishFile[]) {
+      calls += 1;
+      if (calls <= failures) throw new Error("pages is down");
+      return inner.deploy(files);
+    },
+  };
+  return {
+    target,
+    calls: () => calls,
+    fail(n: number) {
+      failures = calls + n;
+    },
+  };
+}
+
+test("a failed publish is retried after 60 s with no new writes", async () => {
+  const flaky = flakyTarget(fsTarget((await setup()).publishDir), 1);
+  const ctx = await setup({ target: flaky.target });
+  const me = await signIn(ctx);
+  await markDirty(ctx, me);
+  expect((await ctx.publisher.runNow()).ok).toBe(false);
+  expect(ctx.timers.delays()).toEqual([60_000]);
+  await tick(ctx, 59_000);
+  expect(flaky.calls()).toBe(1);
+  await tick(ctx, 1_000);
+  await idle(ctx);
+  expect(flaky.calls()).toBe(2);
+  expect(await state(ctx)).toMatchObject({ dirty: false, last_error: null });
+  expect(ctx.timers.pending()).toBe(0);
+});
+
+test("repeated failures back off 60, 120, 300, 300 and reset after a success", async () => {
+  const flaky = flakyTarget(fsTarget((await setup()).publishDir), 5);
+  const ctx = await setup({ target: flaky.target });
+  const me = await signIn(ctx);
+  await markDirty(ctx, me);
+  const seen: number[][] = [];
+  expect((await ctx.publisher.runNow()).ok).toBe(false);
+  seen.push(ctx.timers.delays());
+  for (const wait of [60_000, 120_000, 300_000]) {
+    await tick(ctx, wait);
+    await idle(ctx);
+    seen.push(ctx.timers.delays());
+  }
+  expect(seen).toEqual([[60_000], [120_000], [300_000], [300_000]]);
+  await tick(ctx, 300_000);
+  await idle(ctx);
+  expect(flaky.calls()).toBe(5);
+  expect(ctx.timers.delays()).toEqual([300_000]);
+  await tick(ctx, 300_000);
+  await idle(ctx);
+  expect(flaky.calls()).toBe(6);
+  expect(ctx.timers.pending()).toBe(0);
+  expect((await state(ctx))?.dirty).toBe(false);
+
+  // After a success the backoff starts over.
+  await ctx.db.update(bundle_state).set({ dirty: true });
+  flaky.fail(1);
+  expect((await ctx.publisher.runNow()).ok).toBe(false);
+  expect(ctx.timers.delays()).toEqual([60_000]);
+});
+
+test("steady writes cannot postpone a publish past 60 s from the first write", async () => {
+  const ctx = await setup();
+  const me = await signIn(ctx);
+  await markDirty(ctx, me);
+  const pointer = join(ctx.publishDir, "bundle-latest.json");
+  expect(existsSync(pointer)).toBe(false);
+  for (let t = 0; t < 60_000; t += 20_000) {
+    await tick(ctx, 20_000);
+    ctx.publisher.schedule();
+  }
+  await tick(ctx, 1);
+  await idle(ctx);
+  expect(existsSync(pointer)).toBe(true);
+});
