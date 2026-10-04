@@ -72,7 +72,7 @@ Save the journey to `docs/design/surveyor-journey.md` with these sections: Users
 
 - [ ] **Step 4: Check and commit**
 
-Run: `grep -n "—" docs/design/surveyor-journey.md` and expect no output.
+Run: `grep -n "$(printf '\342\200\224')" docs/design/surveyor-journey.md` and expect no output.
 
 ```bash
 git add docs/design/surveyor-journey.md
@@ -102,7 +102,7 @@ Save to `docs/design/surveyor-copy.md` as a table per screen with columns: `id`,
 
 - [ ] **Step 3: Check and commit**
 
-Run: `grep -n "—" docs/design/surveyor-copy.md` and expect no output. Run: `grep -c "!" docs/design/surveyor-copy.md` and confirm any matches are not exclamation marks in copy.
+Run: `grep -n "$(printf '\342\200\224')" docs/design/surveyor-copy.md` and expect no output. Run: `grep -c "!" docs/design/surveyor-copy.md` and confirm any matches are not exclamation marks in copy.
 
 ```bash
 git add docs/design/surveyor-copy.md
