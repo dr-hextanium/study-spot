@@ -105,6 +105,13 @@ test("network failures and 5xx are told apart", async () => {
   expect(await api.me()).toEqual({ kind: "server", status: 503, reason: "status" });
 });
 
+test("408 and 429 are transient, like a 5xx, so the write is retried", async () => {
+  const { http, api } = setup();
+  http.replies.push(reply(408), reply(429, { error: "rate_limited" }));
+  expect(await api.me()).toEqual({ kind: "server", status: 408, reason: "status" });
+  expect(await api.me()).toEqual({ kind: "server", status: 429, reason: "status" });
+});
+
 test("photo upload is multipart with the file and text fields", async () => {
   const { http, api } = setup();
   http.replies.push(reply(201, spot));

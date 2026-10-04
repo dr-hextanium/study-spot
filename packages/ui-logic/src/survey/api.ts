@@ -73,6 +73,8 @@ export function interpret<T>(status: number, text: string, schema: z.ZodType<T>)
     const gone = InviteGone.safeParse(body);
     return { kind: "gone", code: gone.success ? gone.data.error : "invite_invalid" };
   }
+  // Timeout and rate limit: the request was fine, so resend later like a 5xx.
+  if (status === 408 || status === 429) return { kind: "server", status, reason: "status" };
   if (status >= 400 && status < 500) {
     const incomplete = Incomplete.safeParse(body);
     if (incomplete.success) {

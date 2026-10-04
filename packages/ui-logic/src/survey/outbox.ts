@@ -365,9 +365,9 @@ export function createOutbox(deps: OutboxDeps) {
   }
 
   /**
-   * Sends writes until none is left. A 5xx holds that spot for the rest of the
-   * pass; a network error or 401 ends it. The backoff starts over only after a
-   * pass that ends with nothing held.
+   * Sends writes until none is left. A 5xx, 408, or 429 holds that spot for the
+   * rest of the pass; a network error or 401 ends it. The backoff starts over
+   * only after a pass that ends with nothing held.
    */
   async function pass(): Promise<void> {
     if (stopped || snapshot.signedOut || !deps.network.online()) return;
