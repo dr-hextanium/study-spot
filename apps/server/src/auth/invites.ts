@@ -1,6 +1,6 @@
 import type { SurveyorPublic, SurveyorRole } from "@study-spot/core";
 import { auth_session, type Db, invite, surveyor } from "@study-spot/db";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull, or } from "drizzle-orm";
 import { HttpError } from "../http.ts";
 import { createSession } from "./sessions.ts";
 import { hashToken, newToken } from "./tokens.ts";
@@ -108,7 +108,7 @@ export async function acceptInvite(
   });
 }
 
-/** Deactivates a surveyor, ends their sessions, and voids their unused invites. */
+/** Deactivates a surveyor, ends their sessions, and voids unused invites for or created by them. */
 export async function revokeSurveyor(db: Db, surveyorId: string): Promise<SurveyorPublic> {
   return db.transaction(async (tx) => {
     const [who] = await tx
@@ -118,7 +118,14 @@ export async function revokeSurveyor(db: Db, surveyorId: string): Promise<Survey
       .returning(publicColumns);
     if (!who) throw new HttpError(404, { error: "not_found" });
     await tx.delete(auth_session).where(eq(auth_session.surveyor_id, surveyorId));
-    await tx.delete(invite).where(and(eq(invite.surveyor_id, surveyorId), isNull(invite.used_at)));
+    await tx
+      .delete(invite)
+      .where(
+        and(
+          or(eq(invite.surveyor_id, surveyorId), eq(invite.created_by, surveyorId)),
+          isNull(invite.used_at),
+        ),
+      );
     return who;
   });
 }

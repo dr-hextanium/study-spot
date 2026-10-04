@@ -218,3 +218,27 @@ test("bootstrap creates an admin and a re-login link for them", async () => {
     role: "admin",
   });
 });
+
+test("revoke also voids unused invites the surveyor created", async () => {
+  const ctx = await setup();
+  const adminA = await signIn(ctx, "admin", "Admin A");
+  const adminB = await signIn(ctx, "admin", "Admin B");
+  const minted = await createInvite(ctx.db, {
+    role: "admin",
+    surveyorId: null,
+    createdBy: adminA.id,
+    now: ctx.clock.now(),
+    webOrigin: WEB_ORIGIN,
+  });
+  const before = (await ctx.db.select().from(surveyor)).length;
+  const res = await ctx.app.inject({
+    method: "POST",
+    url: `/admin/surveyors/${adminA.id}/revoke`,
+    headers: adminB.headers,
+  });
+  expect(res.statusCode).toBe(200);
+  const again = await accept(ctx, minted.token, "Sneaky");
+  expect(again.statusCode).toBe(410);
+  expect(body(again)).toEqual({ error: "invite_invalid" });
+  expect(await ctx.db.select().from(surveyor)).toHaveLength(before);
+});
