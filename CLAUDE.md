@@ -39,6 +39,10 @@ When a decision changes, update the relevant context file and append to the deci
 - No `Bun.*` APIs in `apps/server` or `packages/*`; code must also run on Node.
 - UX honesty: never show a forecast as live; every spot shows a last-verified date.
 
+## Tool use
+
+- Preplan your tool calls, and group independent ones into one batch where it makes sense. Wait for the whole batch to return before reading any result. Every turn re-reads the full context, so fewer turns means fewer tokens.
+
 ## Writing conventions
 
 - Never use em-dashes in UI copy, docs, comments, or commit messages. Use commas or colons.
