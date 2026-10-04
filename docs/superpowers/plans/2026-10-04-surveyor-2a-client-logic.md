@@ -3704,7 +3704,7 @@ Expected: PASS.
 
 - [ ] **Step 5: Record the decisions**
 
-In `docs/context/overview.md`, append to the decision log, numbered after the last entry (16 when plan A's decision 15 is present, else 15):
+In `docs/context/overview.md`, append to the decision log, numbered after the last entry (17 when plan A's decision 16 is present):
 
 ```
 16. Surveyor client logic plan (2026-10-04), detail in `docs/superpowers/plans/2026-10-04-surveyor-2a-client-logic.md`: `packages/ui-logic` gains `Http`, `BinaryCache`, `Ids`, `Timers`, and `Foreground` adapters (browser globals do not type-check there); the outbox stores one record per write, orders by a monotonic `seq`, sends a draft's create before its photos and its photos before its text, chains `base_version` from each response, holds a spot's text behind its failed or conflicted writes, and treats an unparseable 2xx as failed; covers are set only on synced photos; admin actions are online-only; hours stay out of "Needed to publish" (plan A rule); React hooks live in the web UI plan; the copy module is generated from the copy deck by `bun run copy:gen`, which adds `sync.what.review` and `sync.what.cover` and raises `conflict.body` to 90 characters.

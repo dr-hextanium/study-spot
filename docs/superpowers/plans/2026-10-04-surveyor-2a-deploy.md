@@ -1355,7 +1355,7 @@ git commit -m "docs: add real-device acceptance runbook for phase 2a"
 - Modify: `docs/context/overview.md` (decision 16), `docs/context/roadmap.md` (only if it lists deploy as open)
 
 **Interfaces:**
-- Consumes: plan A's decision 15 in `docs/context/overview.md` (do not edit it).
+- Consumes: plan A's decision 16 in `docs/context/overview.md` (do not edit it).
 
 - [ ] **Step 1: Append decision 16.** In `docs/context/overview.md`, directly after the line starting `15. Surveyor server plan`, add:
 
