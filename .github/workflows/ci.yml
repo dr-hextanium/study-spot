@@ -42,6 +42,12 @@ jobs:
       - name: Smoke (Bun)
         run: bun packages/db/scripts/smoke-bundle.ts
 
+      - name: Server smoke (Node)
+        run: bun run smoke:server node
+
+      - name: Server smoke (Bun)
+        run: bun run smoke:server bun
+
       - name: Migrations are up to date
         run: |
           bun run db:generate
@@ -95,3 +101,6 @@ jobs:
 
       - name: Smoke (postgres.js on Node)
         run: node packages/db/scripts/smoke-postgres.ts
+
+      - name: Server smoke against Postgres (Node)
+        run: bun run smoke:server node

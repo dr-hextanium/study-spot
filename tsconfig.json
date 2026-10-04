@@ -6,6 +6,8 @@
     { "path": "packages/ui-logic" },
     { "path": "packages/ui-logic/test" },
     { "path": "packages/db" },
-    { "path": "packages/db/test" }
+    { "path": "packages/db/test" },
+    { "path": "apps/server" },
+    { "path": "apps/server/test" }
   ]
 }
