@@ -253,7 +253,24 @@ export async function writeSection(
       break;
   }
 
-  if (write.section !== "estimates") await stampVerified(db, spotId, [write.section], ctx.now);
+  if (write.section === "hours") {
+    // Hours count as verified only for the current term and only when rows exist.
+    // An empty current-term write means "unconfirmed", so it drops the stamp.
+    if (ctx.term?.id === write.data.term_id) {
+      if (write.data.rows.length > 0) await stampVerified(db, spotId, ["hours"], ctx.now);
+      else
+        await db
+          .delete(spot_verification)
+          .where(
+            and(
+              eq(spot_verification.spot_id, spotId),
+              eq(spot_verification.attribute_group, "hours"),
+            ),
+          );
+    }
+  } else if (write.section !== "estimates") {
+    await stampVerified(db, spotId, [write.section], ctx.now);
+  }
 
   const after = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   return {
@@ -274,6 +291,12 @@ export async function verifyGroups(
 ): Promise<WriteOutcome<SurveySpot>> {
   const before = await spotOr404(db, spotId, ctx.campusId, ctx.term);
   checkVersion(before, baseVersion);
+  if (groups.includes("hours") && before.hours.length === 0) {
+    throw new HttpError(422, {
+      error: "invalid_request",
+      message: "There are no hours for this term to verify. Save the hours first.",
+    });
+  }
   // No-op update that locks the row and re-checks the version, so a section
   // write committing since the read causes a 409 instead of a stale stamp.
   const locked = await db

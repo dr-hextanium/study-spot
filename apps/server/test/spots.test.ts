@@ -8,6 +8,7 @@ import {
   campus,
   spot,
   spot_hours,
+  spot_verification,
   write_receipt,
 } from "@study-spot/db";
 import { and, eq, sql } from "drizzle-orm";
@@ -605,4 +606,92 @@ test("review's update is guarded by version against a write between read and upd
   expect(err).toMatchObject({ status: 409 });
   const [row] = await ctx.db.select().from(spot).where(eq(spot.id, draft.id));
   expect(row?.review_state).toBe("unreviewed");
+});
+
+async function stamps(ctx: TestContext, spotId: string): Promise<string[]> {
+  const rows = await ctx.db
+    .select({ group: spot_verification.attribute_group })
+    .from(spot_verification)
+    .where(eq(spot_verification.spot_id, spotId));
+  return rows.map((r) => r.group).sort();
+}
+
+const HOURS_ROW = {
+  day_of_week: 1,
+  opens: "09:00",
+  closes: "17:00",
+  last_entry: null,
+  is_exam: false,
+};
+
+test("hours with no rows for the current term clear the hours stamp", async () => {
+  const ctx = await setup();
+  const me = await signIn(ctx);
+  const crrId = ctx.ids.spotIds["central-reading-room"];
+  expect(await stamps(ctx, crrId)).toContain("hours");
+  const res = await put(ctx, me, crrId, 1, {
+    section: "hours",
+    data: { term_id: "2026-fall", rows: [] },
+  });
+  expect(res.statusCode).toBe(200);
+  const saved = SurveySpot.parse(body(res));
+  expect(saved.hours).toEqual([]);
+  expect(saved.verified.hours).toBeUndefined();
+  expect(await stamps(ctx, crrId)).not.toContain("hours");
+});
+
+test("hours for another term are saved without stamping", async () => {
+  const ctx = await setup();
+  const me = await signIn(ctx);
+  const draft = await newDraft(ctx, me);
+  const res = await put(ctx, me, draft.id, 1, {
+    section: "hours",
+    data: { term_id: "2027-spring", rows: [HOURS_ROW] },
+  });
+  expect(res.statusCode).toBe(200);
+  expect(await stamps(ctx, draft.id)).toEqual(["identity"]);
+});
+
+test("hours for the current term with rows stamp hours", async () => {
+  const ctx = await setup();
+  const me = await signIn(ctx);
+  const draft = await newDraft(ctx, me);
+  const res = await put(ctx, me, draft.id, 1, {
+    section: "hours",
+    data: { term_id: "2026-fall", rows: [HOURS_ROW] },
+  });
+  expect(res.statusCode).toBe(200);
+  expect(await stamps(ctx, draft.id)).toEqual(["hours", "identity"]);
+});
+
+test("verify with hours and no current-term hours is a 422 that stamps nothing", async () => {
+  const ctx = await setup();
+  const me = await signIn(ctx);
+  const draft = await newDraft(ctx, me);
+  const res = await post(ctx, me, `/survey/spots/${draft.id}/verify`, {
+    client_write_id: writeId(),
+    base_version: 1,
+    groups: ["hours", "access"],
+  });
+  expect(res.statusCode).toBe(422);
+  expect(body(res)).toMatchObject({ error: "invalid_request" });
+  expect(await stamps(ctx, draft.id)).toEqual(["identity"]);
+});
+
+test("verify with hours and access stamps both when current-term hours exist", async () => {
+  const ctx = await setup();
+  const me = await signIn(ctx);
+  const draft = await newDraft(ctx, me);
+  const saved = await put(ctx, me, draft.id, 1, {
+    section: "hours",
+    data: { term_id: "2026-fall", rows: [HOURS_ROW] },
+  });
+  expect(saved.statusCode).toBe(200);
+  const res = await post(ctx, me, `/survey/spots/${draft.id}/verify`, {
+    client_write_id: writeId(),
+    base_version: 2,
+    groups: ["hours", "access"],
+  });
+  expect(res.statusCode).toBe(200);
+  expect(await stamps(ctx, draft.id)).toEqual(["access", "hours", "identity"]);
 });
