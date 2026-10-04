@@ -102,5 +102,10 @@ jobs:
       - name: Smoke (postgres.js on Node)
         run: node packages/db/scripts/smoke-postgres.ts
 
+      - name: Bootstrap admin invite
+        run: bun run admin:invite "CI Admin"
+        env:
+          WEB_ORIGIN: http://localhost:5173
+
       - name: Server smoke against Postgres (Node)
         run: bun run smoke:server node

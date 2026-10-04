@@ -1,37 +1,24 @@
 import { expect, test } from "bun:test";
-import { createTestDb } from "@study-spot/db/testing";
-import { buildApp } from "../src/app.ts";
-
-const WEB = "https://study-spot.pages.dev";
-
-async function app() {
-  return buildApp({
-    db: await createTestDb(),
-    clock: { now: () => new Date("2026-10-13T18:00:00Z") },
-    config: { webOrigin: WEB, campusId: "sbu" },
-  });
-}
-
-function body(res: { body: string }): unknown {
-  return JSON.parse(res.body);
-}
+import { body, setup, WEB_ORIGIN } from "./helpers.ts";
 
 test("GET /health answers ok", async () => {
-  const res = await (await app()).inject({ method: "GET", url: "/health" });
+  const { app } = await setup();
+  const res = await app.inject({ method: "GET", url: "/health" });
   expect(res.statusCode).toBe(200);
   expect(body(res)).toEqual({ ok: true });
 });
 
 test("unknown routes return a not_found code", async () => {
-  const res = await (await app()).inject({ method: "GET", url: "/nope" });
+  const { app } = await setup();
+  const res = await app.inject({ method: "GET", url: "/nope" });
   expect(res.statusCode).toBe(404);
   expect(body(res)).toEqual({ error: "not_found" });
 });
 
 test("CORS allows only the web origin, with Authorization and PUT", async () => {
-  const a = await app();
+  const { app } = await setup();
   const preflight = (origin: string) =>
-    a.inject({
+    app.inject({
       method: "OPTIONS",
       url: "/survey/spots/x/identity",
       headers: {
@@ -40,8 +27,8 @@ test("CORS allows only the web origin, with Authorization and PUT", async () => 
         "access-control-request-headers": "authorization,content-type",
       },
     });
-  const ok = await preflight(WEB);
-  expect(ok.headers["access-control-allow-origin"]).toBe(WEB);
+  const ok = await preflight(WEB_ORIGIN);
+  expect(ok.headers["access-control-allow-origin"]).toBe(WEB_ORIGIN);
   expect(String(ok.headers["access-control-allow-methods"])).toContain("PUT");
   expect(String(ok.headers["access-control-allow-headers"])).toContain("authorization");
   expect(ok.headers["access-control-allow-credentials"]).toBeUndefined();

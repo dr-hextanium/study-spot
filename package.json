@@ -16,6 +16,7 @@
     "db:generate": "cd packages/db && bunx --no-install drizzle-kit generate",
     "db:migrate": "node packages/db/scripts/migrate.ts",
     "db:seed": "node packages/db/scripts/seed.ts",
+    "admin:invite": "node apps/server/scripts/admin-invite.ts",
     "prepare": "lefthook install"
   },
   "devDependencies": {

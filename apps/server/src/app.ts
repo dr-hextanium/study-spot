@@ -9,6 +9,8 @@ import {
 } from "fastify-type-provider-zod";
 import type { Clock } from "./clock.ts";
 import { HttpError } from "./http.ts";
+import { adminRoutes } from "./routes/admin.ts";
+import { authRoutes } from "./routes/auth.ts";
 import { healthRoutes } from "./routes/health.ts";
 
 export type AppConfig = {
@@ -61,6 +63,8 @@ export async function buildApp(deps: AppDeps) {
   });
 
   await app.register(healthRoutes);
+  await app.register(authRoutes(deps));
+  await app.register(adminRoutes(deps));
   return app;
 }
 
