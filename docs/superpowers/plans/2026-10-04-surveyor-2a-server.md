@@ -35,7 +35,7 @@
 
 ## Decisions where the spec is silent or the code disagrees
 
-These are resolved here and recorded in `docs/context/overview.md` (decision 15) by Task 9.
+These are resolved here and recorded in `docs/context/overview.md` (decision 16) by Task 9.
 
 - **Migration 0002 is two migrations.** drizzle-kit asks interactively whether `invite` is a rename of `magic_link` (and `blob_sha256` of `r2_key`), which crashes without a TTY. 0002 holds only the drops, 0003 the additions.
 - **`spot.noise_policy` becomes nullable** and joins `missingV0Fields`. A draft is created from identity only, and noise policy belongs to the environment section; `docs/context/spot-schema.md` already lists it as v0-required. The existing warning strings in `buildBundle.test.ts` do not change.
@@ -132,7 +132,7 @@ apps/server/test/fixtures.ts           identity(), COMPLETING_SECTIONS
 apps/server/test/{env,health,auth,withWrite,spots,photos,pagesTarget,publisher,admin}.test.ts
 
 docs/context/data-model.md             surveyor tooling tables
-docs/context/overview.md               decision 15
+docs/context/overview.md               decision 16
 ```
 
 Out of scope (phase 2b): pick ping, headcounts, routes and route slots, maintenance jobs (including orphan blob cleanup), audit log view.
@@ -7660,7 +7660,7 @@ git commit -m "feat(server): add debounced publisher with pages and fs targets"
 **Files:**
 - Modify: `apps/server/src/routes/admin.ts` (surveyor list, pending photos)
 - Create: `apps/server/test/admin.test.ts`
-- Modify: `docs/context/data-model.md`, `docs/context/overview.md` (decision 15)
+- Modify: `docs/context/data-model.md`, `docs/context/overview.md` (decision 16)
 
 **Interfaces:**
 - Produces routes: `GET /admin/surveyors` (`SurveyorList`, every surveyor including revoked), `GET /admin/photos/pending` (`PendingPhotoList`, oldest first, with `spot_name` and `uploaded_by_name`).
@@ -7904,7 +7904,7 @@ with:
 
 ```markdown
 14. Design track (2026-10-04): visual direction "The Divided Back" chosen (postcard back: printed labels on ruled lines, entered values in ballpoint blue, rubber-stamp status, postmark rings for verification). Contract in `apps/web/.impeccable/surfaces/apps-web.md`. Overrides surveyor spec S3 timing: `DESIGN.md` is written at the end of the web UI build from the shipped screens (Impeccable's process), and `packages/ui-logic/src/tokens.ts` is the token source until then. Components (button, field, segmented control, stepper, sheet, list row, status chip, toast, postmark) are derived in the web UI plan within the contract.
-15. Surveyor server plan (2026-10-04), detail in `docs/superpowers/plans/2026-10-04-surveyor-2a-server.md`: migration 0002 holds only the drops (`magic_link`, `spot_photo.r2_key`) and 0003 the additions, because drizzle-kit prompts for renames otherwise; `spot.noise_policy` and `surveyor.email` are nullable and `noise_policy` joins `missingV0Fields`; `spot.reviewed_by` backs "Reviewed by {name}"; `bundle_state` gains `write_seq`, `last_attempt_at`, `last_warnings`, `last_error`; only section writes bump `spot.version` (verify and review check it; publish, unpublish, and photo actions ignore it); every mutating survey route takes a `client_write_id`; signed-in surveyors fetch unapproved photos from `GET /survey/photos/:id/image`; invite failures are `invite_used`, `invite_expired`, or `invite_invalid`; a revoked surveyor and an expired session both get a plain 401; new env `CAMPUS_ID` (default `sbu`); the data site root holds `bundle-latest.json`, `bundle.<hash>.json`, `photos/<sha256>.jpg`, and `_headers`.
+16. Surveyor server plan (2026-10-04), detail in `docs/superpowers/plans/2026-10-04-surveyor-2a-server.md`: migration 0002 holds only the drops (`magic_link`, `spot_photo.r2_key`) and 0003 the additions, because drizzle-kit prompts for renames otherwise; `spot.noise_policy` and `surveyor.email` are nullable and `noise_policy` joins `missingV0Fields`; `spot.reviewed_by` backs "Reviewed by {name}"; `bundle_state` gains `write_seq`, `last_attempt_at`, `last_warnings`, `last_error`; only section writes bump `spot.version` (verify and review check it; publish, unpublish, and photo actions ignore it); every mutating survey route takes a `client_write_id`; signed-in surveyors fetch unapproved photos from `GET /survey/photos/:id/image`; invite failures are `invite_used`, `invite_expired`, or `invite_invalid`; a revoked surveyor and an expired session both get a plain 401; new env `CAMPUS_ID` (default `sbu`); the data site root holds `bundle-latest.json`, `bundle.<hash>.json`, `photos/<sha256>.jpg`, and `_headers`.
 ```
 
 - [ ] **Step 5: Run the full verification**

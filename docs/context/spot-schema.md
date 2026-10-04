@@ -74,5 +74,6 @@ Grouped by change frequency, which sets the re-survey cadence. Every group carri
 
 ### Field priority
 - Required for v0: identity, directions, eligibility, hours, seat_count, outlet_coverage_pct, noise_policy, food_policy, group_work_ok, last_verified_at.
+- Hours are required for a spot to be suggested, not to be published: a published spot with no hours for the current term shows as "hours not confirmed" and is never picked. This keeps the directory intact at term rollover (decision 15).
 - First headcount sprint: effective_capacity, measured_noise, forecasts, wifi_mbps, lighting, temperature.
 - Later: amenity walking times, accessibility, late-night suitability, linked class buildings.
