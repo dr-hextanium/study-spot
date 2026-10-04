@@ -5,6 +5,7 @@ import type { LightMyRequestResponse } from "fastify";
 import { type App, buildApp } from "../src/app.ts";
 import { createSession } from "../src/auth/sessions.ts";
 import type { Clock } from "../src/clock.ts";
+import { postgresPhotoStore } from "../src/photos/store.ts";
 
 export const NOW = new Date("2026-10-13T18:00:00Z");
 export const WEB_ORIGIN = "https://study-spot.pages.dev";
@@ -56,6 +57,7 @@ export async function setup(): Promise<TestContext> {
     clock,
     config: { webOrigin: WEB_ORIGIN, campusId: "sbu" },
     publisher,
+    photos: postgresPhotoStore(db),
   });
   return { app, db, ids, clock, publisher };
 }

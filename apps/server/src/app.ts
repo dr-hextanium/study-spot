@@ -9,9 +9,11 @@ import {
 } from "fastify-type-provider-zod";
 import type { Clock } from "./clock.ts";
 import { HttpError } from "./http.ts";
+import type { PhotoStore } from "./photos/store.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { authRoutes } from "./routes/auth.ts";
 import { healthRoutes } from "./routes/health.ts";
+import { photoRoutes } from "./routes/photos.ts";
 import { spotRoutes } from "./routes/spots.ts";
 import type { PublishQueue } from "./writes/withWrite.ts";
 
@@ -26,6 +28,7 @@ export type AppDeps = {
   clock: Clock;
   config: AppConfig;
   publisher: PublishQueue;
+  photos: PhotoStore;
   logger?: boolean;
 };
 
@@ -69,6 +72,7 @@ export async function buildApp(deps: AppDeps) {
   await app.register(authRoutes(deps));
   await app.register(adminRoutes(deps));
   await app.register(spotRoutes(deps));
+  await app.register(photoRoutes(deps));
   return app;
 }
 

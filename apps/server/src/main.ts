@@ -2,6 +2,7 @@ import { openDb } from "@study-spot/db";
 import { buildApp } from "./app.ts";
 import { systemClock } from "./clock.ts";
 import { parseEnv } from "./env.ts";
+import { postgresPhotoStore } from "./photos/store.ts";
 
 const parsed = parseEnv(process.env);
 if (!parsed.ok) {
@@ -18,6 +19,7 @@ const app = await buildApp({
   config: { webOrigin: env.WEB_ORIGIN, campusId: env.CAMPUS_ID },
   // Replaced by the real Publisher in Task 8.
   publisher: { schedule: () => {} },
+  photos: postgresPhotoStore(db),
   logger: true,
 });
 
