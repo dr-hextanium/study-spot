@@ -90,6 +90,12 @@ export function createOutbox(deps: OutboxDeps) {
     online: deps.network.online(),
     unreadable: 0,
   };
+  /**
+   * Writes this tab marked `syncing` and has not settled. Passes in a tab are
+   * serial, so at pick time any id here was cut off by a storage error and is
+   * sent again; only other tabs' `syncing` writes make a spot busy.
+   */
+  const mine = new Set<string>();
   let running: Promise<void> | null = null;
   let rerun = false;
   let backoff = BACKOFF_START_MS;
@@ -242,7 +248,9 @@ export function createOutbox(deps: OutboxDeps) {
     return locked(async () => {
       const all = await store.list();
       const busy = new Set(skipped);
-      for (const r of all) if (r.state === "syncing") busy.add(r.spot_id);
+      for (const r of all) {
+        if (r.state === "syncing" && !mine.has(r.client_write_id)) busy.add(r.spot_id);
+      }
       const next = nextToSend(all.filter((r) => !busy.has(r.spot_id)));
       if (next === null) return null;
       const record: WriteRecord = { ...next, state: "syncing", attempts: next.attempts + 1 };
@@ -251,6 +259,7 @@ export function createOutbox(deps: OutboxDeps) {
         ? (record.base_version ?? (await store.version(record.spot_id)))
         : null;
       await store.put(record);
+      mine.add(record.client_write_id);
       return { record, base };
     });
   }
@@ -352,6 +361,7 @@ export function createOutbox(deps: OutboxDeps) {
         // The network call runs outside the lock, so saves and discards are never blocked by it.
         const result = await send(picked.record, picked.base);
         const step = await settle(picked.record, result);
+        mine.delete(picked.record.client_write_id);
         if (step === "skip") skipped.add(picked.record.spot_id);
         if (step === "stop") {
           if (!snapshot.signedOut) retryLater();

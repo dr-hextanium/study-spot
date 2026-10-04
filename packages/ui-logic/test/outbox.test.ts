@@ -691,3 +691,19 @@ test("the backoff starts again at 30 s after a success", async () => {
   await box.idle();
   expect(t.timers.scheduled()).toEqual([BACKOFF_START_MS]);
 });
+
+test("a write this tab left mid-send after a storage error is sent again", async () => {
+  const t = setup();
+  const box = t.make();
+  await box.start();
+  t.cache.failDeletes = true;
+  await box.enqueue(power(SPOT_A), 3);
+  await box.idle();
+  expect(box.getSnapshot().records[0]?.state).toBe("syncing");
+  t.cache.failDeletes = false;
+  t.timers.advance(BACKOFF_START_MS);
+  await box.idle();
+  expect(box.getSnapshot().records).toEqual([]);
+  expect(t.server.requests).toHaveLength(2);
+  expect(t.server.executed).toHaveLength(1);
+});
