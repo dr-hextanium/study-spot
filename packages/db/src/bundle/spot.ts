@@ -3,8 +3,11 @@ import {
   ATTRIBUTE_GROUP,
   type AttributeGroup,
   type BundleSpot,
+  missingV0Fields,
   SEAT_TYPE,
   TABLE_CONFIG,
+  type V0Field,
+  type V0Input,
 } from "@study-spot/core";
 import type {
   spot,
@@ -32,31 +35,51 @@ export type SpotAssemblyInput = {
   hoursUnconfirmed: boolean;
 };
 
+/** The completeness-relevant columns of a spot row. */
+export function pickV0(r: SpotRow): Omit<V0Input, "has_verification"> {
+  return {
+    directions: r.directions,
+    eligibility: r.eligibility,
+    seat_count: r.seat_count,
+    outlet_coverage_pct: r.outlet_coverage_pct,
+    noise_policy: r.noise_policy,
+    group_work_ok: r.group_work_ok,
+    food_policy: r.food_policy,
+  };
+}
+
 /** Sorts by position in an enum value array so output order never depends on row order. */
 function byEnumOrder<T, K extends string>(order: readonly K[], key: (item: T) => K) {
   return (a: T, b: T): number => order.indexOf(key(a)) - order.indexOf(key(b));
 }
 
-export type SpotAssemblyResult = { ok: true; spot: BundleSpot } | { ok: false; missing: string[] };
+export type SpotAssemblyResult = { ok: true; spot: BundleSpot } | { ok: false; missing: V0Field[] };
 
 export function toBundleSpot(input: SpotAssemblyInput): SpotAssemblyResult {
   const r = input.row;
-  const missing: string[] = [];
-  if (r.directions === null) missing.push("directions");
-  if (r.eligibility === null) missing.push("eligibility");
-  if (r.seat_count === null) missing.push("seat_count");
-  if (r.outlet_coverage_pct === null) missing.push("outlet_coverage_pct");
-  if (r.group_work_ok === null) missing.push("group_work_ok");
-  if (r.food_policy === null) missing.push("food_policy");
-  if (input.verifications.length === 0) missing.push("last_verified");
+  const missing = missingV0Fields({
+    ...pickV0(r),
+    has_verification: input.verifications.length > 0,
+  });
+  const {
+    directions,
+    eligibility,
+    seat_count,
+    outlet_coverage_pct,
+    noise_policy,
+    group_work_ok,
+    food_policy,
+  } = r;
+  // The null checks repeat missingV0Fields so TypeScript narrows the row's types.
   if (
-    r.directions === null ||
-    r.eligibility === null ||
-    r.seat_count === null ||
-    r.outlet_coverage_pct === null ||
-    r.group_work_ok === null ||
-    r.food_policy === null ||
-    input.verifications.length === 0
+    missing.length > 0 ||
+    directions === null ||
+    eligibility === null ||
+    seat_count === null ||
+    outlet_coverage_pct === null ||
+    noise_policy === null ||
+    group_work_ok === null ||
+    food_policy === null
   ) {
     return { ok: false, missing };
   }
@@ -79,15 +102,15 @@ export function toBundleSpot(input: SpotAssemblyInput): SpotAssemblyResult {
       common_name: r.common_name,
       lat: r.lat,
       lng: r.lng,
-      directions: r.directions,
-      eligibility: r.eligibility,
+      directions,
+      eligibility,
       eligibility_scope: r.eligibility_scope,
       eligibility_verified: r.eligibility_verified,
       entry_method: r.entry_method,
       reservable: r.reservable,
       reservation_system: r.reservation_system,
       reservation_url: r.reservation_url,
-      seat_count: r.seat_count,
+      seat_count,
       seat_types: [...input.seatTypes]
         .sort(byEnumOrder(SEAT_TYPE, (s) => s.type))
         .map((s) => ({ type: s.type, count: s.count })),
@@ -97,20 +120,20 @@ export function toBundleSpot(input: SpotAssemblyInput): SpotAssemblyResult {
       effective_capacity: r.effective_capacity,
       max_group_size: r.max_group_size,
       spread_out_room: r.spread_out_room,
-      outlet_coverage_pct: r.outlet_coverage_pct,
+      outlet_coverage_pct,
       usb_outlets: r.usb_outlets,
       wifi_mbps: r.wifi_mbps,
       cell_signal: r.cell_signal,
-      noise_policy: r.noise_policy,
+      noise_policy,
       natural_light: r.natural_light,
       lighting: r.lighting,
       temperature: r.temperature,
       temperature_consistent: r.temperature_consistent,
       windows_view: r.windows_view,
       calls_ok: r.calls_ok,
-      group_work_ok: r.group_work_ok,
+      group_work_ok,
       whiteboard: r.whiteboard,
-      food_policy: r.food_policy,
+      food_policy,
       amenities: [...input.amenities]
         .sort(byEnumOrder(AMENITY, (a) => a.amenity))
         .map((a) => ({ amenity: a.amenity, walk_minutes: a.walk_minutes })),
