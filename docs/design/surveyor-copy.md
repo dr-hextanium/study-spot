@@ -1,6 +1,6 @@
 # Surveyor copy deck
 
-Source: `docs/design/surveyor-journey.md`. Produced with Intent `articulate`. Plan D moves these strings into a typed copy module in `packages/ui-logic`; ids here are the keys. Parameters use `{name}`. Never build a sentence by concatenating strings; each id is a whole message.
+Source: `docs/design/surveyor-journey.md`. Produced with Intent `articulate`. Plan B moves these strings into a typed copy module in `packages/ui-logic` (`bun run copy:gen`); ids here are the keys, and a test keeps the two identical. Parameters use `{name}`. Never build a sentence by concatenating strings; each id is a whole message.
 
 ## Voice
 
@@ -44,6 +44,7 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | sync.syncing | Syncing {count} | 20 | header |
 | sync.offline | Offline, saving on this phone | 32 | header |
 | sync.failed | {count} didn't save | 22 | header; opens sheet |
+| sync.unreadable | {count} changes can't be read | 30 | header; opens sheet; stored writes that no longer parse |
 | sync.sheet.title | Changes on this phone | 30 | |
 | sync.sheet.empty | Nothing waiting. Everything is on the server. | 60 | |
 | sync.sheet.item_pending | Waiting: {what} | 60 | {what} from sync.what.* |
@@ -56,6 +57,8 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | sync.what.verify | Verified {name} | 50 | |
 | sync.what.publish | Publish {name} | 50 | |
 | sync.what.photo | Photo for {name} | 50 | |
+| sync.what.review | Review {name} | 50 | |
+| sync.what.cover | Cover photo for {name} | 50 | |
 | sync.saved_on_phone | Saved on this phone | 24 | section status |
 | sync.synced | Synced | 12 | section status |
 | sync.leave_warning | {count} changes haven't synced yet. Leaving now keeps them on this phone. | 90 | shown on next open if still pending |
@@ -95,6 +98,7 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | home.admin | Admin | 10 | admins only |
 | home.attention.title | Needs attention | 20 | |
 | home.attention.failed | {count} changes didn't save | 34 | |
+| home.unreadable | {count} changes can't be read | 34 | attention row; stored writes that no longer parse |
 | home.attention.conflict | Changed by someone else | 30 | row subtitle |
 | home.attention.unreviewed | Unreviewed, edited by {name} | 40 | row subtitle |
 | home.attention.hours_unconfirmed | Hours not confirmed for {term} | 40 | row subtitle |
@@ -198,6 +202,7 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | editor.save | Save | 10 | primary, pinned bottom |
 | editor.verify | Checked, nothing changed | 26 | secondary; stamps verification |
 | editor.verify.done | Marked as checked | 20 | toast |
+| editor.verify.hours_missing | Add hours for {term} before marking this checked. | 60 | server 422: spot has hours but none for the current term |
 | editor.saved | Saved | 10 | toast when online |
 | editor.saved_offline | Saved on this phone | 22 | toast when offline |
 | editor.discard_changes.title | Discard changes? | 20 | leaving with edits |
@@ -394,7 +399,7 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | id | text | max chars | notes |
 |---|---|---|---|
 | conflict.title | Two versions of {section} | 32 | |
-| conflict.body | {name} changed this while your edit was waiting. Pick which version to keep. | 80 | name = last editor from the 409 body |
+| conflict.body | {name} changed this while your edit was waiting. Pick which version to keep. | 90 | name = last editor from the 409 body |
 | conflict.body_unknown | Someone else changed this while your edit was waiting. Pick which version to keep. | 84 | when the last editor's name is unavailable |
 | conflict.yours | Yours | 8 | |
 | conflict.theirs | On the server | 14 | |
