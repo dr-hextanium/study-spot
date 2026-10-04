@@ -267,3 +267,21 @@ test("a conflicted publish or review is not reported as queued", () => {
   ]);
   expect(live.publishQueued).toBe(true);
 });
+test("queued writes overlay in seq order, whatever order they are passed in", () => {
+  const first = section(SPOT_A, SEATING);
+  const second = section(SPOT_A, {
+    section: "seating",
+    data: { ...SEATING.data, seat_count: 55 },
+  });
+  const v = view([second, first]);
+  expect(v.spot.seat_count).toBe(55);
+  expect(v.records.map((r) => r.seq)).toEqual([first.seq, second.seq]);
+  const made = create(LOCAL);
+  const renamed = rec({
+    kind: "spot.section",
+    spot_id: LOCAL,
+    payload: { section: "identity", data: identity({ official_name: "New" }) },
+  });
+  const home = surveyHome(null, [made, renamed].reverse(), ME, new Map());
+  expect(home.drafts.map((d) => d.name)).toEqual(["New"]);
+});

@@ -16,7 +16,7 @@ import {
   v0InputOf,
 } from "@study-spot/core";
 import type { OutboxSnapshot } from "./outbox.ts";
-import { isLocalId, type WriteRecord, type WriteState } from "./writes.ts";
+import { bySeq, isLocalId, type WriteRecord, type WriteState } from "./writes.ts";
 
 /** Fields that count toward "{count} of 7 required parts": every v0 field filled by a section. */
 export const REQUIRED_PARTS: readonly V0Field[] = V0_FIELD.filter(
@@ -157,7 +157,7 @@ export function buildSpotView(
   spotId: string,
   term: TermRef | null,
 ): SpotView | null {
-  const records = allRecords.filter((r) => r.spot_id === spotId);
+  const records = allRecords.filter((r) => r.spot_id === spotId).sort(bySeq);
   const create = records.find((r) => r.kind === "spot.create");
   const base =
     server ??
@@ -381,9 +381,10 @@ export function surveyHome(
   unreadable = 0,
 ): SurveyHome {
   const term = list?.term ?? null;
+  const ordered = [...records].sort(bySeq);
   const nameOf = (spotId: string, fallback: string): string => {
     let name = fallback;
-    for (const r of records) {
+    for (const r of ordered) {
       if (r.spot_id !== spotId) continue;
       if (r.kind === "spot.create") name = r.payload.identity.official_name;
       if (r.kind === "spot.section" && r.payload.section === "identity") {
