@@ -217,7 +217,7 @@ export WEB_ORIGIN=<the PWA origin>
 bun run admin:invite "Your Name"
 ```
 
-Expected: `admin invite for Your Name, valid until <48 hours from now>:` and a `https://<pwa>/invite/<token>` link. Open it inside the installed PWA on your phone. The link is single use. If it expires, run the command again. Further surveyors are invited from the admin screen. Close the shell afterwards (`unset DATABASE_URL`).
+Expected: `admin invite for Your Name, valid until <48 hours from now>:` and a `https://<pwa>/invite/<token>` link. Open it inside the installed PWA on your phone. The link is single use. Run the command only once: each run creates another admin. If the link expires before you use it, ask a second admin for a re-login link from the admin screen; if you are the only admin, run it once more and then revoke the unused admin from the admin screen after signing in. Further surveyors are invited from the admin screen. Close the shell afterwards (`unset DATABASE_URL`).
 
 ## 8. Releases
 

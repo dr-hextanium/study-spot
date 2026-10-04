@@ -36,7 +36,7 @@ Recorded in `docs/context/overview.md` by Task 7.
 
 - **Adapters.** `KeyValueCache` gains `delete` and `keys(prefix)`. New: `BinaryCache` (photo bytes as `Uint8Array`, not base64), `Ids`, `Timers`, `Foreground`, and `Http` (JSON and multipart). `Fetch` stays for the bundle client.
 - **Storage layout.** One key per write (`outbox:w:<id>`), plus `outbox:id:<local id>`, `outbox:v:<spot id>`, `outbox:seq`; photo bytes under `photo:<id>`. No shared index key, so two tabs never overwrite each other's writes. Unreadable records are skipped, never deleted.
-- **Order.** Oldest `seq` first, where `seq = max(now ms, last seq + 1)`. A draft's create goes before anything else for it (plan A answers a photo for an unknown or `local:` spot with 404), then that spot's photos, then its text writes. Text writes wait behind an earlier failed or conflicted text write on the same spot; photos and other spots continue.
+- **Order.** Oldest `seq` first, where `seq = max(now ms, last seq + 1)`. A draft's create goes before anything else for it (plan A answers a photo for an unknown spot with 404 and for a `local:` id with 400, since `spot_id` must be a uuid), then that spot's photos, then its text writes. Text writes wait behind an earlier failed or conflicted text write on the same spot; photos and other spots continue.
 - **Version chaining.** The first queued write for a spot takes the version the surveyor saw. Later ones store `base_version: null` and take the last version the server returned for that spot at send time (verify and review do not bump it, per plan A). Every 2xx answer records its version.
 - **Fixing a refused draft.** Saving Basics for a draft whose create is unsent, or was refused with a 4xx such as `slug_taken`, edits the create in place (same id, no server receipt exists), so the draft and everything queued behind it can still sync. Otherwise the only way out would be discarding the draft.
 - **Attempts.** `attempts` goes up when a send starts, so `attempts > 0` means the server may hold a receipt. Saving a section again replaces an unsent copy in place, and replaces a sent, failed, or conflicted copy with a new id at the back of the queue.
@@ -1601,6 +1601,7 @@ export class FakeSurveyServer implements Http {
       return reply(201, spot);
     }
     if (method === "POST" && path === "/survey/photos") {
+      if (String(body.spot_id).startsWith("local:")) return reply(400, { error: "invalid_request" });
       const s = this.spots.get(String(body.spot_id));
       if (!s) return reply(404, { error: "not_found" });
       const photo = {
