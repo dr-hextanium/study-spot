@@ -130,6 +130,18 @@ test("fill states: partial use fit, partial estimates, photos waiting to upload"
   expect(v.pendingPhotos).toHaveLength(1);
 });
 
+test("a failed photo upload does not count as a photo", () => {
+  const failed = photo(SPOT_A, {
+    state: "failed",
+    error: { status: 413, code: "too_large", message: null, missing: [] },
+  });
+  const v = view([failed], { photos: [] });
+  const fills = Object.fromEntries(sectionStatuses(v, NY).map((s) => [s.section, s.fill]));
+  expect(fills.photos).toBe("missing");
+  // Still listed, so the UI can offer retry or discard.
+  expect(v.pendingPhotos).toHaveLength(1);
+});
+
 test("publish readiness lists missing fields with their sections", () => {
   expect(publishReadiness(view([]))).toEqual({
     kind: "blocked",

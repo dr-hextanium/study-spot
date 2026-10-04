@@ -107,7 +107,7 @@ export function draftSpot(
 }
 
 /** Still on its way to the server: pending or mid-send. */
-function isLive(r: WriteRecord): boolean {
+function isLive(r: Pick<WriteRecord, "state">): boolean {
   return r.state === "pending" || r.state === "syncing";
 }
 
@@ -267,7 +267,8 @@ function fillOf(view: SpotView, section: OverviewSection): SectionFill {
   const { spot } = view;
   switch (section) {
     case "photos":
-      return spot.photos.length + view.pendingPhotos.length > 0 ? "done" : "missing";
+      // A failed upload is listed for retry but is not a photo yet.
+      return spot.photos.length + view.pendingPhotos.filter(isLive).length > 0 ? "done" : "missing";
     case "estimates":
       return spot.estimates.length === 0
         ? "missing"
