@@ -418,3 +418,25 @@ test("an unreadable record is counted, never sent, and never deleted", async () 
   expect(box.getSnapshot().unreadable).toBe(1);
   expect(t.cache.data.get(garbage)).toBe("{not json");
 });
+
+test("re-saving a conflicted section rebases it, and held writes chain from the server", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  await box.enqueue(power(SPOT_A), 3);
+  await box.enqueue(seating(SPOT_A), 3);
+  t.server.bump(SPOT_A);
+  t.network.set(true);
+  await box.idle();
+  expect(box.getSnapshot().records.map((r) => r.state)).toEqual(["conflict", "pending"]);
+
+  await box.enqueue(power(SPOT_A), 3);
+  await box.idle();
+  expect(t.sent().slice(1)).toEqual([
+    `PUT /survey/spots/${SPOT_A}/seating`,
+    `PUT /survey/spots/${SPOT_A}/power`,
+  ]);
+  expect(t.bases().slice(1)).toEqual([4, 5]);
+  expect(box.getSnapshot().records).toEqual([]);
+});
