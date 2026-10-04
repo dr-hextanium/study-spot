@@ -16,6 +16,13 @@ const Palette = z
     warning: Hex,
     danger: Hex,
     focus: Hex,
+    onSuccess: Hex,
+    onWarning: Hex,
+    onDanger: Hex,
+    shell: Hex,
+    onShell: Hex,
+    focusOnShell: Hex,
+    airmail: Hex,
   })
   .catchall(Hex);
 
@@ -28,7 +35,13 @@ export const Tokens = z.object({
   lineHeight: z.record(z.string(), z.number().positive()),
   space: z.record(z.string(), z.number().nonnegative()),
   radius: z.record(z.string(), z.number().nonnegative()),
-  size: z.object({ tapTarget: z.number().min(44) }).catchall(z.number().positive()),
+  size: z
+    .object({
+      tapTarget: z.number().min(44),
+      header: z.number().positive(),
+      line: z.number().positive(),
+    })
+    .catchall(z.number().positive()),
   duration: z.record(z.string(), z.number().nonnegative()),
   easing: z.record(z.string(), z.string().min(1)),
 });
@@ -39,7 +52,9 @@ export type Tokens = z.infer<typeof Tokens>;
  * DESIGN.md is written from the built screens; change both together after that.
  * accent is ballpoint blue (entered values), danger is stamp red, shell is the
  * printed header band. border is a decorative ruled line; borderStrong outlines
- * controls (3:1 minimum).
+ * controls (3:1 minimum). Content on the shell uses onShell and focusOnShell only;
+ * status colors never sit on the shell. Student palettes are provisional until
+ * student mode is designed (build step 5).
  */
 export const tokens: Tokens = {
   color: {
@@ -55,10 +70,15 @@ export const tokens: Tokens = {
         onAccent: "#ffffff",
         success: "#1d6b3a",
         warning: "#8a5a00",
-        danger: "#b3202a",
+        danger: "#a01c25",
         focus: "#1f3fbf",
+        airmail: "#1f3fbf",
         shell: "#16181d",
         onShell: "#ffffff",
+        onSuccess: "#ffffff",
+        onWarning: "#ffffff",
+        onDanger: "#ffffff",
+        focusOnShell: "#9fb2ff",
       },
       dark: {
         background: "#121316",
@@ -73,8 +93,13 @@ export const tokens: Tokens = {
         warning: "#f0c060",
         danger: "#ff8a8f",
         focus: "#9fb2ff",
+        airmail: "#9fb2ff",
         shell: "#000000",
         onShell: "#f2f1ec",
+        onSuccess: "#0b0d10",
+        onWarning: "#0b0d10",
+        onDanger: "#0b0d10",
+        focusOnShell: "#b8c6ff",
       },
     },
     student: {
@@ -89,11 +114,15 @@ export const tokens: Tokens = {
         onAccent: "#ffffff",
         success: "#1d6b3a",
         warning: "#8a5a00",
-        danger: "#b3202a",
+        danger: "#a01c25",
         focus: "#1f3fbf",
         airmail: "#1f3fbf",
         shell: "#16181d",
         onShell: "#ffffff",
+        onSuccess: "#ffffff",
+        onWarning: "#ffffff",
+        onDanger: "#ffffff",
+        focusOnShell: "#9fb2ff",
       },
       dark: {
         background: "#121316",
@@ -111,6 +140,10 @@ export const tokens: Tokens = {
         airmail: "#9fb2ff",
         shell: "#000000",
         onShell: "#f2f1ec",
+        onSuccess: "#0b0d10",
+        onWarning: "#0b0d10",
+        onDanger: "#0b0d10",
+        focusOnShell: "#b8c6ff",
       },
     },
   },
