@@ -11,7 +11,7 @@ Phase 2a spans five subsystems, so it is split into five plans. Each produces wo
 | A. Server | `2026-10-04-surveyor-2a-server.md` | foundation (merged) | now |
 | B. Client logic (`packages/ui-logic`) | `2026-10-04-surveyor-2a-client-logic.md` | A's Task 2 (survey API contract in `packages/core`) | after A Task 2 lands |
 | C. Design track | `2026-10-04-surveyor-2a-design.md` | spec only | now, in parallel with A |
-| D. Web UI (`apps/web`) | `2026-10-04-surveyor-2a-web.md` (written after C) | B and C | after B and C |
+| D. Web UI (`apps/web`), in three sequential parts | `2026-10-04-surveyor-2a-web-1-foundation.md` (outbox liveness, server reads, copy, scaffold, adapters, cache, hooks, components, shell, invite, spot list, e2e harness), `2026-10-04-surveyor-2a-web-2-screens.md` (new spot, overview, every section editor, photos, acceptance e2e), `2026-10-04-surveyor-2a-web-3-finish.md` (admin, finishing e2e, detector and audit, decision 19, DESIGN.md) | B and C | after B and C; each part after the one before it |
 | E. Deploy and ops | `2026-10-04-surveyor-2a-deploy.md` | A, D | after A; final steps after D |
 
 Plan D is written once C has produced the direction contract, the surveyor journey, the copy deck, and the typed tokens, because its component and screen code depends on them. Writing it earlier would mean placeholder styling. `DESIGN.md` itself is written at the end of plan D by the Impeccable documenter, from the built screens (Impeccable's own process for a new visual world).
@@ -20,7 +20,7 @@ Plan D is written once C has produced the direction contract, the surveyor journ
 
 1. A (server) and C (design) in parallel.
 2. B (client logic) once A's contract task is merged.
-3. D (web UI) once B and C are done.
+3. D (web UI) once B and C are done: part 1, then part 2, then part 3. Each part ends with working, tested software.
 4. E (deploy): server and data site deploy after A; PWA deploy and the real-device acceptance run after D.
 
 ## Shared contract
