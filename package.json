@@ -11,6 +11,7 @@
     "lint": "biome check .",
     "fix": "biome check --write .",
     "test": "bun test",
+    "copy:gen": "bun packages/ui-logic/test/gen-copy.ts && biome check --write packages/ui-logic/src/copy/copy.gen.ts",
     "smoke:node": "node packages/db/scripts/smoke-bundle.ts",
     "smoke:server": "node apps/server/scripts/smoke-server.ts",
     "db:generate": "cd packages/db && bunx --no-install drizzle-kit generate",
