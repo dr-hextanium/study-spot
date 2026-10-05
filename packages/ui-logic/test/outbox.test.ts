@@ -784,3 +784,26 @@ test("the UI can list unreadable records and discard them, and only them", async
   expect(t.blobs.data.size).toBe(0);
   expect(box.getSnapshot().records).toHaveLength(1);
 });
+
+test("a write queued from a stale cached copy starts from the newer version this phone knows", async () => {
+  const t = setup();
+  const box = t.make();
+  await box.start();
+  await box.enqueue(power(SPOT_A), 3);
+  await box.idle();
+  // The screen still shows the cached copy at version 3.
+  await box.enqueue(seating(SPOT_A), 3);
+  await box.idle();
+
+  expect(t.bases()).toEqual([3, 4]);
+  expect(t.server.spot(SPOT_A).version).toBe(5);
+  expect(box.getSnapshot().records).toEqual([]);
+});
+
+test("start() reads the network state again, so a change before it subscribed is not missed", async () => {
+  const t = setup();
+  const box = t.make();
+  t.network.set(false);
+  await box.start();
+  expect(box.getSnapshot().online).toBe(false);
+});

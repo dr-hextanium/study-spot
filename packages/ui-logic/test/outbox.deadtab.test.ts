@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { SurveySpot } from "@study-spot/core";
 import { surveySpotFixture } from "../../core/test/fixtures/survey-spot.ts";
-import { createOutbox, createSurveyApi } from "../src/index.ts";
+import { createOutbox, createSurveyApi, HELD_RECHECK_MS } from "../src/index.ts";
 import { POWER, SEATING, SPOT_A } from "./builders.ts";
 import { API, FakeSurveyServer, TOKEN } from "./fakeServer.ts";
 import {
@@ -16,13 +16,12 @@ import {
 } from "./fakes.ts";
 
 /*
- * Acceptance tests for tabs sharing one outbox, which plan D must make pass.
- * Today a `syncing` record from another tab is trusted until a reload, so a
- * dead tab's write blocks its spot, and start() in a new tab resets a live
- * tab's in-flight write and sends it twice. Plan D adds an owner id on syncing
- * records and a liveness check (Web Locks) in pick and start(). It may change
- * the setup to wire liveness in; the assertions describe the required outcome.
- * In these tests, stop() stands in for a tab dying.
+ * Tabs sharing one outbox (decision 18). A `syncing` record carries its tab's
+ * Liveness owner id: pick and start() leave a live tab's in-flight write alone
+ * and send a gone tab's write again. The default Liveness and QueueSignal are
+ * in-process registries keyed by the shared cache, which is what these tabs
+ * share; apps/web passes Web Locks and BroadcastChannel versions. In these
+ * tests, stop() stands in for a tab dying.
  */
 
 const power = (spot_id: string) => ({ kind: "spot.section", spot_id, payload: POWER }) as const;
@@ -45,11 +44,10 @@ function setup(spots: SurveySpot[]) {
     const ids = sequentialIds(`80${tab.toString().padStart(2, "0")}`);
     return createOutbox({ cache, blobs, api, clock, ids, timers, network, foreground, lock });
   };
-  return { server, network, foreground, make };
+  return { server, network, foreground, timers, make };
 }
 
-// required by plan D (Web Locks liveness)
-test.skip("a live tab recovers a dead tab's in-flight write without a reload", async () => {
+test("a live tab recovers a dead tab's in-flight write without a reload", async () => {
   const t = setup([surveySpotFixture({ id: SPOT_A, version: 3 })]);
   const live = t.make();
   await live.start();
@@ -74,8 +72,7 @@ test.skip("a live tab recovers a dead tab's in-flight write without a reload", a
   ]);
 });
 
-// required by plan D (Web Locks liveness)
-test.skip("start() in a new tab does not send a live tab's in-flight write again", async () => {
+test("start() in a new tab does not send a live tab's in-flight write again", async () => {
   const t = setup([surveySpotFixture({ id: SPOT_A, version: 3 })]);
   const a = t.make();
   await a.start();
@@ -94,4 +91,48 @@ test.skip("start() in a new tab does not send a live tab's in-flight write again
   expect(t.server.spot(SPOT_A).version).toBe(4);
   expect(a.getSnapshot().records).toEqual([]);
   expect(b.getSnapshot().records).toEqual([]);
+});
+
+test("a spot held by a tab that dies is picked up on the recheck timer alone", async () => {
+  const t = setup([surveySpotFixture({ id: SPOT_A, version: 3 })]);
+  const live = t.make();
+  await live.start();
+  const dying = t.make();
+  await dying.start();
+  const gate = t.server.holdNext();
+  await dying.enqueue(power(SPOT_A), 3);
+  await gate.arrived;
+  await live.idle();
+  expect(t.timers.scheduled()).toContain(HELD_RECHECK_MS);
+  dying.stop();
+  t.timers.advance(HELD_RECHECK_MS);
+  await live.idle();
+
+  expect(live.getSnapshot().records).toEqual([]);
+  expect(t.server.spot(SPOT_A).version).toBe(4);
+});
+
+test("a dead tab's late answer does not settle a write another tab took over", async () => {
+  const t = setup([surveySpotFixture({ id: SPOT_A, version: 3 })]);
+  const live = t.make();
+  await live.start();
+  const dying = t.make();
+  await dying.start();
+  const gate = t.server.holdNext();
+  await dying.enqueue(power(SPOT_A), 3);
+  await gate.arrived;
+  dying.stop();
+  const second = t.server.holdNext();
+  void live.syncNow();
+  await second.arrived;
+  // The first copy answers while the second is still in flight.
+  gate.release();
+  await dying.idle();
+  expect(live.getSnapshot().records.map((r) => r.state)).toEqual(["syncing"]);
+  second.release();
+  await live.idle();
+
+  expect(live.getSnapshot().records).toEqual([]);
+  expect(t.server.executed).toHaveLength(1);
+  expect(t.server.spot(SPOT_A).version).toBe(4);
 });

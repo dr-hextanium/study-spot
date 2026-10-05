@@ -51,6 +51,26 @@ export interface Lock {
   run<T>(name: string, fn: () => Promise<T>): Promise<T>;
 }
 
+/**
+ * Tells whether the context (a tab, an app process) that marked a write as
+ * sending is still running. apps/web backs it with a Web Lock each tab holds
+ * for its whole life, so a closed or crashed tab reads as gone at once.
+ */
+export interface Liveness {
+  /** Marks this context as running until `release`. Resolves with its owner id, the same on every call. */
+  hold(): Promise<string>;
+  release(): void;
+  /** False once the context holding `owner` ended or released it. */
+  alive(owner: string): Promise<boolean>;
+}
+
+/** Tells other contexts sharing the queue's storage that it changed (BroadcastChannel on web). */
+export interface QueueSignal {
+  /** Reaches every other context's subscribers, never this one's. */
+  post(): void;
+  subscribe(listener: () => void): () => void;
+}
+
 export interface Clock {
   now(): Date;
 }

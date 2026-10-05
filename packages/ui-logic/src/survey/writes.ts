@@ -52,6 +52,11 @@ const Common = {
   /** Sends started. Above 0 means the server may hold a receipt for this id. */
   attempts: z.number().int().nonnegative(),
   state: WriteState,
+  /**
+   * The context that marked the write `syncing` (Liveness owner id). Only read
+   * while `syncing`; absent on records stored before it existed.
+   */
+  owner: z.string().min(1).nullable().optional(),
   error: WriteError.nullable(),
   /** The server's spot from a 409, shown in the conflict view. */
   current: SurveySpot.nullable(),
@@ -120,6 +125,7 @@ export type NewWrite = DistributiveOmit<
   | "error"
   | "current"
   | "base_version"
+  | "owner"
 >;
 
 export function bySeq(a: WriteRecord, b: WriteRecord): number {

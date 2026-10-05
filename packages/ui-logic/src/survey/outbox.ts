@@ -5,10 +5,13 @@ import type {
   Foreground,
   Ids,
   KeyValueCache,
+  Liveness,
   Lock,
   NetworkStatus,
+  QueueSignal,
   Timers,
 } from "../adapters.ts";
+import { createLocalLiveness, createLocalSignal } from "../liveness.ts";
 import { createLocalLock } from "../lock.ts";
 import type { ApiResult, SurveyApi } from "./api.ts";
 import { createOutboxStore } from "./outboxStore.ts";
@@ -26,6 +29,8 @@ import {
 
 export const BACKOFF_START_MS = 30_000;
 export const BACKOFF_MAX_MS = 300_000;
+/** How soon a pass looks again at a spot another live tab is sending. */
+export const HELD_RECHECK_MS = 15_000;
 
 export type OutboxDeps = {
   cache: KeyValueCache;
@@ -41,6 +46,14 @@ export type OutboxDeps = {
    * apps/web passes a Web Locks one so tabs sharing storage take turns too.
    */
   lock?: Lock;
+  /**
+   * Tells whether the tab that marked a write `syncing` still runs. Defaults to
+   * an in-process registry shared by outboxes on the same cache; apps/web
+   * passes a Web Locks one.
+   */
+  liveness?: Liveness;
+  /** Wakes other tabs when the queue changes. Defaults to in-process; apps/web uses BroadcastChannel. */
+  signal?: QueueSignal;
 };
 
 export type OutboxSnapshot = {
@@ -89,6 +102,8 @@ export type Outbox = ReturnType<typeof createOutbox>;
 export function createOutbox(deps: OutboxDeps) {
   const store = createOutboxStore(deps);
   const lock = deps.lock ?? createLocalLock();
+  const liveness = deps.liveness ?? createLocalLiveness(deps.cache);
+  const signal = deps.signal ?? createLocalSignal(deps.cache);
   /** Queue changes, the pick of the next write, and its result write never interleave. */
   const locked = <T>(fn: () => Promise<T>): Promise<T> => lock.run(OUTBOX_LOCK, fn);
   const listeners = new Set<() => void>();
@@ -102,11 +117,12 @@ export function createOutbox(deps: OutboxDeps) {
     unreadable: 0,
   };
   /**
-   * Writes this tab marked `syncing` and has not settled. Passes in a tab are
-   * serial, so at pick time any id here was cut off by a storage error and is
-   * sent again; only other tabs' `syncing` writes make a spot busy.
+   * This tab's Liveness owner id, set by start(). Passes in a tab are serial,
+   * so at pick time a `syncing` write owned by this tab was cut off by a
+   * storage error and is sent again; only another live tab's write makes a
+   * spot busy. A write whose owner is gone (closed tab, earlier run) is sent again.
    */
-  const mine = new Set<string>();
+  let self: string | null = null;
   let running: Promise<void> | null = null;
   let rerun = false;
   let backoff = BACKOFF_START_MS;
@@ -140,20 +156,25 @@ export function createOutbox(deps: OutboxDeps) {
       const real =
         queued.kind === "spot.create" ? undefined : (await store.idMap())[queued.spot_id];
       const write: NewWrite = real === undefined ? queued : { ...queued, spot_id: real };
+      // A cached copy can be older than an answer this phone already applied; never seed below it.
+      const known = serverVersion === null ? null : await store.version(write.spot_id);
+      const seen = serverVersion === null ? null : Math.max(serverVersion, known ?? 0);
       const meta = {
         client_write_id: deps.ids.uuid(),
         seq: await store.nextSeq(),
         created_at: deps.clock.now().toISOString(),
       };
       if (bytes !== null) await store.putPhoto(meta.client_write_id, bytes);
-      const plan = planEnqueue(await store.list(), write, serverVersion, meta);
+      const plan = planEnqueue(await store.list(), write, seen, meta);
       for (const r of plan.put) await store.put(r);
       for (const removed of plan.remove) await store.remove(removed);
       if (plan.seedVersion !== null) await raiseVersion(write.spot_id, plan.seedVersion);
       return plan.put[0]?.client_write_id ?? meta.client_write_id;
     });
     await refresh();
+    // Start this tab's pass before waking the others, so the tab that queued a write sends it.
     void sync();
+    signal.post();
     return id;
   }
 
@@ -256,31 +277,46 @@ export function createOutbox(deps: OutboxDeps) {
     for (const x of later) await store.remove(x.client_write_id);
   }
 
+  /** True when another tab that is still running marked this write as sending. */
+  async function sendingElsewhere(r: WriteRecord): Promise<boolean> {
+    if (r.state !== "syncing" || r.owner == null || r.owner === self) return false;
+    return liveness.alive(r.owner);
+  }
+
   /**
    * Under the lock: picks the next write, marks it as sending, and resolves its
    * base_version (version chaining: a write queued behind another takes that
-   * write's response version). A spot with a write already in flight (another
-   * tab's) is skipped, so two tabs never send the same write or race its followers.
+   * write's response version). A spot with a write in flight in another live tab
+   * is skipped, so two tabs never send the same write or race its followers;
+   * `held` says so, for the recheck timer. A gone tab's write is taken over.
    */
   function pick(
     skipped: ReadonlySet<string>,
-  ): Promise<{ record: WriteRecord; base: number | null } | null> {
+  ): Promise<{ next: { record: WriteRecord; base: number | null } | null; held: boolean }> {
     return locked(async () => {
       const all = await store.list();
       const busy = new Set(skipped);
+      let held = false;
       for (const r of all) {
-        if (r.state === "syncing" && !mine.has(r.client_write_id)) busy.add(r.spot_id);
+        if (!busy.has(r.spot_id) && (await sendingElsewhere(r))) {
+          busy.add(r.spot_id);
+          held = true;
+        }
       }
       const next = nextToSend(all.filter((r) => !busy.has(r.spot_id)));
-      if (next === null) return null;
-      const record: WriteRecord = { ...next, state: "syncing", attempts: next.attempts + 1 };
+      if (next === null) return { next: null, held };
+      const record: WriteRecord = {
+        ...next,
+        state: "syncing",
+        attempts: next.attempts + 1,
+        owner: self,
+      };
       const versioned = VERSIONED_KINDS.includes(record.kind);
       const base = versioned
         ? (record.base_version ?? (await store.version(record.spot_id)))
         : null;
       await store.put(record);
-      mine.add(record.client_write_id);
-      return { record, base };
+      return { next: { record, base }, held };
     });
   }
 
@@ -291,7 +327,9 @@ export function createOutbox(deps: OutboxDeps) {
   function settle(sent: WriteRecord, result: SendResult): Promise<Step> {
     return locked(async () => {
       const now = (await store.list()).find((x) => x.client_write_id === sent.client_write_id);
-      const ours = now?.state === "syncing" && now.attempts === sent.attempts;
+      // Another tab may have taken the write over (this tab looked gone), so match the owner too.
+      const ours =
+        now?.state === "syncing" && now.attempts === sent.attempts && now.owner === sent.owner;
       switch (result.kind) {
         case "ok":
           if (ours) await applyOk(sent, result.value);
@@ -373,15 +411,18 @@ export function createOutbox(deps: OutboxDeps) {
     if (stopped || snapshot.signedOut || !deps.network.online()) return;
     emit({ syncing: true });
     const skipped = new Set<string>();
+    let held = false;
     try {
       for (;;) {
-        const picked = await pick(skipped);
+        const { next: picked, held: heldNow } = await pick(skipped);
+        held = heldNow;
         if (picked === null) break;
+        signal.post();
         await refresh();
         // The network call runs outside the lock, so saves and discards are never blocked by it.
         const result = await send(picked.record, picked.base);
         const step = await settle(picked.record, result);
-        mine.delete(picked.record.client_write_id);
+        signal.post();
         if (step === "skip") skipped.add(picked.record.spot_id);
         if (step === "stop") {
           if (!snapshot.signedOut) retryLater();
@@ -390,6 +431,10 @@ export function createOutbox(deps: OutboxDeps) {
       }
       if (skipped.size > 0) {
         retryLater();
+      } else if (held) {
+        // A tab that dies mid-send never says so; look again even if nothing else triggers a pass.
+        schedule(HELD_RECHECK_MS);
+        backoff = BACKOFF_START_MS;
       } else {
         cancelTimer?.();
         cancelTimer = null;
@@ -430,32 +475,45 @@ export function createOutbox(deps: OutboxDeps) {
     });
     await refresh();
     void sync();
+    signal.post();
   }
 
   return {
     /** Loads the queue, resets writes cut off mid-send, and starts listening for triggers. */
     async start(): Promise<void> {
+      self = await liveness.hold();
       stopped = false;
       await locked(async () => {
         for (const r of await store.list()) {
-          if (r.state === "syncing") await store.put({ ...r, state: "pending" });
+          // A live tab's in-flight write is left alone; a gone tab's goes back in the queue.
+          if (r.state === "syncing" && r.owner !== self && !(await sendingElsewhere(r))) {
+            await store.put({ ...r, state: "pending" });
+          }
         }
         for (const moved of rewriteSpotIds(await store.list(), await store.idMap())) {
           await store.put(moved);
         }
       });
+      signal.post();
       unsubscribe = [
+        signal.subscribe(() => {
+          void refresh().catch(() => undefined);
+          void sync();
+        }),
         deps.network.subscribe((online) => {
           emit({ online });
           if (online) void sync();
         }),
         deps.foreground.subscribe(() => void sync()),
       ];
+      // The network may have changed between createOutbox and subscribing.
+      emit({ online: deps.network.online() });
       await refresh();
       await sync();
     },
     stop(): void {
       stopped = true;
+      liveness.release();
       for (const u of unsubscribe) u();
       unsubscribe = [];
       cancelTimer?.();
@@ -544,6 +602,7 @@ export function createOutbox(deps: OutboxDeps) {
      */
     async discardUnreadable(key: string): Promise<void> {
       await locked(() => store.removeUnreadable(key));
+      signal.post();
       await refresh();
     },
     /** After signing in again on this phone. */
