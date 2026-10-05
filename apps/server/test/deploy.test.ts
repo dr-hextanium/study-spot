@@ -117,3 +117,66 @@ test("the release, smoke, and backup jobs and the deploy hook call are time boun
   expect(migrate).toContain("    timeout-minutes: 20\n");
   expect(migrate).toMatch(/curl -fsS --max-time 30 -X POST/);
 });
+
+const workflows = () =>
+  readdirSync(root(".github/workflows"))
+    .filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"))
+    .map((f) => [f, read(`.github/workflows/${f}`)] as const);
+
+test("each database secret is referenced by exactly one workflow", () => {
+  const users = (secret: string) =>
+    workflows()
+      .filter(([, text]) => text.includes(secret))
+      .map(([name]) => name);
+  expect(users("DATABASE_URL_DIRECT")).toEqual(["migrate.yml"]);
+  expect(users("BACKUP_DATABASE_URL")).toEqual(["backup.yml"]);
+});
+
+test("secrets reach scripts only through env mappings, and no workflow traces commands", () => {
+  for (const [name, text] of workflows()) {
+    const secretLines = text.split("\n").filter((line) => line.includes("secrets."));
+    for (const line of secretLines) {
+      expect({ name, line }).toEqual({
+        name,
+        line: expect.stringMatching(/^\s+[A-Z_]+: \$\{\{ secrets\.[A-Z_]+ \}\}$/),
+      });
+    }
+    expect(text).not.toMatch(/set -[a-wyz]*x/);
+  }
+});
+
+test("the backup dump is one guarded, strict, encrypted pipeline", () => {
+  const wf = read(".github/workflows/backup.yml");
+  const dumpLines = wf.split("\n").filter((line) => /pg_dump"? -Fc/.test(line));
+  expect(dumpLines).toHaveLength(1);
+  expect(dumpLines[0]).toMatch(
+    /pg_dump"? -Fc [^|]*"\$DATABASE_URL" \| age -r "\$BACKUP_AGE_RECIPIENT" > backup\.dump\.age$/,
+  );
+  expect(wf.match(/pg_dump[^\n]*\| age -r/g)).toHaveLength(1);
+  const dumpStep = wf.slice(wf.indexOf("- name: Dump and encrypt"));
+  const dumpScript = dumpStep.slice(dumpStep.indexOf("run: |"));
+  expect(dumpScript.split("pg_dump")[0]).toContain("set -euo pipefail");
+  expect(wf.indexOf("assert-db-host.ts --direct")).toBeGreaterThan(-1);
+  expect(wf.indexOf("assert-db-host.ts --direct")).toBeLessThan(wf.indexOf("bin/psql"));
+  expect(wf.indexOf("bin/psql")).toBeLessThan(wf.indexOf("- name: Dump and encrypt"));
+  expect(wf).toContain("if-no-files-found: error");
+  expect(wf.match(/^\s+path: .*$/gm)).toEqual(["          path: backup.dump.age"]);
+});
+
+test("releases queue one at a time and deploy through the hook from env", () => {
+  const wf = read(".github/workflows/migrate.yml");
+  expect(wf).toMatch(
+    /^concurrency:\n {2}group: production-release\n {2}cancel-in-progress: false$/m,
+  );
+  const hook = wf.split("\n").filter((line) => line.includes("RENDER_DEPLOY_HOOK_URL"));
+  expect(hook).toHaveLength(2);
+  expect(hook[0]).toMatch(
+    /^ {8}run: curl -fsS --max-time 30 -X POST "\$\{RENDER_DEPLOY_HOOK_URL\}&ref=\$\{GITHUB_SHA\}" > \/dev\/null$/,
+  );
+  expect(hook[1]).toMatch(
+    /^ {10}RENDER_DEPLOY_HOOK_URL: \$\{\{ secrets\.RENDER_DEPLOY_HOOK_URL \}\}$/,
+  );
+  expect(wf).toMatch(
+    /^ {2}smoke:\n {4}needs: migrate\n {4}uses: \.\/\.github\/workflows\/smoke-deploy\.yml$/m,
+  );
+});
