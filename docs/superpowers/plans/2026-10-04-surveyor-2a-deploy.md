@@ -32,7 +32,7 @@
 
 ## Decisions where the spec is silent
 
-Recorded in `docs/context/overview.md` as decision 16 by Task 10.
+Recorded in `docs/context/overview.md` as decision 19 by Task 10.
 
 - **Release order.** The blueprint sets `autoDeployTrigger: "off"` (quoted, because bare `off` is YAML boolean false). A deploy is `git tag vX.Y.Z && git push --tags`: `migrate.yml` migrates, then POSTs the Render deploy hook with `ref=<sha>`, then runs the smoke. A push to `main` never deploys the API. Migrations must be additive (expand, then contract in a later release) because the old server runs until the hook finishes.
 - **Two Neon URLs.** Render gets the pooled URL as `DATABASE_URL`. GitHub environment secret `DATABASE_URL_DIRECT` (no `-pooler`) is used for migrations and `pg_dump`. Both carry `?sslmode=require`.
@@ -61,7 +61,7 @@ apps/server/test/dbHost.test.ts                checkDbHost
 
 docs/ops.md                                    runbook (Task 1; PWA section marked after plan D)
 docs/runbooks/surveyor-2a-acceptance.md        real-device acceptance (Task 9)
-docs/context/overview.md                       decision 16
+docs/context/overview.md                       decision 19
 ```
 
 Out of scope: custom domain, R2, monitoring beyond the smoke, staging environment, Render paid plans, 2b maintenance jobs.
@@ -1218,11 +1218,11 @@ git commit -m "ci: add weekly encrypted database backup"
 - [ ] **Step 1: Push and confirm CI.** Run: `git push origin main`. Expected: the `ci` workflow passes (the existing jobs plus `deploy.test.ts`, `check.test.ts`, `dbHost.test.ts` in `bun test`).
 - [ ] **Step 2: OWNER, create the Render service.** `docs/ops.md` section 2.3 step 3 (New > Blueprint > repo; `render.yaml` is read from `main`). Enter prompted values: `DATABASE_URL` (pooled), `WEB_ORIGIN` (for now `http://localhost:5173`; fixed in Task 8), `DATA_BASE_URL` (Task 2 value), `CF_ACCOUNT_ID`, `CF_API_TOKEN`. Expected: first build runs `npx --yes bun@1.3.14 install --frozen-lockfile`, then the service reports healthy on `/health`. If the build fails because `bun` cannot be fetched or run, replace `buildCommand` with `curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.14" && $HOME/.bun/bin/bun install --frozen-lockfile`, commit that change as `fix(deploy): install bun with the official script on render`, and re-sync the blueprint.
 - [ ] **Step 3: OWNER, migrate by hand once.** `docs/ops.md` section 6 step 1 using the direct URL. Expected: `migrations applied`. If it fails on `channel_binding`, remove that parameter in the Neon string and update the stored values (`DATABASE_URL_DIRECT`, `BACKUP_DATABASE_URL`, Render `DATABASE_URL`).
-- [ ] **Step 4: OWNER, finish the Render and GitHub wiring.** Copy the service URL into repo variable `API_BASE_URL`; copy the Deploy Hook into environment `production` secret `RENDER_DEPLOY_HOOK_URL` (section 2.3 step 5).
+- [ ] **Step 4: OWNER, finish the Render and GitHub wiring.** Copy the service URL into repo variable `API_BASE_URL`; copy the Deploy Hook into environment `production` secret `RENDER_DEPLOY_HOOK_URL` (section 2.3 step 5). Before the first release, set repo variable `WEB_ORIGIN=http://localhost:5173`, matching Render's value from step 2 (Task 8 replaces both with the real PWA origin).
 - [ ] **Step 5: First admin.** `docs/ops.md` section 7. Expected: an invite link printed. Do not open it until the PWA exists (Task 8).
-- [ ] **Step 6: Exercise the release path.** Actions > migrate > Run workflow on `main`, approve. Expected: jobs `migrate` (host guard prints `database host ok: <host>`, `migrations applied`, hook returns 200 or 202) and `smoke`. The smoke fails at `pointer` ("run POST /admin/publish") until the first publish exists and at `cors` until `WEB_ORIGIN` is the real PWA origin; that is expected now. Record which step failed.
+- [ ] **Step 6: Exercise the release path.** Actions > migrate > Run workflow on `main`, approve. Expected: job `migrate` passes (host guard prints `database host ok: <host>`, `migrations applied`, then the hook step succeeds; its response is hidden by `> /dev/null`, so only the step result shows). In `smoke`, `health` passes and reports this commit (the first real check of `RENDER_GIT_COMMIT` and the hook's `&ref=`), `cors` passes against `http://localhost:5173`, and `pointer` fails with the publish hint ("run POST /admin/publish") because nothing is published yet; that failure is expected now. Record the result.
 - [ ] **Step 7: First backup and drill.** Actions > backup > Run workflow. Expected: green run, artifact `perch-backup` about the size of the empty schema. Do the restore drill from `docs/ops.md` section 10. Expected: `bun run admin:invite "Drill"` works against the restored branch. Delete the branch.
-- [ ] **Step 8: Confirm the pooled URL on Render is healthy under writes.** After Task 9 begins, watch Render logs for `prepared statement` or `pgbouncer` errors; if any appear, switch Render's `DATABASE_URL` to the direct URL and note it in decision 16.
+- [ ] **Step 8: Confirm the pooled URL on Render is healthy under writes.** After Task 9 begins, watch Render logs for `prepared statement` or `pgbouncer` errors; if any appear, switch Render's `DATABASE_URL` to the direct URL and note it in decision 19.
 - [ ] **Step 9: Confirm CORS and the data site headers by hand.** Run:
 
 ```bash
@@ -1352,19 +1352,19 @@ git commit -m "docs: add real-device acceptance runbook for phase 2a"
 ### Task 10: Close out
 
 **Files:**
-- Modify: `docs/context/overview.md` (decision 16), `docs/context/roadmap.md` (only if it lists deploy as open)
+- Modify: `docs/context/overview.md` (decision 19), `docs/context/roadmap.md` (only if it lists deploy as open)
 
 **Interfaces:**
 - Consumes: plan A's decision 16 in `docs/context/overview.md` (do not edit it).
 
-- [ ] **Step 1: Append decision 16.** In `docs/context/overview.md`, directly after the line starting `15. Surveyor server plan`, add:
+- [ ] **Step 1: Append decision 19.** In `docs/context/overview.md`, directly after the line starting `18. Outbox requirements`, add:
 
 ```markdown
-16. Deploy and ops (2026-10-04), detail in `docs/superpowers/plans/2026-10-04-surveyor-2a-deploy.md` and `docs/ops.md`: Render blueprint with `autoDeployTrigger: "off"`; releases are tag pushes handled by `migrate.yml` (host guard, `db:migrate`, deploy hook, smoke) so schema lands before code and migrations must be additive; Render uses the Neon pooled URL, migrations and dumps use the direct URL (`DATABASE_URL_DIRECT`), both with `sslmode=require`; backups are weekly `pg_dump` encrypted with `age` and stored as a 90-day GitHub Actions artifact (public repo, so encryption is mandatory; chosen over a dump in a private repo for no extra repo, no history growth, and automatic expiry; R2 stays rejected for needing a card); web env vars are `VITE_API_BASE_URL` and `VITE_DATA_BASE_URL`; `study-spot-data` is a direct-upload project created with wrangler, `study-spot` is Git-connected; no keep-alive pinger in v0; card and second-seat requirements are checked at sign-up and recorded in `docs/ops.md`.
+19. Deploy and ops (2026-10-04), detail in `docs/superpowers/plans/2026-10-04-surveyor-2a-deploy.md` and `docs/ops.md`: Render blueprint with `autoDeployTrigger: "off"`; releases are tag pushes handled by `migrate.yml` (host guard, `db:migrate`, deploy hook, smoke) so schema lands before code and migrations must be additive; Render uses the Neon pooled URL, migrations and dumps use the direct URL (`DATABASE_URL_DIRECT`), both with `sslmode=require`; backups are weekly `pg_dump` encrypted with `age` and stored as a 90-day GitHub Actions artifact (public repo, so encryption is mandatory; chosen over a dump in a private repo for no extra repo, no history growth, and automatic expiry; R2 stays rejected for needing a card); web env vars are `VITE_API_BASE_URL` and `VITE_DATA_BASE_URL`; `study-spot-data` is a direct-upload project created with wrangler, `study-spot` is Git-connected; no keep-alive pinger in v0; card and second-seat requirements are checked at sign-up and recorded in `docs/ops.md`.
 ```
 
 - [ ] **Step 2: Check the roadmap.** Run: `grep -n -i "deploy\|ops.md\|render" docs/context/roadmap.md`. If a line lists deploy or ops as open for 2a, mark it done in the same style as its neighbours.
-- [ ] **Step 3: Full verification.** Run: `bun run typecheck && bun run lint && bun test`. Expected: all pass (plan A's tests plus 6 deploy, 9 check, 5 dbHost). Run: `grep -rn "$(printf '\342\200\224')" docs/ops.md docs/runbooks docs/context render.yaml .github apps/server || echo clean`. Expected: `clean`.
+- [ ] **Step 3: Full verification.** Run: `bun run typecheck && bun run lint && bun test`. Expected: all pass (plan A's tests plus the deploy, check, and dbHost tests). Run: `grep -rn "$(printf '\342\200\224')" docs/ops.md docs/runbooks docs/context render.yaml .github apps/server || echo clean`. Expected: `clean`.
 - [ ] **Step 4: Commit**
 
 ```bash
