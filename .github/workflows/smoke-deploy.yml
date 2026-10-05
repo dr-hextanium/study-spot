@@ -1,0 +1,33 @@
+name: smoke-deploy
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Smoke the live stack
+        run: bun run smoke:deploy
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          WEB_ORIGIN: ${{ vars.WEB_ORIGIN }}
+          DATA_BASE_URL: ${{ vars.DATA_BASE_URL }}
+          SMOKE_WAIT_SECONDS: "180"
