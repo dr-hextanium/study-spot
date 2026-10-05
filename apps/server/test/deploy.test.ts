@@ -58,3 +58,14 @@ test("the server never runs migrations on start", () => {
     expect(text).not.toMatch(/migrate\(|db:migrate|drizzle-orm\/postgres-js\/migrator/);
   }
 });
+
+test("migrations run only from migrate.yml, behind the production environment and a host guard", () => {
+  const wf = read(".github/workflows/migrate.yml");
+  expect(wf).toContain("workflow_dispatch:");
+  expect(wf).toContain('- "v*"');
+  expect(wf).not.toContain("pull_request");
+  expect(wf).toContain("environment: production");
+  expect(wf.indexOf("assert-db-host.ts")).toBeGreaterThan(-1);
+  expect(wf.indexOf("assert-db-host.ts")).toBeLessThan(wf.indexOf("bun run db:migrate"));
+  expect(wf.indexOf("bun run db:migrate")).toBeLessThan(wf.indexOf("RENDER_DEPLOY_HOOK_URL"));
+});
