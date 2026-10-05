@@ -2,7 +2,12 @@ import { expect, test } from "bun:test";
 import { buildBundle } from "@study-spot/db";
 import { seed } from "@study-spot/db/seed";
 import { createTestDb } from "@study-spot/db/testing";
-import { type CheckResult, checkDeploy, type FetchLike } from "../src/deploy/check.ts";
+import {
+  type CheckOptions,
+  type CheckResult,
+  checkDeploy,
+  type FetchLike,
+} from "../src/deploy/check.ts";
 
 const API = "https://study-spot-api.onrender.com";
 const WEB = "https://study-spot.pages.dev";
@@ -39,6 +44,7 @@ const good: Handler = ({ url, method, origin }) => {
           headers: {
             "access-control-allow-origin": WEB,
             "access-control-allow-methods": "GET, POST, PUT",
+            "access-control-allow-headers": "authorization, content-type",
           },
         })
       : new Response(null, { status: 204 });
@@ -61,7 +67,10 @@ function fakeFetch(handler: Handler): FetchLike {
     });
 }
 
-const run = (handler: Handler, extra: { maxHealthAttempts?: number } = {}): Promise<CheckResult> =>
+const run = (
+  handler: Handler,
+  extra: Partial<Omit<CheckOptions, "apiBaseUrl" | "webOrigin" | "dataBaseUrl">> = {},
+): Promise<CheckResult> =>
   checkDeploy({
     apiBaseUrl: API,
     webOrigin: WEB,
@@ -113,6 +122,7 @@ test("a server that allows any origin fails at the cors step", async () => {
           headers: {
             "access-control-allow-origin": req.origin ?? "*",
             "access-control-allow-methods": "PUT",
+            "access-control-allow-headers": "authorization, content-type",
           },
         })
       : good(req),
@@ -167,4 +177,128 @@ test("an invalid bundle or a mutable hashed file fails at the bundle step", asyn
       : good(req),
   );
   expect(mutable).toMatchObject({ ok: false, step: "bundle" });
+});
+
+test("a preflight that omits authorization fails at the cors step", async () => {
+  const result = await run((req) =>
+    req.method === "OPTIONS" && req.origin === WEB
+      ? new Response(null, {
+          status: 204,
+          headers: {
+            "access-control-allow-origin": WEB,
+            "access-control-allow-methods": "PUT",
+            "access-control-allow-headers": "content-type",
+          },
+        })
+      : good(req),
+  );
+  expect(result).toMatchObject({ ok: false, step: "cors" });
+  if (!result.ok) expect(result.detail).toContain("authorization");
+});
+
+test("allow-headers match is case-insensitive", async () => {
+  const result = await run((req) =>
+    req.method === "OPTIONS" && req.origin === WEB
+      ? new Response(null, {
+          status: 204,
+          headers: {
+            "access-control-allow-origin": WEB,
+            "access-control-allow-methods": "PUT",
+            "access-control-allow-headers": "Content-Type,Authorization",
+          },
+        })
+      : good(req),
+  );
+  expect(result).toMatchObject({ ok: true });
+});
+
+test("every request carries an abort signal", async () => {
+  const signals: Array<AbortSignal | null | undefined> = [];
+  const result = await checkDeploy({
+    apiBaseUrl: API,
+    webOrigin: WEB,
+    dataBaseUrl: DATA,
+    sleep: async () => {},
+    fetch: async (url, init) => {
+      signals.push(init?.signal);
+      return good({
+        url,
+        method: init?.method ?? "GET",
+        origin: new Headers(init?.headers).get("origin"),
+      });
+    },
+  });
+  expect(result).toMatchObject({ ok: true });
+  expect(signals.length).toBe(5);
+  expect(signals.every((s) => s instanceof AbortSignal)).toBe(true);
+});
+
+test("the health loop stops at the wall-clock deadline and reports why", async () => {
+  let clock = 0;
+  let calls = 0;
+  const result = await checkDeploy({
+    apiBaseUrl: API,
+    webOrigin: WEB,
+    dataBaseUrl: DATA,
+    maxWaitMs: 30_000,
+    healthIntervalMs: 5_000,
+    now: () => clock,
+    sleep: async (ms) => {
+      clock += ms;
+    },
+    fetch: async () => {
+      calls += 1;
+      clock += 2_000;
+      return new Response("waking", { status: 503 });
+    },
+  });
+  expect(result).toMatchObject({ ok: false, step: "health" });
+  if (!result.ok) {
+    expect(result.detail).toContain("503");
+    expect(result.detail).toMatch(/\d+s/);
+  }
+  expect(calls).toBeGreaterThan(1);
+  expect(calls).toBeLessThan(10);
+});
+
+test("a health fetch error is named in the detail", async () => {
+  const result = await run(
+    () => {
+      throw new Error("ECONNRESET");
+    },
+    { maxHealthAttempts: 2 },
+  );
+  expect(result).toMatchObject({ ok: false, step: "health" });
+  if (!result.ok) expect(result.detail).toContain("ECONNRESET");
+});
+
+const failing =
+  (matches: (url: string) => boolean): Handler =>
+  (req) => {
+    if (matches(req.url)) throw new Error("socket hang up");
+    return good(req);
+  };
+
+for (const [step, matches] of [
+  ["cors", (u: string) => u.startsWith(`${API}/survey/`)],
+  ["pointer", (u: string) => u === `${DATA}/bundle-latest.json`],
+  ["bundle", (u: string) => u === `${DATA}/bundle.${HASH}.json`],
+] as const) {
+  test(`a network error at the ${step} step returns a failure instead of throwing`, async () => {
+    const result = await run(failing(matches));
+    expect(result).toMatchObject({ ok: false, step });
+    if (!result.ok) {
+      expect(result.detail).toContain("could not reach");
+      expect(result.detail).toContain("socket hang up");
+    }
+  });
+}
+
+test("a body read that throws at the bundle step returns a failure", async () => {
+  const result = await run((req) =>
+    req.url === `${DATA}/bundle.${HASH}.json`
+      ? new Response("not json", { headers: { "cache-control": "immutable" } })
+      : good(req),
+  );
+  expect(result).toMatchObject({ ok: false, step: "bundle" });
 });

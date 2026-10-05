@@ -30,7 +30,7 @@ const result = await checkDeploy({
   apiBaseUrl: env.API_BASE_URL,
   webOrigin: env.WEB_ORIGIN,
   dataBaseUrl: env.DATA_BASE_URL,
-  maxHealthAttempts: Math.ceil(env.SMOKE_WAIT_SECONDS / 5),
+  maxWaitMs: env.SMOKE_WAIT_SECONDS * 1000,
 });
 if (!result.ok) {
   console.error(`deploy smoke failed at ${result.step}: ${result.detail}`);
