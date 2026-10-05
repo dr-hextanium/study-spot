@@ -69,3 +69,12 @@ test("migrations run only from migrate.yml, behind the production environment an
   expect(wf.indexOf("assert-db-host.ts")).toBeLessThan(wf.indexOf("bun run db:migrate"));
   expect(wf.indexOf("bun run db:migrate")).toBeLessThan(wf.indexOf("RENDER_DEPLOY_HOOK_URL"));
 });
+
+test("the backup workflow encrypts before upload and never uploads a plain dump", () => {
+  const wf = read(".github/workflows/backup.yml");
+  expect(wf).toContain("environment: backup");
+  expect(wf).toContain("age -r");
+  expect(wf).toContain("retention-days: 90");
+  expect(wf).toContain("path: backup.dump.age");
+  expect(wf).not.toMatch(/path:\s*backup\.dump\s*$/m);
+});

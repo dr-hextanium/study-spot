@@ -1,0 +1,64 @@
+name: backup
+
+on:
+  schedule:
+    - cron: "17 6 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    environment: backup
+    env:
+      DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+      EXPECTED_DB_HOST: ${{ vars.EXPECTED_DB_HOST }}
+      PG_MAJOR: ${{ vars.PG_MAJOR }}
+      BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Check the database host
+        run: node apps/server/scripts/assert-db-host.ts
+
+      - name: Check the backup variables
+        run: |
+          test -n "$PG_MAJOR" || { echo "PG_MAJOR is not set"; exit 1; }
+          test -n "$BACKUP_AGE_RECIPIENT" || { echo "BACKUP_AGE_RECIPIENT is not set"; exit 1; }
+
+      - name: Install pg_dump and age
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-common age
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y "postgresql-client-${PG_MAJOR}"
+
+      - name: Check client and server versions
+        run: |
+          set -euo pipefail
+          server_major=$("/usr/lib/postgresql/${PG_MAJOR}/bin/psql" "$DATABASE_URL" -Atc "show server_version_num" | cut -c1-2)
+          client_major=$("/usr/lib/postgresql/${PG_MAJOR}/bin/pg_dump" --version | sed -E 's/[^0-9]*([0-9]+).*/\1/')
+          echo "server $server_major, pg_dump $client_major"
+          test "$client_major" -ge "$server_major"
+
+      - name: Dump and encrypt
+        # The dump is piped straight into age: plaintext never touches disk. Explicit
+        # pipefail so a failed pg_dump fails the job instead of leaving an encrypted partial file.
+        run: |
+          set -euo pipefail
+          "/usr/lib/postgresql/${PG_MAJOR}/bin/pg_dump" -Fc --no-owner --no-acl "$DATABASE_URL" | age -r "$BACKUP_AGE_RECIPIENT" > backup.dump.age
+          test -s backup.dump.age
+          ls -l backup.dump.age
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: perch-backup
+          path: backup.dump.age
+          retention-days: 90
+          if-no-files-found: error
