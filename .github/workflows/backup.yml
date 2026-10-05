@@ -12,6 +12,7 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     environment: backup
+    timeout-minutes: 30
     # DATABASE_URL is set per step, only where it is used.
     env:
       EXPECTED_DB_HOST: ${{ vars.EXPECTED_DB_HOST }}

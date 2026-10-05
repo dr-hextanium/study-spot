@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     # Required reviewers and the main/v* rule are set on this environment (docs/ops.md 2.1).
     environment: production
+    timeout-minutes: 20
     # DATABASE_URL is set per step, only where it is used.
     env:
       EXPECTED_DB_HOST: ${{ vars.EXPECTED_DB_HOST }}
@@ -47,7 +48,7 @@ jobs:
 
       - name: Deploy the API at this commit
         # The hook URL is a secret: pass it through env, never inline it in the script text.
-        run: curl -fsS -X POST "${RENDER_DEPLOY_HOOK_URL}&ref=${GITHUB_SHA}" > /dev/null
+        run: curl -fsS --max-time 30 -X POST "${RENDER_DEPLOY_HOOK_URL}&ref=${GITHUB_SHA}" > /dev/null
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
 

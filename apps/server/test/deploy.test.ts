@@ -109,3 +109,11 @@ test("DATABASE_URL is set only on the steps that use it, never for a whole job",
     expect(wf.match(/DATABASE_URL: /g)?.length).toBe(steps);
   }
 });
+
+test("the release, smoke, and backup jobs and the deploy hook call are time bound", () => {
+  expect(read(".github/workflows/smoke-deploy.yml")).toContain("    timeout-minutes: 15\n");
+  expect(read(".github/workflows/backup.yml")).toContain("    timeout-minutes: 30\n");
+  const migrate = read(".github/workflows/migrate.yml");
+  expect(migrate).toContain("    timeout-minutes: 20\n");
+  expect(migrate).toMatch(/curl -fsS --max-time 30 -X POST/);
+});
