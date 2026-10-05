@@ -88,6 +88,7 @@ Set on Render (from `render.yaml`; secrets are prompted once, then edited under 
 | `CF_DATA_PROJECT` | `study-spot-data` | |
 | `CAMPUS_ID` | `sbu` | default if unset |
 | `PORT` | set by Render | do not set |
+| `RENDER_GIT_COMMIT` | set by Render | do not set; reported on `/health` and required by the release smoke. Absent on a VPS, so run the smoke there without `EXPECTED_COMMIT` |
 | `NODE_VERSION` | `24` | Render build setting, not read by the app |
 | `FS_PUBLISH_DIR` | directory | only with `PUBLISH_TARGET=fs` |
 
@@ -106,7 +107,7 @@ Create (owner):
 Rotate (every 12 months, or on any suspicion):
 
 1. Create a new token with the same single permission.
-2. Render service > Environment: replace `CF_API_TOKEN`, Save, let it redeploy.
+2. Render service > Environment: replace `CF_API_TOKEN` and use the save option that also deploys without rebuilding (a "save and deploy" style choice; labels may differ). That restarts the live commit with the new token.
 3. From the admin screen run Publish now (or `POST /admin/publish`) and confirm last published time moves.
 4. Dashboard > API Tokens: delete the old token (Roll is also fine, then update Render).
 
@@ -122,7 +123,7 @@ Migrations are never run by the server. They run from GitHub (section 8) or, for
    ```
 
    Expected: `migrations applied`. Seeding production is not done; the first surveyor data comes from the app.
-2. Afterwards: Actions > migrate > Run workflow (branch `main`), approve the `production` deployment. The workflow checks the database host against `EXPECTED_DB_HOST` first and stops on a mismatch.
+2. Afterwards: Actions > migrate > Run workflow (branch `main`), approve the `production` deployment. The workflow checks the database host against `EXPECTED_DB_HOST` first and stops on a mismatch. A manual run is a full release of the chosen ref: after migrating it deploys that ref to Render and runs the smoke. Runs share one concurrency group, and GitHub keeps only one pending run per group, so a third queued release cancels the second pending one.
 3. Migrations must be additive in the release that ships them. The old server keeps running until the deploy hook finishes.
 
 ## 7. First admin and later invites on production
@@ -147,6 +148,8 @@ git push origin v0.1.0
 
 Actions > migrate starts, waits for a reviewer, then: host guard, `db:migrate`, Render deploy hook for that commit, smoke (`/health` with retry until it reports that commit, CORS, data pointer, bundle). Render deploys also appear under the service's Events tab. A push to `main` does not deploy the API; it runs CI and, if the PWA project is connected, deploys the PWA (section 9).
 
+Never use Render's manual "Deploy latest commit": it skips migrations. Deploy the API only through the migrate workflow.
+
 ## 9. PWA on Cloudflare Pages (once the web app exists)
 
 Create `study-spot` from Git, never direct upload:
@@ -158,9 +161,9 @@ Create `study-spot` from Git, never direct upload:
    - Build command: `bun install --frozen-lockfile && bun run --filter '@study-spot/web' build`
    - Build output directory: `apps/web/dist`
 3. Settings > Variables and secrets, for Production and Preview: `BUN_VERSION=1.3.14`, `NODE_VERSION=24`, `VITE_API_BASE_URL=<API_BASE_URL>`, `VITE_DATA_BASE_URL=<DATA_BASE_URL>`. The Pages v3 image ships Bun 1.2.15 by default, so pinning is required.
-4. After the first build, copy the production origin into `WEB_ORIGIN` on Render (Environment tab) and in the repo variable `WEB_ORIGIN`, then redeploy the API with the deploy hook.
+4. After the first build, copy the production origin into `WEB_ORIGIN` on Render (Environment tab) and in the repo variable `WEB_ORIGIN`. Then re-run Actions > migrate on the current `v*` tag (Run workflow, pick the tag): it runs the host guard, migrations, a deploy of that commit, and the smoke, including CORS for the new `WEB_ORIGIN`.
 5. Preview deployments (other branches) run on different origins. The API's CORS rejects them by design, so previews can render but cannot sync. Set Settings > Builds > Branch control to production only if that is confusing.
-6. Free plan limits: 500 builds a month, 25 MiB per file, 20,000 files per site. Direct-upload deployments of the data site do not use builds but share the file limit: each approved photo is one file, so plan for cleanup before about 15,000 photos.
+6. Free plan limits: 500 builds a month, 25 MiB per file, 20,000 files per site. Direct-upload deployments of the data site do not use builds but share the file limit: each approved photo is one file, so plan for cleanup before about 15,000 photos. A Pages deploy of the data site drops older hashed bundles and photos; clients keep using their cached bundle until they refetch the pointer.
 
 ## 10. Backups and restore
 
@@ -179,9 +182,9 @@ Restore drill (do it once before surveying, then each term):
 1. Download the artifact (Actions > backup > run > Artifacts), unzip.
 2. In Neon create a branch (Branches > Create branch) so production is untouched; copy that branch's direct URL. A branch already contains production's schema and data, so do not restore into its default database: create an empty one.
 3. `psql "<branch direct url>" -c 'CREATE DATABASE drill'`
-4. `age -d -i perch-backup.key backup.dump.age > backup.dump`
-5. `pg_restore --no-owner --no-acl -d "<branch direct url with /drill as the database name>" backup.dump`. Your local `pg_restore` must be version 17 or newer (check `pg_restore --version`).
-6. Check it: `read -rs DATABASE_URL && export DATABASE_URL` (the `/drill` URL), `export WEB_ORIGIN=<the PWA origin>`, then `bun run admin:invite "Drill"` should print an invite link. Delete the Neon branch and `unset DATABASE_URL`.
+4. Restore `perch-backup.key` from the password manager into the working directory, then `age -d -i perch-backup.key backup.dump.age > backup.dump`. Step 5 deletes it again.
+5. `pg_restore --no-owner --no-acl -d "<branch direct url with /drill as the database name>" backup.dump`. Your local `pg_restore` must be version 17 or newer (check `pg_restore --version`). Then `rm perch-backup.key backup.dump`.
+6. Check it from the repo checkout, after `bun install`: `read -rs DATABASE_URL && export DATABASE_URL` (the `/drill` URL), `export WEB_ORIGIN=<the PWA origin>`, then `bun run admin:invite "Drill"` should print an invite link. Delete the Neon branch and `unset DATABASE_URL`.
 
 Notes: `pg_dump` must be at least as new as Neon's server (the workflow installs `postgresql-client-$PG_MAJOR` and fails on a mismatch). GitHub disables scheduled workflows after 60 days without repo activity; if backups stop, push any commit or re-enable it under Actions. Neon's own 6-hour restore window is a safety net, not a backup. A manual snapshot (1 allowed on free) before risky migrations is cheap.
 
@@ -222,7 +225,7 @@ Use if Render, Neon, or Pages become unusable. A small VPS (Hetzner-style, 2 GB 
    ```
 
 6. Build the PWA elsewhere with `VITE_API_BASE_URL=https://api.<domain>` and `VITE_DATA_BASE_URL=https://data.<domain>`, copy `apps/web/dist` to `/srv/perch-web`.
-7. Run `smoke-deploy` with the new origins. Back up with a cron `pg_dump -Fc | age -r <recipient>` to another machine. `FsTarget` never deletes old hashed bundles, which also keeps cached clients working.
+7. Run `smoke-deploy` with the new origins and an empty `expected_commit` (there is no `RENDER_GIT_COMMIT`). Back up with a cron `pg_dump -Fc | age -r <recipient>` to another machine. `FsTarget` never deletes old hashed bundles, which also keeps cached clients working.
 
 ## 13. Sources (checked 2026-10-04)
 
