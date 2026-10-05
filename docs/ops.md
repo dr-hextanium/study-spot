@@ -47,12 +47,13 @@ Card-free stack for the Perch survey tooling: Render (API), Neon (Postgres), Clo
 
    ```bash
    export CLOUDFLARE_ACCOUNT_ID=<your account id>
-   export CLOUDFLARE_API_TOKEN=<token from section 5>
+   read -rs CLOUDFLARE_API_TOKEN && export CLOUDFLARE_API_TOKEN
    npx wrangler pages project create study-spot-data --production-branch main
+   unset CLOUDFLARE_API_TOKEN
    ```
 
    Copy the project's real `*.pages.dev` hostname from Workers & Pages > study-spot-data. That origin is `DATA_BASE_URL`.
-4. The PWA project `study-spot` is created later, after plan D, from Git (section 9). Never create it with direct upload.
+4. The PWA project `study-spot` is created later, once the web app exists, from Git (section 9). Never create it with direct upload.
 
 ## 3. Values to record
 
@@ -66,6 +67,9 @@ Card-free stack for the Perch survey tooling: Render (API), Neon (Postgres), Clo
 | `DATABASE_URL`, `DATABASE_URL_DIRECT` | Neon Connect dialog | yes |
 | `CF_API_TOKEN` | Cloudflare token (section 5) | yes |
 | `RENDER_DEPLOY_HOOK_URL` | Render service Settings | yes |
+| `BACKUP_DATABASE_URL` | Neon direct string, same as `DATABASE_URL_DIRECT` | yes |
+| `BACKUP_AGE_RECIPIENT` | `age-keygen` public key (section 10) | no |
+| `PG_MAJOR` | Neon Postgres major version, `17` | no |
 
 Copy hostnames from each dashboard. Never derive them from project names: Cloudflare and Render add a suffix when a name is taken, and a wrong `WEB_ORIGIN` makes every browser request fail CORS.
 
@@ -97,7 +101,7 @@ Create (owner):
 1. Dashboard > Manage Account > API Tokens > Create Token (or My Profile > API Tokens). Under Custom token choose Get started.
 2. Token name `study-spot-publisher`. Permissions: one row, Account > Cloudflare Pages > Edit. Account Resources: Include > the club account only. Optionally set a TTL (for example 12 months) and put a reminder in the club calendar.
 3. Continue to summary > Create Token. The secret is shown once: put it in the password manager, then in Render as `CF_API_TOKEN`.
-4. Check it: `curl -s -H "Authorization: Bearer $CF_API_TOKEN" https://api.cloudflare.com/client/v4/user/tokens/verify` should print `"status":"active"`. (If an account-owned token is used, verify with `.../accounts/$CF_ACCOUNT_ID/tokens/verify`.)
+4. Check it: `read -rs CLOUDFLARE_API_TOKEN && export CLOUDFLARE_API_TOKEN`, then `curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" https://api.cloudflare.com/client/v4/user/tokens/verify` should print `"status":"active"`. (If an account-owned token is used, verify with `.../accounts/$CF_ACCOUNT_ID/tokens/verify`.) Then `unset CLOUDFLARE_API_TOKEN`. Reading it with `read -rs` keeps it out of shell history.
 
 Rotate (every 12 months, or on any suspicion):
 
@@ -131,7 +135,7 @@ export WEB_ORIGIN=<the PWA origin>
 bun run admin:invite "Your Name"
 ```
 
-Expected: `admin invite for Your Name, valid until <48 hours from now>:` and a `https://<pwa>/invite/<token>` link. Open it inside the installed PWA on your phone. The link is single use. Run the command only once: each run creates another admin. If the link expires before you use it, ask a second admin for a re-login link from the admin screen; if you are the only admin, run it once more and then revoke the unused admin from the admin screen after signing in. Further surveyors are invited from the admin screen. Close the shell afterwards (`unset DATABASE_URL`).
+Expected: `admin invite for Your Name, valid until <48 hours from now>:` and a `https://<pwa>/invite/<token>` link. Open it inside the installed PWA on your phone. The link is single use. Run the command only once: each run creates another admin. Run it again only if the link expired before anyone used it; in that case, after signing in with the new link, revoke the unused admin from the admin screen. (If another admin already exists, they can instead issue a re-login link for the unused admin from the admin screen.) Further surveyors are invited from the admin screen. Close the shell afterwards (`unset DATABASE_URL`).
 
 ## 8. Releases
 
@@ -141,9 +145,9 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Actions > migrate starts, waits for a reviewer, then: host guard, `db:migrate`, Render deploy hook for that commit, smoke (`/health` with retry, CORS, data pointer, bundle). A failed smoke leaves the previous data site untouched. Render deploys also appear under the service's Events tab. A push to `main` does not deploy the API; it runs CI and, if the PWA project is connected, deploys the PWA (section 9).
+Actions > migrate starts, waits for a reviewer, then: host guard, `db:migrate`, Render deploy hook for that commit, smoke (`/health` with retry, CORS, data pointer, bundle). Render deploys also appear under the service's Events tab. A push to `main` does not deploy the API; it runs CI and, if the PWA project is connected, deploys the PWA (section 9).
 
-## 9. PWA on Cloudflare Pages (after plan D)
+## 9. PWA on Cloudflare Pages (once the web app exists)
 
 Create `study-spot` from Git, never direct upload:
 
@@ -173,10 +177,11 @@ Prints `Public key: age1...`. Put that value in repo variable `BACKUP_AGE_RECIPI
 Restore drill (do it once before surveying, then each term):
 
 1. Download the artifact (Actions > backup > run > Artifacts), unzip.
-2. In Neon create a branch (Branches > Create branch) so production is untouched; copy that branch's direct URL.
-3. `age -d -i perch-backup.key backup.dump.age > backup.dump`
-4. `pg_restore --no-owner --no-acl -d "<branch direct url>" backup.dump`
-5. Point `DATABASE_URL` at the branch and run `bun run admin:invite "Drill"`; delete the branch.
+2. In Neon create a branch (Branches > Create branch) so production is untouched; copy that branch's direct URL. A branch already contains production's schema and data, so do not restore into its default database: create an empty one.
+3. `psql "<branch direct url>" -c 'CREATE DATABASE drill'`
+4. `age -d -i perch-backup.key backup.dump.age > backup.dump`
+5. `pg_restore --no-owner --no-acl -d "<branch direct url with /drill as the database name>" backup.dump`. Your local `pg_restore` must be version 17 or newer (check `pg_restore --version`).
+6. Check it: `read -rs DATABASE_URL && export DATABASE_URL` (the `/drill` URL), `export WEB_ORIGIN=<the PWA origin>`, then `bun run admin:invite "Drill"` should print an invite link. Delete the Neon branch and `unset DATABASE_URL`.
 
 Notes: `pg_dump` must be at least as new as Neon's server (the workflow installs `postgresql-client-$PG_MAJOR` and fails on a mismatch). GitHub disables scheduled workflows after 60 days without repo activity; if backups stop, push any commit or re-enable it under Actions. Neon's own 6-hour restore window is a safety net, not a backup. A manual snapshot (1 allowed on free) before risky migrations is cheap.
 
