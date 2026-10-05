@@ -2,9 +2,26 @@ export type HostCheck = { ok: true; host: string } | { ok: false; error: string 
 
 const STRONG_SSL = new Set(["require", "verify-ca", "verify-full"]);
 
+/**
+ * libpq (psql, pg_dump) honors query keys such as host, hostaddr, port, service, and
+ * dbname over the authority, so only the two keys Neon's strings carry are allowed.
+ */
+const ALLOWED_KEYS = new Set(["sslmode", "channel_binding"]);
+
 /** Neon's pooled hostname is the direct one with -pooler after the endpoint id. */
 function normalize(host: string): string {
   return host.toLowerCase().replace(/-pooler(?=\.)/, "");
+}
+
+/** libpq expands a database name holding = or a URL into a whole connection string. */
+function plainDbName(pathname: string): boolean {
+  let name: string;
+  try {
+    name = decodeURIComponent(pathname.slice(1));
+  } catch {
+    return false;
+  }
+  return /^[A-Za-z0-9_.-]+$/.test(name);
 }
 
 /**
@@ -21,11 +38,19 @@ export function checkDbHost(databaseUrl: string, expectedHost: string): HostChec
   if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
     return { ok: false, error: "DATABASE_URL is not a postgres:// URL" };
   }
-  // postgres-js uses the last sslmode, so a repeated one could hide a weak value.
-  const sslmodes = parsed.searchParams.getAll("sslmode");
-  if (sslmodes.length > 1) {
-    return { ok: false, error: "DATABASE_URL must set sslmode exactly once" };
+  for (const key of new Set(parsed.searchParams.keys())) {
+    if (!ALLOWED_KEYS.has(key)) {
+      return { ok: false, error: `DATABASE_URL must not set the ${key} parameter` };
+    }
+    // postgres-js uses the last value, so a repeated key could hide a weak one.
+    if (parsed.searchParams.getAll(key).length > 1) {
+      return { ok: false, error: `DATABASE_URL must set ${key} exactly once` };
+    }
   }
+  if (!plainDbName(parsed.pathname)) {
+    return { ok: false, error: "DATABASE_URL database name must be a plain name" };
+  }
+  const sslmodes = parsed.searchParams.getAll("sslmode");
   if (!STRONG_SSL.has(sslmodes[0] ?? "")) {
     return { ok: false, error: "DATABASE_URL must set sslmode=require (or stronger)" };
   }

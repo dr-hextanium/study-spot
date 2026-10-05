@@ -50,3 +50,45 @@ test("a repeated sslmode is rejected, since the driver uses the last one", () =>
     }
   }
 });
+
+test("query keys that libpq honors over the authority host are rejected", () => {
+  for (const query of [
+    "?sslmode=require&host=secret.evil.example",
+    "?sslmode=require&hostaddr=10.0.0.1",
+    "?sslmode=require&service=secret",
+    "?sslmode=require&port=6543",
+    "?sslmode=require&dbname=postgres://u:secret@evil.example/db",
+    "?sslmode=require&options=secret",
+  ]) {
+    const result = checkDbHost(url(HOST, query), HOST);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).not.toContain("secret");
+  }
+});
+
+test("only sslmode and channel_binding are allowed, each at most once", () => {
+  expect(checkDbHost(url(HOST, "?sslmode=require&channel_binding=require"), HOST).ok).toBe(true);
+  const twice = checkDbHost(
+    url(HOST, "?sslmode=require&channel_binding=require&channel_binding=disable"),
+    HOST,
+  );
+  expect(twice.ok).toBe(false);
+});
+
+test("a database name that is itself a connection string is rejected", () => {
+  for (const path of [
+    "host%3Dsecret.evil.example",
+    "postgres%3A%2F%2Fu%3Asecret%40evil.example%2Fdb",
+    "db%ZZ",
+  ]) {
+    const result = checkDbHost(`postgres://u:secret@${HOST}/${path}?sslmode=require`, HOST);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).not.toContain("secret");
+  }
+});
+
+test("a multi-host authority is rejected by the host comparison", () => {
+  const result = checkDbHost(`postgres://u:secret@${HOST},evil.example/db?sslmode=require`, HOST);
+  expect(result.ok).toBe(false);
+  if (!result.ok) expect(result.error).not.toContain("secret");
+});
