@@ -25,7 +25,7 @@ jobs:
           node-version: 24
 
       - name: Check the database host
-        run: node apps/server/scripts/assert-db-host.ts
+        run: node apps/server/scripts/assert-db-host.ts --direct
 
       - name: Check the backup variables
         run: |

@@ -1,5 +1,10 @@
 export type HostCheck = { ok: true; host: string } | { ok: false; error: string };
 
+export type HostCheckOptions = {
+  /** Migrations and dumps need a session, which Neon's pooler (PgBouncer) does not give. */
+  requireDirect?: boolean;
+};
+
 const STRONG_SSL = new Set(["require", "verify-ca", "verify-full"]);
 
 /**
@@ -28,7 +33,11 @@ function plainDbName(pathname: string): boolean {
  * Guards a migration or dump against the wrong database. Compares only the host,
  * and never puts the URL (which holds the password) in an error.
  */
-export function checkDbHost(databaseUrl: string, expectedHost: string): HostCheck {
+export function checkDbHost(
+  databaseUrl: string,
+  expectedHost: string,
+  options: HostCheckOptions = {},
+): HostCheck {
   let parsed: URL;
   try {
     parsed = new URL(databaseUrl);
@@ -53,6 +62,9 @@ export function checkDbHost(databaseUrl: string, expectedHost: string): HostChec
   const sslmodes = parsed.searchParams.getAll("sslmode");
   if (!STRONG_SSL.has(sslmodes[0] ?? "")) {
     return { ok: false, error: "DATABASE_URL must set sslmode=require (or stronger)" };
+  }
+  if (options.requireDirect === true && parsed.hostname.toLowerCase().includes("-pooler")) {
+    return { ok: false, error: "DATABASE_URL must use the direct host, not the -pooler one" };
   }
   const actual = normalize(parsed.hostname);
   const expected = normalize(expectedHost);

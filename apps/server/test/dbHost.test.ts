@@ -92,3 +92,15 @@ test("a multi-host authority is rejected by the host comparison", () => {
   expect(result.ok).toBe(false);
   if (!result.ok) expect(result.error).not.toContain("secret");
 });
+
+test("requireDirect rejects the pooled host and keeps the direct one", () => {
+  const pooled = "ep-cool-dew-123456-pooler.us-east-2.aws.neon.tech";
+  const rejected = checkDbHost(url(pooled), HOST, { requireDirect: true });
+  expect(rejected.ok).toBe(false);
+  if (!rejected.ok) {
+    expect(rejected.error).toContain("pooler");
+    expect(rejected.error).not.toContain("secret");
+  }
+  expect(checkDbHost(url(pooled.toUpperCase()), HOST, { requireDirect: true }).ok).toBe(false);
+  expect(checkDbHost(url(HOST), HOST, { requireDirect: true })).toEqual({ ok: true, host: HOST });
+});

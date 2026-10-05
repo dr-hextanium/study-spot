@@ -88,3 +88,11 @@ test("the release smoke is told which commit must be live", () => {
   const migrate = read(".github/workflows/migrate.yml");
   expect(migrate).toMatch(/with:\s*\n\s+expected_commit: \$\{\{ github\.sha \}\}/);
 });
+
+test("migrate and backup both require the direct database host", () => {
+  for (const name of ["migrate.yml", "backup.yml"]) {
+    expect(read(`.github/workflows/${name}`)).toContain(
+      "run: node apps/server/scripts/assert-db-host.ts --direct",
+    );
+  }
+});
