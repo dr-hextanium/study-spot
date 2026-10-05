@@ -8,7 +8,12 @@
       "!.impeccable",
       "!.idea",
       "!**/dist-test",
-      "!**/drizzle/meta"
+      "!**/drizzle/meta",
+      "!apps/web/src/routeTree.gen.ts",
+      "!apps/web/dist-types",
+      "!apps/web/dev-dist",
+      "!apps/web/test-results",
+      "!apps/web/playwright-report"
     ]
   },
   "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },

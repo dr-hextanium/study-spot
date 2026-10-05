@@ -20,3 +20,10 @@ HANDOFF.md
 
 dist-test/
 *.tsbuildinfo
+
+# Web app build and test output
+apps/web/dist-types/
+apps/web/dev-dist/
+apps/web/test-results/
+apps/web/playwright-report/
+apps/web/e2e/.state/

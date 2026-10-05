@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Perch</title>
+  <rect width="512" height="512" fill="#16181d"/>
+  <g fill="none" stroke="#ffffff" stroke-linecap="round">
+    <circle cx="196" cy="256" r="108" stroke-width="20"/>
+    <circle cx="196" cy="256" r="76" stroke-width="9"/>
+    <path d="M326 200c24-18 48 18 72 0s48-18 72 0M326 256c24-18 48 18 72 0s48-18 72 0M326 312c24-18 48 18 72 0s48-18 72 0" stroke-width="15"/>
+  </g>
+  <circle cx="196" cy="256" r="24" fill="#9fb2ff"/>
+</svg>

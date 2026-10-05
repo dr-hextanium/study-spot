@@ -1,0 +1,18 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../dist-types/test",
+    "jsx": "react-jsx",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["vite/client", "vite-plugin-pwa/react"]
+  },
+  "include": ["."],
+  "references": [
+    { "path": ".." },
+    { "path": "../../../packages/core" },
+    { "path": "../../../packages/core/test" },
+    { "path": "../../../packages/ui-logic" },
+    { "path": "../../../packages/ui-logic/test" }
+  ]
+}

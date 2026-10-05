@@ -36,6 +36,15 @@ jobs:
       - name: Test
         run: bun test
 
+      - name: Web unit tests
+        run: bun run --filter '@study-spot/web' test
+
+      - name: Web build
+        run: bun run --filter '@study-spot/web' build
+        env:
+          VITE_API_BASE_URL: https://api.example.invalid
+          VITE_DATA_BASE_URL: https://data.example.invalid
+
       - name: Smoke (Node)
         run: bun run smoke:node
 
