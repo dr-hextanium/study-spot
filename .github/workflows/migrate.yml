@@ -18,8 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     # Required reviewers and the main/v* rule are set on this environment (docs/ops.md 2.1).
     environment: production
+    # DATABASE_URL is set per step, only where it is used.
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL_DIRECT }}
       EXPECTED_DB_HOST: ${{ vars.EXPECTED_DB_HOST }}
     steps:
       - uses: actions/checkout@v7
@@ -37,9 +37,13 @@ jobs:
 
       - name: Check the database host
         run: node apps/server/scripts/assert-db-host.ts --direct
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_DIRECT }}
 
       - name: Migrate
         run: bun run db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_DIRECT }}
 
       - name: Deploy the API at this commit
         # The hook URL is a secret: pass it through env, never inline it in the script text.

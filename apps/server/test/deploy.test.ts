@@ -96,3 +96,16 @@ test("migrate and backup both require the direct database host", () => {
     );
   }
 });
+
+test("DATABASE_URL is set only on the steps that use it, never for a whole job", () => {
+  // Job-level env keys sit at 6 spaces, step-level env keys at 10.
+  for (const [name, steps] of [
+    ["migrate.yml", 2],
+    ["backup.yml", 3],
+  ] as const) {
+    const wf = read(`.github/workflows/${name}`);
+    expect(wf).not.toMatch(/^ {6}DATABASE_URL:/m);
+    expect(wf.match(/^ {10}DATABASE_URL: /gm)?.length).toBe(steps);
+    expect(wf.match(/DATABASE_URL: /g)?.length).toBe(steps);
+  }
+});
