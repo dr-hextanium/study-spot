@@ -37,7 +37,11 @@ const publisher = createPublisher({
 const app = await buildApp({
   db,
   clock: systemClock,
-  config: { webOrigin: env.WEB_ORIGIN, campusId: env.CAMPUS_ID },
+  config: {
+    webOrigin: env.WEB_ORIGIN,
+    campusId: env.CAMPUS_ID,
+    commit: env.RENDER_GIT_COMMIT ?? null,
+  },
   publisher,
   photos,
   logger: true,

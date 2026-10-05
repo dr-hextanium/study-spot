@@ -1,11 +1,19 @@
 import { expect, test } from "bun:test";
 import { body, setup, WEB_ORIGIN } from "./helpers.ts";
 
-test("GET /health answers ok", async () => {
+test("GET /health answers ok with a null commit when none is configured", async () => {
   const { app } = await setup();
   const res = await app.inject({ method: "GET", url: "/health" });
   expect(res.statusCode).toBe(200);
-  expect(body(res)).toEqual({ ok: true });
+  expect(body(res)).toEqual({ ok: true, commit: null });
+});
+
+test("GET /health reports the deployed commit", async () => {
+  const commit = "0123456789abcdef0123456789abcdef01234567";
+  const { app } = await setup({ commit });
+  const res = await app.inject({ method: "GET", url: "/health" });
+  expect(res.statusCode).toBe(200);
+  expect(body(res)).toEqual({ ok: true, commit });
 });
 
 test("unknown routes return a not_found code", async () => {

@@ -22,6 +22,8 @@ export type AppConfig = {
   /** The PWA origin, the only origin CORS allows. */
   webOrigin: string;
   campusId: string;
+  /** The deployed git commit (RENDER_GIT_COMMIT), shown on /health; null when unknown. */
+  commit: string | null;
 };
 
 export type AppDeps = {
@@ -69,7 +71,7 @@ export async function buildApp(deps: AppDeps) {
     maxAge: 600,
   });
 
-  await app.register(healthRoutes);
+  await app.register(healthRoutes(deps.config));
   await app.register(authRoutes(deps));
   await app.register(adminRoutes(deps));
   await app.register(spotRoutes(deps));

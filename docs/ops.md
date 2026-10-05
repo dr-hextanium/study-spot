@@ -145,7 +145,7 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Actions > migrate starts, waits for a reviewer, then: host guard, `db:migrate`, Render deploy hook for that commit, smoke (`/health` with retry, CORS, data pointer, bundle). Render deploys also appear under the service's Events tab. A push to `main` does not deploy the API; it runs CI and, if the PWA project is connected, deploys the PWA (section 9).
+Actions > migrate starts, waits for a reviewer, then: host guard, `db:migrate`, Render deploy hook for that commit, smoke (`/health` with retry until it reports that commit, CORS, data pointer, bundle). Render deploys also appear under the service's Events tab. A push to `main` does not deploy the API; it runs CI and, if the PWA project is connected, deploys the PWA (section 9).
 
 ## 9. PWA on Cloudflare Pages (once the web app exists)
 

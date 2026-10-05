@@ -302,3 +302,53 @@ test("a body read that throws at the bundle step returns a failure", async () =>
   );
   expect(result).toMatchObject({ ok: false, step: "bundle" });
 });
+
+const OLD = "1111111111111111111111111111111111111111";
+const NEW = "2222222222222222222222222222222222222222";
+const withCommit = (commitFor: (attempt: number) => unknown): Handler =>
+  (() => {
+    let attempt = 0;
+    return (req: Req) =>
+      req.url === `${API}/health` ? json({ ok: true, commit: commitFor(++attempt) }) : good(req);
+  })();
+
+test("with an expected commit, the health loop waits until that commit is live", async () => {
+  const result = await run(
+    withCommit((n) => (n < 3 ? OLD : NEW)),
+    { expectedCommit: NEW },
+  );
+  expect(result).toMatchObject({ ok: true, healthAttempts: 3 });
+});
+
+test("an old commit that never rolls over fails at health and names both commits", async () => {
+  const result = await run(
+    withCommit(() => OLD),
+    { expectedCommit: NEW, maxHealthAttempts: 4 },
+  );
+  expect(result).toMatchObject({ ok: false, step: "health" });
+  if (!result.ok) {
+    expect(result.detail).toContain(`live commit ${OLD}`);
+    expect(result.detail).toContain(NEW);
+  }
+});
+
+test("a server that reports no commit fails when a commit is expected", async () => {
+  for (const handler of [withCommit(() => null), good]) {
+    const result = await run(handler, { expectedCommit: NEW, maxHealthAttempts: 2 });
+    expect(result).toMatchObject({ ok: false, step: "health" });
+    if (!result.ok) expect(result.detail).toContain("unknown");
+  }
+});
+
+test("without an expected commit, any reported commit passes", async () => {
+  const result = await run(withCommit(() => OLD));
+  expect(result).toMatchObject({ ok: true, healthAttempts: 1 });
+});
+
+test("a short live sha matches the full expected sha", async () => {
+  const result = await run(
+    withCommit(() => NEW.slice(0, 12)),
+    { expectedCommit: NEW.toUpperCase() },
+  );
+  expect(result).toMatchObject({ ok: true });
+});

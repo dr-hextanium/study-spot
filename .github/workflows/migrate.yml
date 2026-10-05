@@ -50,3 +50,5 @@ jobs:
   smoke:
     needs: migrate
     uses: ./.github/workflows/smoke-deploy.yml
+    with:
+      expected_commit: ${{ github.sha }}

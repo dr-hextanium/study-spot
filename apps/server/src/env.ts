@@ -15,6 +15,8 @@ const Base = z.object({
   DATA_BASE_URL: z.httpUrl().transform((u) => u.replace(/\/+$/, "")),
   PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
   CAMPUS_ID: z.string().min(1).default("sbu"),
+  /** Set by Render at build and run time; reported on /health. */
+  RENDER_GIT_COMMIT: z.string().min(1).optional(),
 });
 
 const PagesEnv = Base.extend({

@@ -2,7 +2,19 @@ name: smoke-deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      expected_commit:
+        description: "Commit /health must report (empty: any)"
+        type: string
+        required: false
+        default: ""
   workflow_call:
+    inputs:
+      expected_commit:
+        description: "Commit /health must report (empty: any)"
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -31,4 +43,6 @@ jobs:
           API_BASE_URL: ${{ vars.API_BASE_URL }}
           WEB_ORIGIN: ${{ vars.WEB_ORIGIN }}
           DATA_BASE_URL: ${{ vars.DATA_BASE_URL }}
-          SMOKE_WAIT_SECONDS: "180"
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          # Waiting for a commit means outlasting a Render build, not only a cold start.
+          SMOKE_WAIT_SECONDS: ${{ inputs.expected_commit != '' && '420' || '180' }}

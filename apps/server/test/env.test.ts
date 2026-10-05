@@ -41,3 +41,12 @@ test("empty strings count as missing and bad values are rejected", () => {
   expect(parseEnv({ ...fsEnv, PORT: "0" }).ok).toBe(false);
   expect(parseEnv({ ...fsEnv, PUBLISH_TARGET: "r2" }).ok).toBe(false);
 });
+
+test("RENDER_GIT_COMMIT is optional and passed through", () => {
+  const none = parseEnv({ ...fsEnv, RENDER_GIT_COMMIT: "" });
+  if (!none.ok) throw new Error(none.error);
+  expect(none.env.RENDER_GIT_COMMIT).toBeUndefined();
+  const set = parseEnv({ ...fsEnv, RENDER_GIT_COMMIT: "abc1234" });
+  if (!set.ok) throw new Error(set.error);
+  expect(set.env.RENDER_GIT_COMMIT).toBe("abc1234");
+});

@@ -19,6 +19,11 @@ export type CheckOptions = {
   now?: () => number;
   /** Injectable for tests. */
   timeoutSignal?: (ms: number) => AbortSignal;
+  /**
+   * When set, /health must report this commit: the loop keeps polling while the
+   * old deploy still answers, until the new one is live or the deadline passes.
+   */
+  expectedCommit?: string;
 };
 
 export type CheckStep = "health" | "cors" | "pointer" | "bundle";
@@ -27,7 +32,17 @@ export type CheckResult =
   | { ok: true; hash: string; spots: number; healthAttempts: number }
   | { ok: false; step: CheckStep; detail: string };
 
-const Health = z.object({ ok: z.literal(true) });
+/** Older servers send no commit; that still counts as healthy when no commit is expected. */
+const Health = z.object({ ok: z.literal(true), commit: z.string().nullable().optional() });
+
+/** Render may report a full or short SHA; match on the shared prefix of at least 7 characters. */
+function sameCommit(live: string, expected: string): boolean {
+  const a = live.trim().toLowerCase();
+  const b = expected.trim().toLowerCase();
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  return short.length >= 7 && long.startsWith(short);
+}
+
 const FOREIGN_ORIGIN = "https://not-the-web-origin.example";
 
 function fail(step: CheckStep, detail: string): CheckResult {
@@ -91,9 +106,20 @@ export async function checkDeploy(opts: CheckOptions): Promise<CheckResult> {
     healthAttempts += 1;
     try {
       const res = await doFetch(`${api}/health`);
-      const body = await readJson(res);
-      healthy = res.ok && Health.safeParse(body).success;
-      if (!healthy) lastProblem = res.ok ? "unexpected /health body" : `status ${res.status}`;
+      const health = Health.safeParse(await readJson(res));
+      if (!res.ok) {
+        lastProblem = `status ${res.status}`;
+      } else if (!health.success) {
+        lastProblem = "unexpected /health body";
+      } else if (opts.expectedCommit === undefined) {
+        healthy = true;
+      } else {
+        const live = health.data.commit ?? null;
+        healthy = live !== null && sameCommit(live, opts.expectedCommit);
+        if (!healthy) {
+          lastProblem = `live commit ${live ?? "unknown (RENDER_GIT_COMMIT unset?)"}, expected ${opts.expectedCommit}`;
+        }
+      }
     } catch (error) {
       healthy = false;
       lastProblem = error instanceof Error ? error.message : String(error);

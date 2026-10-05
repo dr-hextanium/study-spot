@@ -17,11 +17,13 @@ function envBlocks(yaml: string): Map<string, string> {
   return blocks;
 }
 
-test("render.yaml env keys match env.ts, plus NODE_VERSION, minus PORT and FS_PUBLISH_DIR", () => {
+test("render.yaml env keys match env.ts, plus NODE_VERSION, minus PORT, FS_PUBLISH_DIR, and RENDER_GIT_COMMIT", () => {
   const fromEnv = new Set<string>();
   for (const option of Env.options) for (const key of Object.keys(option.shape)) fromEnv.add(key);
   fromEnv.delete("PORT");
   fromEnv.delete("FS_PUBLISH_DIR");
+  // Render sets this one itself on every deploy.
+  fromEnv.delete("RENDER_GIT_COMMIT");
   fromEnv.add("NODE_VERSION");
   expect([...envBlocks(read("render.yaml")).keys()].sort()).toEqual([...fromEnv].sort());
 });
@@ -77,4 +79,12 @@ test("the backup workflow encrypts before upload and never uploads a plain dump"
   expect(wf).toContain("retention-days: 90");
   expect(wf).toContain("path: backup.dump.age");
   expect(wf).not.toMatch(/path:\s*backup\.dump\s*$/m);
+});
+
+test("the release smoke is told which commit must be live", () => {
+  const smoke = read(".github/workflows/smoke-deploy.yml");
+  expect(smoke).toMatch(/workflow_call:\s*\n\s+inputs:\s*\n\s+expected_commit:/);
+  expect(smoke).toMatch(/EXPECTED_COMMIT: \$\{\{ inputs\.expected_commit \}\}/);
+  const migrate = read(".github/workflows/migrate.yml");
+  expect(migrate).toMatch(/with:\s*\n\s+expected_commit: \$\{\{ github\.sha \}\}/);
 });

@@ -110,7 +110,9 @@ export type TestContext = {
 };
 
 /** Seeded PGlite database, an FsTarget in a temp dir, manual timers, a controllable clock. */
-export async function setup(opts: { target?: PublishTarget } = {}): Promise<TestContext> {
+export async function setup(
+  opts: { target?: PublishTarget; commit?: string } = {},
+): Promise<TestContext> {
   const db = await createTestDb();
   const ids = await seed(db);
   const clock = testClock();
@@ -131,7 +133,7 @@ export async function setup(opts: { target?: PublishTarget } = {}): Promise<Test
   const app = await buildApp({
     db,
     clock,
-    config: { webOrigin: WEB_ORIGIN, campusId: "sbu" },
+    config: { webOrigin: WEB_ORIGIN, campusId: "sbu", commit: opts.commit ?? null },
     publisher,
     photos,
   });
