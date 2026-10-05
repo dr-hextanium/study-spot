@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: study-spot-api
+    runtime: node
+    plan: free
+    region: virginia
+    branch: main
+    # Releases go through .github/workflows/migrate.yml, which migrates and then calls the deploy hook.
+    autoDeployTrigger: "off"
+    # Bun installs the workspace (npm cannot resolve workspace:* dependencies). The server runs on Node.
+    buildCommand: npx --yes bun@1.3.14 install --frozen-lockfile
+    startCommand: node apps/server/src/main.ts
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: DATABASE_URL
+        sync: false
+      - key: WEB_ORIGIN
+        sync: false
+      - key: DATA_BASE_URL
+        sync: false
+      - key: PUBLISH_TARGET
+        value: "pages"
+      - key: CF_ACCOUNT_ID
+        sync: false
+      - key: CF_API_TOKEN
+        sync: false
+      - key: CF_DATA_PROJECT
+        value: "study-spot-data"
+      - key: CAMPUS_ID
+        value: "sbu"
