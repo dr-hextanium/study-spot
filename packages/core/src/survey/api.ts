@@ -43,6 +43,17 @@ export const SurveyorList = z.object({
 });
 export type SurveyorList = z.infer<typeof SurveyorList>;
 
+// Campus
+
+/** The campus and its buildings, for the new-spot building picker and campus-local dates. */
+export const CampusInfo = z.object({
+  campus: z.object({ id: z.string(), name: z.string(), tz: z.string() }),
+  buildings: z.array(
+    z.object({ id: z.string(), name: z.string(), lat: z.number(), lng: z.number() }),
+  ),
+});
+export type CampusInfo = z.infer<typeof CampusInfo>;
+
 // Spots
 
 export const SectionParams = z.object({ id: z.uuid(), section: SurveySection });

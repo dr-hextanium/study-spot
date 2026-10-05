@@ -13,6 +13,7 @@ import type { PhotoStore } from "./photos/store.ts";
 import type { Publisher } from "./publish/publisher.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { authRoutes } from "./routes/auth.ts";
+import { campusRoutes } from "./routes/campus.ts";
 import { healthRoutes } from "./routes/health.ts";
 import { photoRoutes } from "./routes/photos.ts";
 import { publishRoutes } from "./routes/publish.ts";
@@ -74,6 +75,7 @@ export async function buildApp(deps: AppDeps) {
   await app.register(healthRoutes(deps.config));
   await app.register(authRoutes(deps));
   await app.register(adminRoutes(deps));
+  await app.register(campusRoutes(deps));
   await app.register(spotRoutes(deps));
   await app.register(photoRoutes(deps));
   await app.register(publishRoutes(deps));
