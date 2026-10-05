@@ -15,6 +15,20 @@
       "when": 1791012026257,
       "tag": "0001_milky_ink",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791132930897,
+      "tag": "0002_drop_magic_link_and_r2_key",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791132935550,
+      "tag": "0003_surveyor_tooling",
+      "breakpoints": true
     }
   ]
 }

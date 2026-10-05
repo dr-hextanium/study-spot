@@ -14,7 +14,10 @@ const base: SpotRow = {
   lng: -73.12,
   directions: "Floor 3.",
   status: "published",
+  review_state: "unreviewed",
+  reviewed_by: null,
   version: 1,
+  last_edited_by: null,
   eligibility: "all_students",
   eligibility_scope: null,
   eligibility_verified: true,
@@ -107,7 +110,7 @@ test("verification dates and photos are included, cover first", () => {
         id: "p1",
         spot_id: base.id,
         url: "https://example.org/a.jpg",
-        r2_key: "a.jpg",
+        blob_sha256: null,
         taken_at: at,
         is_cover: false,
         uploaded_by: null,
@@ -118,7 +121,7 @@ test("verification dates and photos are included, cover first", () => {
         id: "p2",
         spot_id: base.id,
         url: "https://example.org/cover.jpg",
-        r2_key: "cover.jpg",
+        blob_sha256: null,
         taken_at: at,
         is_cover: true,
         uploaded_by: null,
@@ -134,4 +137,32 @@ test("verification dates and photos are included, cover first", () => {
     "https://example.org/a.jpg",
   ]);
   expect(r.spot.photos[0]?.is_cover).toBe(true);
+});
+
+test("a missing noise policy blocks the spot", () => {
+  const r = toBundleSpot({ row: { ...base, noise_policy: null }, ...empty });
+  expect(r).toEqual({ ok: false, missing: ["noise_policy"] });
+});
+
+test("an approved photo without a url yet is left out", () => {
+  const at = new Date("2026-10-05T15:00:00Z");
+  const r = toBundleSpot({
+    row: base,
+    ...empty,
+    approvedPhotos: [
+      {
+        id: "p1",
+        spot_id: base.id,
+        url: null,
+        blob_sha256: "ab".repeat(32),
+        taken_at: at,
+        is_cover: true,
+        uploaded_by: null,
+        approved_by: "s",
+        approved_at: at,
+      },
+    ],
+  });
+  if (!r.ok) throw new Error("expected ok");
+  expect(r.spot.photos).toEqual([]);
 });

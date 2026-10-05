@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": ".", "outDir": "../dist-test", "types": ["bun", "node"] },
+  "include": ["."],
+  "references": [
+    { "path": ".." },
+    { "path": "../../../packages/core" },
+    { "path": "../../../packages/db" }
+  ]
+}

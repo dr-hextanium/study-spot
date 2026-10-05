@@ -124,3 +124,7 @@ export type SpotStatus = z.infer<typeof SpotStatus>;
 export const NOISE_SAMPLE_SOURCE = ["survey", "user"] as const;
 export const NoiseSampleSource = z.enum(NOISE_SAMPLE_SOURCE);
 export type NoiseSampleSource = z.infer<typeof NoiseSampleSource>;
+
+export const REVIEW_STATE = ["unreviewed", "reviewed"] as const;
+export const ReviewState = z.enum(REVIEW_STATE);
+export type ReviewState = z.infer<typeof ReviewState>;

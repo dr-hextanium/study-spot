@@ -42,6 +42,12 @@ jobs:
       - name: Smoke (Bun)
         run: bun packages/db/scripts/smoke-bundle.ts
 
+      - name: Server smoke (Node)
+        run: bun run smoke:server node
+
+      - name: Server smoke (Bun)
+        run: bun run smoke:server bun
+
       - name: Migrations are up to date
         run: |
           bun run db:generate
@@ -95,3 +101,14 @@ jobs:
 
       - name: Smoke (postgres.js on Node)
         run: node packages/db/scripts/smoke-postgres.ts
+
+      - name: Bootstrap admin invite
+        run: bun run admin:invite "CI Admin"
+        env:
+          WEB_ORIGIN: http://localhost:5173
+
+      - name: Server smoke against Postgres (Node)
+        run: bun run smoke:server node
+
+      - name: Write and publish smoke against Postgres (Node)
+        run: node apps/server/scripts/smoke-publish.ts

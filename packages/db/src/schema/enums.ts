@@ -14,6 +14,7 @@ import {
   NOISE_BUCKET,
   NOISE_POLICY,
   NOISE_SAMPLE_SOURCE,
+  REVIEW_STATE,
   SEAT_TYPE,
   SPOT_STATUS,
   SURVEYOR_ROLE,
@@ -46,3 +47,4 @@ export const forecast_profile = pgEnum("forecast_profile", FORECAST_PROFILE);
 export const surveyor_role = pgEnum("surveyor_role", SURVEYOR_ROLE);
 export const spot_status = pgEnum("spot_status", SPOT_STATUS);
 export const noise_sample_source = pgEnum("noise_sample_source", NOISE_SAMPLE_SOURCE);
+export const review_state = pgEnum("review_state", REVIEW_STATE);

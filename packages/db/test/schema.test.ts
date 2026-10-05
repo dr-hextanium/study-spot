@@ -2,14 +2,19 @@ import { expect, test } from "bun:test";
 import { sql } from "drizzle-orm";
 import {
   building,
+  bundle_state,
   campus,
+  invite,
+  photo_blob,
   spot,
   spot_hours,
   spot_photo,
   spot_room,
   spot_seat_type,
   spotSelectSchema,
+  surveyor,
   term,
+  write_receipt,
 } from "../src/index.ts";
 import { createTestDb } from "../src/testing.ts";
 
@@ -82,7 +87,6 @@ test("a spot has at most one cover photo", async () => {
   const photo = {
     spot_id: row.id,
     url: "https://example.org/a.jpg",
-    r2_key: "a.jpg",
     taken_at: new Date(),
   };
   await db.insert(spot_photo).values({ ...photo, is_cover: true });
@@ -132,4 +136,85 @@ test("pick_ping hour bucket stays within a day", async () => {
       ),
     ),
   ).rejects.toThrow();
+});
+
+test("surveyor tooling columns have the expected defaults", async () => {
+  const { db, row } = await withSpot();
+  expect(row.review_state).toBe("unreviewed");
+  expect(row.last_edited_by).toBeNull();
+  const [draft] = await db
+    .insert(spot)
+    .values({
+      slug: "no-noise-yet",
+      building_id: "melville-library",
+      floor: "1",
+      official_name: "No Noise Yet",
+      lat: 40.9,
+      lng: -73.1,
+    })
+    .returning();
+  expect(draft?.noise_policy).toBeNull();
+
+  const [state] = await db.insert(bundle_state).values({ campus_id: "sbu" }).returning();
+  expect(state?.write_seq).toBe(0);
+  expect(state?.last_warnings).toBeNull();
+
+  // magic_link was dropped by migration 0002.
+  await expect(Promise.resolve(db.execute(sql`select * from magic_link`))).rejects.toThrow();
+});
+
+test("invites allow a null creator and enforce the surveyor reference", async () => {
+  const { db } = await withSpot();
+  const [s] = await db.insert(surveyor).values({ display_name: "Ana" }).returning();
+  if (!s) throw new Error("insert returned nothing");
+  expect(s.email).toBeNull();
+  const expires_at = new Date("2026-10-15T00:00:00Z");
+  await db.insert(invite).values({ token_hash: "a", role: "admin", expires_at });
+  await db
+    .insert(invite)
+    .values({ token_hash: "b", role: "surveyor", surveyor_id: s.id, created_by: s.id, expires_at });
+  await expect(
+    Promise.resolve(
+      db.insert(invite).values({
+        token_hash: "c",
+        role: "surveyor",
+        surveyor_id: "8d0f7c1e-2b7a-4c39-9a51-3f6f4f0f2a11",
+        expires_at,
+      }),
+    ),
+  ).rejects.toThrow();
+});
+
+test("photo blobs round-trip bytes exactly and photos must reference a blob", async () => {
+  const { db, row } = await withSpot();
+  const bytes = new Uint8Array([0xff, 0xd8, 0x00, 0x01, 0x7f, 0x80, 0xff, 0xd9]);
+  await db
+    .insert(photo_blob)
+    .values({ sha256: "f".repeat(64), bytes, content_type: "image/jpeg", byte_size: 8 });
+  const [blob] = await db.select().from(photo_blob);
+  expect(blob ? Array.from(blob.bytes) : []).toEqual(Array.from(bytes));
+
+  await db
+    .insert(spot_photo)
+    .values({ spot_id: row.id, blob_sha256: "f".repeat(64), taken_at: new Date() });
+  await expect(
+    Promise.resolve(
+      db
+        .insert(spot_photo)
+        .values({ spot_id: row.id, blob_sha256: "0".repeat(64), taken_at: new Date() }),
+    ),
+  ).rejects.toThrow();
+});
+
+test("write receipts store a json response", async () => {
+  const { db } = await withSpot();
+  const [s] = await db.insert(surveyor).values({ display_name: "Ana" }).returning();
+  if (!s) throw new Error("insert returned nothing");
+  const id = "0b7e7f8e-3f3a-4c55-8d5e-1e2f3a4b5c6d";
+  const response = { kind: "spot.create", status: 201, body: { id: "x" } };
+  await db
+    .insert(write_receipt)
+    .values({ client_write_id: id, surveyor_id: s.id, response_json: response });
+  const [r] = await db.select().from(write_receipt);
+  expect(r?.response_json).toEqual(response);
 });
