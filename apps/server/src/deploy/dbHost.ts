@@ -21,8 +21,12 @@ export function checkDbHost(databaseUrl: string, expectedHost: string): HostChec
   if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
     return { ok: false, error: "DATABASE_URL is not a postgres:// URL" };
   }
-  const sslmode = parsed.searchParams.get("sslmode") ?? "";
-  if (!STRONG_SSL.has(sslmode)) {
+  // postgres-js uses the last sslmode, so a repeated one could hide a weak value.
+  const sslmodes = parsed.searchParams.getAll("sslmode");
+  if (sslmodes.length > 1) {
+    return { ok: false, error: "DATABASE_URL must set sslmode exactly once" };
+  }
+  if (!STRONG_SSL.has(sslmodes[0] ?? "")) {
     return { ok: false, error: "DATABASE_URL must set sslmode=require (or stronger)" };
   }
   const actual = normalize(parsed.hostname);

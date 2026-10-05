@@ -35,3 +35,18 @@ test("garbage and non-postgres urls are rejected without echoing them", () => {
     if (!result.ok) expect(result.error).not.toContain("secret");
   }
 });
+
+test("a repeated sslmode is rejected, since the driver uses the last one", () => {
+  for (const query of [
+    "?sslmode=require&sslmode=disable",
+    "?sslmode=disable&sslmode=require",
+    "?sslmode=require&sslmode=require",
+  ]) {
+    const result = checkDbHost(url(HOST, query), HOST);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain("sslmode");
+      expect(result.error).not.toContain("secret");
+    }
+  }
+});
