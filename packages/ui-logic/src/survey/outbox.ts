@@ -190,7 +190,13 @@ export function createOutbox(deps: OutboxDeps) {
       case "photo.cover":
         return api.setCover(r.payload.photo_id, { client_write_id });
       case "photo.upload": {
-        const bytes = await store.photo(client_write_id);
+        let bytes: Uint8Array | null;
+        try {
+          bytes = await store.photo(client_write_id);
+        } catch {
+          // The read failed or timed out: the bytes may be fine, so keep the write queued.
+          return { kind: "network" };
+        }
         if (bytes === null) return { kind: "local", code: "photo_missing" };
         return api.uploadPhoto(
           { spot_id: r.spot_id, client_write_id, taken_at: r.payload.taken_at },

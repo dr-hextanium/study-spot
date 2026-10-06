@@ -342,6 +342,29 @@ test("a photo whose bytes were evicted fails alone and does not hold the spot's 
   ]);
 });
 
+test("a photo read that fails or times out is unknown: the upload stays queued, not failed", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  await box.addPhoto(SPOT_A, 3, JPEG, new Date("2026-10-05T15:59:00Z"));
+  const real = t.blobs.get.bind(t.blobs);
+  let broken = true;
+  t.blobs.get = async (key) => {
+    if (broken) throw new Error("bin get timed out after 8000 ms");
+    return real(key);
+  };
+  t.network.set(true);
+  await box.idle();
+  expect(box.getSnapshot().records).toMatchObject([{ kind: "photo.upload", state: "pending" }]);
+  expect(t.sent()).toEqual([]);
+  broken = false;
+  t.timers.advance(BACKOFF_MAX_MS);
+  await box.idle();
+  expect(t.sent()).toEqual(["POST /survey/photos"]);
+  expect(box.getSnapshot().records).toEqual([]);
+});
+
 test("one spot edited offline in two tabs keeps both writes and runs each once", async () => {
   const t = setup();
   t.network.set(false);
