@@ -129,3 +129,14 @@ export function sanitizePersisted(raw: unknown): PersistedClient {
     clientState: { mutations: [], queries: kept },
   } as unknown as PersistedClient;
 }
+
+/**
+ * Survey queries that hold data are persisted, including one whose last refetch
+ * failed: the copy kept for offline use must outlive a failed refresh.
+ */
+export function shouldPersistQuery(q: {
+  queryKey: readonly unknown[];
+  state: { data: unknown };
+}): boolean {
+  return q.queryKey[0] === "survey" && q.state.data !== undefined;
+}

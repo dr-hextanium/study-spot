@@ -8,6 +8,7 @@ import {
   mergeList,
   newerSpot,
   sanitizePersisted,
+  shouldPersistQuery,
 } from "../src/app/serverCache.ts";
 import { CAMPUS, summary } from "./harness.tsx";
 
@@ -70,4 +71,26 @@ test("persisted queries are checked on restore: damaged or unknown ones are drop
   expect(restored.buster).toBe("survey-1");
   expect(sanitizePersisted("garbage").clientState.queries).toEqual([]);
   expect(sanitizePersisted({ timestamp: 1 }).clientState.queries).toEqual([]);
+});
+
+test("a survey query whose refetch failed is still persisted while it holds data", async () => {
+  const qc = new QueryClient();
+  qc.setQueryData(keys.campus, CAMPUS);
+  await qc
+    .fetchQuery({
+      queryKey: keys.campus,
+      queryFn: () => Promise.reject(new Error("down")),
+      retry: false,
+      staleTime: 0,
+    })
+    .catch(() => undefined);
+  const query = qc.getQueryCache().find({ queryKey: keys.campus });
+  expect(query?.state.status).toBe("error");
+  expect(query?.state.data).toEqual(CAMPUS);
+  expect(query !== undefined && shouldPersistQuery(query)).toBe(true);
+  const empty = qc.getQueryCache().build(qc, { queryKey: keys.list });
+  expect(shouldPersistQuery(empty)).toBe(false);
+  const admin = qc.getQueryCache().build(qc, { queryKey: keys.surveyors });
+  admin.setData({ surveyors: [] });
+  expect(shouldPersistQuery(admin)).toBe(false);
 });

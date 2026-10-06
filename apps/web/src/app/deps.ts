@@ -108,8 +108,10 @@ function buildAppDeps(env: { apiBaseUrl: string; dataBaseUrl: string }): AppDeps
     token: () => session.token(),
   });
   // Web Locks are in every browser Perch supports (Safari 15.4+). Without them the
-  // outbox's own createLocalLock and createLocalLiveness apply (one tab at a time),
-  // so lock and liveness are passed together or not at all. One liveness per outbox.
+  // outbox's own createLocalLock and createLocalLiveness apply. Those cover this tab
+  // only and do not exclude other tabs; a duplicate send is left to the server's
+  // idempotency on client_write_id. Lock and liveness are passed together or not at
+  // all, and each outbox gets its own liveness.
   const locks: LockApi | undefined =
     typeof navigator !== "undefined" && "locks" in navigator ? navigator.locks : undefined;
   const outbox = createOutbox({
