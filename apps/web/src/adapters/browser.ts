@@ -79,10 +79,14 @@ export const OUTBOX_CHANNEL = "study-spot:outbox";
 
 /** Wakes other tabs of this origin when the queue changes. A no-op where BroadcastChannel is missing. */
 export function createBroadcastSignal(name: string = OUTBOX_CHANNEL): QueueSignal {
-  if (typeof BroadcastChannel === "undefined") {
-    return { post: () => {}, subscribe: () => () => {} };
+  const none: QueueSignal = { post: () => {}, subscribe: () => () => {} };
+  if (typeof BroadcastChannel === "undefined") return none;
+  let channel: BroadcastChannel;
+  try {
+    channel = new BroadcastChannel(name);
+  } catch {
+    return none;
   }
-  const channel = new BroadcastChannel(name);
   return {
     post: () => channel.postMessage("changed"),
     subscribe(listener) {

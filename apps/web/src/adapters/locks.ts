@@ -26,21 +26,33 @@ export function createWebLiveness(locks: LockApi, ids: Ids): Liveness {
   const self = ids.uuid();
   let release: (() => void) | null = null;
   let held: Promise<void> | null = null;
+  let released = false;
   return {
     hold() {
-      held ??= new Promise<void>((granted) => {
-        void locks.request(
-          `${TAB_LOCK_PREFIX}${self}`,
-          () =>
-            new Promise<void>((done) => {
-              release = done;
-              granted();
-            }),
-        );
-      });
+      if (held === null) {
+        released = false;
+        const attempt = new Promise<void>((resolve, reject) => {
+          locks
+            .request(
+              `${TAB_LOCK_PREFIX}${self}`,
+              () =>
+                new Promise<void>((done) => {
+                  if (released) done();
+                  else release = done;
+                  resolve();
+                }),
+            )
+            .catch((error: unknown) => {
+              if (held === attempt) held = null;
+              reject(error instanceof Error ? error : new Error(String(error)));
+            });
+        });
+        held = attempt;
+      }
       return held.then(() => self);
     },
     release() {
+      released = true;
       release?.();
       release = null;
       held = null;

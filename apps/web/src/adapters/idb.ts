@@ -24,19 +24,43 @@ function toBytes(value: unknown): Uint8Array | null {
  * The outbox queue, photo bytes, and the persisted query cache, in one
  * IndexedDB database with a string store and a binary store.
  */
-export function openStores(name: string = DB_NAME): Stores {
+export function openStores(name: string = DB_NAME, open: typeof openDB = openDB): Stores {
   let db: Promise<IDBPDatabase<StudySpotDb>> | null = null;
   const conn = (): Promise<IDBPDatabase<StudySpotDb>> => {
-    db ??= openDB<StudySpotDb>(name, DB_VERSION, {
+    if (db) return db;
+    const forget = (attempt: Promise<IDBPDatabase<StudySpotDb>>) => {
+      if (db === attempt) db = null;
+    };
+    const opening = open<StudySpotDb>(name, DB_VERSION, {
       upgrade(d) {
         d.createObjectStore("kv");
         d.createObjectStore("bin");
       },
-    }).catch((error: unknown) => {
-      db = null;
-      throw error;
+      // The browser dropped the connection (storage cleared, profile closed): reopen next call.
+      terminated() {
+        forget(attempt);
+      },
+      // Another tab wants to upgrade: let go so it is not blocked, and reopen next call.
+      blocking() {
+        forget(attempt);
+        void opening.then((d) => d.close());
+      },
     });
-    return db;
+    // A hung open must not be cached forever: time it out, and close it if it lands late.
+    const attempt: Promise<IDBPDatabase<StudySpotDb>> = withTimeout(
+      opening,
+      STORAGE_TIMEOUT_MS,
+      "indexeddb open",
+    );
+    db = attempt;
+    attempt.catch(() => forget(attempt));
+    opening.then(
+      (d) => {
+        if (db !== attempt) d.close();
+      },
+      () => {},
+    );
+    return attempt;
   };
   const run = <T>(what: string, fn: (d: IDBPDatabase<StudySpotDb>) => Promise<T>) =>
     withTimeout(

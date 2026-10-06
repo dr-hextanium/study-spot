@@ -1,7 +1,9 @@
 // @vitest-environment node
 import "fake-indexeddb/auto";
 import type { HttpRequest } from "@study-spot/ui-logic";
+import { openDB } from "idb";
 import { expect, test, vi } from "vitest";
+import { createBroadcastSignal } from "../src/adapters/browser.ts";
 import { createFetchHttp, JSON_TIMEOUT_MS } from "../src/adapters/http.ts";
 import { openStores } from "../src/adapters/idb.ts";
 import {
@@ -196,4 +198,101 @@ test("a tab's liveness lock is visible to other tabs until it releases", async (
   await Promise.resolve();
   expect(await b.alive(owner)).toBe(false);
   expect(await b.alive("never")).toBe(false);
+});
+
+test("hold rejects, without hanging or leaking, when the lock request fails", async () => {
+  const failing: LockApi = {
+    request: () => Promise.reject(new DOMException("denied", "SecurityError")),
+    query: async () => ({}),
+  };
+  const liveness = createWebLiveness(failing, { uuid: () => "t" });
+  await expect(liveness.hold()).rejects.toThrow("denied");
+  await expect(liveness.hold()).rejects.toThrow("denied");
+});
+
+test("release before the grant releases the lock once it is granted", async () => {
+  const locks = new FakeLocks();
+  let open: () => void = () => {};
+  const gate = new Promise<void>((resolve) => {
+    open = resolve;
+  });
+  const gated: LockApi = {
+    request: (name, cb) => gate.then(() => locks.request(name, cb)),
+    query: () => locks.query(),
+  };
+  const liveness = createWebLiveness(gated, { uuid: () => "t" });
+  const held = liveness.hold();
+  liveness.release();
+  open();
+  await held;
+  await new Promise((r) => setTimeout(r, 0));
+  expect(locks.heldNames.size).toBe(0);
+});
+
+test("the stores reopen after the browser terminates or blocks the connection", async () => {
+  type Opts = Parameters<typeof openDB>[2];
+  let opens = 0;
+  let opts: Opts | undefined;
+  const open = ((name: string, version: number, o: Opts) => {
+    opens += 1;
+    opts = o;
+    return openDB(name, version, o);
+  }) as typeof openDB;
+  n += 1;
+  const { cache } = openStores(`test-${n}`, open);
+  await cache.set("a", "1");
+  opts?.terminated?.();
+  expect(await cache.get("a")).toBe("1");
+  expect(opens).toBe(2);
+  // blocking(): the connection is closed so an upgrade can proceed, then reopened.
+  opts?.blocking?.(1, 2, undefined as never);
+  expect(await cache.get("a")).toBe("1");
+  expect(opens).toBe(3);
+});
+
+test("a failed or timed-out open is not cached", async () => {
+  let opens = 0;
+  const open = ((name: string, version: number, o: Parameters<typeof openDB>[2]) => {
+    opens += 1;
+    if (opens === 1) return Promise.reject(new Error("open failed"));
+    return openDB(name, version, o);
+  }) as typeof openDB;
+  n += 1;
+  const { cache } = openStores(`test-${n}`, open);
+  await expect(cache.get("a")).rejects.toThrow("open failed");
+  await cache.set("a", "1");
+  expect(await cache.get("a")).toBe("1");
+  expect(opens).toBe(2);
+
+  vi.useFakeTimers();
+  let hang = true;
+  const slowOpen = ((name: string, version: number, o: Parameters<typeof openDB>[2]) =>
+    hang ? new Promise(() => {}) : openDB(name, version, o)) as typeof openDB;
+  n += 1;
+  const slow = openStores(`test-${n}`, slowOpen).cache;
+  const stuck = slow.get("a");
+  const assertion = expect(stuck).rejects.toThrow("timed out");
+  vi.advanceTimersByTime(10_000);
+  await assertion;
+  vi.useRealTimers();
+  hang = false;
+  expect(await slow.get("a")).toBeNull();
+});
+
+test("a BroadcastChannel that throws leaves a no-op signal", () => {
+  vi.stubGlobal(
+    "BroadcastChannel",
+    class {
+      constructor() {
+        throw new Error("blocked");
+      }
+    },
+  );
+  try {
+    const signal = createBroadcastSignal("x");
+    expect(() => signal.post()).not.toThrow();
+    expect(() => signal.subscribe(() => {})()).not.toThrow();
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });
