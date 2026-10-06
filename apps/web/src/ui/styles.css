@@ -139,7 +139,6 @@ select {
   align-items: center;
   gap: 6px;
   min-height: var(--size-tapTarget);
-  max-width: 46vw;
   padding: 0 var(--space-xs);
   border: 0;
   background: transparent;
@@ -658,6 +657,12 @@ select {
   background: var(--color-success);
   border-color: var(--color-success);
   color: var(--color-onSuccess);
+}
+
+.stamp--filled.stamp--blue {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-onAccent);
 }
 
 .stamp--filled.stamp--ink {

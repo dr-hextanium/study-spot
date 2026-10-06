@@ -2,6 +2,7 @@ import { t } from "@study-spot/ui-logic";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { expect, test, vi } from "vitest";
+import { dateTime, headerText, postmarkState, shortDate } from "../src/lib/format.ts";
 import { Button } from "../src/ui/Button.tsx";
 import { TextField } from "../src/ui/Field.tsx";
 import { Postmark } from "../src/ui/Postmark.tsx";
@@ -10,6 +11,7 @@ import { ConfirmSheet } from "../src/ui/Sheet.tsx";
 import { StampChip } from "../src/ui/StampChip.tsx";
 import { Stepper } from "../src/ui/Stepper.tsx";
 import { SyncPostmark } from "../src/ui/SyncPostmark.tsx";
+import css from "../src/ui/styles.css?raw";
 
 test("buttons default to type=button and carry their variant", () => {
   render(<Button variant="primary">Publish</Button>);
@@ -119,4 +121,64 @@ test("a confirm sheet is a labelled dialog with both choices", () => {
   expect(dialog.hasAttribute("open")).toBe(true);
   fireEvent.click(screen.getByRole("button", { name: "Discard changes" }));
   expect(onConfirm).toHaveBeenCalled();
+});
+
+function MinStepper() {
+  const [n, setN] = useState<number | null>(null);
+  return <Stepper label="Seats" value={n} onChange={setN} min={10} max={500} />;
+}
+
+test("the stepper lets a surveyor type a number whose first digit is below the minimum", () => {
+  render(<MinStepper />);
+  const input = screen.getByRole("textbox", { name: "Seats" }) as HTMLInputElement;
+  fireEvent.change(input, { target: { value: "2" } });
+  expect(input.value).toBe("2");
+  fireEvent.change(input, { target: { value: "25" } });
+  expect(input.value).toBe("25");
+  fireEvent.blur(input);
+  expect(input.value).toBe("25");
+});
+
+test("an out-of-range entry is clamped on blur and the box shows the stored value", () => {
+  render(<MinStepper />);
+  const input = screen.getByRole("textbox", { name: "Seats" }) as HTMLInputElement;
+  fireEvent.change(input, { target: { value: "2" } });
+  fireEvent.blur(input);
+  expect(input.value).toBe("10");
+  fireEvent.change(input, { target: { value: "9999" } });
+  expect(input.value).toBe("9999");
+  fireEvent.blur(input);
+  expect(input.value).toBe("500");
+  fireEvent.click(screen.getByRole("button", { name: t("common.less") }));
+  expect(input.value).toBe("499");
+});
+
+test("the header postmark is not capped narrower than its longest short text", () => {
+  const rule = /\.syncmark\s*\{[^}]*\}/.exec(css)?.[0] ?? "";
+  expect(rule).not.toBe("");
+  expect(rule).not.toMatch(/max-width/);
+  for (const header of [
+    { kind: "failed", count: 100 },
+    { kind: "unreadable", count: 100 },
+    { kind: "pending", count: 100 },
+    { kind: "syncing", count: 100 },
+  ] as const) {
+    expect(headerText(header).length).toBeLessThanOrEqual(16);
+  }
+});
+
+test("bad dates never read as fresh and never throw", () => {
+  const now = new Date("2026-10-05T12:00:00Z");
+  expect(postmarkState("not a date", now)).toBe("never");
+  expect(postmarkState(null, now)).toBe("never");
+  expect(postmarkState("2026-10-01T00:00:00Z", now)).toBe("fresh");
+  expect(() => shortDate("garbage", "America/New_York")).not.toThrow();
+  expect(() => dateTime("garbage", "America/New_York")).not.toThrow();
+});
+
+test("every filled stamp tone has a readable text color rule", () => {
+  for (const tone of ["ink", "red", "green", "blue"]) {
+    expect(css).toContain(`.stamp--filled.stamp--${tone}`);
+  }
+  expect(css).toMatch(/\.stamp--filled\.stamp--blue\s*\{[^}]*--color-onAccent/);
 });

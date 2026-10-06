@@ -14,6 +14,8 @@ export default defineConfig({
     environment: "jsdom",
     include: ["test/**/*.test.{ts,tsx}"],
     setupFiles: ["test/setup.ts"],
+    // Keep real CSS text so tests can read the stylesheet via ?raw.
+    css: true,
     restoreMocks: true,
   },
 });

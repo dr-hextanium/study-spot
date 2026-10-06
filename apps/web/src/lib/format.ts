@@ -14,25 +14,32 @@ const DAY_MS = 86_400_000;
 
 export function postmarkState(verifiedAt: string | null, now: Date): PostmarkState {
   if (verifiedAt === null) return "never";
-  return now.getTime() - Date.parse(verifiedAt) > STALE_AFTER_DAYS * DAY_MS ? "stale" : "fresh";
+  const at = Date.parse(verifiedAt);
+  // An unreadable date is no evidence of a check.
+  if (Number.isNaN(at)) return "never";
+  return now.getTime() - at > STALE_AFTER_DAYS * DAY_MS ? "stale" : "fresh";
 }
 
 /** "Oct 5", in the campus time zone. */
 export function shortDate(iso: string, tz: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: tz }).format(
-    new Date(iso),
+    d,
   );
 }
 
 /** "Oct 15, 3:40 PM", in the campus time zone. */
 export function dateTime(iso: string, tz: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
     timeZone: tz,
-  }).format(new Date(iso));
+  }).format(d);
 }
 
 const SECTION_NAME = {

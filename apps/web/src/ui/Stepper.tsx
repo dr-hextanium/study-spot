@@ -35,14 +35,27 @@ export function Stepper({
     setText(value === null ? "" : String(value));
   }, [value]);
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
-  const commit = (raw: string) => {
+  // While typing, keep the text as entered and report only in-range numbers, so
+  // "2" on the way to "25" is not yanked up to the minimum.
+  const edit = (raw: string) => {
     setText(raw);
-    if (raw.trim() === "") return onChange(null);
+    if (raw === "") return onChange(null);
     const n = Number(raw);
-    if (Number.isFinite(n)) onChange(clamp(Math.round(n)));
+    if (Number.isFinite(n) && n >= min && n <= max) onChange(n);
   };
-  const bump = (dir: 1 | -1) =>
-    onChange(clamp((value ?? (dir > 0 ? min - step : min)) + dir * step));
+  // On blur, clamp and make the box show what is stored.
+  const settle = () => {
+    if (text === "") return;
+    const n = clamp(Number(text));
+    setText(String(n));
+    onChange(n);
+  };
+  const bump = (dir: 1 | -1) => {
+    const typed = text === "" ? value : Number(text);
+    const next = clamp((typed ?? (dir > 0 ? min - step : min)) + dir * step);
+    setText(String(next));
+    onChange(next);
+  };
   return (
     <fieldset className={`field stepper${error === undefined ? "" : " field--error"}`}>
       <legend className="label field__label" id={labelId}>
@@ -67,7 +80,8 @@ export function Stepper({
           value={text}
           aria-describedby={helper !== undefined || error !== undefined ? helpId : undefined}
           aria-invalid={error !== undefined}
-          onChange={(e) => commit(e.currentTarget.value.replace(/[^0-9]/g, ""))}
+          onBlur={settle}
+          onChange={(e) => edit(e.currentTarget.value.replace(/[^0-9]/g, ""))}
         />
         {suffix === undefined ? null : (
           <span className="stepper__unit" aria-hidden="true">
