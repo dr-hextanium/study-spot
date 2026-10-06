@@ -1,4 +1,11 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { UpdatePrompt } from "../screens/UpdatePrompt.tsx";
 
-/** The shell's update prompt joins in Task 8. */
-export const Route = createRootRoute({ component: Outlet });
+export const Route = createRootRoute({
+  component: () => (
+    <>
+      <Outlet />
+      <UpdatePrompt />
+    </>
+  ),
+});
