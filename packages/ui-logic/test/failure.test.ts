@@ -27,6 +27,10 @@ test("a publish refused as incomplete lists the missing fields and can be retrie
   expect(view).toEqual({ message: "Still missing: How to get there, Seats", canRetry: true });
 });
 
+test("an unreadable photo can be retried", () => {
+  expect(failureView(err({ status: 0, code: "photo_unreadable" })).canRetry).toBe(true);
+});
+
 test("local failures that can never succeed hide retry", () => {
   for (const code of ["photo_missing", "bad_response", "no_base_version"]) {
     expect(failureView(err({ status: 0, code })).canRetry).toBe(false);

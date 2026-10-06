@@ -28,7 +28,7 @@ export type WriteState = z.infer<typeof WriteState>;
 export const WriteError = z.object({
   /** HTTP status, or 0 for a local error. */
   status: z.number().int().nonnegative(),
-  /** ApiErrorCode, a local code (photo_missing, bad_response, no_base_version), or null. */
+  /** ApiErrorCode, a local code (photo_missing, photo_unreadable, bad_response, no_base_version), or null. */
   code: z.string().nullable(),
   message: z.string().nullable(),
   missing: z.array(z.enum(V0_FIELD)),

@@ -7,6 +7,7 @@ import {
   createOutbox,
   createOutboxStore,
   createSurveyApi,
+  PHOTO_READ_MAX_FAILURES,
 } from "../src/index.ts";
 import { identity, POWER, SEATING, SPOT_A, SPOT_B } from "./builders.ts";
 import { API, FakeSurveyServer, TOKEN } from "./fakeServer.ts";
@@ -362,6 +363,43 @@ test("a photo read that fails or times out is unknown: the upload stays queued, 
   t.timers.advance(BACKOFF_MAX_MS);
   await box.idle();
   expect(t.sent()).toEqual(["POST /survey/photos"]);
+  expect(box.getSnapshot().records).toEqual([]);
+});
+
+test("a photo that cannot be read holds only its spot, then fails retryable after the cap", async () => {
+  const t = setup([
+    surveySpotFixture({ id: SPOT_A, version: 3 }),
+    surveySpotFixture({ id: SPOT_B, version: 3 }),
+  ]);
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  await box.addPhoto(SPOT_A, 3, JPEG, new Date("2026-10-05T15:59:00Z"));
+  await box.enqueue(power(SPOT_B), 3);
+  const real = t.blobs.get.bind(t.blobs);
+  let broken = true;
+  t.blobs.get = async (key) => {
+    if (broken) throw new Error("bin get timed out after 8000 ms");
+    return real(key);
+  };
+  t.network.set(true);
+  await box.idle();
+  expect(t.sent()).toEqual([`PUT /survey/spots/${SPOT_B}/power`]);
+  for (let i = 1; i < PHOTO_READ_MAX_FAILURES; i++) {
+    expect(box.getSnapshot().records).toMatchObject([{ kind: "photo.upload", state: "pending" }]);
+    t.timers.advance(BACKOFF_MAX_MS);
+    await box.idle();
+  }
+  const [photo] = box.getSnapshot().records;
+  expect(photo).toMatchObject({
+    kind: "photo.upload",
+    state: "failed",
+    error: { status: 0, code: "photo_unreadable" },
+  });
+  broken = false;
+  await box.retry(photo?.client_write_id ?? "");
+  await box.idle();
+  expect(t.sent().at(-1)).toBe("POST /survey/photos");
   expect(box.getSnapshot().records).toEqual([]);
 });
 

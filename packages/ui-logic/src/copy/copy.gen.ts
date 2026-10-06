@@ -381,6 +381,8 @@ export const COPY = {
   "field.food_policy": "Food and drink",
   "field.last_verified": "A checked section",
   "failed.reason.photo_missing": "The photo is no longer on this phone. Take it again.",
+  "failed.reason.photo_unreadable":
+    "This phone could not read the photo. Try again, or take it again.",
   "failed.reason.bad_response":
     "The server's answer couldn't be read, so this can't be sent again. Discard it and redo it.",
   "failed.reason.no_base_version":
@@ -800,6 +802,7 @@ export const COPY_MAX = {
   "field.food_policy": 16,
   "field.last_verified": 20,
   "failed.reason.photo_missing": 60,
+  "failed.reason.photo_unreadable": 70,
   "failed.reason.bad_response": 100,
   "failed.reason.no_base_version": 90,
   "failed.reason.forbidden": 40,

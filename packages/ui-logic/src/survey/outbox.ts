@@ -30,6 +30,8 @@ import {
 export const BACKOFF_START_MS = 30_000;
 export const BACKOFF_MAX_MS = 300_000;
 /** How soon a pass looks again at a spot another live tab is sending. */
+/** Photo reads that may fail in a row before the upload is marked failed (photo_unreadable). */
+export const PHOTO_READ_MAX_FAILURES = 5;
 export const HELD_RECHECK_MS = 15_000;
 
 export type OutboxDeps = {
@@ -85,7 +87,7 @@ export type AppliedListener = (
 ) => void;
 type SendResult =
   | ApiResult<SurveySpot>
-  | { kind: "local"; code: "photo_missing" | "no_base_version" };
+  | { kind: "local"; code: "photo_missing" | "photo_unreadable" | "no_base_version" };
 /** After a write: go on, hold that spot for the rest of the pass, or end the pass. */
 type Step = "next" | "skip" | "stop";
 
@@ -129,6 +131,8 @@ export function createOutbox(deps: OutboxDeps) {
   let cancelTimer: (() => void) | null = null;
   let unsubscribe: (() => void)[] = [];
   let stopped = true;
+  /** Consecutive failed photo reads per write, in this tab only. */
+  const unreadPhotos = new Map<string, number>();
 
   function emit(next: Partial<OutboxSnapshot>): void {
     snapshot = { ...snapshot, ...next };
@@ -195,8 +199,16 @@ export function createOutbox(deps: OutboxDeps) {
           bytes = await store.photo(client_write_id);
         } catch {
           // The read failed or timed out: the bytes may be fine, so keep the write queued.
-          return { kind: "network" };
+          // Only this spot waits (like a 5xx), so the rest of the queue still sends.
+          const failures = (unreadPhotos.get(client_write_id) ?? 0) + 1;
+          if (failures < PHOTO_READ_MAX_FAILURES) {
+            unreadPhotos.set(client_write_id, failures);
+            return { kind: "server", status: 0, reason: "status" };
+          }
+          unreadPhotos.delete(client_write_id);
+          return { kind: "local", code: "photo_unreadable" };
         }
+        unreadPhotos.delete(client_write_id);
         if (bytes === null) return { kind: "local", code: "photo_missing" };
         return api.uploadPhoto(
           { spot_id: r.spot_id, client_write_id, taken_at: r.payload.taken_at },

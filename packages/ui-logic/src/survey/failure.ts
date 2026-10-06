@@ -28,6 +28,7 @@ export type FailureView = { message: string; canRetry: boolean };
 
 const CODE_COPY = {
   photo_missing: { id: "failed.reason.photo_missing", canRetry: false },
+  photo_unreadable: { id: "failed.reason.photo_unreadable", canRetry: true },
   bad_response: { id: "failed.reason.bad_response", canRetry: false },
   no_base_version: { id: "failed.reason.no_base_version", canRetry: false },
   forbidden: { id: "failed.reason.forbidden", canRetry: true },

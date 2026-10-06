@@ -494,6 +494,7 @@ Strings the built screens needed beyond the sections above: short header forms f
 | field.food_policy | Food and drink | 16 | |
 | field.last_verified | A checked section | 20 | any saved or checked section |
 | failed.reason.photo_missing | The photo is no longer on this phone. Take it again. | 60 | local: bytes evicted |
+| failed.reason.photo_unreadable | This phone could not read the photo. Try again, or take it again. | 70 | local: storage read failed repeatedly |
 | failed.reason.bad_response | The server's answer couldn't be read, so this can't be sent again. Discard it and redo it. | 100 | retry hidden |
 | failed.reason.no_base_version | This phone lost track of the spot's version. Discard it and save the section again. | 90 | retry hidden |
 | failed.reason.forbidden | Your account can't make this change. | 40 | 403 |
