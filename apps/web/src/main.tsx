@@ -4,7 +4,7 @@ import "./ui/styles.css";
 import { tokens } from "@study-spot/ui-logic";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import { AppProvider } from "./app/AppProvider.tsx";
 import { createAppDeps } from "./app/deps.ts";
 import { parseWebEnv } from "./env.ts";
@@ -32,7 +32,10 @@ const deps = createAppDeps({
   apiBaseUrl: parsed.env.VITE_API_BASE_URL,
   dataBaseUrl: parsed.env.VITE_DATA_BASE_URL,
 });
-createRoot(root).render(
+// A hot reload re-runs this module; reuse the first React root rather than mounting twice.
+const hot: { root?: Root } = import.meta.hot?.data ?? {};
+hot.root ??= createRoot(root);
+hot.root.render(
   <StrictMode>
     <AppProvider deps={deps}>
       <RouterProvider router={router} />
