@@ -1,5 +1,5 @@
 import { t } from "@study-spot/ui-logic";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import { ME, renderRoute, TOKEN, testApp } from "./harness.tsx";
 
@@ -25,6 +25,29 @@ test("a new surveyor adds a name, joins, and lands on the spot list", async () =
   fireEvent.click(screen.getByRole("button", { name: t("invite.join") }));
   await waitFor(() => expect(view.router.state.location.pathname).toBe("/survey"));
   expect(app.deps.session.current()?.surveyor.display_name).toBe("Ana");
+  // The invite token must not stay in history: Back from /survey cannot reach it.
+  expect(view.router.history.location.pathname).toBe("/survey");
+  view.router.history.back();
+  await waitFor(() => expect(view.router.history.location.pathname).not.toBe(LINK));
+});
+
+test("moving to a new screen focuses its main area, but the first load does not", async () => {
+  const view = renderRoute(testApp({ me: null }), "/survey");
+  await screen.findByText(t("auth.expired.title"));
+  expect(document.activeElement).toBe(document.body);
+  await act(async () => {
+    await view.router.navigate({ to: "/invite/$token", params: { token: "b".repeat(43) } });
+  });
+  await screen.findByRole("heading", { name: t("invite.title") });
+  await waitFor(() => expect(document.activeElement?.tagName).toBe("MAIN"));
+});
+
+test("Join is disabled while offline", async () => {
+  const app = testApp({ me: null });
+  app.network.set(false);
+  renderRoute(app, LINK);
+  const join = await screen.findByRole("button", { name: t("invite.join") });
+  expect((join as HTMLButtonElement).disabled).toBe(true);
 });
 
 test("a re-login link asks for no name and says Sign in", async () => {

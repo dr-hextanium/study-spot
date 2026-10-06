@@ -7,7 +7,10 @@ import type { ReactNode } from "react";
 export function Screen(props: { children: ReactNode; action?: ReactNode }) {
   return (
     <>
-      <main className={`screen${props.action === undefined ? "" : " screen--with-action"}`}>
+      <main
+        tabIndex={-1}
+        className={`screen${props.action === undefined ? "" : " screen--with-action"}`}
+      >
         {props.children}
       </main>
       {props.action === undefined ? null : <div className="pinned">{props.action}</div>}

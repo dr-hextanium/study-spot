@@ -55,7 +55,7 @@ export function Invite(props: { token: string; relogin: boolean }) {
     switch (res.kind) {
       case "ok":
         if (!join(res.value)) return setProblem("storage");
-        await navigate({ to: "/survey" });
+        await navigate({ to: "/survey", replace: true });
         return;
       case "gone":
         return setProblem(

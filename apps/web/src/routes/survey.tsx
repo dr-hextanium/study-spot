@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useOutboxSnapshot } from "../hooks/useOutbox.ts";
 import { useSession } from "../hooks/useSession.ts";
 import { SignedOut } from "../screens/SignedOut.tsx";
@@ -21,5 +21,11 @@ function useLeaveGuard(): void {
 function SurveyLayout() {
   const { signedOut } = useSession();
   useLeaveGuard();
+  // Signing out swaps the screen in place, so no navigation moves focus for it.
+  const wasSignedOut = useRef(signedOut);
+  useEffect(() => {
+    if (signedOut && !wasSignedOut.current) document.querySelector<HTMLElement>("main")?.focus();
+    wasSignedOut.current = signedOut;
+  }, [signedOut]);
   return signedOut ? <SignedOut /> : <Outlet />;
 }
