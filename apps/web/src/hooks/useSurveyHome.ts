@@ -1,6 +1,7 @@
 import type { SurveySpot } from "@study-spot/core";
 import { type SurveyHome, surveyHome } from "@study-spot/ui-logic";
 import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { keys } from "../app/keys.ts";
 import { useOutboxSnapshot } from "./useOutbox.ts";
 import { useSpotList } from "./useQueries.ts";
@@ -18,6 +19,16 @@ export function useSurveyHome(): HomeState {
   const list = useSpotList();
   const snapshot = useOutboxSnapshot();
   const qc = useQueryClient();
+  // Detail reads below are not query subscriptions, so re-render when any cached spot changes.
+  const [, setTick] = useState(0);
+  useEffect(
+    () =>
+      qc.getQueryCache().subscribe((e) => {
+        if (e.type === "added" || e.type === "removed" || e.type === "updated")
+          setTick((n) => n + 1);
+      }),
+    [qc],
+  );
   if (me === null) return { home: null, noList: true, refreshing: false };
   const details = new Map<string, SurveySpot>();
   for (const [key, data] of qc.getQueriesData<SurveySpot>({ queryKey: keys.spotPrefix })) {

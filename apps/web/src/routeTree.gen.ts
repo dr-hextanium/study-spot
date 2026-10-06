@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SurveyRouteImport } from './routes/survey'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as SurveyIndexRouteImport } from './routes/survey.index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,34 +29,41 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
   path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SurveyIndexRoute = SurveyIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SurveyRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/survey': typeof SurveyRoute
+  '/survey': typeof SurveyRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
+  '/survey/': typeof SurveyIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/survey': typeof SurveyRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/survey': typeof SurveyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/survey': typeof SurveyRoute
+  '/survey': typeof SurveyRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
+  '/survey/': typeof SurveyIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/survey' | '/invite/$token'
+  fullPaths: '/' | '/survey' | '/invite/$token' | '/survey/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/survey' | '/invite/$token'
-  id: '__root__' | '/' | '/survey' | '/invite/$token'
+  to: '/' | '/invite/$token' | '/survey'
+  id: '__root__' | '/' | '/survey' | '/invite/$token' | '/survey/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  SurveyRoute: typeof SurveyRoute
+  SurveyRoute: typeof SurveyRouteWithChildren
   InviteTokenRoute: typeof InviteTokenRoute
 }
 
@@ -82,12 +90,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/survey/': {
+      id: '/survey/'
+      path: '/'
+      fullPath: '/survey/'
+      preLoaderRoute: typeof SurveyIndexRouteImport
+      parentRoute: typeof SurveyRoute
+    }
   }
 }
 
+interface SurveyRouteChildren {
+  SurveyIndexRoute: typeof SurveyIndexRoute
+}
+
+const SurveyRouteChildren: SurveyRouteChildren = {
+  SurveyIndexRoute: SurveyIndexRoute,
+}
+
+const SurveyRouteWithChildren =
+  SurveyRoute._addFileChildren(SurveyRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  SurveyRoute: SurveyRoute,
+  SurveyRoute: SurveyRouteWithChildren,
   InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport
