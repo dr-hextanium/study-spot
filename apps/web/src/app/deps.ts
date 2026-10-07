@@ -30,6 +30,7 @@ import { createFetchHttp } from "../adapters/http.ts";
 import { openStores } from "../adapters/idb.ts";
 import { createWebLiveness, createWebLock, type LockApi } from "../adapters/locks.ts";
 import { type AuthState, createAuthState } from "./authState.ts";
+import { createPersistStorage } from "./persistStorage.ts";
 import { ApiFailure } from "./queries.ts";
 import { applyServerSpot, sanitizePersisted } from "./serverCache.ts";
 import { createSessionState, type SessionState } from "./sessionState.ts";
@@ -158,11 +159,7 @@ function buildAppDeps(env: { apiBaseUrl: string; dataBaseUrl: string }): AppDeps
   outbox.onApplied((spot: SurveySpot) => applyServerSpot(queryClient, spot));
   // The persisted copy is a cache: a storage failure (quota, timeout) costs only the copy.
   const persister = createAsyncStoragePersister({
-    storage: {
-      getItem: (key) => stores.cache.get(key).catch(() => null),
-      setItem: (key, value) => stores.cache.set(key, value).catch(() => undefined),
-      removeItem: (key) => stores.cache.delete(key).catch(() => undefined),
-    },
+    storage: createPersistStorage(stores.cache),
     key: "query:survey",
     throttleTime: 250,
     deserialize: (raw) => {
