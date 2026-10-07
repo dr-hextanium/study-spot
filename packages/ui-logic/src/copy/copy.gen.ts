@@ -414,7 +414,7 @@ export const COPY = {
   "photos.approve": "Approve",
   "photos.approve.own": "You took this, so someone else approves it.",
   "photos.approve.done": "Photo approved",
-  "photos.online_only": "Approving and covers need a connection.",
+  "photos.online_only": "Approving needs a connection.",
   "photos.not_synced": "Not synced yet",
   "photos.cover.wait": "Sync first to use this as cover",
   "estimates.cell": "{day}, {block}: {bucket}",
@@ -433,6 +433,10 @@ export const COPY = {
   "unit.minutes": "min",
   "unit.percent": "%",
   "new.building.none": "No building matches.",
+  "common.save_failed": "This phone couldn't save that. Check what you have, then try again.",
+  "spot.conflict.open": "Open the conflict",
+  "spot.failed.open": "Open the unsaved changes",
+  "photos.alt": "Photo of this spot",
   "new.building.offline": "The building list loads once you're online.",
 } as const;
 
@@ -831,7 +835,7 @@ export const COPY_MAX = {
   "photos.approve": 10,
   "photos.approve.own": 50,
   "photos.approve.done": 16,
-  "photos.online_only": 44,
+  "photos.online_only": 32,
   "photos.not_synced": 16,
   "photos.cover.wait": 32,
   "estimates.cell": 40,
@@ -850,5 +854,9 @@ export const COPY_MAX = {
   "unit.minutes": 4,
   "unit.percent": 2,
   "new.building.none": 24,
+  "common.save_failed": 70,
+  "spot.conflict.open": 20,
+  "spot.failed.open": 26,
+  "photos.alt": 20,
   "new.building.offline": 50,
 } as const satisfies Record<keyof typeof COPY, number>;

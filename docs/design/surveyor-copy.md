@@ -520,7 +520,7 @@ Strings the built screens needed beyond the sections above: short header forms f
 | photos.approve | Approve | 10 | any surveyor but the uploader |
 | photos.approve.own | You took this, so someone else approves it. | 50 | |
 | photos.approve.done | Photo approved | 16 | toast |
-| photos.online_only | Approving and covers need a connection. | 44 | |
+| photos.online_only | Approving needs a connection. | 32 | |
 | photos.not_synced | Not synced yet | 16 | badge on a photo still on the phone |
 | photos.cover.wait | Sync first to use this as cover | 32 | |
 | estimates.cell | {day}, {block}: {bucket} | 40 | accessible name of a grid cell |
@@ -539,6 +539,10 @@ Strings the built screens needed beyond the sections above: short header forms f
 | unit.minutes | min | 4 | stepper suffix |
 | unit.percent | % | 2 | stepper suffix |
 | new.building.none | No building matches. | 24 | |
+| common.save_failed | This phone couldn't save that. Check what you have, then try again. | 70 | storage timed out and nothing was queued |
+| spot.conflict.open | Open the conflict | 20 | accessible name of the conflict banner's Open button |
+| spot.failed.open | Open the unsaved changes | 26 | accessible name of the failed banner's Open button |
+| photos.alt | Photo of this spot | 20 | alt text of a spot photo |
 | new.building.offline | The building list loads once you're online. | 50 | first run offline |
 
 ## Pending questions

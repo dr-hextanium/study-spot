@@ -145,10 +145,20 @@ export function createOutbox(deps: OutboxDeps) {
     for (const l of listeners) l();
   }
 
+  /** Numbers each read as it starts; a read never emits after a later-started one has. */
+  let reads = 0;
+  let emitted = 0;
+
   async function refresh(): Promise<WriteRecord[]> {
+    reads += 1;
+    const mine = reads;
     const records = await store.list();
     const unreadable = (await store.unreadable()).length;
-    emit({ records, idMap: await store.idMap(), unreadable, loaded: true });
+    const idMap = await store.idMap();
+    if (mine > emitted) {
+      emitted = mine;
+      emit({ records, idMap, unreadable, loaded: true });
+    }
     return records;
   }
 
@@ -169,8 +179,23 @@ export function createOutbox(deps: OutboxDeps) {
     queued: NewWrite,
     serverVersion: number | null,
     bytes: Uint8Array | null = null,
+    fixedId: string | null = null,
+    once = false,
   ): Promise<string> {
     const id = await locked(async () => {
+      // A caller that picked the id retries safely: a write already stored under it, or a
+      // create whose local id is stored or already applied (in the map), is not queued twice.
+      if (once) {
+        const stored = (await store.list()).find((r) =>
+          queued.kind === "spot.create"
+            ? r.spot_id === queued.spot_id
+            : r.client_write_id === fixedId,
+        );
+        if (stored !== undefined) return stored.client_write_id;
+        if (queued.kind === "spot.create" && (await store.idMap())[queued.spot_id] !== undefined) {
+          return queued.spot_id;
+        }
+      }
       const real =
         queued.kind === "spot.create" ? undefined : (await store.idMap())[queued.spot_id];
       const write: NewWrite = real === undefined ? queued : { ...queued, spot_id: real };
@@ -178,7 +203,7 @@ export function createOutbox(deps: OutboxDeps) {
       const known = serverVersion === null ? null : await store.version(write.spot_id);
       const seen = serverVersion === null ? null : Math.max(serverVersion, known ?? 0);
       const meta = {
-        client_write_id: deps.ids.uuid(),
+        client_write_id: fixedId ?? deps.ids.uuid(),
         seq: await store.nextSeq(),
         created_at: deps.clock.now().toISOString(),
       };
@@ -187,7 +212,7 @@ export function createOutbox(deps: OutboxDeps) {
       for (const r of plan.put) await store.put(r);
       for (const removed of plan.remove) await store.remove(removed);
       if (plan.seedVersion !== null) await raiseVersion(write.spot_id, plan.seedVersion);
-      return plan.put[0]?.client_write_id ?? meta.client_write_id;
+      return plan.put[0]?.client_write_id ?? plan.existing ?? meta.client_write_id;
     });
     await refresh();
     // Start this tab's pass before waking the others, so the tab that queued a write sends it.
@@ -575,6 +600,13 @@ export function createOutbox(deps: OutboxDeps) {
         listeners.delete(listener);
       };
     },
+    /**
+     * Re-reads the queue into the snapshot. A storage timeout is reported as unknown, so
+     * a caller whose save threw reloads before offering Retry: the write may have landed.
+     */
+    async reload(): Promise<void> {
+      await refresh();
+    },
     /** Same object until something changes, as useSyncExternalStore requires. */
     getSnapshot: (): OutboxSnapshot => snapshot,
     /** Called with each spot the server returns, so the app can update its cached copy. */
@@ -584,16 +616,33 @@ export function createOutbox(deps: OutboxDeps) {
         applied.delete(listener);
       };
     },
-    /** Queues a new draft and returns its local id. */
-    async createSpot(identity: IdentitySection): Promise<string> {
-      const spotId = `${LOCAL_PREFIX}${deps.ids.uuid()}`;
-      await enqueue({ kind: "spot.create", spot_id: spotId, payload: { identity } }, null);
+    /**
+     * Queues a new draft and returns its local id. With a `key` (a uuid the screen made
+     * once per submit) the id is `local:<key>` and calling again is a no-op, so a retry
+     * after a failed or timed-out save cannot make two drafts.
+     */
+    async createSpot(identity: IdentitySection, key: string | null = null): Promise<string> {
+      const spotId = `${LOCAL_PREFIX}${key ?? deps.ids.uuid()}`;
+      await enqueue(
+        { kind: "spot.create", spot_id: spotId, payload: { identity } },
+        null,
+        null,
+        null,
+        key !== null,
+      );
       return spotId;
     },
     /** Queues a write. `serverVersion` is the version the surveyor saw; null for a local spot. */
     enqueue: (write: SpotWrite, serverVersion: number | null): Promise<string> =>
       enqueue(write, serverVersion),
-    addPhoto: (spotId: string, serverVersion: number | null, bytes: Uint8Array, takenAt: Date) =>
+    /** With a `clientWriteId` picked by the caller, queuing the same photo again is a no-op. */
+    addPhoto: (
+      spotId: string,
+      serverVersion: number | null,
+      bytes: Uint8Array,
+      takenAt: Date,
+      clientWriteId: string | null = null,
+    ) =>
       enqueue(
         {
           kind: "photo.upload",
@@ -602,6 +651,8 @@ export function createOutbox(deps: OutboxDeps) {
         },
         serverVersion,
         bytes,
+        clientWriteId,
+        clientWriteId !== null,
       ),
     /** Sends a failed write again with the same id (4xx answers are never stored). */
     retry: (clientWriteId: string) =>

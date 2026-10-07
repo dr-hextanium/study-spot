@@ -42,7 +42,7 @@ DESIGN.md (+ sidecar)            written by the Impeccable documenter
 
 Journey E: create an invite link for a surveyor or an admin and copy it; the surveyor list with badges, a new sign-in link per surveyor (made with their role, so an admin's lost-phone link keeps admin), and Remove access with a confirm; the publish status (last published time in campus time, dirty or up to date, last error, skipped spots reworded by `publishWarningText`) with Publish now; photos waiting for approval with Approve and Reject (confirmed). Home shows an Admin link to admins.
 
-**Carried from part 1 (owner: this task):**
+**Carried from parts 1 and 2 (owner: this task):**
 - (I5) A re-join by a different surveyor while the queue is non-empty must confirm or refuse, because `join()` never compares `accepted.surveyor.id` with the stored id.
 - (I6) Sign-out: `outbox.stop()` plus clearing the persisted survey cache and the session, and the `pass()` loop must check `stopped` before each pick. The `auth.revoked.body` copy is unused today.
 - Local liveness fallback: `createLocalLiveness` names the owner `local-1` in every tab; give it a uuid owner id so two fallback tabs do not take over each other's in-flight writes.
@@ -50,6 +50,7 @@ Journey E: create an invite link for a surveyor or an admin and copy it; the sur
 - `persistStorage.ts`: one transient restore failure blocks saves for the session. Retry the read inside `setItem`, and skip a write whose dehydrated queries are empty.
 - `Home.tsx`: decide the leave-with-pending banner on the first `loaded` snapshot, not on `started`.
 - Note in `AppDeps` that the session subscription from `buildAppDeps` is required for `join()` to resume.
+- (Part 2) A server unpublish or photo approval bumps the spot version through `spotWrite`, but the outbox's stored version is not updated. A write already queued on that spot can then conflict with the surveyor's own admin action. Handle this with the admin work (update the stored version from the answer, as `onApplied` does for queued writes).
 
 **Files:**
 - Create: `apps/web/src/screens/Admin.tsx`, `apps/web/src/screens/admin.css`, `apps/web/src/routes/survey.admin.tsx`

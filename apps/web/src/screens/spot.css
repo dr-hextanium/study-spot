@@ -1,0 +1,249 @@
+/*
+ * Spot screens of survey mode: new spot, overview, section editors, the
+ * conflict view, hours, the busyness grid, and photos. Tokens only.
+ */
+
+/* An entered value printed on the line, in ballpoint blue */
+.entered {
+  color: var(--color-accent);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.picker__option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--size-line);
+  padding: var(--space-xs) 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.picker__option[aria-pressed="true"] {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.pinned__note {
+  color: var(--color-textMuted);
+  font-size: var(--fontSize-small);
+}
+
+/* Conflict view: yours and on the server, field by field */
+.diff {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.diff th,
+.diff td {
+  padding: var(--space-xs) var(--space-xxs);
+  border-bottom: var(--size-rule) solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  font-size: var(--fontSize-small);
+}
+
+.diff tbody th {
+  font-weight: 600;
+}
+
+.diff__mine {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.blockers {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xxs) var(--space-sm);
+  font-size: var(--fontSize-small);
+}
+
+.blockers a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-tapTarget);
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.admin-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding-top: var(--space-md);
+}
+
+.spot-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Hours: one block per day */
+.day__times {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-xs);
+}
+
+.day__time {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+  flex: 1 1 8rem;
+}
+
+.day__next {
+  align-self: center;
+  color: var(--color-accent);
+  font-size: var(--fontSize-small);
+  font-weight: 600;
+}
+
+.day__toggles {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-lg);
+}
+
+.day__toggles .check {
+  border-bottom: 0;
+}
+
+.checks .check:last-child {
+  border-bottom: 0;
+}
+
+/* Busyness grid: a fill line rises with the bucket */
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.grid thead th,
+.grid tbody th {
+  padding: var(--space-xs) var(--space-xxs);
+  text-align: left;
+}
+
+.grid td {
+  padding: var(--space-xxs);
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  min-height: 56px;
+  padding: var(--space-xs);
+  border: var(--size-rule) solid var(--color-borderStrong);
+  border-radius: var(--radius-control);
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--color-accent) 22%, transparent) calc(var(--fill) * 100%),
+    var(--color-background) 0
+  );
+  color: var(--color-accent);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--easing-standard);
+}
+
+/* Fill heights follow FULLNESS_RATIO in packages/core. */
+.cell[data-bucket="unset"] {
+  --fill: 0;
+}
+
+.cell[data-bucket="empty"] {
+  --fill: 0.1;
+}
+
+.cell[data-bucket="some"] {
+  --fill: 0.35;
+}
+
+.cell[data-bucket="filling"] {
+  --fill: 0.6;
+}
+
+.cell[data-bucket="nearly_full"] {
+  --fill: 0.85;
+}
+
+.cell[data-bucket="full"] {
+  --fill: 1;
+}
+
+.cell--unset {
+  border-style: dashed;
+  color: var(--color-textMuted);
+  font-weight: 500;
+}
+
+.cell__text {
+  position: relative;
+  font-size: var(--fontSize-small);
+  line-height: var(--lineHeight-tight);
+}
+
+/* Photos */
+.photos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.photo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding-bottom: var(--space-md);
+  border-bottom: var(--size-rule) solid var(--color-border);
+}
+
+.photo__img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+
+.photo__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.checklist {
+  margin: 0;
+  padding-left: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell {
+    transition: none;
+  }
+}

@@ -961,3 +961,83 @@ test("a rejected liveness hold still lets later triggers send", async () => {
   await box.idle();
   expect(t.sent()).toEqual([`PUT /survey/spots/${SPOT_A}/power`]);
 });
+
+test("reload shows a write another tab or a timed-out save left in storage", async () => {
+  const t = setup([]);
+  t.network.set(false);
+  const one = t.make();
+  const two = t.make();
+  await one.start();
+  await two.start();
+  await two.createSpot(identity());
+  expect(one.getSnapshot().records).toEqual([]);
+  await one.reload();
+  expect(one.getSnapshot().records.map((r) => r.kind)).toEqual(["spot.create"]);
+});
+
+test("a create with a caller key is queued once, before and after it syncs", async () => {
+  const t = setup([]);
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const submit = crypto.randomUUID();
+  const local = await box.createSpot(identity(), submit);
+  expect(await box.createSpot(identity(), submit)).toBe(local);
+  expect(box.getSnapshot().records.length).toBe(1);
+  t.network.set(true);
+  await box.idle();
+  expect(await box.createSpot(identity(), submit)).toBe(local);
+  expect(box.getSnapshot().records).toEqual([]);
+  expect(t.server.spots.size).toBe(1);
+});
+
+test("a photo with a caller id is queued once", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const id = "9c2d1e3f-4a5b-4c6d-8e7f-a1b2c3d4e5f6";
+  const taken = new Date("2026-10-05T15:59:00Z");
+  await box.addPhoto(SPOT_A, 3, JPEG, taken, id);
+  await box.addPhoto(SPOT_A, 3, JPEG, taken, id);
+  expect(box.getSnapshot().records.filter((r) => r.kind === "photo.upload").length).toBe(1);
+});
+
+test("a slow read that started earlier never overwrites a newer snapshot", async () => {
+  const t = setup([]);
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const realKeys = t.cache.keys.bind(t.cache);
+  let release: () => void = () => undefined;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let first = true;
+  t.cache.keys = async (prefix) => {
+    const keys = await realKeys(prefix);
+    if (!first) return keys;
+    first = false;
+    await gate;
+    return keys;
+  };
+  const slow = box.reload();
+  await box.createSpot(identity());
+  expect(box.getSnapshot().records.length).toBe(1);
+  release();
+  await slow;
+  expect(box.getSnapshot().records.length).toBe(1);
+});
+
+test("a second publish enqueue returns the id of the one already queued", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const first = await box.enqueue({ kind: "spot.publish", spot_id: SPOT_A, payload: {} }, 3);
+  const second = await box.enqueue({ kind: "spot.publish", spot_id: SPOT_A, payload: {} }, 3);
+  expect(second).toBe(first);
+  expect(box.getSnapshot().records.length).toBe(1);
+  const review = await box.enqueue({ kind: "spot.review", spot_id: SPOT_A, payload: {} }, 3);
+  expect(await box.enqueue({ kind: "spot.review", spot_id: SPOT_A, payload: {} }, 3)).toBe(review);
+});

@@ -1,9 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { t } from "@study-spot/ui-logic";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Plus } from "lucide-react";
 import { Home } from "../screens/Home.tsx";
 
 export const Route = createFileRoute("/survey/")({ component: HomeRoute });
 
-/** Spot rows become links and New spot appears once the spot screens exist (part 2). */
 function HomeRoute() {
-  return <Home />;
+  return (
+    <Home
+      spotLink={(id) => ({ to: "/survey/spots/$id", params: { id } })}
+      action={
+        <Link to="/survey/spots/new" className="btn btn--primary btn--wide">
+          <Plus aria-hidden="true" size={20} strokeWidth={2.5} />
+          <span className="btn__label">{t("home.new_spot")}</span>
+        </Link>
+      }
+    />
+  );
 }

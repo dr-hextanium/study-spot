@@ -13,6 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SurveyRouteImport } from './routes/survey'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as SurveyIndexRouteImport } from './routes/survey.index'
+import { Route as SurveySpotsNewRouteImport } from './routes/survey.spots.new'
+import { Route as SurveySpotsIdIndexRouteImport } from './routes/survey.spots.$id.index'
+import { Route as SurveySpotsIdSectionRouteImport } from './routes/survey.spots.$id.$section'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,17 +37,38 @@ const SurveyIndexRoute = SurveyIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SurveyRoute,
 } as any)
+const SurveySpotsNewRoute = SurveySpotsNewRouteImport.update({
+  id: '/spots/new',
+  path: '/spots/new',
+  getParentRoute: () => SurveyRoute,
+} as any)
+const SurveySpotsIdIndexRoute = SurveySpotsIdIndexRouteImport.update({
+  id: '/spots/$id/',
+  path: '/spots/$id/',
+  getParentRoute: () => SurveyRoute,
+} as any)
+const SurveySpotsIdSectionRoute = SurveySpotsIdSectionRouteImport.update({
+  id: '/spots/$id/$section',
+  path: '/spots/$id/$section',
+  getParentRoute: () => SurveyRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/survey': typeof SurveyRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
   '/survey/': typeof SurveyIndexRoute
+  '/survey/spots/new': typeof SurveySpotsNewRoute
+  '/survey/spots/$id/$section': typeof SurveySpotsIdSectionRoute
+  '/survey/spots/$id/': typeof SurveySpotsIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/invite/$token': typeof InviteTokenRoute
   '/survey': typeof SurveyIndexRoute
+  '/survey/spots/new': typeof SurveySpotsNewRoute
+  '/survey/spots/$id/$section': typeof SurveySpotsIdSectionRoute
+  '/survey/spots/$id': typeof SurveySpotsIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -52,13 +76,37 @@ export interface FileRoutesById {
   '/survey': typeof SurveyRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
   '/survey/': typeof SurveyIndexRoute
+  '/survey/spots/new': typeof SurveySpotsNewRoute
+  '/survey/spots/$id/$section': typeof SurveySpotsIdSectionRoute
+  '/survey/spots/$id/': typeof SurveySpotsIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/survey' | '/invite/$token' | '/survey/'
+  fullPaths:
+    | '/'
+    | '/survey'
+    | '/invite/$token'
+    | '/survey/'
+    | '/survey/spots/new'
+    | '/survey/spots/$id/$section'
+    | '/survey/spots/$id/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/invite/$token' | '/survey'
-  id: '__root__' | '/' | '/survey' | '/invite/$token' | '/survey/'
+  to:
+    | '/'
+    | '/invite/$token'
+    | '/survey'
+    | '/survey/spots/new'
+    | '/survey/spots/$id/$section'
+    | '/survey/spots/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/survey'
+    | '/invite/$token'
+    | '/survey/'
+    | '/survey/spots/new'
+    | '/survey/spots/$id/$section'
+    | '/survey/spots/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -97,15 +145,42 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SurveyIndexRouteImport
       parentRoute: typeof SurveyRoute
     }
+    '/survey/spots/new': {
+      id: '/survey/spots/new'
+      path: '/spots/new'
+      fullPath: '/survey/spots/new'
+      preLoaderRoute: typeof SurveySpotsNewRouteImport
+      parentRoute: typeof SurveyRoute
+    }
+    '/survey/spots/$id/': {
+      id: '/survey/spots/$id/'
+      path: '/spots/$id'
+      fullPath: '/survey/spots/$id/'
+      preLoaderRoute: typeof SurveySpotsIdIndexRouteImport
+      parentRoute: typeof SurveyRoute
+    }
+    '/survey/spots/$id/$section': {
+      id: '/survey/spots/$id/$section'
+      path: '/spots/$id/$section'
+      fullPath: '/survey/spots/$id/$section'
+      preLoaderRoute: typeof SurveySpotsIdSectionRouteImport
+      parentRoute: typeof SurveyRoute
+    }
   }
 }
 
 interface SurveyRouteChildren {
   SurveyIndexRoute: typeof SurveyIndexRoute
+  SurveySpotsNewRoute: typeof SurveySpotsNewRoute
+  SurveySpotsIdSectionRoute: typeof SurveySpotsIdSectionRoute
+  SurveySpotsIdIndexRoute: typeof SurveySpotsIdIndexRoute
 }
 
 const SurveyRouteChildren: SurveyRouteChildren = {
   SurveyIndexRoute: SurveyIndexRoute,
+  SurveySpotsNewRoute: SurveySpotsNewRoute,
+  SurveySpotsIdSectionRoute: SurveySpotsIdSectionRoute,
+  SurveySpotsIdIndexRoute: SurveySpotsIdIndexRoute,
 }
 
 const SurveyRouteWithChildren =

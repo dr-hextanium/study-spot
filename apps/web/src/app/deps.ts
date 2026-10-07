@@ -29,6 +29,7 @@ import {
 import { createFetchHttp } from "../adapters/http.ts";
 import { openStores } from "../adapters/idb.ts";
 import { createWebLiveness, createWebLock, type LockApi } from "../adapters/locks.ts";
+import { browserImageKit, type ImageKit } from "../lib/photo.ts";
 import { type AuthState, createAuthState } from "./authState.ts";
 import { createPersistStorage } from "./persistStorage.ts";
 import { ApiFailure } from "./queries.ts";
@@ -48,6 +49,8 @@ export type AppDeps = {
   blobs: BinaryCache;
   network: NetworkStatus;
   geolocation: GeolocationAdapter;
+  /** Decoding and encoding for the photo resize; a seam so tests need no canvas. */
+  imageKit: ImageKit;
   share: Share;
   clock: Clock;
   /** API origin, for the photo image route that the typed client does not cover. */
@@ -182,6 +185,7 @@ function buildAppDeps(env: { apiBaseUrl: string; dataBaseUrl: string }): AppDeps
     blobs: stores.blobs,
     network,
     geolocation: createGeolocation(),
+    imageKit: browserImageKit,
     share: createShare(),
     clock: systemClock,
     apiBaseUrl: env.apiBaseUrl,
