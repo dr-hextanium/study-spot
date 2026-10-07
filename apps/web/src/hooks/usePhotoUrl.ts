@@ -15,6 +15,8 @@ export function usePhotoUrl(
   const [url, setUrl] = useState<string | null>(null);
   const key = "photoId" in source ? `server:${source.photoId}` : `local:${source.clientWriteId}`;
   useEffect(() => {
+    // The previous photo's URL is revoked by the old cleanup; never show it.
+    setUrl(null);
     let live = true;
     let made: string | null = null;
     const load = async (): Promise<Uint8Array | null> => {

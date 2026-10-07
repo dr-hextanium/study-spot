@@ -20,6 +20,8 @@ export type Shrunk =
 /** The browser pieces the pipeline uses, so the size logic is testable without a canvas. */
 export type ImageKit = {
   decode(file: Blob): Promise<{ width: number; height: number; image: CanvasImageSource } | null>;
+  /** Frees the decoded image once encoding is done. */
+  release?(image: CanvasImageSource): void;
   encode(
     image: CanvasImageSource,
     size: { width: number; height: number },
@@ -28,6 +30,9 @@ export type ImageKit = {
 };
 
 export const browserImageKit: ImageKit = {
+  release(image) {
+    if (image instanceof ImageBitmap) image.close();
+  },
   async decode(file) {
     try {
       // from-image applies the EXIF rotation before the pixels are redrawn.
@@ -43,8 +48,17 @@ export const browserImageKit: ImageKit = {
     canvas.height = size.height;
     const ctx = canvas.getContext("2d");
     if (ctx === null) return Promise.resolve(null);
+    // JPEG has no alpha; without a fill, transparent PNG pixels come out black.
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, size.width, size.height);
     ctx.drawImage(image, 0, 0, size.width, size.height);
-    return new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+    return new Promise((resolve) => {
+      try {
+        canvas.toBlob(resolve, "image/jpeg", quality);
+      } catch {
+        resolve(null);
+      }
+    });
   },
 };
 
@@ -56,13 +70,17 @@ export const browserImageKit: ImageKit = {
 export async function shrinkPhoto(file: Blob, kit: ImageKit = browserImageKit): Promise<Shrunk> {
   const decoded = await kit.decode(file);
   if (decoded === null) return { ok: false, reason: "unreadable" };
-  const size = fitWithin(decoded.width, decoded.height);
-  for (const quality of [QUALITY, RETRY_QUALITY]) {
-    const blob = await kit.encode(decoded.image, size, quality);
-    if (blob === null) return { ok: false, reason: "unreadable" };
-    if (blob.size <= PHOTO_MAX_BYTES) {
-      return { ok: true, bytes: new Uint8Array(await blob.arrayBuffer()), ...size };
+  try {
+    const size = fitWithin(decoded.width, decoded.height);
+    for (const quality of [QUALITY, RETRY_QUALITY]) {
+      const blob = await kit.encode(decoded.image, size, quality);
+      if (blob === null) return { ok: false, reason: "unreadable" };
+      if (blob.size <= PHOTO_MAX_BYTES) {
+        return { ok: true, bytes: new Uint8Array(await blob.arrayBuffer()), ...size };
+      }
     }
+    return { ok: false, reason: "too_big" };
+  } finally {
+    kit.release?.(decoded.image);
   }
-  return { ok: false, reason: "too_big" };
 }
