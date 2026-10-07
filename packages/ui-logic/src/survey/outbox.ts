@@ -145,10 +145,20 @@ export function createOutbox(deps: OutboxDeps) {
     for (const l of listeners) l();
   }
 
+  /** Numbers each read as it starts; a read never emits after a later-started one has. */
+  let reads = 0;
+  let emitted = 0;
+
   async function refresh(): Promise<WriteRecord[]> {
+    reads += 1;
+    const mine = reads;
     const records = await store.list();
     const unreadable = (await store.unreadable()).length;
-    emit({ records, idMap: await store.idMap(), unreadable, loaded: true });
+    const idMap = await store.idMap();
+    if (mine > emitted) {
+      emitted = mine;
+      emit({ records, idMap, unreadable, loaded: true });
+    }
     return records;
   }
 

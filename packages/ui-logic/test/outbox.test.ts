@@ -1002,3 +1002,29 @@ test("a photo with a caller id is queued once", async () => {
   await box.addPhoto(SPOT_A, 3, JPEG, taken, id);
   expect(box.getSnapshot().records.filter((r) => r.kind === "photo.upload").length).toBe(1);
 });
+
+test("a slow read that started earlier never overwrites a newer snapshot", async () => {
+  const t = setup([]);
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const realKeys = t.cache.keys.bind(t.cache);
+  let release: () => void = () => undefined;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let first = true;
+  t.cache.keys = async (prefix) => {
+    const keys = await realKeys(prefix);
+    if (!first) return keys;
+    first = false;
+    await gate;
+    return keys;
+  };
+  const slow = box.reload();
+  await box.createSpot(identity());
+  expect(box.getSnapshot().records.length).toBe(1);
+  release();
+  await slow;
+  expect(box.getSnapshot().records.length).toBe(1);
+});
