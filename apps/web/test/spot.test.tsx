@@ -149,7 +149,7 @@ test("a conflict resolves both ways from the overview", async () => {
   await app.deps.outbox.enqueue({ kind: "spot.section", spot_id: spot.id, payload: SEATING }, 3);
   await app.deps.outbox.idle();
   renderRoute(app, at(spot));
-  fireEvent.click(await screen.findByRole("button", { name: t("common.open") }));
+  fireEvent.click(await screen.findByRole("button", { name: t("spot.conflict.open") }));
   const sheet = await screen.findByRole("dialog", {
     name: t("conflict.title", { section: t("section.seating.name") }),
   });
@@ -164,7 +164,7 @@ test("a conflict resolves both ways from the overview", async () => {
   app.server.inner.bump(spot.id, { seat_count: 7 });
   await app.deps.outbox.enqueue({ kind: "spot.section", spot_id: spot.id, payload: SEATING }, 5);
   await app.deps.outbox.idle();
-  fireEvent.click(await screen.findByRole("button", { name: t("common.open") }));
+  fireEvent.click(await screen.findByRole("button", { name: t("spot.conflict.open") }));
   fireEvent.click(await screen.findByRole("button", { name: t("conflict.keep_theirs") }));
   expect(await screen.findByText(t("conflict.dropped"))).toBeTruthy();
   expect(app.server.inner.spot(spot.id).seat_count).toBe(7);
@@ -180,7 +180,7 @@ test("a failed write says why in deck words; an unreadable answer offers only Di
   await app.deps.outbox.idle();
   renderRoute(app, at(spot));
   expect(await screen.findByText(t("spot.failed.banner"))).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: t("common.open") }));
+  fireEvent.click(screen.getByRole("button", { name: t("spot.failed.open") }));
   const sheet = await screen.findByRole("dialog", { name: t("failed.title") });
   expect(within(sheet).getByText(t("failed.reason.bad_response"))).toBeTruthy();
   expect(within(sheet).queryByRole("button", { name: t("failed.retry") })).toBeNull();
@@ -373,7 +373,7 @@ test("closing a write sheet replaces its history entry, so Back does not reopen 
   await app.deps.outbox.enqueue({ kind: "spot.section", spot_id: spot.id, payload: SEATING }, 3);
   await app.deps.outbox.idle();
   const view = renderRoute(app, at(spot));
-  fireEvent.click(await screen.findByRole("button", { name: t("common.open") }));
+  fireEvent.click(await screen.findByRole("button", { name: t("spot.failed.open") }));
   const sheet = await screen.findByRole("dialog", { name: t("failed.title") });
   fireEvent.click(within(sheet).getByRole("button", { name: t("common.close") }));
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -486,7 +486,7 @@ test("discarding a failed create leaves the spot that no longer exists", async (
   const local = await app.deps.outbox.createSpot(identity());
   await app.deps.outbox.idle();
   const view = renderRoute(app, `/survey/spots/${local}`);
-  fireEvent.click(await screen.findByRole("button", { name: t("common.open") }));
+  fireEvent.click(await screen.findByRole("button", { name: t("spot.failed.open") }));
   const sheet = await screen.findByRole("dialog", { name: t("failed.title") });
   fireEvent.click(within(sheet).getByRole("button", { name: t("failed.discard") }));
   const confirm = await screen.findByRole("dialog", { name: t("failed.discard") });
@@ -622,7 +622,7 @@ test("a retry or discard that throws says so instead of closing silently", async
     throw new Error("indexeddb timeout");
   };
   renderRoute(app, at(spot));
-  fireEvent.click(await screen.findByRole("button", { name: t("common.open") }));
+  fireEvent.click(await screen.findByRole("button", { name: t("spot.failed.open") }));
   const sheet = await screen.findByRole("dialog", { name: t("failed.title") });
   fireEvent.click(within(sheet).getByRole("button", { name: t("failed.discard") }));
   const confirm = await screen.findByRole("dialog", { name: t("failed.discard") });

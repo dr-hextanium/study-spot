@@ -134,7 +134,7 @@ test("acceptance 4: a conflicting edit from two phones resolves both ways", asyn
   await expect(
     phoneB.getByText("Someone else changed this spot. Pick which version to keep."),
   ).toBeVisible({ timeout: 60_000 });
-  await phoneB.getByRole("button", { name: "Open", exact: true }).click();
+  await phoneB.getByRole("button", { name: "Open the conflict", exact: true }).click();
   await expect(phoneB.getByRole("cell", { name: "11" })).toBeVisible();
   await expect(phoneB.getByRole("cell", { name: "22" })).toBeVisible();
   await phoneB.getByRole("button", { name: "Keep mine" }).click();
@@ -149,7 +149,9 @@ test("acceptance 4: a conflicting edit from two phones resolves both ways", asyn
   await edit(page, "44");
   await expect(page.getByRole("button", { name: "All synced" })).toBeVisible();
   await other.setOffline(false);
-  await phoneB.getByRole("button", { name: "Open", exact: true }).click({ timeout: 60_000 });
+  await phoneB
+    .getByRole("button", { name: "Open the conflict", exact: true })
+    .click({ timeout: 60_000 });
   await phoneB.getByRole("button", { name: "Keep theirs" }).click();
   await expect(phoneB.getByRole("button", { name: "All synced" })).toBeVisible({ timeout: 60_000 });
   await expect.poll(async () => (await getSpot(await tokenOf(page), spot.id)).seat_count).toBe(44);

@@ -434,6 +434,8 @@ export const COPY = {
   "unit.percent": "%",
   "new.building.none": "No building matches.",
   "common.save_failed": "This phone couldn't save that. Check what you have, then try again.",
+  "spot.conflict.open": "Open the conflict",
+  "spot.failed.open": "Open the unsaved changes",
   "new.building.offline": "The building list loads once you're online.",
 } as const;
 
@@ -852,5 +854,7 @@ export const COPY_MAX = {
   "unit.percent": 2,
   "new.building.none": 24,
   "common.save_failed": 70,
+  "spot.conflict.open": 20,
+  "spot.failed.open": 26,
   "new.building.offline": 50,
 } as const satisfies Record<keyof typeof COPY, number>;

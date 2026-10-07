@@ -235,7 +235,11 @@ function Ready(props: {
         {conflicts.length > 0 ? (
           <Banner
             action={
-              <Button variant="quiet" onClick={() => show(conflicts[0])}>
+              <Button
+                variant="quiet"
+                aria-label={t("spot.conflict.open")}
+                onClick={() => show(conflicts[0])}
+              >
                 {t("common.open")}
               </Button>
             }
@@ -246,7 +250,11 @@ function Ready(props: {
         {failed.length > 0 ? (
           <Banner
             action={
-              <Button variant="quiet" onClick={() => show(failed[0])}>
+              <Button
+                variant="quiet"
+                aria-label={t("spot.failed.open")}
+                onClick={() => show(failed[0])}
+              >
                 {t("common.open")}
               </Button>
             }
