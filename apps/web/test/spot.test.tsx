@@ -1,9 +1,11 @@
 import type { SurveySpot } from "@study-spot/core";
 import { t } from "@study-spot/ui-logic";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";
 import { identity, SEATING } from "../../../packages/ui-logic/test/builders.ts";
+import type { ImageKit } from "../src/lib/photo.ts";
+import { CHECKLIST_KEY } from "../src/screens/editors/PhotosEditor.tsx";
 import { ME, renderRoute, testApp } from "./harness.tsx";
 
 const DRAFT = surveySpotFixture({
@@ -377,4 +379,101 @@ test("closing a write sheet replaces its history entry, so Back does not reopen 
   view.router.history.back();
   await waitFor(() => expect(view.router.state.location.search).toEqual({}));
   expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+const PHOTO = {
+  id: "7d0a1c52-3b6e-4e1f-9a2b-5c8d7e6f4a3b",
+  spot_id: "",
+  url: null,
+  taken_at: "2026-10-05T15:00:00.000Z",
+  is_cover: false,
+  uploaded_by: "2c1e5b7a-0c2d-4f5e-9a1b-3c4d5e6f7a8b",
+  approved: true,
+  approved_at: "2026-10-05T16:00:00.000Z",
+} as const;
+
+function fakeKit(sizes: number[], decodes = true): ImageKit {
+  return {
+    decode: async () =>
+      decodes ? { width: 4000, height: 3000, image: {} as CanvasImageSource } : null,
+    encode: async () => new Blob([new Uint8Array(sizes.shift() ?? 1000)], { type: "image/jpeg" }),
+  };
+}
+
+const pickFile = () =>
+  fireEvent.change(screen.getByTestId("photo-library"), {
+    target: { files: [new File(["x"], "a.jpg", { type: "image/jpeg" })] },
+  });
+
+test("the photo checklist shows once per session and gates both pickers", async () => {
+  sessionStorage.removeItem(CHECKLIST_KEY);
+  const click = vi.spyOn(HTMLInputElement.prototype, "click");
+  const app = testApp({ spots: [DRAFT] });
+  renderRoute(app, `${at(DRAFT)}/photos`);
+  fireEvent.click(await screen.findByRole("button", { name: t("photos.choose") }));
+  expect(await screen.findByRole("dialog", { name: t("photos.checklist.title") })).toBeTruthy();
+  expect(click).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: t("photos.checklist.ok") }));
+  expect(click).toHaveBeenCalledTimes(1);
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  fireEvent.click(screen.getByRole("button", { name: t("photos.take") }));
+  expect(click).toHaveBeenCalledTimes(2);
+  expect(screen.queryByRole("dialog")).toBeNull();
+  click.mockRestore();
+});
+
+test("a picked photo is queued; an oversize or unreadable one shows its error", async () => {
+  sessionStorage.setItem(CHECKLIST_KEY, "1");
+  const app = testApp({ spots: [DRAFT] });
+  app.network.set(false);
+  app.deps.imageKit = fakeKit([1000]);
+  renderRoute(app, `${at(DRAFT)}/photos`);
+  await screen.findByRole("button", { name: t("photos.choose") });
+  pickFile();
+  await waitFor(() =>
+    expect(app.deps.outbox.getSnapshot().records.some((r) => r.kind === "photo.upload")).toBe(true),
+  );
+  expect(await screen.findByText(t("photos.not_synced"))).toBeTruthy();
+
+  app.deps.imageKit = fakeKit([2_000_000, 2_000_000]);
+  pickFile();
+  expect(await screen.findByText(t("photos.too_big"))).toBeTruthy();
+  app.deps.imageKit = fakeKit([], false);
+  pickFile();
+  expect(await screen.findByText(t("photos.unreadable"))).toBeTruthy();
+  expect(screen.queryByText(t("photos.too_big"))).toBeNull();
+});
+
+test("a synced photo is set as the cover", async () => {
+  const spot = surveySpotFixture({ photos: [{ ...PHOTO, spot_id: DRAFT.id }] });
+  const app = testApp({ spots: [spot] });
+  renderRoute(app, `${at(spot)}/photos`);
+  fireEvent.click(await screen.findByRole("button", { name: t("photos.cover") }));
+  await waitFor(() =>
+    expect(app.server.inner.spot(spot.id).photos.find((p) => p.id === PHOTO.id)?.is_cover).toBe(
+      true,
+    ),
+  );
+});
+
+test("publishing offline queues it and says it goes live after syncing", async () => {
+  const ready = surveySpotFixture({ status: "draft" });
+  const app = testApp({ spots: [ready] });
+  app.network.set(false);
+  renderRoute(app, at(ready));
+  fireEvent.click(await screen.findByRole("button", { name: t("spot.publish") }));
+  expect(await screen.findByText(t("spot.publish.queued"))).toBeTruthy();
+  expect(app.server.inner.spot(ready.id).status).toBe("draft");
+  expect(screen.queryByText(t("spot.publish.done"))).toBeNull();
+});
+
+test("saving does not trip the leave guard on the way back", async () => {
+  const app = testApp({ spots: [DRAFT] });
+  const view = renderRoute(app, `${at(DRAFT)}/seating`);
+  fireEvent.change(await screen.findByRole("textbox", { name: t("seating.seat_count.label") }), {
+    target: { value: "40" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: t("editor.save") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(DRAFT)));
+  expect(screen.queryByRole("dialog", { name: t("editor.discard_changes.title") })).toBeNull();
 });

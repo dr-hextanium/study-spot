@@ -125,28 +125,32 @@ function LocalPhoto(props: { photo: PendingPhoto }) {
  * photos only; approving needs a connection.
  */
 export function PhotosEditor({ view }: { view: SpotView }) {
-  const { outbox } = useDeps();
+  const deps = useDeps();
+  const { outbox } = deps;
   const online = useOnline();
   const camera = useRef<HTMLInputElement>(null);
   const library = useRef<HTMLInputElement>(null);
-  const [checklist, setChecklist] = useState(false);
+  // Which picker the checklist is gating, if it is showing.
+  const [checklist, setChecklist] = useState<"camera" | "library" | null>(null);
   // One id per photo: picking again after a failed save reuses it, so it is queued once.
   const photoId = useRef(crypto.randomUUID());
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<"too_big" | "unreadable" | "save_failed" | null>(null);
 
-  function takePhoto() {
-    if (checklistSeen()) camera.current?.click();
-    else setChecklist(true);
+  function pick(source: "camera" | "library") {
+    if (checklistSeen()) (source === "camera" ? camera : library).current?.click();
+    else setChecklist(source);
   }
 
   async function onFile(file: File | undefined) {
     if (file === undefined) return;
     setBusy(true);
     setProblem(null);
-    const shrunk = await shrinkPhoto(file);
-    setBusy(false);
-    if (!shrunk.ok) return setProblem(shrunk.reason);
+    const shrunk = await shrinkPhoto(file, deps.imageKit);
+    if (!shrunk.ok) {
+      setBusy(false);
+      return setProblem(shrunk.reason);
+    }
     try {
       await outbox.addPhoto(
         view.spot.id,
@@ -165,6 +169,8 @@ export function PhotosEditor({ view }: { view: SpotView }) {
         .records.some((r) => r.client_write_id === photoId.current);
       if (landed) photoId.current = crypto.randomUUID();
       else setProblem("save_failed");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -184,7 +190,7 @@ export function PhotosEditor({ view }: { view: SpotView }) {
               wide
               disabled={busy}
               icon={<Camera aria-hidden="true" size={20} strokeWidth={2.25} />}
-              onClick={takePhoto}
+              onClick={() => pick("camera")}
             >
               {busy ? t("photos.processing") : t("photos.take")}
             </Button>
@@ -192,7 +198,7 @@ export function PhotosEditor({ view }: { view: SpotView }) {
               wide
               disabled={busy}
               icon={<ImagePlus aria-hidden="true" size={20} strokeWidth={2.25} />}
-              onClick={() => library.current?.click()}
+              onClick={() => pick("library")}
             >
               {t("photos.choose")}
             </Button>
@@ -249,18 +255,18 @@ export function PhotosEditor({ view }: { view: SpotView }) {
         />
       </Screen>
       <Sheet
-        open={checklist}
+        open={checklist !== null}
         title={t("photos.checklist.title")}
-        onClose={() => setChecklist(false)}
+        onClose={() => setChecklist(null)}
         actions={
           <Button
             variant="primary"
             wide
             onClick={() => {
               markChecklistSeen();
-              setChecklist(false);
-              // Still inside the tap, so the browser lets the camera open.
-              camera.current?.click();
+              // Still inside the tap, so the browser lets the picker open.
+              (checklist === "library" ? library : camera).current?.click();
+              setChecklist(null);
             }}
           >
             {t("photos.checklist.ok")}

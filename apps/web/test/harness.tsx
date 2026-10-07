@@ -33,6 +33,7 @@ import { createAuthState } from "../src/app/authState.ts";
 import { type AppDeps, createQueryClient, resumeOnNewSession } from "../src/app/deps.ts";
 import { applyServerSpot } from "../src/app/serverCache.ts";
 import { createSessionState } from "../src/app/sessionState.ts";
+import { browserImageKit } from "../src/lib/photo.ts";
 import { routeTree } from "../src/routeTree.gen.ts";
 
 export const API = "https://api.example";
@@ -167,6 +168,7 @@ export function testApp(
     blobs,
     network,
     geolocation: { current: async () => null },
+    imageKit: browserImageKit,
     share: { share: async () => "copied" },
     clock,
     apiBaseUrl: API,
