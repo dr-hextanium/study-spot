@@ -71,9 +71,10 @@ export function dayProblem(hours: DayHours): DayProblem {
   return hours.opens === hours.closes ? "same_time" : null;
 }
 
-/** Closing before opening means after midnight, shown as "2:00 next day". */
+/** Closing before opening means after midnight, shown as "2:00 next day". A stored 24:00 is midnight too. */
 export function closesNextDay(hours: DayHours): boolean {
-  return hours.kind === "open" && hours.closes !== "" && hours.closes < hours.opens;
+  if (hours.kind !== "open" || hours.closes === "") return false;
+  return hours.closes === ALL_DAY_CLOSES || hours.closes < hours.opens;
 }
 
 /** A new day's starting hours. A time input yields 00:00, never 24:00, for midnight. */

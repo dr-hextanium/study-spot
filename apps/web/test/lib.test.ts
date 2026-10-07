@@ -3,7 +3,14 @@ import { t } from "@study-spot/ui-logic";
 import { expect, test } from "vitest";
 import { cellsOf, nextBucket, toGrid } from "../src/lib/estimates.ts";
 import { fieldValueText, valueText } from "../src/lib/fields.ts";
-import { closesNextDay, copyMonday, dayProblem, fromWeek, toWeek } from "../src/lib/hours.ts";
+import {
+  closesNextDay,
+  copyMonday,
+  type DayHours,
+  dayProblem,
+  fromWeek,
+  toWeek,
+} from "../src/lib/hours.ts";
 import { GOOD_FIX_METERS, spotPoint } from "../src/lib/location.ts";
 import { fitWithin, type ImageKit, shrinkPhoto } from "../src/lib/photo.ts";
 import { slugify, spotSlug } from "../src/lib/slug.ts";
@@ -66,7 +73,7 @@ test("a day cannot open and close at the same time; a stored 24:00 close stays 2
     closes: "24:00",
     lastEntry: null,
   });
-  expect(closesNextDay(late[2]?.hours ?? { kind: "closed" })).toBe(false);
+  expect(closesNextDay(late[2]?.hours ?? { kind: "closed" })).toBe(true);
 });
 
 test("an unchanged edit writes the stored hours back identically", () => {
@@ -148,4 +155,16 @@ test("an encode over 1.5 MB retries once at 0.7, then gives up", async () => {
     ok: false,
     reason: "unreadable",
   });
+});
+
+test("a stored 24:00 close reads as next day, like a typed midnight", () => {
+  const open = (closes: string): DayHours => ({
+    kind: "open",
+    opens: "08:00",
+    closes,
+    lastEntry: null,
+  });
+  expect(closesNextDay(open("24:00"))).toBe(true);
+  expect(closesNextDay(open("00:00"))).toBe(true);
+  expect(closesNextDay(open("22:00"))).toBe(false);
 });
