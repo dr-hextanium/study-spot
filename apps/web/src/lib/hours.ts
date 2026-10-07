@@ -83,3 +83,11 @@ export const DEFAULT_OPEN: DayHours = {
   closes: "22:00",
   lastEntry: null,
 };
+
+/**
+ * What a time input can show: it only accepts up to 23:59, so a stored close of
+ * 24:00 reads as 00:00 (midnight). The stored value is untouched until edited.
+ */
+export function timeInputValue(time: string): string {
+  return time === ALL_DAY_CLOSES ? ALL_DAY_OPENS : time;
+}
