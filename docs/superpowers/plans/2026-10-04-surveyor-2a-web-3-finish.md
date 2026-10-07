@@ -42,6 +42,10 @@ DESIGN.md (+ sidecar)            written by the Impeccable documenter
 
 Journey E: create an invite link for a surveyor or an admin and copy it; the surveyor list with badges, a new sign-in link per surveyor (made with their role, so an admin's lost-phone link keeps admin), and Remove access with a confirm; the publish status (last published time in campus time, dirty or up to date, last error, skipped spots reworded by `publishWarningText`) with Publish now; photos waiting for approval with Approve and Reject (confirmed). Home shows an Admin link to admins.
 
+**Carried from part 1 (owner: this task):**
+- (I5) A re-join by a different surveyor while the queue is non-empty must confirm or refuse, because `join()` never compares `accepted.surveyor.id` with the stored id.
+- (I6) Sign-out: `outbox.stop()` plus clearing the persisted survey cache and the session, and the `pass()` loop must check `stopped` before each pick. The `auth.revoked.body` copy is unused today.
+
 **Files:**
 - Create: `apps/web/src/screens/Admin.tsx`, `apps/web/src/screens/admin.css`, `apps/web/src/routes/survey.admin.tsx`
 - Replace: `apps/web/src/routes/survey.index.tsx`; Modify: `apps/web/src/main.tsx` (import), `apps/web/src/routeTree.gen.ts` (generated)

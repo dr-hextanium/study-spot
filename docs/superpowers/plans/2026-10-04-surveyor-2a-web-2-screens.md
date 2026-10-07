@@ -1006,6 +1006,8 @@ git commit -m "feat(web): add spot helpers, photo resize, and spot hooks"
 
 The rest of the spot job, as screens: `/survey/spots/new` (identity only, saved on the phone at once), `/survey/spots/$id` (the contract's first viewport: ink band with name and sync postmark, the stamp row, conflict and failed banners, the ruled sheet of sections in three groups with postmark rings, the pinned action: Publish, the blocked list linking to sections, or Looks right; Unpublish for admins online), `?write=` opening the conflict or failed sheet, and `/survey/spots/$id/$section` with an editor for each of the 12 sections. Home rows link to their spot and New spot is pinned on the list.
 
+**Carried from part 1:** an IndexedDB timeout is reported as unknown, so create and photo callers must refresh the outbox snapshot before offering Retry. Otherwise a retry can create duplicate drafts.
+
 **Files:**
 - Create: `apps/web/src/ui/Choices.tsx`
 - Create: `apps/web/src/screens/BuildingPicker.tsx`, `LocationButton.tsx`, `NewSpot.tsx`, `WriteSheets.tsx`, `Overview.tsx`, `spot.css`
