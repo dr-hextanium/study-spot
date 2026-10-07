@@ -584,3 +584,15 @@ test("moving from one spot's section to another spot's remounts with that spot's
   await view.router.navigate({ to: `${at(b)}/seating` });
   await waitFor(async () => expect(await seats()).toHaveProperty("value", "20"));
 });
+
+test("a spot id that is not a uuid or a local id is not found, without any lookup", async () => {
+  const app = testApp();
+  renderRoute(app, "/survey/spots/not-an-id");
+  expect(await screen.findByText(/not found/i)).toBeTruthy();
+  expect(app.server.inner.requests.some((r) => r.path.includes("not-an-id"))).toBe(false);
+});
+
+test("a section that does not exist is not found", async () => {
+  renderRoute(testApp({ spots: [DRAFT] }), `${at(DRAFT)}/nothing`);
+  expect(await screen.findByText(/not found/i)).toBeTruthy();
+});

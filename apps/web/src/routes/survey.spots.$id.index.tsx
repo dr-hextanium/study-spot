@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { SpotRef } from "@study-spot/ui-logic";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 import { z } from "zod";
 import { Overview } from "../screens/Overview.tsx";
 
@@ -6,6 +7,14 @@ import { Overview } from "../screens/Overview.tsx";
 const Search = z.object({ write: z.string().optional() });
 
 export const Route = createFileRoute("/survey/spots/$id/")({
+  params: {
+    parse: (raw) => {
+      const id = SpotRef.safeParse(raw.id);
+      if (!id.success) throw notFound();
+      return { id: id.data };
+    },
+    stringify: (p) => ({ id: p.id }),
+  },
   validateSearch: Search,
   component: OverviewRoute,
 });

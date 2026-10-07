@@ -1,5 +1,5 @@
 import { SURVEY_SECTION } from "@study-spot/core";
-import { t } from "@study-spot/ui-logic";
+import { SpotRef, t } from "@study-spot/ui-logic";
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { z } from "zod";
@@ -16,9 +16,10 @@ const Section = z.enum([...SURVEY_SECTION, "photos"]);
 export const Route = createFileRoute("/survey/spots/$id/$section")({
   params: {
     parse: (raw) => {
+      const id = SpotRef.safeParse(raw.id);
       const section = Section.safeParse(raw.section);
-      if (!section.success) throw notFound();
-      return { id: raw.id, section: section.data };
+      if (!id.success || !section.success) throw notFound();
+      return { id: id.data, section: section.data };
     },
     stringify: (p) => ({ id: p.id, section: p.section }),
   },
