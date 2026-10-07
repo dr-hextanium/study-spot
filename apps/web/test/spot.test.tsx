@@ -554,3 +554,17 @@ test("a retry of the same photo reuses its id; a different photo always gets a n
     ).toBe(1),
   );
 });
+
+test("two quick Publish taps while the server is failing show no Published toast", async () => {
+  const ready = surveySpotFixture({ status: "draft" });
+  const app = testApp({ spots: [ready] });
+  renderRoute(app, at(ready));
+  const publish = await screen.findByRole("button", { name: t("spot.publish") });
+  app.server.inner.failFor.add(ready.id);
+  fireEvent.click(publish);
+  fireEvent.click(publish);
+  await app.deps.outbox.idle();
+  await new Promise((r) => setTimeout(r, 50));
+  expect(screen.queryByText(t("spot.publish.done"))).toBeNull();
+  expect(app.deps.outbox.getSnapshot().records.length).toBe(1);
+});

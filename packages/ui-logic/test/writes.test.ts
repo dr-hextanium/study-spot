@@ -72,7 +72,12 @@ test("a second publish is a no-op and invalid section data is refused", () => {
     3,
     meta(1),
   );
-  expect(plan).toEqual({ put: [], remove: [], seedVersion: null });
+  expect(plan).toEqual({
+    put: [],
+    remove: [],
+    seedVersion: null,
+    existing: publish.client_write_id,
+  });
   const bad = { ...SEATING, data: { ...SEATING.data, seat_count: 0 } };
   expect(() =>
     planEnqueue([], { kind: "spot.section", spot_id: SPOT_A, payload: bad }, 3, meta(2)),

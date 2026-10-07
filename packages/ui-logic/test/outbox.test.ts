@@ -1028,3 +1028,16 @@ test("a slow read that started earlier never overwrites a newer snapshot", async
   await slow;
   expect(box.getSnapshot().records.length).toBe(1);
 });
+
+test("a second publish enqueue returns the id of the one already queued", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const first = await box.enqueue({ kind: "spot.publish", spot_id: SPOT_A, payload: {} }, 3);
+  const second = await box.enqueue({ kind: "spot.publish", spot_id: SPOT_A, payload: {} }, 3);
+  expect(second).toBe(first);
+  expect(box.getSnapshot().records.length).toBe(1);
+  const review = await box.enqueue({ kind: "spot.review", spot_id: SPOT_A, payload: {} }, 3);
+  expect(await box.enqueue({ kind: "spot.review", spot_id: SPOT_A, payload: {} }, 3)).toBe(review);
+});

@@ -212,7 +212,7 @@ export function createOutbox(deps: OutboxDeps) {
       for (const r of plan.put) await store.put(r);
       for (const removed of plan.remove) await store.remove(removed);
       if (plan.seedVersion !== null) await raiseVersion(write.spot_id, plan.seedVersion);
-      return plan.put[0]?.client_write_id ?? meta.client_write_id;
+      return plan.put[0]?.client_write_id ?? plan.existing ?? meta.client_write_id;
     });
     await refresh();
     // Start this tab's pass before waking the others, so the tab that queued a write sends it.

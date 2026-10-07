@@ -150,20 +150,28 @@ function Ready(props: {
       replace: r === undefined,
     });
 
-  async function publish() {
-    const id = await outbox.enqueue(
-      { kind: "spot.publish", spot_id: spot.id, payload: {} },
-      view.serverVersion,
-    );
-    toasts.track(id, { done: "spot.publish.done", waiting: "spot.publish.queued" });
+  // A second tap while the first is being queued must not queue or announce anything.
+  const [queuing, setQueuing] = useState(false);
+  async function queue(
+    kind: "spot.publish" | "spot.review",
+    copy: {
+      done: "spot.publish.done" | "spot.review.done";
+      waiting: "spot.publish.queued" | "spot.review.queued";
+    },
+  ) {
+    if (queuing) return;
+    setQueuing(true);
+    try {
+      const id = await outbox.enqueue({ kind, spot_id: spot.id, payload: {} }, view.serverVersion);
+      toasts.track(id, copy);
+    } finally {
+      setQueuing(false);
+    }
   }
-  async function markReviewed() {
-    const id = await outbox.enqueue(
-      { kind: "spot.review", spot_id: spot.id, payload: {} },
-      view.serverVersion,
-    );
-    toasts.track(id, { done: "spot.review.done", waiting: "spot.review.queued" });
-  }
+  const publish = () =>
+    queue("spot.publish", { done: "spot.publish.done", waiting: "spot.publish.queued" });
+  const markReviewed = () =>
+    queue("spot.review", { done: "spot.review.done", waiting: "spot.review.queued" });
   async function unpublish() {
     setUnpublishing(false);
     const res = await api.unpublish(spot.id, { client_write_id: crypto.randomUUID() });
@@ -176,6 +184,7 @@ function Ready(props: {
       <Button
         variant={readiness.kind === "ready" ? "secondary" : "primary"}
         wide
+        disabled={queuing}
         onClick={() => void markReviewed()}
       >
         {t("spot.review")}
@@ -185,7 +194,7 @@ function Ready(props: {
   if (readiness.kind === "ready") {
     action = (
       <>
-        <Button variant="primary" wide onClick={() => void publish()}>
+        <Button variant="primary" wide disabled={queuing} onClick={() => void publish()}>
           {t("spot.publish")}
         </Button>
         {reviewButton}

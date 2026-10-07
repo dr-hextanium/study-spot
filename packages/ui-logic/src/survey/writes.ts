@@ -142,6 +142,8 @@ export type EnqueuePlan = {
   remove: string[];
   /** Version to remember for this spot when no earlier write chains it. */
   seedVersion: number | null;
+  /** Set when nothing was added because an equal write is already queued: that write's id. */
+  existing?: string;
 };
 
 /**
@@ -160,8 +162,9 @@ export function planEnqueue(
 ): EnqueuePlan {
   const sameSpot = existing.filter((r) => r.spot_id === write.spot_id);
   if (write.kind === "spot.publish" || write.kind === "spot.review") {
-    if (sameSpot.some((r) => r.kind === write.kind && r.state !== "failed")) {
-      return { put: [], remove: [], seedVersion: null };
+    const queued = sameSpot.find((r) => r.kind === write.kind && r.state !== "failed");
+    if (queued !== undefined) {
+      return { put: [], remove: [], seedVersion: null, existing: queued.client_write_id };
     }
   }
   // Saving Basics before the create has gone through (or after it was refused,

@@ -51,7 +51,17 @@ function ServerPhoto(props: { photo: SurveyPhoto; view: SpotView }) {
   const toasts = useToasts();
   const url = usePhotoUrl({ photoId: photo.id });
   const own = me !== null && me.role !== "admin" && photo.uploaded_by === me.id;
+  const [approving, setApproving] = useState(false);
   async function approve() {
+    if (approving) return;
+    setApproving(true);
+    try {
+      await approveOnce();
+    } finally {
+      setApproving(false);
+    }
+  }
+  async function approveOnce() {
     const res = await api.approvePhoto(photo.id, { client_write_id: crypto.randomUUID() });
     if (res.kind === "ok") {
       applyServerSpot(queryClient, res.value);
@@ -91,7 +101,7 @@ function ServerPhoto(props: { photo: SurveyPhoto; view: SpotView }) {
         {photo.approved ? null : own ? (
           <p className="field__helper">{t("photos.approve.own")}</p>
         ) : (
-          <Button disabled={!online} onClick={() => void approve()}>
+          <Button disabled={!online || approving} onClick={() => void approve()}>
             {t("photos.approve")}
           </Button>
         )}
