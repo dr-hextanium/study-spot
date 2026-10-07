@@ -34,7 +34,7 @@ export function SyncSheet(props: { open: boolean; onClose: () => void }) {
     };
   }, [props.open, snapshot.unreadable, outbox]);
 
-  const empty = snapshot.records.length === 0 && unreadable.length === 0;
+  const empty = snapshot.loaded && snapshot.records.length === 0 && snapshot.unreadable === 0;
   return (
     <>
       <Sheet

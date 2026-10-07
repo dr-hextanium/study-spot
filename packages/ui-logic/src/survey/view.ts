@@ -332,6 +332,7 @@ export function reviewAction(view: SpotView, me: SurveyorPublic): "button" | "ow
 
 export type SyncHeader =
   | { kind: "signed_out" }
+  | { kind: "checking" }
   | { kind: "failed"; count: number }
   | { kind: "unreadable"; count: number }
   | { kind: "offline" }
@@ -342,6 +343,8 @@ export type SyncHeader =
 /** The header line: what needs the surveyor first, then connectivity, then progress. */
 export function syncHeader(s: OutboxSnapshot): SyncHeader {
   if (s.signedOut) return { kind: "signed_out" };
+  // Until the queue has been read, an empty list means nothing yet, not nothing waiting.
+  if (!s.loaded) return { kind: "checking" };
   const stuck = s.records.filter((r) => r.state === "failed" || r.state === "conflict").length;
   if (stuck > 0) return { kind: "failed", count: stuck };
   if (s.unreadable > 0) return { kind: "unreadable", count: s.unreadable };

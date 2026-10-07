@@ -78,6 +78,18 @@ test("an unreadable stored change is counted, listed, and can be discarded", asy
   expect(await app.cache.get("outbox:w:broken")).toBeNull();
 });
 
+test("the sync sheet never says everything is on the server while unreadable writes exist", async () => {
+  const app = testApp();
+  await app.cache.set("outbox:w:broken", "{not json");
+  vi.spyOn(app.deps.outbox, "unreadableKeys").mockRejectedValue(new Error("idb down"));
+  renderRoute(app, "/survey");
+  fireEvent.click(
+    await screen.findByRole("button", { name: t("sync.short.unreadable", { count: 1 }) }),
+  );
+  const sheet = await screen.findByRole("dialog", { name: t("sync.sheet.title") });
+  expect(within(sheet).queryByText(t("sync.sheet.empty"))).toBeNull();
+});
+
 test("a 401 on the list shows Sign in again and keeps queued changes", async () => {
   const app = testApp();
   app.network.set(false);

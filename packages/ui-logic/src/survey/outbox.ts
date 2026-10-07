@@ -69,6 +69,8 @@ export type OutboxSnapshot = {
   online: boolean;
   /** Stored records that fail to parse. Never sent; deleted only by `discardUnreadable`. */
   unreadable: number;
+  /** False until the queue was read from storage once. Before that, `records` is empty by default, not by fact. */
+  loaded: boolean;
 };
 
 /** Writes a caller may queue for an existing spot (creates and photos have their own calls). */
@@ -104,7 +106,7 @@ export type Outbox = ReturnType<typeof createOutbox>;
 export function createOutbox(deps: OutboxDeps) {
   const store = createOutboxStore(deps);
   const lock = deps.lock ?? createLocalLock();
-  const liveness = deps.liveness ?? createLocalLiveness(deps.cache);
+  let liveness = deps.liveness ?? createLocalLiveness(deps.cache);
   const signal = deps.signal ?? createLocalSignal(deps.cache);
   /** Queue changes, the pick of the next write, and its result write never interleave. */
   const locked = <T>(fn: () => Promise<T>): Promise<T> => lock.run(OUTBOX_LOCK, fn);
@@ -117,6 +119,7 @@ export function createOutbox(deps: OutboxDeps) {
     signedOut: false,
     online: deps.network.online(),
     unreadable: 0,
+    loaded: false,
   };
   /**
    * This tab's Liveness owner id, set by start(). Passes in a tab are serial,
@@ -131,6 +134,9 @@ export function createOutbox(deps: OutboxDeps) {
   let cancelTimer: (() => void) | null = null;
   let unsubscribe: (() => void)[] = [];
   let stopped = true;
+  /** False until start() finished its recovery step; passes wait for it. */
+  let ready = false;
+  let cancelLoad: (() => void) | null = null;
   /** Consecutive failed photo reads per write, in this tab only. */
   const unreadPhotos = new Map<string, number>();
 
@@ -142,8 +148,16 @@ export function createOutbox(deps: OutboxDeps) {
   async function refresh(): Promise<WriteRecord[]> {
     const records = await store.list();
     const unreadable = (await store.unreadable()).length;
-    emit({ records, idMap: await store.idMap(), unreadable });
+    emit({ records, idMap: await store.idMap(), unreadable, loaded: true });
     return records;
+  }
+
+  /** First read of the queue; a failure is tried again later, so the header does not stay on Checking. */
+  function load(): void {
+    cancelLoad = null;
+    refresh().catch(() => {
+      if (!stopped) cancelLoad = deps.timers.after(BACKOFF_START_MS, load);
+    });
   }
 
   /**
@@ -426,7 +440,7 @@ export function createOutbox(deps: OutboxDeps) {
    * only after a pass that ends with nothing held.
    */
   async function pass(): Promise<void> {
-    if (stopped || snapshot.signedOut || !deps.network.online()) return;
+    if (stopped || !ready || snapshot.signedOut || !deps.network.online()) return;
     emit({ syncing: true });
     const skipped = new Set<string>();
     let held = false;
@@ -499,20 +513,11 @@ export function createOutbox(deps: OutboxDeps) {
   return {
     /** Loads the queue, resets writes cut off mid-send, and starts listening for triggers. */
     async start(): Promise<void> {
-      self = await liveness.hold();
       stopped = false;
-      await locked(async () => {
-        for (const r of await store.list()) {
-          // A live tab's in-flight write is left alone; a gone tab's goes back in the queue.
-          if (r.state === "syncing" && r.owner !== self && !(await sendingElsewhere(r))) {
-            await store.put({ ...r, state: "pending" });
-          }
-        }
-        for (const moved of rewriteSpotIds(await store.list(), await store.idMap())) {
-          await store.put(moved);
-        }
-      });
-      signal.post();
+      ready = false;
+      // Reading the queue needs neither the liveness hold nor the lock, so it goes first.
+      load();
+      // Triggers listen from the start, whatever happens to the steps below.
       unsubscribe = [
         signal.subscribe(() => {
           void refresh().catch(() => undefined);
@@ -526,11 +531,38 @@ export function createOutbox(deps: OutboxDeps) {
       ];
       // The network may have changed between createOutbox and subscribing.
       emit({ online: deps.network.online() });
-      await refresh();
+      try {
+        self = await liveness.hold();
+      } catch {
+        // Web Locks failed: this tab then answers for itself only, like a browser without them.
+        liveness = createLocalLiveness(deps.cache);
+        self = await liveness.hold();
+      }
+      try {
+        await locked(async () => {
+          for (const r of await store.list()) {
+            // A live tab's in-flight write is left alone; a gone tab's goes back in the queue.
+            if (r.state === "syncing" && r.owner !== self && !(await sendingElsewhere(r))) {
+              await store.put({ ...r, state: "pending" });
+            }
+          }
+          for (const moved of rewriteSpotIds(await store.list(), await store.idMap())) {
+            await store.put(moved);
+          }
+        });
+        signal.post();
+      } catch {
+        // Storage trouble: the queue is untouched; the next pass or read tries again.
+      }
+      ready = true;
+      await refresh().catch(() => undefined);
       await sync();
     },
     stop(): void {
       stopped = true;
+      ready = false;
+      cancelLoad?.();
+      cancelLoad = null;
       liveness.release();
       for (const u of unsubscribe) u();
       unsubscribe = [];

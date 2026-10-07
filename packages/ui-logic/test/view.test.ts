@@ -171,6 +171,7 @@ test("the sync header puts stuck writes first, then offline, then progress", () 
     signedOut: false,
     online: true,
     unreadable: 0,
+    loaded: true,
   };
   const pending = section(SPOT_A, SEATING);
   const failed = section(SPOT_B, SEATING, { state: "failed" });
@@ -186,6 +187,8 @@ test("the sync header puts stuck writes first, then offline, then progress", () 
     count: 1,
   });
   expect(syncHeader({ ...base, signedOut: true })).toEqual({ kind: "signed_out" });
+  expect(syncHeader({ ...base, loaded: false })).toEqual({ kind: "checking" });
+  expect(syncHeader({ ...base, loaded: false, online: false })).toEqual({ kind: "checking" });
 });
 
 function summary(over: Partial<SpotSummary>): SpotSummary {
@@ -305,6 +308,7 @@ test("the sync header never says all synced while unreadable writes exist", () =
     signedOut: false,
     online: true,
     unreadable: 2,
+    loaded: true,
   };
   expect(syncHeader(base)).toEqual({ kind: "unreadable", count: 2 });
   expect(syncHeader({ ...base, online: false })).toEqual({ kind: "unreadable", count: 2 });

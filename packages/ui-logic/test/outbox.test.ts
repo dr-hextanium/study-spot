@@ -7,7 +7,9 @@ import {
   createOutbox,
   createOutboxStore,
   createSurveyApi,
+  type Liveness,
   PHOTO_READ_MAX_FAILURES,
+  syncHeader,
 } from "../src/index.ts";
 import { identity, POWER, SEATING, SPOT_A, SPOT_B } from "./builders.ts";
 import { API, FakeSurveyServer, TOKEN } from "./fakeServer.ts";
@@ -867,4 +869,95 @@ test("start() reads the network state again, so a change before it subscribed is
   t.network.set(false);
   await box.start();
   expect(box.getSnapshot().online).toBe(false);
+});
+
+const flush = async () => {
+  for (let i = 0; i < 20; i += 1) await Promise.resolve();
+};
+
+test("a queue that has not loaded is never reported as all synced", async () => {
+  const t = setup();
+  const never = new Promise<never>(() => undefined);
+  class HangingCache extends MemoryCache {
+    override keys(): Promise<string[]> {
+      return never;
+    }
+  }
+  const box = createOutbox({
+    cache: new HangingCache(),
+    blobs: new MemoryBinary(),
+    api: createSurveyApi({ http: t.server, baseUrl: API, token: () => TOKEN }),
+    clock: mutableClock("2026-10-05T16:00:00Z"),
+    ids: sequentialIds("8100"),
+    timers: new FakeTimers(),
+    network: new FakeNetwork(),
+    foreground: new FakeForeground(),
+  });
+  expect(syncHeader(box.getSnapshot())).toEqual({ kind: "checking" });
+  void box.start();
+  await flush();
+  expect(box.getSnapshot().loaded).toBe(false);
+  expect(syncHeader(box.getSnapshot())).toEqual({ kind: "checking" });
+});
+
+test("a queue whose read fails stays checking and loads once the read works", async () => {
+  const t = setup();
+  const timers = new FakeTimers();
+  class FlakyCache extends MemoryCache {
+    broken = true;
+    override async keys(prefix: string): Promise<string[]> {
+      if (this.broken) throw new Error("idb down");
+      return super.keys(prefix);
+    }
+  }
+  const cache = new FlakyCache();
+  const box = createOutbox({
+    cache,
+    blobs: new MemoryBinary(),
+    api: createSurveyApi({ http: t.server, baseUrl: API, token: () => TOKEN }),
+    clock: mutableClock("2026-10-05T16:00:00Z"),
+    ids: sequentialIds("8200"),
+    timers,
+    network: new FakeNetwork(),
+    foreground: new FakeForeground(),
+  });
+  await box.start();
+  expect(syncHeader(box.getSnapshot())).toEqual({ kind: "checking" });
+  cache.broken = false;
+  timers.advance(BACKOFF_START_MS);
+  await flush();
+  expect(box.getSnapshot().loaded).toBe(true);
+  expect(syncHeader(box.getSnapshot())).toEqual({ kind: "all_synced" });
+});
+
+test("a rejected liveness hold still lets later triggers send", async () => {
+  const t = setup();
+  t.network.set(false);
+  const first = t.make();
+  await first.start();
+  await first.enqueue(power(SPOT_A), 3);
+  first.stop();
+  const broken: Liveness = {
+    hold: () => Promise.reject(new Error("locks unavailable")),
+    release: () => undefined,
+    alive: async () => false,
+  };
+  const box = createOutbox({
+    cache: t.cache,
+    blobs: t.blobs,
+    api: createSurveyApi({ http: t.server, baseUrl: API, token: () => TOKEN }),
+    clock: mutableClock("2026-10-05T16:00:00Z"),
+    ids: sequentialIds("8300"),
+    timers: t.timers,
+    network: t.network,
+    foreground: t.foreground,
+    liveness: broken,
+  });
+  await box.start();
+  expect(box.getSnapshot().loaded).toBe(true);
+  expect(box.getSnapshot().records).toHaveLength(1);
+  expect(t.sent()).toEqual([]);
+  t.network.set(true);
+  await box.idle();
+  expect(t.sent()).toEqual([`PUT /survey/spots/${SPOT_A}/power`]);
 });

@@ -66,6 +66,8 @@ export function headerText(h: SyncHeader): string {
   switch (h.kind) {
     case "signed_out":
       return t("sync.short.signed_out");
+    case "checking":
+      return t("sync.short.checking");
     case "failed":
       return t("sync.short.failed", { count: h.count });
     case "unreadable":
@@ -86,6 +88,8 @@ export function headerLong(h: SyncHeader): string {
   switch (h.kind) {
     case "signed_out":
       return t("auth.expired.title");
+    case "checking":
+      return t("sync.checking");
     case "failed":
       return t("sync.failed", { count: h.count });
     case "unreadable":

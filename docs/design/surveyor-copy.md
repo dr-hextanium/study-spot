@@ -463,6 +463,8 @@ Strings the built screens needed beyond the sections above: short header forms f
 
 | id | text | max chars | notes |
 |---|---|---|---|
+| sync.checking | Checking this phone | 24 | header long form and sheet, until the queue has been read; never shown as synced |
+| sync.short.checking | Checking | 10 | header postmark |
 | sync.short.pending | {count} waiting | 14 | header postmark; full form in the sync sheet |
 | sync.short.offline | Offline | 10 | header postmark; sync.offline in the sheet |
 | sync.short.failed | {count} not saved | 16 | header postmark |

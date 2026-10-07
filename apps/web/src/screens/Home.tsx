@@ -42,12 +42,14 @@ function usePendingAfterOpen(): number {
   const [count, setCount] = useState(0);
   useEffect(() => {
     let live = true;
-    void started.then(() => {
-      const left = outbox
-        .getSnapshot()
-        .records.filter((r) => r.state === "pending" || r.state === "syncing").length;
-      if (live) setCount(left);
-    });
+    void started
+      .then(() => {
+        const left = outbox
+          .getSnapshot()
+          .records.filter((r) => r.state === "pending" || r.state === "syncing").length;
+        if (live) setCount(left);
+      })
+      .catch(() => undefined);
     return () => {
       live = false;
     };
