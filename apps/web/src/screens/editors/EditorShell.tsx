@@ -74,7 +74,23 @@ export function EditorShell<S extends SurveySection>({
   });
   const back = () => navigate({ to: "/survey/spots/$id", params: { id: view.spot.id } });
 
-  async function save(force: boolean) {
+  const [failed, setFailed] = useState(false);
+  // A storage failure must not strand the surveyor on a button that does nothing: reload what
+  // the phone holds, then say so.
+  async function guarded(run: () => Promise<void>) {
+    setFailed(false);
+    try {
+      await run();
+    } catch {
+      leaving.current = false;
+      await outbox.reload().catch(() => undefined);
+      setFailed(true);
+    }
+  }
+  const save = (force: boolean) => guarded(() => saveNow(force));
+  const verify = () => guarded(verifyNow);
+
+  async function saveNow(force: boolean) {
     setCleared(null);
     if (validate !== undefined && !validate()) return setInvalid(true);
     const outcome = await api.save({ force });
@@ -84,7 +100,7 @@ export function EditorShell<S extends SurveySection>({
     leaving.current = true;
     await back();
   }
-  async function verify() {
+  async function verifyNow() {
     if (api.verify === null) return;
     const id = await api.verify();
     toasts.track(id, { done: "editor.verify.done", waiting: "editor.saved_offline" });
@@ -116,6 +132,7 @@ export function EditorShell<S extends SurveySection>({
       >
         <p className="lede spot-name">{view.spot.official_name}</p>
         {invalid ? <Banner>{t("editor.invalid")}</Banner> : null}
+        {failed ? <Banner>{t("common.save_failed")}</Banner> : null}
         {children(api)}
       </Screen>
       <ConfirmSheet

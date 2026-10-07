@@ -87,7 +87,14 @@ export function FailedSheet(props: { record: WriteRecord; spotName: string; onCl
   const navigate = useNavigate();
   const { record } = props;
   const [confirming, setConfirming] = useState(false);
+  const toasts = useToasts();
   const view = failureView(record.error);
+  // The queue could not be changed; read it back and say so, so the sheet is not left silent.
+  const failed = () => {
+    setConfirming(false);
+    void outbox.reload().catch(() => undefined);
+    toasts.show(t("common.save_failed"));
+  };
   return (
     <>
       <Sheet
@@ -101,8 +108,7 @@ export function FailedSheet(props: { record: WriteRecord; spotName: string; onCl
                 variant="primary"
                 wide
                 onClick={() => {
-                  void outbox.retry(record.client_write_id);
-                  props.onClose();
+                  outbox.retry(record.client_write_id).then(props.onClose, failed);
                 }}
               >
                 {t("failed.retry")}
@@ -130,10 +136,11 @@ export function FailedSheet(props: { record: WriteRecord; spotName: string; onCl
         destructive
         onCancel={() => setConfirming(false)}
         onConfirm={() => {
-          void outbox.discard(record.client_write_id);
-          props.onClose();
-          // Dropping a create drops the whole draft, so there is no spot left to show.
-          if (record.kind === "spot.create") void navigate({ to: "/survey", replace: true });
+          outbox.discard(record.client_write_id).then(() => {
+            props.onClose();
+            // Dropping a create drops the whole draft, so there is no spot left to show.
+            if (record.kind === "spot.create") void navigate({ to: "/survey", replace: true });
+          }, failed);
         }}
       />
     </>

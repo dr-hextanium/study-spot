@@ -596,3 +596,36 @@ test("a section that does not exist is not found", async () => {
   renderRoute(testApp({ spots: [DRAFT] }), `${at(DRAFT)}/nothing`);
   expect(await screen.findByText(/not found/i)).toBeTruthy();
 });
+
+test("a save that throws names the problem and stays on the editor", async () => {
+  const app = testApp({ spots: [DRAFT] });
+  app.deps.outbox.enqueue = async () => {
+    throw new Error("indexeddb timeout");
+  };
+  const view = renderRoute(app, `${at(DRAFT)}/seating`);
+  fireEvent.change(await screen.findByRole("textbox", { name: t("seating.seat_count.label") }), {
+    target: { value: "40" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: t("editor.save") }));
+  expect((await screen.findByRole("alert")).textContent).toBe(t("common.save_failed"));
+  expect(view.router.state.location.pathname).toBe(`${at(DRAFT)}/seating`);
+});
+
+test("a retry or discard that throws says so instead of closing silently", async () => {
+  const spot = surveySpotFixture({ version: 3 });
+  const app = testApp({ spots: [spot] });
+  await app.deps.started;
+  app.server.inner.failWith.push(200);
+  await app.deps.outbox.enqueue({ kind: "spot.section", spot_id: spot.id, payload: SEATING }, 3);
+  await app.deps.outbox.idle();
+  app.deps.outbox.discard = async () => {
+    throw new Error("indexeddb timeout");
+  };
+  renderRoute(app, at(spot));
+  fireEvent.click(await screen.findByRole("button", { name: t("common.open") }));
+  const sheet = await screen.findByRole("dialog", { name: t("failed.title") });
+  fireEvent.click(within(sheet).getByRole("button", { name: t("failed.discard") }));
+  const confirm = await screen.findByRole("dialog", { name: t("failed.discard") });
+  fireEvent.click(within(confirm).getByRole("button", { name: t("failed.discard") }));
+  expect(await screen.findByText(t("common.save_failed"))).toBeTruthy();
+});
