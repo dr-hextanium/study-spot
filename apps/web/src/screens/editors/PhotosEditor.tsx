@@ -132,8 +132,9 @@ export function PhotosEditor({ view }: { view: SpotView }) {
   const library = useRef<HTMLInputElement>(null);
   // Which picker the checklist is gating, if it is showing.
   const [checklist, setChecklist] = useState<"camera" | "library" | null>(null);
-  // One id per photo: picking again after a failed save reuses it, so it is queued once.
-  const photoId = useRef(crypto.randomUUID());
+  // The id of a photo whose save failed, tied to that file: picking the same file again
+  // reuses it so it is queued once; any other file gets a new id.
+  const failed = useRef<{ file: string; id: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<"too_big" | "unreadable" | "save_failed" | null>(null);
 
@@ -151,24 +152,21 @@ export function PhotosEditor({ view }: { view: SpotView }) {
       setBusy(false);
       return setProblem(shrunk.reason);
     }
+    const fileKey = `${file.name}:${file.size}:${file.lastModified}`;
+    const id = failed.current?.file === fileKey ? failed.current.id : crypto.randomUUID();
     try {
-      await outbox.addPhoto(
-        view.spot.id,
-        view.serverVersion,
-        shrunk.bytes,
-        new Date(),
-        photoId.current,
-      );
-      photoId.current = crypto.randomUUID();
+      await outbox.addPhoto(view.spot.id, view.serverVersion, shrunk.bytes, new Date(), id);
+      failed.current = null;
     } catch {
       // A storage timeout does not say whether the photo landed. Reload the queue so the
-      // list shows it if it did. Picking again reuses this id, so it cannot be queued twice.
+      // list shows it if it did. Picking the same file again reuses this id, so it is queued once.
       await outbox.reload().catch(() => undefined);
-      const landed = outbox
-        .getSnapshot()
-        .records.some((r) => r.client_write_id === photoId.current);
-      if (landed) photoId.current = crypto.randomUUID();
-      else setProblem("save_failed");
+      const landed = outbox.getSnapshot().records.some((r) => r.client_write_id === id);
+      if (landed) failed.current = null;
+      else {
+        failed.current = { file: fileKey, id };
+        setProblem("save_failed");
+      }
     } finally {
       setBusy(false);
     }

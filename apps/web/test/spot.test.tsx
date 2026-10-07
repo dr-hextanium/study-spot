@@ -516,3 +516,41 @@ test("the chosen building is described to the search input", async () => {
   expect(described).not.toBeNull();
   expect(document.getElementById(described ?? "")?.textContent).toBe("Melville Library");
 });
+
+test("a retry of the same photo reuses its id; a different photo always gets a new one", async () => {
+  sessionStorage.setItem(CHECKLIST_KEY, "1");
+  const app = testApp({ spots: [DRAFT] });
+  app.network.set(false);
+  app.deps.imageKit = fakeKit([1000, 1000, 1000, 1000]);
+  const real = app.deps.outbox.addPhoto;
+  const ids: (string | null | undefined)[] = [];
+  app.deps.outbox.addPhoto = async (...args) => {
+    ids.push(args[4]);
+    // The first two saves throw before anything lands, and reading the queue back fails too.
+    if (ids.length <= 2) throw new Error("indexeddb timeout");
+    return real(...args);
+  };
+  app.deps.outbox.reload = async () => {
+    throw new Error("indexeddb timeout");
+  };
+  renderRoute(app, `${at(DRAFT)}/photos`);
+  await screen.findByRole("button", { name: t("photos.choose") });
+  const pick = (name: string) =>
+    fireEvent.change(screen.getByTestId("photo-library"), {
+      target: { files: [new File(["x"], name, { type: "image/jpeg", lastModified: 1 })] },
+    });
+  pick("first.jpg");
+  expect(await screen.findByText(t("common.save_failed"))).toBeTruthy();
+  pick("first.jpg");
+  await waitFor(() => expect(ids.length).toBe(2));
+  expect(ids[1]).toBe(ids[0]);
+  await screen.findByText(t("common.save_failed"));
+  pick("second.jpg");
+  await waitFor(() => expect(ids.length).toBe(3));
+  expect(ids[2]).not.toBe(ids[0]);
+  await waitFor(() =>
+    expect(
+      app.deps.outbox.getSnapshot().records.filter((r) => r.kind === "photo.upload").length,
+    ).toBe(1),
+  );
+});
