@@ -27,15 +27,25 @@ type Props = {
 export function BuildingPicker({ buildings, value, onChange, error }: Props) {
   const inputId = useId();
   const helpId = useId();
+  const chosenId = useId();
   const [query, setQuery] = useState("");
   const chosen = buildings?.find((b) => b.id === value);
   const matches = buildings === undefined ? [] : matchBuildings(buildings, query).slice(0, SHOWN);
   return (
     <div className={`field${error === undefined ? "" : " field--error"}`}>
-      <label className="label field__label" htmlFor={inputId}>
-        {t("new.building.label")}
-      </label>
-      {chosen === undefined ? null : <p className="entered">{chosen.name}</p>}
+      {/* Offline there is no input, so the label must not point at one. */}
+      {buildings === undefined ? (
+        <p className="label field__label">{t("new.building.label")}</p>
+      ) : (
+        <label className="label field__label" htmlFor={inputId}>
+          {t("new.building.label")}
+        </label>
+      )}
+      {chosen === undefined ? null : (
+        <p className="entered" id={chosenId}>
+          {chosen.name}
+        </p>
+      )}
       {buildings === undefined ? (
         <p className="field__helper">{t("new.building.offline")}</p>
       ) : (
@@ -47,7 +57,11 @@ export function BuildingPicker({ buildings, value, onChange, error }: Props) {
             value={query}
             placeholder={t("new.building.placeholder")}
             autoComplete="off"
-            aria-describedby={error === undefined ? undefined : helpId}
+            aria-describedby={
+              [chosen === undefined ? null : chosenId, error === undefined ? null : helpId]
+                .filter((x) => x !== null)
+                .join(" ") || undefined
+            }
             onChange={(e) => setQuery(e.currentTarget.value)}
           />
           {query.trim() === "" ? null : matches.length === 0 ? (

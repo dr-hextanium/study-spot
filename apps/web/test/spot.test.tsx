@@ -1,10 +1,11 @@
 import type { SurveySpot } from "@study-spot/core";
 import { t } from "@study-spot/ui-logic";
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";
 import { identity, SEATING } from "../../../packages/ui-logic/test/builders.ts";
 import type { ImageKit } from "../src/lib/photo.ts";
+import { BuildingPicker } from "../src/screens/BuildingPicker.tsx";
 import { CHECKLIST_KEY } from "../src/screens/editors/PhotosEditor.tsx";
 import { ME, renderRoute, testApp } from "./harness.tsx";
 
@@ -492,4 +493,26 @@ test("discarding a failed create leaves the spot that no longer exists", async (
   fireEvent.click(within(confirm).getByRole("button", { name: t("failed.discard") }));
   await waitFor(() => expect(view.router.state.location.pathname).toBe("/survey"));
   expect(app.deps.outbox.getSnapshot().records).toEqual([]);
+});
+
+test("the building picker without a list has no label pointing at a missing input", () => {
+  const { container } = render(
+    <BuildingPicker buildings={undefined} value={null} onChange={() => undefined} />,
+  );
+  expect(container.querySelector("label")).toBeNull();
+  expect(container.querySelector("input")).toBeNull();
+  expect(screen.getByText(t("new.building.offline"))).toBeTruthy();
+});
+
+test("the chosen building is described to the search input", async () => {
+  const app = testApp();
+  renderRoute(app, "/survey/spots/new");
+  const search = await screen.findByRole("searchbox", { name: t("new.building.label") });
+  fireEvent.change(search, { target: { value: "melv" } });
+  fireEvent.click(await screen.findByRole("button", { name: "Melville Library" }));
+  const described = screen
+    .getByRole("searchbox", { name: t("new.building.label") })
+    .getAttribute("aria-describedby");
+  expect(described).not.toBeNull();
+  expect(document.getElementById(described ?? "")?.textContent).toBe("Melville Library");
 });
