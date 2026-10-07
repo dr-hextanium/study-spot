@@ -575,6 +575,13 @@ export function createOutbox(deps: OutboxDeps) {
         listeners.delete(listener);
       };
     },
+    /**
+     * Re-reads the queue into the snapshot. A storage timeout is reported as unknown, so
+     * a caller whose save threw reloads before offering Retry: the write may have landed.
+     */
+    async reload(): Promise<void> {
+      await refresh();
+    },
     /** Same object until something changes, as useSyncExternalStore requires. */
     getSnapshot: (): OutboxSnapshot => snapshot,
     /** Called with each spot the server returns, so the app can update its cached copy. */

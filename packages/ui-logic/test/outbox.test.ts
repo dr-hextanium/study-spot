@@ -961,3 +961,16 @@ test("a rejected liveness hold still lets later triggers send", async () => {
   await box.idle();
   expect(t.sent()).toEqual([`PUT /survey/spots/${SPOT_A}/power`]);
 });
+
+test("reload shows a write another tab or a timed-out save left in storage", async () => {
+  const t = setup([]);
+  t.network.set(false);
+  const one = t.make();
+  const two = t.make();
+  await one.start();
+  await two.start();
+  await two.createSpot(identity());
+  expect(one.getSnapshot().records).toEqual([]);
+  await one.reload();
+  expect(one.getSnapshot().records.map((r) => r.kind)).toEqual(["spot.create"]);
+});

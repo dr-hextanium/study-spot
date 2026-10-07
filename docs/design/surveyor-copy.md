@@ -539,6 +539,7 @@ Strings the built screens needed beyond the sections above: short header forms f
 | unit.minutes | min | 4 | stepper suffix |
 | unit.percent | % | 2 | stepper suffix |
 | new.building.none | No building matches. | 24 | |
+| common.save_failed | This phone couldn't save that. Check what you have, then try again. | 70 | storage timed out and nothing was queued |
 | new.building.offline | The building list loads once you're online. | 50 | first run offline |
 
 ## Pending questions
