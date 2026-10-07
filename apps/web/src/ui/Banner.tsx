@@ -6,8 +6,10 @@ export function Banner(props: {
   action?: ReactNode;
   tone?: "danger" | "note";
 }) {
+  const tone = props.tone ?? "danger";
   return (
-    <div className={`banner banner--${props.tone ?? "danger"}`} role="status">
+    // A refusal interrupts; a note waits to be read.
+    <div className={`banner banner--${tone}`} role={tone === "danger" ? "alert" : "status"}>
       <p className="banner__text">{props.children}</p>
       {props.action}
     </div>

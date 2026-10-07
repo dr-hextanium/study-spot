@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { expect, test, vi } from "vitest";
 import { dateTime, headerText, postmarkState, shortDate } from "../src/lib/format.ts";
+import { Banner } from "../src/ui/Banner.tsx";
 import { Button } from "../src/ui/Button.tsx";
 import { TextField } from "../src/ui/Field.tsx";
 import { Postmark } from "../src/ui/Postmark.tsx";
@@ -84,6 +85,27 @@ test("postmarks say their state and stamp when the date changes", () => {
 test("stamp chips are text, so their status reads without color", () => {
   render(<StampChip tone="red">Draft</StampChip>);
   expect(screen.getByText("Draft").className).toContain("stamp--red");
+});
+
+test("a filled amber stamp takes the onWarning text color", () => {
+  render(
+    <StampChip tone="amber" filled>
+      Hours
+    </StampChip>,
+  );
+  expect(screen.getByText("Hours").className).toContain("stamp--filled");
+  expect(screen.getByText("Hours").className).toContain("stamp--amber");
+});
+
+test("a refusal banner is an alert and a note is a status", () => {
+  render(
+    <>
+      <Banner>No</Banner>
+      <Banner tone="note">Heads up</Banner>
+    </>,
+  );
+  expect(screen.getByRole("alert").textContent).toBe("No");
+  expect(screen.getByRole("status").textContent).toBe("Heads up");
 });
 
 test("the header postmark uses the short forms that fit a 360 px phone", () => {

@@ -665,6 +665,12 @@ select {
   color: var(--color-onAccent);
 }
 
+.stamp--filled.stamp--amber {
+  background: var(--color-warning);
+  border-color: var(--color-warning);
+  color: var(--color-onWarning);
+}
+
 .stamp--filled.stamp--ink {
   background: var(--color-text);
   border-color: var(--color-text);
