@@ -477,3 +477,19 @@ test("saving does not trip the leave guard on the way back", async () => {
   await waitFor(() => expect(view.router.state.location.pathname).toBe(at(DRAFT)));
   expect(screen.queryByRole("dialog", { name: t("editor.discard_changes.title") })).toBeNull();
 });
+
+test("discarding a failed create leaves the spot that no longer exists", async () => {
+  const app = testApp();
+  await app.deps.started;
+  app.server.inner.failWith.push(200);
+  const local = await app.deps.outbox.createSpot(identity());
+  await app.deps.outbox.idle();
+  const view = renderRoute(app, `/survey/spots/${local}`);
+  fireEvent.click(await screen.findByRole("button", { name: t("common.open") }));
+  const sheet = await screen.findByRole("dialog", { name: t("failed.title") });
+  fireEvent.click(within(sheet).getByRole("button", { name: t("failed.discard") }));
+  const confirm = await screen.findByRole("dialog", { name: t("failed.discard") });
+  fireEvent.click(within(confirm).getByRole("button", { name: t("failed.discard") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe("/survey"));
+  expect(app.deps.outbox.getSnapshot().records).toEqual([]);
+});

@@ -1,4 +1,5 @@
 import { conflictDiff, failureView, t, type WriteRecord } from "@study-spot/ui-logic";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { useToasts } from "../hooks/useToasts.tsx";
@@ -83,6 +84,7 @@ export function ConflictSheet(props: {
 /** A change the server refused: why, in the deck's words, and Retry or Discard. */
 export function FailedSheet(props: { record: WriteRecord; spotName: string; onClose: () => void }) {
   const { outbox } = useDeps();
+  const navigate = useNavigate();
   const { record } = props;
   const [confirming, setConfirming] = useState(false);
   const view = failureView(record.error);
@@ -130,6 +132,8 @@ export function FailedSheet(props: { record: WriteRecord; spotName: string; onCl
         onConfirm={() => {
           void outbox.discard(record.client_write_id);
           props.onClose();
+          // Dropping a create drops the whole draft, so there is no spot left to show.
+          if (record.kind === "spot.create") void navigate({ to: "/survey", replace: true });
         }}
       />
     </>
