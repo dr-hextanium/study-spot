@@ -146,6 +146,8 @@ function Ready(props: {
       to: "/survey/spots/$id",
       params: { id: props.id },
       search: r === undefined ? {} : { write: r.client_write_id },
+      // Closing a sheet replaces its entry, so Back leaves the screen instead of reopening it.
+      replace: r === undefined,
     });
 
   async function publish() {

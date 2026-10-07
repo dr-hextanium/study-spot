@@ -361,3 +361,20 @@ test("a create that was already sent before the save threw does not say it faile
   expect(screen.queryByText(t("common.save_failed"))).toBeNull();
   expect(app.server.inner.spots.size).toBe(1);
 });
+
+test("closing a write sheet replaces its history entry, so Back does not reopen it", async () => {
+  const spot = surveySpotFixture({ version: 3 });
+  const app = testApp({ spots: [spot] });
+  await app.deps.started;
+  app.server.inner.failWith.push(200);
+  await app.deps.outbox.enqueue({ kind: "spot.section", spot_id: spot.id, payload: SEATING }, 3);
+  await app.deps.outbox.idle();
+  const view = renderRoute(app, at(spot));
+  fireEvent.click(await screen.findByRole("button", { name: t("common.open") }));
+  const sheet = await screen.findByRole("dialog", { name: t("failed.title") });
+  fireEvent.click(within(sheet).getByRole("button", { name: t("common.close") }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  view.router.history.back();
+  await waitFor(() => expect(view.router.state.location.search).toEqual({}));
+  expect(screen.queryByRole("dialog")).toBeNull();
+});
