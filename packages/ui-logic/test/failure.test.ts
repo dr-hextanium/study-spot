@@ -75,3 +75,10 @@ test("publisher warnings are reworded with the spot name and field names", () =>
   );
   expect(publishWarningText("something new", spots)).toBe("something new");
 });
+
+test("a server code that names an Object method is not mistaken for a known code", () => {
+  expect(failureView(err({ status: 500, code: "toString" }))).toEqual({
+    message: t("error.generic"),
+    canRetry: true,
+  });
+});

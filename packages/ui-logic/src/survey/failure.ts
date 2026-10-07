@@ -44,7 +44,7 @@ const CODE_COPY = {
 type KnownCode = keyof typeof CODE_COPY;
 
 function known(code: string | null): code is KnownCode {
-  return code !== null && code in CODE_COPY;
+  return code !== null && Object.hasOwn(CODE_COPY, code);
 }
 
 /**
