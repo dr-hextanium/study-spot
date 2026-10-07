@@ -45,6 +45,11 @@ Journey E: create an invite link for a surveyor or an admin and copy it; the sur
 **Carried from part 1 (owner: this task):**
 - (I5) A re-join by a different surveyor while the queue is non-empty must confirm or refuse, because `join()` never compares `accepted.surveyor.id` with the stored id.
 - (I6) Sign-out: `outbox.stop()` plus clearing the persisted survey cache and the session, and the `pass()` loop must check `stopped` before each pick. The `auth.revoked.body` copy is unused today.
+- Local liveness fallback: `createLocalLiveness` names the owner `local-1` in every tab; give it a uuid owner id so two fallback tabs do not take over each other's in-flight writes.
+- `resumeOnNewSession` (`apps/web/src/app/deps.ts`) resumes on a same-token save too; resume only when the token changed, and have test relogins hand out a fresh token.
+- `persistStorage.ts`: one transient restore failure blocks saves for the session. Retry the read inside `setItem`, and skip a write whose dehydrated queries are empty.
+- `Home.tsx`: decide the leave-with-pending banner on the first `loaded` snapshot, not on `started`.
+- Note in `AppDeps` that the session subscription from `buildAppDeps` is required for `join()` to resume.
 
 **Files:**
 - Create: `apps/web/src/screens/Admin.tsx`, `apps/web/src/screens/admin.css`, `apps/web/src/routes/survey.admin.tsx`
