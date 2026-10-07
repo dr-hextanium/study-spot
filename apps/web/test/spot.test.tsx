@@ -246,8 +246,8 @@ test("a create whose storage write timed out but landed opens the draft, not a d
   const app = testApp();
   app.network.set(false);
   const real = app.deps.outbox.createSpot;
-  app.deps.outbox.createSpot = async (identity) => {
-    await real(identity);
+  app.deps.outbox.createSpot = async (identity, key) => {
+    await real(identity, key);
     throw new Error("indexeddb timeout");
   };
   const view = renderRoute(app, "/survey/spots/new");
@@ -307,4 +307,57 @@ test("an edit in progress survives its draft's create syncing and the move to th
     "value",
     "41",
   );
+});
+
+async function fillNewSpot() {
+  fireEvent.change(await screen.findByRole("searchbox", { name: t("new.building.label") }), {
+    target: { value: "melv" },
+  });
+  fireEvent.click(await screen.findByRole("button", { name: "Melville Library" }));
+  fireEvent.change(screen.getByRole("textbox", { name: t("new.floor.label") }), {
+    target: { value: "3" },
+  });
+  fireEvent.change(screen.getByRole("textbox", { name: t("new.official_name.label") }), {
+    target: { value: "Quiet Corner" },
+  });
+}
+
+test("retrying a create after a thrown save queues one draft, even if the reload fails too", async () => {
+  const app = testApp();
+  app.network.set(false);
+  const real = app.deps.outbox.createSpot;
+  let calls = 0;
+  app.deps.outbox.createSpot = async (identity, key) => {
+    calls += 1;
+    if (calls === 1) throw new Error("indexeddb timeout");
+    return real(identity, key);
+  };
+  app.deps.outbox.reload = async () => {
+    throw new Error("indexeddb timeout");
+  };
+  const view = renderRoute(app, "/survey/spots/new");
+  await fillNewSpot();
+  fireEvent.click(screen.getByRole("button", { name: t("new.save") }));
+  expect((await screen.findByRole("alert")).textContent).toBe(t("common.save_failed"));
+  fireEvent.click(screen.getByRole("button", { name: t("new.save") }));
+  await waitFor(() =>
+    expect(view.router.state.location.pathname).toMatch(/^\/survey\/spots\/local(:|%3A)/),
+  );
+  expect(app.deps.outbox.getSnapshot().records.length).toBe(1);
+});
+
+test("a create that was already sent before the save threw does not say it failed", async () => {
+  const app = testApp();
+  const real = app.deps.outbox.createSpot;
+  app.deps.outbox.createSpot = async (identity, key) => {
+    await real(identity, key);
+    await app.deps.outbox.idle();
+    throw new Error("indexeddb timeout");
+  };
+  const view = renderRoute(app, "/survey/spots/new");
+  await fillNewSpot();
+  fireEvent.click(screen.getByRole("button", { name: t("new.save") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toMatch(/^\/survey\/spots\//));
+  expect(screen.queryByText(t("common.save_failed"))).toBeNull();
+  expect(app.server.inner.spots.size).toBe(1);
 });

@@ -17,6 +17,11 @@ export const LOCAL_PREFIX = "local:";
 export const LocalSpotId = z.string().regex(/^local:[0-9a-f-]{36}$/);
 export const SpotRef = z.union([z.uuid(), LocalSpotId]);
 
+/** The local spot id a create made with this key gets. */
+export function localIdFor(key: string): string {
+  return `${LOCAL_PREFIX}${key}`;
+}
+
 export function isLocalId(id: string): boolean {
   return id.startsWith(LOCAL_PREFIX);
 }

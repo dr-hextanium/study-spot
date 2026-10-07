@@ -130,6 +130,8 @@ export function PhotosEditor({ view }: { view: SpotView }) {
   const camera = useRef<HTMLInputElement>(null);
   const library = useRef<HTMLInputElement>(null);
   const [checklist, setChecklist] = useState(false);
+  // One id per photo: picking again after a failed save reuses it, so it is queued once.
+  const photoId = useRef(crypto.randomUUID());
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<"too_big" | "unreadable" | "save_failed" | null>(null);
 
@@ -145,17 +147,24 @@ export function PhotosEditor({ view }: { view: SpotView }) {
     const shrunk = await shrinkPhoto(file);
     setBusy(false);
     if (!shrunk.ok) return setProblem(shrunk.reason);
-    const before = new Set(outbox.getSnapshot().records.map((r) => r.client_write_id));
     try {
-      await outbox.addPhoto(view.spot.id, view.serverVersion, shrunk.bytes, new Date());
+      await outbox.addPhoto(
+        view.spot.id,
+        view.serverVersion,
+        shrunk.bytes,
+        new Date(),
+        photoId.current,
+      );
+      photoId.current = crypto.randomUUID();
     } catch {
       // A storage timeout does not say whether the photo landed. Reload the queue so the
-      // list shows it if it did; only then is picking the photo again safe.
+      // list shows it if it did. Picking again reuses this id, so it cannot be queued twice.
       await outbox.reload().catch(() => undefined);
       const landed = outbox
         .getSnapshot()
-        .records.some((r) => r.kind === "photo.upload" && !before.has(r.client_write_id));
-      if (!landed) setProblem("save_failed");
+        .records.some((r) => r.client_write_id === photoId.current);
+      if (landed) photoId.current = crypto.randomUUID();
+      else setProblem("save_failed");
     }
   }
 

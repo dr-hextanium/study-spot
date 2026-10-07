@@ -1,5 +1,5 @@
 import type { IdentitySection } from "@study-spot/core";
-import { t } from "@study-spot/ui-logic";
+import { localIdFor, t } from "@study-spot/ui-logic";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
@@ -41,6 +41,8 @@ export function NewSpot() {
   const [commonName, setCommonName] = useState("");
   const [directions, setDirections] = useState("");
   const [location, setLocation] = useState<LocationState>({ kind: "idle" });
+  // One id per submit: a retry after a failed save sends the same one, so it cannot double up.
+  const [submitKey, setSubmitKey] = useState(() => crypto.randomUUID());
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const building = buildings?.find((b) => b.id === buildingId);
@@ -62,29 +64,24 @@ export function NewSpot() {
     };
     rememberBuilding(building.id);
     setSaveFailed(false);
-    const known = new Set(outbox.getSnapshot().records.map((r) => r.client_write_id));
     let id: string;
     try {
-      id = await outbox.createSpot(identity);
+      id = await outbox.createSpot(identity, submitKey);
     } catch {
-      // A storage timeout does not say whether the draft landed. Reload the queue and
-      // look for it before offering another try, or a retry makes a duplicate draft.
+      // A storage timeout does not say whether the draft landed. Reload the queue and look
+      // for this submit's id; if it is missing, trying again is safe because the same id is
+      // sent, so a draft that did land is never made twice.
       await outbox.reload().catch(() => undefined);
-      const landed = outbox
-        .getSnapshot()
-        .records.find(
-          (r) =>
-            r.kind === "spot.create" &&
-            !known.has(r.client_write_id) &&
-            r.payload.identity.slug === identity.slug,
-        );
-      if (landed === undefined) {
+      const snap = outbox.getSnapshot();
+      const lid = localIdFor(submitKey);
+      if (!snap.records.some((r) => r.spot_id === lid) && snap.idMap[lid] === undefined) {
         setSaving(false);
         setSaveFailed(true);
         return;
       }
-      id = landed.spot_id;
+      id = lid;
     }
+    setSubmitKey(crypto.randomUUID());
     await navigate({ to: "/survey/spots/$id", params: { id }, replace: true });
   }
 

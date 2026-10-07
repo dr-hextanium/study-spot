@@ -974,3 +974,31 @@ test("reload shows a write another tab or a timed-out save left in storage", asy
   await one.reload();
   expect(one.getSnapshot().records.map((r) => r.kind)).toEqual(["spot.create"]);
 });
+
+test("a create with a caller key is queued once, before and after it syncs", async () => {
+  const t = setup([]);
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const submit = crypto.randomUUID();
+  const local = await box.createSpot(identity(), submit);
+  expect(await box.createSpot(identity(), submit)).toBe(local);
+  expect(box.getSnapshot().records.length).toBe(1);
+  t.network.set(true);
+  await box.idle();
+  expect(await box.createSpot(identity(), submit)).toBe(local);
+  expect(box.getSnapshot().records).toEqual([]);
+  expect(t.server.spots.size).toBe(1);
+});
+
+test("a photo with a caller id is queued once", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const id = "9c2d1e3f-4a5b-4c6d-8e7f-a1b2c3d4e5f6";
+  const taken = new Date("2026-10-05T15:59:00Z");
+  await box.addPhoto(SPOT_A, 3, JPEG, taken, id);
+  await box.addPhoto(SPOT_A, 3, JPEG, taken, id);
+  expect(box.getSnapshot().records.filter((r) => r.kind === "photo.upload").length).toBe(1);
+});
