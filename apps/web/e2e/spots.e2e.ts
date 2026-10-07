@@ -1,8 +1,9 @@
+import { randomUUID } from "node:crypto";
 import type { Page } from "@playwright/test";
 import { API_ORIGIN } from "../playwright.config.ts";
-import { completeSpot, draftSpot, getSpot, surveyorInvite, tokenOf } from "./api.ts";
+import { call, completeSpot, draftSpot, getSpot, surveyorInvite, tokenOf } from "./api.ts";
 import { expect, pinClock, signIn, test } from "./fixtures.ts";
-import { bigJpeg, GPS_MARK, withExif } from "./photo.ts";
+import { bigJpeg, GPS_MARK, jpegMarkers, withExif } from "./photo.ts";
 
 async function saveSection(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Save", exact: true }).click();
@@ -57,7 +58,7 @@ test("acceptance 1: a spot made offline with every required field and a photo sy
   await page.getByRole("button", { name: "Copy Monday to weekdays" }).click();
   await saveSection(page);
 
-  // Task 12 change: Choose is gated by the postcard checklist, so go through it as a surveyor does.
+  // Choose is gated by the postcard checklist, so go through it as a surveyor does.
   await openSection(page, "Photos");
   const photo = withExif(await bigJpeg(page));
   await page.getByRole("button", { name: "Choose from library" }).click();
@@ -75,7 +76,7 @@ test("acceptance 1: a spot made offline with every required field and a photo sy
 
   await page.context().setOffline(false);
   await expect(page.getByRole("button", { name: "All synced" })).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByText("Published", { exact: true })).toBeVisible();
+  await expect(page.locator(".stamp-row").getByText("Published", { exact: true })).toBeVisible();
   const id = new URL(page.url()).pathname.split("/").at(-1) ?? "";
   expect(id).toMatch(/^[0-9a-f-]{36}$/);
   const token = await tokenOf(page);
@@ -94,7 +95,8 @@ test("acceptance 1: a spot made offline with every required field and a photo sy
   const bytes = Buffer.from(await res.arrayBuffer());
   expect(bytes.subarray(0, 2)).toEqual(Buffer.from([0xff, 0xd8]));
   expect(bytes.length).toBeLessThanOrEqual(1_500_000);
-  expect(bytes.includes(Buffer.from("Exif\0\0", "binary"))).toBe(false);
+  // No APP1 segment (EXIF, XMP) anywhere in the marker walk, not just no "Exif" string.
+  expect(jpegMarkers(bytes)).not.toContain(0xe1);
   expect(bytes.includes(Buffer.from(GPS_MARK, "binary"))).toBe(false);
   const size = await page.evaluate(async (b64) => {
     const raw = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
@@ -190,6 +192,14 @@ test("acceptance 3: a second surveyor can mark a spot reviewed; the one who edit
   await reviewer.page.getByRole("button", { name: "Looks right" }).click();
   await expect(reviewer.page.getByRole("button", { name: "Marked reviewed" })).toBeVisible();
   await expect.poll(async () => (await getSpot(admin, spot.id)).review_state).toBe("reviewed");
+  // The server enforces it too: the last editor's own review call is refused.
+  const latest = await getSpot(admin, spot.id);
+  await expect(
+    call(await tokenOf(editor.page), "POST", `/survey/spots/${spot.id}/review`, {
+      client_write_id: randomUUID(),
+      base_version: latest.version,
+    }),
+  ).rejects.toThrow(/403/);
   await editor.context.close();
   await reviewer.context.close();
 });

@@ -49,3 +49,16 @@ export function withExif(jpeg: Buffer): Buffer {
     jpeg.subarray(2),
   ]);
 }
+
+/** The marker bytes of each segment before the scan data, in order (0xe1 is APP1: EXIF or XMP). */
+export function jpegMarkers(jpeg: Buffer): number[] {
+  const markers: number[] = [];
+  let at = 2;
+  while (at + 4 <= jpeg.length && jpeg[at] === 0xff) {
+    const marker = jpeg[at + 1] ?? 0;
+    markers.push(marker);
+    if (marker === 0xda) break;
+    at += 2 + jpeg.readUInt16BE(at + 2);
+  }
+  return markers;
+}

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Page } from "@playwright/test";
-import { SurveySpot } from "@study-spot/core";
+import { CreateInviteResponse, SurveySpot } from "@study-spot/core";
 import { StoredSession } from "@study-spot/ui-logic";
 import { API_ORIGIN } from "../playwright.config.ts";
 
@@ -122,9 +122,9 @@ export async function completeSpot(
 
 /** A new-surveyor invite link made by an admin, as a path to open in another context. */
 export async function surveyorInvite(adminToken: string): Promise<string> {
-  const res = (await call(adminToken, "POST", "/admin/invites", { role: "surveyor" })) as {
-    url: string;
-  };
+  const res = CreateInviteResponse.parse(
+    await call(adminToken, "POST", "/admin/invites", { role: "surveyor" }),
+  );
   const url = new URL(res.url);
   return `${url.pathname}${url.search}`;
 }
