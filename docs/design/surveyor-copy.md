@@ -471,6 +471,7 @@ Strings the built screens needed beyond the sections above: short header forms f
 | sync.short.unreadable | {count} unreadable | 16 | header postmark |
 | sync.short.signed_out | Signed out | 12 | header postmark |
 | sync.unreadable_one | 1 change can't be read | 30 | singular of sync.unreadable |
+| auth.misconfigured | This build has no server address. Ask whoever sent you the link. | 70 | shown in place of the app when the deploy env is missing; the technical detail follows on its own line |
 | sync.leave_warning_one | 1 change hasn't synced yet. Leaving now keeps it on this phone. | 90 | singular of sync.leave_warning |
 | sync.sheet.unreadable_item | A saved change this app can't read | 40 | one row per unreadable record |
 | sync.sheet.unreadable_help | These came from a newer or damaged copy of the app. Discard them if they stay. | 90 | |

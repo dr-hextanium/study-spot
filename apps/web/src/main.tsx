@@ -1,7 +1,7 @@
 import "@fontsource/public-sans/latin-600.css";
 import "@fontsource/public-sans/latin-700.css";
 import "./ui/styles.css";
-import { tokens } from "@study-spot/ui-logic";
+import { t, tokens } from "@study-spot/ui-logic";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -25,7 +25,7 @@ if (root === null) throw new Error("missing #root");
 const parsed = parseWebEnv(import.meta.env);
 if (!parsed.ok) {
   // A build without the deploy env cannot reach the API; say so instead of failing quietly.
-  root.textContent = `Perch is misconfigured:\n${parsed.error}`;
+  root.textContent = `${t("auth.misconfigured")}\n${parsed.error}`;
   throw new Error(parsed.error);
 }
 const deps = createAppDeps({

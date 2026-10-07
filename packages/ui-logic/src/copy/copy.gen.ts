@@ -356,6 +356,7 @@ export const COPY = {
   "sync.short.unreadable": "{count} unreadable",
   "sync.short.signed_out": "Signed out",
   "sync.unreadable_one": "1 change can't be read",
+  "auth.misconfigured": "This build has no server address. Ask whoever sent you the link.",
   "sync.leave_warning_one": "1 change hasn't synced yet. Leaving now keeps it on this phone.",
   "sync.sheet.unreadable_item": "A saved change this app can't read",
   "sync.sheet.unreadable_help":
@@ -781,6 +782,7 @@ export const COPY_MAX = {
   "sync.short.unreadable": 16,
   "sync.short.signed_out": 12,
   "sync.unreadable_one": 30,
+  "auth.misconfigured": 70,
   "sync.leave_warning_one": 90,
   "sync.sheet.unreadable_item": 40,
   "sync.sheet.unreadable_help": 90,
