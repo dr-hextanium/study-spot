@@ -83,6 +83,31 @@ export function createQueryClient(): QueryClient {
 }
 
 /**
+ * Signing in again, in this tab or another, resumes this tab: reads and the
+ * outbox leave their signed-out state and the survey queries load again. The
+ * session store is the one place all tabs agree on, so this listens there.
+ */
+export function resumeOnNewSession(deps: {
+  session: SessionState;
+  auth: AuthState;
+  outbox: Outbox;
+  queryClient: QueryClient;
+}): () => void {
+  const { session, auth, outbox, queryClient } = deps;
+  let last = session.token();
+  return session.subscribe(() => {
+    const token = session.token();
+    const wasOut = auth.signedOut() || outbox.getSnapshot().signedOut;
+    const changed = token !== last;
+    last = token;
+    if (token === null || !(changed || wasOut)) return;
+    auth.reset();
+    outbox.resume();
+    void queryClient.invalidateQueries();
+  });
+}
+
+/**
  * The one AppDeps of this page. A second outbox would share this tab's id and
  * Web Lock name, so a hot reload of this module must hand back the first one:
  * `import.meta.hot.data` survives the reload, a plain module variable would not.
@@ -129,6 +154,7 @@ function buildAppDeps(env: { apiBaseUrl: string; dataBaseUrl: string }): AppDeps
     signal: createBroadcastSignal(),
   });
   const queryClient = createQueryClient();
+  resumeOnNewSession({ session, auth, outbox, queryClient });
   outbox.onApplied((spot: SurveySpot) => applyServerSpot(queryClient, spot));
   // The persisted copy is a cache: a storage failure (quota, timeout) costs only the copy.
   const persister = createAsyncStoragePersister({

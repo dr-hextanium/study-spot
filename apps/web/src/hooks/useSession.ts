@@ -12,7 +12,7 @@ export type SessionView = {
 };
 
 export function useSession(): SessionView {
-  const { session, auth, outbox, queryClient } = useDeps();
+  const { session, auth } = useDeps();
   const stored = useSyncExternalStore(session.subscribe, session.current);
   const readsOut = useSyncExternalStore(auth.subscribe, auth.signedOut);
   const snapshot = useOutboxSnapshot();
@@ -20,11 +20,8 @@ export function useSession(): SessionView {
     me: stored?.surveyor ?? null,
     signedOut: stored === null || readsOut || snapshot.signedOut,
     join(accepted) {
-      if (!session.save({ token: accepted.token, surveyor: accepted.surveyor })) return false;
-      auth.reset();
-      outbox.resume();
-      void queryClient.invalidateQueries();
-      return true;
+      // Saving fires the session subscription in deps.ts, which resumes every tab.
+      return session.save({ token: accepted.token, surveyor: accepted.surveyor });
     },
   };
 }

@@ -30,7 +30,7 @@ import {
 } from "../../../packages/ui-logic/test/fakes.ts";
 import { AppProvider } from "../src/app/AppProvider.tsx";
 import { createAuthState } from "../src/app/authState.ts";
-import { type AppDeps, createQueryClient } from "../src/app/deps.ts";
+import { type AppDeps, createQueryClient, resumeOnNewSession } from "../src/app/deps.ts";
 import { applyServerSpot } from "../src/app/serverCache.ts";
 import { createSessionState } from "../src/app/sessionState.ts";
 import { routeTree } from "../src/routeTree.gen.ts";
@@ -119,6 +119,8 @@ export type TestApp = {
   timers: FakeTimers;
   clock: ReturnType<typeof mutableClock>;
   cache: MemoryCache;
+  /** The session's storage, shared with a second store to act as another tab. */
+  storage: MemoryStorage;
 };
 
 /** App dependencies on fakes: in-memory storage, the fake server, manual timers. */
@@ -131,7 +133,8 @@ export function testApp(
   const network = new FakeNetwork();
   const timers = new FakeTimers();
   const clock = mutableClock(opts.now ?? "2026-10-13T18:00:00Z");
-  const session = createSessionState(createSessionStore(new MemoryStorage()));
+  const storage = new MemoryStorage();
+  const session = createSessionState(createSessionStore(storage));
   const me = opts.me === undefined ? ME : opts.me;
   if (me !== null) session.save({ token: TOKEN, surveyor: me });
   const api = createSurveyApi({ http: server, baseUrl: API, token: () => session.token() });
@@ -150,10 +153,12 @@ export function testApp(
     queries: { ...queryClient.getDefaultOptions().queries, retry: false },
   });
   outbox.onApplied((spot) => applyServerSpot(queryClient, spot));
+  const auth = createAuthState();
+  resumeOnNewSession({ session, auth, outbox, queryClient });
   const deps: AppDeps = {
     api,
     session,
-    auth: createAuthState(),
+    auth,
     outbox,
     started: outbox.start(),
     queryClient,
@@ -167,7 +172,7 @@ export function testApp(
     apiBaseUrl: API,
     dataBaseUrl: "https://data.example",
   };
-  return { deps, server, network, timers, clock, cache };
+  return { deps, server, network, timers, clock, cache, storage };
 }
 
 export function renderApp(app: TestApp, ui: ReactNode): RenderResult {
