@@ -3,6 +3,7 @@ import { t } from "@study-spot/ui-logic";
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { z } from "zod";
+import { useOutboxSnapshot } from "../hooks/useOutbox.ts";
 import { type SpotViewState, useSpotView } from "../hooks/useSpotView.ts";
 import { EDITORS } from "../screens/editors/index.tsx";
 import { SurveyHeader } from "../screens/SurveyHeader.tsx";
@@ -27,6 +28,11 @@ export const Route = createFileRoute("/survey/spots/$id/$section")({
 function SectionRoute() {
   const { id, section } = Route.useParams();
   const state = useSpotView(id);
+  const snapshot = useOutboxSnapshot();
+  // The editor keeps its form only while the same draft moves from its local id to the real
+  // one; any other change of spot starts a fresh form, so one spot's edits never save to another.
+  const keyId = useRef(id);
+  if (keyId.current !== id && snapshot.idMap[keyId.current] !== id) keyId.current = id;
   const navigate = useNavigate();
   // The last ready screen and where it is moving to, so an editor with unsaved edits
   // stays mounted while a draft made offline moves from its local id to the real one.
@@ -63,6 +69,6 @@ function SectionRoute() {
     );
   }
   const Editor = EDITORS[section];
-  // Keyed by section only: a fresh form each time an editor opens, but not when the id moves.
-  return <Editor key={section} view={shown.view} />;
+  // A fresh form each time an editor opens, but not when a draft's id moves.
+  return <Editor key={`${section}:${keyId.current}`} view={shown.view} />;
 }

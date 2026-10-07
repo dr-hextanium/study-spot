@@ -2,6 +2,7 @@ import type { SurveySection, V0Field } from "@study-spot/core";
 import { fieldList, isLocalId, type SpotView, t } from "@study-spot/ui-logic";
 import { useBlocker, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useRef, useState } from "react";
+import { useDeps } from "../../app/AppProvider.tsx";
 import { type SectionFormApi, useSectionForm } from "../../hooks/useSectionForm.ts";
 import { useToasts } from "../../hooks/useToasts.tsx";
 import { sectionName } from "../../lib/format.ts";
@@ -14,14 +15,14 @@ import { SurveyHeader } from "../SurveyHeader.tsx";
 type Place = { routeId: string; params: Record<string, unknown> };
 
 /** A draft's id changing under the same screen (local to real) is not leaving the editor. */
-function isIdMove(current: Place, next: Place): boolean {
+function isIdMove(current: Place, next: Place, idMap: Readonly<Record<string, string>>): boolean {
   const from = current.params.id;
   return (
     current.routeId === next.routeId &&
     current.params.section === next.params.section &&
     typeof from === "string" &&
     isLocalId(from) &&
-    next.params.id !== from
+    idMap[from] === next.params.id
   );
 }
 
@@ -58,6 +59,7 @@ export function EditorShell<S extends SurveySection>({
   validate,
   children,
 }: Props<S>) {
+  const { outbox } = useDeps();
   const api = useSectionForm(section, view);
   const toasts = useToasts();
   const navigate = useNavigate();
@@ -67,7 +69,7 @@ export function EditorShell<S extends SurveySection>({
   const leaving = useRef(false);
   const blocker = useBlocker({
     shouldBlockFn: ({ current, next }) =>
-      api.form.dirty && !leaving.current && !isIdMove(current, next),
+      api.form.dirty && !leaving.current && !isIdMove(current, next, outbox.getSnapshot().idMap),
     withResolver: true,
   });
   const back = () => navigate({ to: "/survey/spots/$id", params: { id: view.spot.id } });

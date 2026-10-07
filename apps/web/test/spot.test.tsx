@@ -568,3 +568,19 @@ test("two quick Publish taps while the server is failing show no Published toast
   expect(screen.queryByText(t("spot.publish.done"))).toBeNull();
   expect(app.deps.outbox.getSnapshot().records.length).toBe(1);
 });
+
+test("moving from one spot's section to another spot's remounts with that spot's values", async () => {
+  const a = surveySpotFixture({ seat_count: 10 });
+  const b = surveySpotFixture({ id: "3f6c0b1e-8d2a-4c57-9b1f-6a7e8d9c0b2a", seat_count: 20 });
+  const app = testApp({ spots: [a, b] });
+  const view = renderRoute(app, `${at(a)}/seating`);
+  const seats = () => screen.findByRole("textbox", { name: t("seating.seat_count.label") });
+  expect(await seats()).toHaveProperty("value", "10");
+  await view.router.navigate({ to: `${at(b)}/seating` });
+  await waitFor(async () => expect(await seats()).toHaveProperty("value", "20"));
+  // Both spots are cached now, so the next move has no loading gap to remount the editor.
+  await view.router.navigate({ to: `${at(a)}/seating` });
+  await waitFor(async () => expect(await seats()).toHaveProperty("value", "10"));
+  await view.router.navigate({ to: `${at(b)}/seating` });
+  await waitFor(async () => expect(await seats()).toHaveProperty("value", "20"));
+});
