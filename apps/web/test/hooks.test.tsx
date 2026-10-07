@@ -83,3 +83,47 @@ test("the section form validates with the shared schema, then queues the write",
   await waitFor(() => expect(app.server.inner.spot(spot.id).seat_count).toBe(25));
   expect(form.result.current.verify).not.toBeNull();
 });
+
+test("before the queue is read from disk the view is loading, not missing", async () => {
+  const app = testApp();
+  await app.deps.started;
+  app.network.set(false);
+  app.server.offline = true;
+  const local = await app.deps.outbox.createSpot(identity({ official_name: "Stairwell Desk" }));
+  // The same queue as a cold start sees it: not loaded yet, then loaded.
+  const real = app.deps.outbox;
+  const listeners = new Set<() => void>();
+  let loaded = false;
+  let cached: { from: unknown; value: ReturnType<typeof real.getSnapshot> } | null = null;
+  const unloaded = () => {
+    const from = real.getSnapshot();
+    if (cached === null || cached.from !== from)
+      cached = { from, value: { ...from, loaded: false } };
+    return cached.value;
+  };
+  const cold = {
+    ...real,
+    subscribe(l: () => void) {
+      listeners.add(l);
+      const off = real.subscribe(l);
+      return () => {
+        listeners.delete(l);
+        off();
+      };
+    },
+    getSnapshot: () => (loaded ? real.getSnapshot() : unloaded()),
+  };
+  const deps = { ...app.deps, outbox: cold };
+  const view = renderHook(() => useSpotView(local), {
+    wrapper: (props: { children: ReactNode }) => (
+      <AppProvider deps={deps}>{props.children}</AppProvider>
+    ),
+  });
+  await waitFor(() => expect(view.result.current.kind).toBe("loading"));
+  expect(view.result.current.kind).toBe("loading");
+  loaded = true;
+  act(() => {
+    for (const l of listeners) l();
+  });
+  await waitFor(() => expect(view.result.current.kind).toBe("ready"));
+});

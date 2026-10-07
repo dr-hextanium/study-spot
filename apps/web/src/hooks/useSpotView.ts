@@ -38,6 +38,8 @@ export function useSpotView(id: string): SpotViewState {
   const tz = useCampusTz();
   // While the persisted cache is being read back, "not on this phone" would be a false alarm.
   const restoring = useIsRestoring();
+  // Until the queue is read from disk, a local draft or its pending writes could be hiding.
+  if (!snapshot.loaded) return { kind: "loading" };
   const real = snapshot.idMap[id];
   if (real !== undefined) return { kind: "redirect", to: real };
   const term = server.data?.term ?? list.data?.term ?? null;
