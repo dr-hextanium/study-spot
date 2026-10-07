@@ -3,7 +3,7 @@ import { t } from "@study-spot/ui-logic";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { expect, test } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";
-import { SEATING } from "../../../packages/ui-logic/test/builders.ts";
+import { identity, SEATING } from "../../../packages/ui-logic/test/builders.ts";
 import { ME, renderRoute, testApp } from "./harness.tsx";
 
 const DRAFT = surveySpotFixture({
@@ -38,7 +38,7 @@ test("a new spot is created on the phone and opens its overview, then moves to i
 
   app.network.set(true);
   await app.deps.outbox.idle();
-  await waitFor(() => expect(view.router.state.location.pathname).not.toMatch(/local:/));
+  await waitFor(() => expect(view.router.state.location.pathname).not.toMatch(/local(:|%3A)/));
   const created = [...app.server.inner.spots.values()][0];
   expect(created?.slug).toBe("quiet-corner-melville-library");
   expect(created?.lat).toBe(40.9154);
@@ -288,4 +288,23 @@ test("a create that failed before anything was stored offers a retry message", a
   fireEvent.click(screen.getByRole("button", { name: t("new.save") }));
   expect((await screen.findByRole("alert")).textContent).toBe(t("common.save_failed"));
   expect(screen.getByRole("button", { name: t("new.save") })).toHaveProperty("disabled", false);
+});
+
+test("an edit in progress survives its draft's create syncing and the move to the real id", async () => {
+  const app = testApp();
+  app.network.set(false);
+  await app.deps.started;
+  const local = await app.deps.outbox.createSpot(identity());
+  const view = renderRoute(app, `/survey/spots/${local}/seating`);
+  const seats = await screen.findByRole("textbox", { name: t("seating.seat_count.label") });
+  fireEvent.change(seats, { target: { value: "41" } });
+  app.network.set(true);
+  await app.deps.outbox.idle();
+  await waitFor(() => expect(view.router.state.location.pathname).not.toMatch(/local(:|%3A)/));
+  expect(view.router.state.location.pathname).toMatch(/\/seating$/);
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(screen.getByRole("textbox", { name: t("seating.seat_count.label") })).toHaveProperty(
+    "value",
+    "41",
+  );
 });

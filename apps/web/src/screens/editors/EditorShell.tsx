@@ -1,5 +1,5 @@
 import type { SurveySection, V0Field } from "@study-spot/core";
-import { fieldList, type SpotView, t } from "@study-spot/ui-logic";
+import { fieldList, isLocalId, type SpotView, t } from "@study-spot/ui-logic";
 import { useBlocker, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useRef, useState } from "react";
 import { type SectionFormApi, useSectionForm } from "../../hooks/useSectionForm.ts";
@@ -10,6 +10,20 @@ import { Button } from "../../ui/Button.tsx";
 import { Screen } from "../../ui/Screen.tsx";
 import { ConfirmSheet } from "../../ui/Sheet.tsx";
 import { SurveyHeader } from "../SurveyHeader.tsx";
+
+type Place = { routeId: string; params: Record<string, unknown> };
+
+/** A draft's id changing under the same screen (local to real) is not leaving the editor. */
+function isIdMove(current: Place, next: Place): boolean {
+  const from = current.params.id;
+  return (
+    current.routeId === next.routeId &&
+    current.params.section === next.params.section &&
+    typeof from === "string" &&
+    isLocalId(from) &&
+    next.params.id !== from
+  );
+}
 
 /** Field error text: the deck's specific message where there is one, else "Required". */
 export function errorFor(
@@ -52,7 +66,8 @@ export function EditorShell<S extends SurveySection>({
   // A ref, not state: the blocker is asked during the navigation that saving starts.
   const leaving = useRef(false);
   const blocker = useBlocker({
-    shouldBlockFn: () => api.form.dirty && !leaving.current,
+    shouldBlockFn: ({ current, next }) =>
+      api.form.dirty && !leaving.current && !isIdMove(current, next),
     withResolver: true,
   });
   const back = () => navigate({ to: "/survey/spots/$id", params: { id: view.spot.id } });
