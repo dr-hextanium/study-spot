@@ -1,8 +1,9 @@
-import type { AttentionRow, DraftRow, StaleRow } from "@study-spot/ui-logic";
+import type { AttentionRow, DraftRow, OutboxSnapshot, StaleRow } from "@study-spot/ui-logic";
 import { plural, t } from "@study-spot/ui-logic";
 import { type ReactNode, useEffect, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { useOnline } from "../hooks/useOnline.ts";
+import { useOutboxSnapshot } from "../hooks/useOutbox.ts";
 import { useCampusTz } from "../hooks/useQueries.ts";
 import { useSurveyHome } from "../hooks/useSurveyHome.ts";
 import { shortDate } from "../lib/format.ts";
@@ -36,25 +37,31 @@ function draftText(row: DraftRow): string | undefined {
   return row.requiredDone === null ? undefined : t("home.drafts.row", { count: row.requiredDone });
 }
 
-/** Writes still queued once this page load's first sync pass ended (journey edge 9). */
+/**
+ * Writes still waiting, shown only when some were still queued once this page
+ * load's first sync pass ended (journey edge 9). It follows the live queue, so
+ * it goes away once they sync.
+ */
 function usePendingAfterOpen(): number {
   const { started, outbox } = useDeps();
-  const [count, setCount] = useState(0);
+  const snapshot = useOutboxSnapshot();
+  const [leftAtOpen, setLeftAtOpen] = useState(false);
   useEffect(() => {
     let live = true;
-    void started
+    started
       .then(() => {
-        const left = outbox
-          .getSnapshot()
-          .records.filter((r) => r.state === "pending" || r.state === "syncing").length;
-        if (live) setCount(left);
+        if (live) setLeftAtOpen(waiting(outbox.getSnapshot()) > 0);
       })
       .catch(() => undefined);
     return () => {
       live = false;
     };
   }, [started, outbox]);
-  return count;
+  return leftAtOpen ? waiting(snapshot) : 0;
+}
+
+function waiting(snapshot: OutboxSnapshot): number {
+  return snapshot.records.filter((r) => r.state === "pending" || r.state === "syncing").length;
 }
 
 function List(props: { title: string; children: ReactNode; empty: string | null }) {

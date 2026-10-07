@@ -153,3 +153,18 @@ test("a draft's required-part count appears when its detail reaches the cache la
   });
   expect(await within(drafts).findByText(/of 7 required parts done/)).toBeTruthy();
 });
+
+test("the unsynced-changes banner goes away once the queue syncs", async () => {
+  const app = testApp();
+  app.network.set(false);
+  await app.deps.started;
+  await app.deps.outbox.createSpot(identity());
+  renderRoute(app, "/survey");
+  const text = t("sync.leave_warning_one");
+  expect(await screen.findByText(text)).toBeTruthy();
+  app.network.set(true);
+  await act(async () => {
+    await app.deps.outbox.syncNow();
+  });
+  await waitFor(() => expect(screen.queryByText(text)).toBeNull());
+});
