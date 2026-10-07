@@ -49,7 +49,7 @@ test("copy Monday fills Tuesday to Friday only", () => {
   expect(week.filter((d) => d.hours.kind === "open").map((d) => d.day)).toEqual([1, 2, 3, 4, 5]);
 });
 
-test("a day cannot open and close at the same time; midnight closing reads as 00:00", () => {
+test("a day cannot open and close at the same time; a stored 24:00 close stays 24:00", () => {
   expect(dayProblem({ kind: "open", opens: "09:00", closes: "09:00", lastEntry: null })).toBe(
     "same_time",
   );
@@ -63,9 +63,22 @@ test("a day cannot open and close at the same time; midnight closing reads as 00
   expect(late[2]?.hours).toEqual({
     kind: "open",
     opens: "18:00",
-    closes: "00:00",
+    closes: "24:00",
     lastEntry: null,
   });
+  expect(closesNextDay(late[2]?.hours ?? { kind: "closed" })).toBe(false);
+});
+
+test("an unchanged edit writes the stored hours back identically", () => {
+  const rows = [
+    { day_of_week: 1, opens: "08:00", closes: "12:00", last_entry: "11:30", is_exam: false },
+    { day_of_week: 1, opens: "13:00", closes: "24:00", last_entry: null, is_exam: false },
+    { day_of_week: 2, opens: "00:00", closes: "24:00", last_entry: "23:00", is_exam: false },
+    { day_of_week: 3, opens: "00:00", closes: "24:00", last_entry: null, is_exam: false },
+    { day_of_week: 4, opens: "18:00", closes: "24:00", last_entry: null, is_exam: false },
+    { day_of_week: 5, opens: "08:00", closes: "02:00", last_entry: null, is_exam: false },
+  ];
+  expect(fromWeek(toWeek(rows, false), false)).toEqual(rows);
 });
 
 test("estimate cells cycle upward and only set cells are sent", () => {

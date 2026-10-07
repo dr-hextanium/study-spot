@@ -19,13 +19,16 @@ function toDay(rows: readonly HoursRow[]): Pick<DayModel, "hours" | "extra"> {
   const sorted = [...rows].sort((a, b) => a.opens.localeCompare(b.opens));
   const [first, ...extra] = sorted;
   if (first === undefined) return { hours: { kind: "closed" }, extra: [] };
-  if (first.opens === ALL_DAY_OPENS && first.closes === ALL_DAY_CLOSES) {
+  if (
+    first.opens === ALL_DAY_OPENS &&
+    first.closes === ALL_DAY_CLOSES &&
+    first.last_entry === null
+  ) {
     return { hours: { kind: "all_day" }, extra };
   }
-  // A time input cannot show 24:00; midnight at the end of the day is 00:00 there.
-  const closes = first.closes === ALL_DAY_CLOSES ? "00:00" : first.closes;
+  // A stored 24:00 close stays 24:00, so an unchanged edit writes the same rows back.
   return {
-    hours: { kind: "open", opens: first.opens, closes, lastEntry: first.last_entry },
+    hours: { kind: "open", opens: first.opens, closes: first.closes, lastEntry: first.last_entry },
     extra,
   };
 }
@@ -50,7 +53,10 @@ export function fromWeek(week: readonly DayModel[], isExam: boolean): HoursRow[]
   });
 }
 
-/** Copies Monday's hours to Tuesday through Friday. */
+/**
+ * Copies Monday's hours to Tuesday through Friday. Only `hours` is copied; each
+ * target day keeps its own `extra` blocks.
+ */
 export function copyMonday(week: readonly DayModel[]): DayModel[] {
   const monday = week.find((d) => d.day === 1);
   if (monday === undefined) return [...week];
@@ -70,7 +76,7 @@ export function closesNextDay(hours: DayHours): boolean {
   return hours.kind === "open" && hours.closes !== "" && hours.closes < hours.opens;
 }
 
-/** A time input never yields 24:00; midnight at the end of the day is entered as 00:00. */
+/** A new day's starting hours. A time input yields 00:00, never 24:00, for midnight. */
 export const DEFAULT_OPEN: DayHours = {
   kind: "open",
   opens: "08:00",
