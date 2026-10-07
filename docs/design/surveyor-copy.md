@@ -520,7 +520,7 @@ Strings the built screens needed beyond the sections above: short header forms f
 | photos.approve | Approve | 10 | any surveyor but the uploader |
 | photos.approve.own | You took this, so someone else approves it. | 50 | |
 | photos.approve.done | Photo approved | 16 | toast |
-| photos.online_only | Approving and covers need a connection. | 44 | |
+| photos.online_only | Approving needs a connection. | 32 | |
 | photos.not_synced | Not synced yet | 16 | badge on a photo still on the phone |
 | photos.cover.wait | Sync first to use this as cover | 32 | |
 | estimates.cell | {day}, {block}: {bucket} | 40 | accessible name of a grid cell |
