@@ -99,3 +99,14 @@ test("survey light stamp red meets the 7:1 sunlight bar", () => {
   const c = tokens.color.survey.light;
   expect(contrastRatio(c.danger, c.background)).toBeGreaterThanOrEqual(7);
 });
+
+for (const { mode, scheme, c } of palettes) {
+  test(`${mode} ${scheme}: the header band stands apart from the page`, () => {
+    expect(contrastRatio(c.shell, c.background)).toBeGreaterThanOrEqual(1.3);
+  });
+}
+
+test("controls and cards share the contract's 4 px corner", () => {
+  expect(tokens.radius.control).toBe(4);
+  expect(tokens.radius.card).toBe(4);
+});

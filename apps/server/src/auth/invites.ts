@@ -36,7 +36,9 @@ export async function createInvite(
     created_at: opts.now,
     expires_at,
   });
-  return { token, url: `${opts.webOrigin}/invite/${token}`, expires_at };
+  // A re-login link says so, so the invite screen can skip the name and say "Sign in".
+  const hint = opts.surveyorId === null ? "" : "?relogin=1";
+  return { token, url: `${opts.webOrigin}/invite/${token}${hint}`, expires_at };
 }
 
 /** Why an invite could not be used, for the right message on the invite screen. */

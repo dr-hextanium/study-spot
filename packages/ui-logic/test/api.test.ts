@@ -178,3 +178,18 @@ test("photo upload returns the parsed spot, sends auth, and sends taken_at only 
     "spot_id",
   ]);
 });
+
+test("campus() reads the campus route and a trailing slash in the base URL is dropped", async () => {
+  const http = new ScriptedHttp();
+  http.replies.push({
+    status: 200,
+    text: JSON.stringify({
+      campus: { id: "sbu", name: "Stony Brook University", tz: "America/New_York" },
+      buildings: [{ id: "melville-library", name: "Melville Library", lat: 40.9, lng: -73.1 }],
+    }),
+  });
+  const api = createSurveyApi({ http, baseUrl: `${BASE}/`, token: () => TOKEN });
+  const res = await api.campus();
+  expect(res.kind).toBe("ok");
+  expect(http.requests.map((r) => r.url)).toEqual([`${BASE}/survey/campus`]);
+});

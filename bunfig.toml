@@ -1,0 +1,4 @@
+[test]
+# apps/web runs its DOM tests under Vitest (jsdom) and its browser tests under
+# Playwright; bun test covers packages/* and apps/server only.
+pathIgnorePatterns = ["apps/web/**"]

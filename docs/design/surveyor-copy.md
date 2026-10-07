@@ -457,8 +457,92 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | admin.photos.reject | Reject | 8 | |
 | admin.photos.reject.confirm | Delete this photo? It won't be published. | 50 | |
 
+## Web UI states (plan D)
+
+Strings the built screens needed beyond the sections above: short header forms for a 360 px phone, singular counts, per-code failure reasons (server messages are never shown raw), field names for "Missing: {field}", and the re-login invite.
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| sync.checking | Checking this phone | 24 | header long form and sheet, until the queue has been read; never shown as synced |
+| sync.short.checking | Checking | 10 | header postmark |
+| sync.short.pending | {count} waiting | 14 | header postmark; full form in the sync sheet |
+| sync.short.offline | Offline | 10 | header postmark; sync.offline in the sheet |
+| sync.short.failed | {count} not saved | 16 | header postmark |
+| sync.short.unreadable | {count} unreadable | 16 | header postmark |
+| sync.short.signed_out | Signed out | 12 | header postmark |
+| sync.unreadable_one | 1 change can't be read | 30 | singular of sync.unreadable |
+| auth.misconfigured | This build has no server address. Ask whoever sent you the link. | 70 | shown in place of the app when the deploy env is missing; the technical detail follows on its own line |
+| sync.leave_warning_one | 1 change hasn't synced yet. Leaving now keeps it on this phone. | 90 | singular of sync.leave_warning |
+| sync.sheet.unreadable_item | A saved change this app can't read | 40 | one row per unreadable record |
+| sync.sheet.unreadable_help | These came from a newer or damaged copy of the app. Discard them if they stay. | 90 | |
+| sync.sheet.open_spot | Open spot | 12 | row action |
+| home.attention.failed_one | 1 change didn't save | 34 | singular of home.attention.failed |
+| home.unreadable_one | 1 change can't be read | 34 | singular of home.unreadable |
+| home.stale.empty | No published spots yet. | 30 | |
+| home.drafts.empty | No drafts. | 14 | |
+| home.offline_first | The spot list loads once you're online. New spots still save on this phone. | 90 | first run offline, nothing cached |
+| spot.section.on_phone | On this phone | 14 | section row sync state |
+| spot.section.syncing | Syncing | 10 | section row sync state |
+| spot.section.failed | Didn't save | 12 | section row sync state |
+| spot.section.conflict | Two versions | 14 | section row sync state |
+| spot.publish.queued_chip | Publish queued | 16 | chip while the publish waits to sync |
+| spot.review.queued | Review queued | 16 | chip; "Marked reviewed" only after it lands |
+| spot.not_found | This spot isn't on this phone. Go online to load it. | 60 | spot never cached and offline |
+| field.directions | How to get there | 20 | names for Missing: {field} and Still missing: {fields} |
+| field.eligibility | Who can use it | 18 | |
+| field.seat_count | Seats | 10 | |
+| field.outlet_coverage_pct | Seats near an outlet | 22 | |
+| field.noise_policy | Noise rule | 12 | |
+| field.group_work_ok | Group work | 12 | |
+| field.food_policy | Food and drink | 16 | |
+| field.last_verified | A checked section | 20 | any saved or checked section |
+| failed.reason.photo_missing | The photo is no longer on this phone. Take it again. | 60 | local: bytes evicted |
+| failed.reason.photo_unreadable | This phone could not read the photo. Try again, or take it again. | 70 | local: storage read failed repeatedly |
+| failed.reason.bad_response | The server's answer couldn't be read, so this can't be sent again. Discard it and redo it. | 100 | retry hidden |
+| failed.reason.no_base_version | This phone lost track of the spot's version. Discard it and save the section again. | 90 | retry hidden |
+| failed.reason.forbidden | Your account can't make this change. | 40 | 403 |
+| failed.reason.not_found | This spot is no longer on the server. | 40 | 404 |
+| failed.reason.invalid_request | Some values weren't accepted. Open the section, check it, and save again. | 80 | 400 and 422 without a known code |
+| failed.reason.slug_taken | Another spot already has this name. Change the name in Basics. | 70 | |
+| failed.reason.unknown_building | That building isn't on the server's list. Pick it again in Basics. | 70 | |
+| failed.reason.unknown_term | The term changed. Open Hours and save again. | 50 | |
+| failed.reason.photo_too_large | The photo was too large for the server. Take it again. | 60 | |
+| failed.reason.photo_type | The server only takes JPEG photos. Take it again. | 60 | |
+| failed.reason.write_id_reused | This change clashed with an older one. Discard it and make it again. | 80 | retry hidden |
+| editor.unpublish.title | This takes the spot off the student app | 44 | saving would clear a required field on a published spot |
+| editor.unpublish.body | With {fields} empty, students stop seeing this spot after the next publish. | 100 | |
+| editor.unpublish.action | Save anyway | 14 | |
+| identity.outdoor.label | Outdoors | 10 | |
+| identity.seasonal.label | Only open some seasons | 24 | |
+| invite.relogin.title | Sign in on this phone | 24 | link for an existing surveyor; no name asked |
+| invite.relogin.body | This link signs you back in. Your name and role stay the same. | 70 | |
+| invite.relogin.action | Sign in | 10 | primary |
+| photos.approve | Approve | 10 | any surveyor but the uploader |
+| photos.approve.own | You took this, so someone else approves it. | 50 | |
+| photos.approve.done | Photo approved | 16 | toast |
+| photos.online_only | Approving and covers need a connection. | 44 | |
+| photos.not_synced | Not synced yet | 16 | badge on a photo still on the phone |
+| photos.cover.wait | Sync first to use this as cover | 32 | |
+| estimates.cell | {day}, {block}: {bucket} | 40 | accessible name of a grid cell |
+| update.ready | A new version of Perch is ready. | 40 | update prompt |
+| update.reload | Reload | 10 | |
+| admin.invite.relogin.created | Sign-in link for {name}. Works once, for 48 hours. | 60 | |
+| admin.surveyors.inactive | No access | 10 | badge |
+| admin.publish.warning.missing | missing {fields} | 60 | reworded buildBundle reason |
+| admin.publish.warning.invalid | has a value the student app can't use | 44 | |
+| admin.publish.warning.hours | has hours the student app can't read | 44 | |
+| common.close | Close | 10 | |
+| common.open | Open | 8 | banner action that opens the conflict or failed view |
+| common.loading | Loading | 10 | |
+| common.less | Less | 6 | stepper button inside a labeled group |
+| common.more | More | 6 | |
+| unit.minutes | min | 4 | stepper suffix |
+| unit.percent | % | 2 | stepper suffix |
+| new.building.none | No building matches. | 24 | |
+| new.building.offline | The building list loads once you're online. | 50 | first run offline |
+
 ## Pending questions
 
 - Floor naming at Stony Brook (e.g. "Lower level" vs "B") should come from the first survey walk; the floor field is free text for now.
 - Whether "Checked" or "Verified" reads better to the crew. The deck uses "Checked" in the UI and keeps "verified" in code and data.
-- `admin.publish.warning.item` reasons are generated by the server (`skipped <slug>: missing ...`). Plan D maps those to readable text, for example "missing directions, seat count".
+- `admin.publish.warning.item` reasons are generated by the server (`skipped <slug>: ...`). The web UI maps them to `admin.publish.warning.*` with the `field.*` names.

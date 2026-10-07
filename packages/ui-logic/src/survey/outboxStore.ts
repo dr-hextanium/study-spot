@@ -119,13 +119,12 @@ export function createOutboxStore(deps: {
     async putPhoto(clientWriteId: string, bytes: Uint8Array): Promise<void> {
       await blobs.set(photoKey(clientWriteId), bytes);
     },
-    /** Photo bytes, or null when missing or unreadable (evicted storage). */
+    /**
+     * Photo bytes, or null when the store answered that none are there (evicted
+     * storage). A failed or timed-out read rejects: that is unknown, not missing.
+     */
     async photo(clientWriteId: string): Promise<Uint8Array | null> {
-      try {
-        return await blobs.get(photoKey(clientWriteId));
-      } catch {
-        return null;
-      }
+      return blobs.get(photoKey(clientWriteId));
     },
   };
 }

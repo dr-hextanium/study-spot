@@ -7,6 +7,9 @@ import {
   createOutbox,
   createOutboxStore,
   createSurveyApi,
+  type Liveness,
+  PHOTO_READ_MAX_FAILURES,
+  syncHeader,
 } from "../src/index.ts";
 import { identity, POWER, SEATING, SPOT_A, SPOT_B } from "./builders.ts";
 import { API, FakeSurveyServer, TOKEN } from "./fakeServer.ts";
@@ -340,6 +343,66 @@ test("a photo whose bytes were evicted fails alone and does not hold the spot's 
   expect(box.getSnapshot().records).toMatchObject([
     { kind: "photo.upload", state: "failed", error: { status: 0, code: "photo_missing" } },
   ]);
+});
+
+test("a photo read that fails or times out is unknown: the upload stays queued, not failed", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  await box.addPhoto(SPOT_A, 3, JPEG, new Date("2026-10-05T15:59:00Z"));
+  const real = t.blobs.get.bind(t.blobs);
+  let broken = true;
+  t.blobs.get = async (key) => {
+    if (broken) throw new Error("bin get timed out after 8000 ms");
+    return real(key);
+  };
+  t.network.set(true);
+  await box.idle();
+  expect(box.getSnapshot().records).toMatchObject([{ kind: "photo.upload", state: "pending" }]);
+  expect(t.sent()).toEqual([]);
+  broken = false;
+  t.timers.advance(BACKOFF_MAX_MS);
+  await box.idle();
+  expect(t.sent()).toEqual(["POST /survey/photos"]);
+  expect(box.getSnapshot().records).toEqual([]);
+});
+
+test("a photo that cannot be read holds only its spot, then fails retryable after the cap", async () => {
+  const t = setup([
+    surveySpotFixture({ id: SPOT_A, version: 3 }),
+    surveySpotFixture({ id: SPOT_B, version: 3 }),
+  ]);
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  await box.addPhoto(SPOT_A, 3, JPEG, new Date("2026-10-05T15:59:00Z"));
+  await box.enqueue(power(SPOT_B), 3);
+  const real = t.blobs.get.bind(t.blobs);
+  let broken = true;
+  t.blobs.get = async (key) => {
+    if (broken) throw new Error("bin get timed out after 8000 ms");
+    return real(key);
+  };
+  t.network.set(true);
+  await box.idle();
+  expect(t.sent()).toEqual([`PUT /survey/spots/${SPOT_B}/power`]);
+  for (let i = 1; i < PHOTO_READ_MAX_FAILURES; i++) {
+    expect(box.getSnapshot().records).toMatchObject([{ kind: "photo.upload", state: "pending" }]);
+    t.timers.advance(BACKOFF_MAX_MS);
+    await box.idle();
+  }
+  const [photo] = box.getSnapshot().records;
+  expect(photo).toMatchObject({
+    kind: "photo.upload",
+    state: "failed",
+    error: { status: 0, code: "photo_unreadable" },
+  });
+  broken = false;
+  await box.retry(photo?.client_write_id ?? "");
+  await box.idle();
+  expect(t.sent().at(-1)).toBe("POST /survey/photos");
+  expect(box.getSnapshot().records).toEqual([]);
 });
 
 test("one spot edited offline in two tabs keeps both writes and runs each once", async () => {
@@ -783,4 +846,118 @@ test("the UI can list unreadable records and discard them, and only them", async
   expect(t.cache.data.has(garbage)).toBe(false);
   expect(t.blobs.data.size).toBe(0);
   expect(box.getSnapshot().records).toHaveLength(1);
+});
+
+test("a write queued from a stale cached copy starts from the newer version this phone knows", async () => {
+  const t = setup();
+  const box = t.make();
+  await box.start();
+  await box.enqueue(power(SPOT_A), 3);
+  await box.idle();
+  // The screen still shows the cached copy at version 3.
+  await box.enqueue(seating(SPOT_A), 3);
+  await box.idle();
+
+  expect(t.bases()).toEqual([3, 4]);
+  expect(t.server.spot(SPOT_A).version).toBe(5);
+  expect(box.getSnapshot().records).toEqual([]);
+});
+
+test("start() reads the network state again, so a change before it subscribed is not missed", async () => {
+  const t = setup();
+  const box = t.make();
+  t.network.set(false);
+  await box.start();
+  expect(box.getSnapshot().online).toBe(false);
+});
+
+const flush = async () => {
+  for (let i = 0; i < 20; i += 1) await Promise.resolve();
+};
+
+test("a queue that has not loaded is never reported as all synced", async () => {
+  const t = setup();
+  const never = new Promise<never>(() => undefined);
+  class HangingCache extends MemoryCache {
+    override keys(): Promise<string[]> {
+      return never;
+    }
+  }
+  const box = createOutbox({
+    cache: new HangingCache(),
+    blobs: new MemoryBinary(),
+    api: createSurveyApi({ http: t.server, baseUrl: API, token: () => TOKEN }),
+    clock: mutableClock("2026-10-05T16:00:00Z"),
+    ids: sequentialIds("8100"),
+    timers: new FakeTimers(),
+    network: new FakeNetwork(),
+    foreground: new FakeForeground(),
+  });
+  expect(syncHeader(box.getSnapshot())).toEqual({ kind: "checking" });
+  void box.start();
+  await flush();
+  expect(box.getSnapshot().loaded).toBe(false);
+  expect(syncHeader(box.getSnapshot())).toEqual({ kind: "checking" });
+});
+
+test("a queue whose read fails stays checking and loads once the read works", async () => {
+  const t = setup();
+  const timers = new FakeTimers();
+  class FlakyCache extends MemoryCache {
+    broken = true;
+    override async keys(prefix: string): Promise<string[]> {
+      if (this.broken) throw new Error("idb down");
+      return super.keys(prefix);
+    }
+  }
+  const cache = new FlakyCache();
+  const box = createOutbox({
+    cache,
+    blobs: new MemoryBinary(),
+    api: createSurveyApi({ http: t.server, baseUrl: API, token: () => TOKEN }),
+    clock: mutableClock("2026-10-05T16:00:00Z"),
+    ids: sequentialIds("8200"),
+    timers,
+    network: new FakeNetwork(),
+    foreground: new FakeForeground(),
+  });
+  await box.start();
+  expect(syncHeader(box.getSnapshot())).toEqual({ kind: "checking" });
+  cache.broken = false;
+  timers.advance(BACKOFF_START_MS);
+  await flush();
+  expect(box.getSnapshot().loaded).toBe(true);
+  expect(syncHeader(box.getSnapshot())).toEqual({ kind: "all_synced" });
+});
+
+test("a rejected liveness hold still lets later triggers send", async () => {
+  const t = setup();
+  t.network.set(false);
+  const first = t.make();
+  await first.start();
+  await first.enqueue(power(SPOT_A), 3);
+  first.stop();
+  const broken: Liveness = {
+    hold: () => Promise.reject(new Error("locks unavailable")),
+    release: () => undefined,
+    alive: async () => false,
+  };
+  const box = createOutbox({
+    cache: t.cache,
+    blobs: t.blobs,
+    api: createSurveyApi({ http: t.server, baseUrl: API, token: () => TOKEN }),
+    clock: mutableClock("2026-10-05T16:00:00Z"),
+    ids: sequentialIds("8300"),
+    timers: t.timers,
+    network: t.network,
+    foreground: t.foreground,
+    liveness: broken,
+  });
+  await box.start();
+  expect(box.getSnapshot().loaded).toBe(true);
+  expect(box.getSnapshot().records).toHaveLength(1);
+  expect(t.sent()).toEqual([]);
+  t.network.set(true);
+  await box.idle();
+  expect(t.sent()).toEqual([`PUT /survey/spots/${SPOT_A}/power`]);
 });

@@ -8,6 +8,9 @@
     { "path": "packages/db" },
     { "path": "packages/db/test" },
     { "path": "apps/server" },
-    { "path": "apps/server/test" }
+    { "path": "apps/server/test" },
+    { "path": "apps/web" },
+    { "path": "apps/web/test" },
+    { "path": "apps/web/e2e" }
   ]
 }

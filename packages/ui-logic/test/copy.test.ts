@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { COPY, COPY_MAX, type CopyId, t } from "../src/index.ts";
+import { COPY, COPY_MAX, type CopyId, plural, t } from "../src/index.ts";
 import { parseCopyDeck } from "./copyDeck.ts";
 
 const deck = parseCopyDeck(
@@ -16,8 +16,11 @@ const deck = parseCopyDeck(
  * display name; the deck's max chars assume names up to about 20 characters.
  */
 const SAMPLE: Readonly<Record<string, string>> = {
+  block: "Afternoon",
+  bucket: "Nearly full",
   count: "12",
   date: "Oct 15",
+  day: "Weekdays",
   field: "outlet coverage",
   fields: "directions, seat count",
   meters: "120",
@@ -87,4 +90,16 @@ test("the deck covers the states added by review fixes", () => {
     "Add hours for Fall 2026 before marking this checked.",
   );
   expect(t("conflict.body_unknown")).toContain("Someone else");
+});
+
+test("plural picks the singular id for 1 and fills count otherwise", () => {
+  expect(plural(1, "home.attention.failed_one", "home.attention.failed")).toBe(
+    "1 change didn't save",
+  );
+  expect(plural(3, "home.attention.failed_one", "home.attention.failed")).toBe(
+    "3 changes didn't save",
+  );
+  expect(plural(0, "sync.unreadable_one", "sync.unreadable")).toBe("0 changes can't be read");
+  // @ts-expect-error the plural form must take exactly { count }
+  plural(2, "common.save", "sync.what.create");
 });

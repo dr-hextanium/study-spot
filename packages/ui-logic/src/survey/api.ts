@@ -3,6 +3,7 @@ import {
   AcceptInviteResponse,
   ApiError,
   type ApiErrorCode,
+  CampusInfo,
   type CreateInviteRequest,
   CreateInviteResponse,
   type CreateSpotRequest,
@@ -116,6 +117,7 @@ export type SurveyApi = ReturnType<typeof createSurveyApi>;
 
 /** Typed client for every plan A route except the photo image bytes (plan D fetches those). */
 export function createSurveyApi(deps: SurveyApiDeps) {
+  const baseUrl = deps.baseUrl.replace(/\/+$/, "");
   async function call<T>(
     method: HttpMethod,
     path: string,
@@ -132,7 +134,7 @@ export function createSurveyApi(deps: SurveyApiDeps) {
     }
     let res: { status: number; text: string };
     try {
-      res = await deps.http.send({ method, url: `${deps.baseUrl}${path}`, headers, body });
+      res = await deps.http.send({ method, url: `${baseUrl}${path}`, headers, body });
     } catch {
       return { kind: "network" };
     }
@@ -147,6 +149,7 @@ export function createSurveyApi(deps: SurveyApiDeps) {
       call("POST", "/auth/accept", AcceptInviteResponse, json(req), false),
     me: () => call("GET", "/auth/me", SurveyorPublic),
     logout: () => call("POST", "/auth/logout", z.null()),
+    campus: () => call("GET", "/survey/campus", CampusInfo),
     listSpots: () => call("GET", "/survey/spots", SpotList),
     getSpot: (id: string) => call("GET", spot(id), SurveySpot),
     createSpot: (req: CreateSpotRequest) => call("POST", "/survey/spots", SurveySpot, json(req)),

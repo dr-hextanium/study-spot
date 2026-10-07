@@ -26,3 +26,19 @@ export function t<K extends CopyId>(
     return value === undefined ? match : String(value);
   });
 }
+
+/** Ids whose text has no placeholders. */
+export type PlainCopyId = { [K in CopyId]: [CopyParam<K>] extends [never] ? K : never }[CopyId];
+/** Ids whose only placeholder is {count}. */
+export type CountCopyId = {
+  [K in CopyId]: [CopyParam<K>] extends ["count"] ? K : never;
+}[CopyId];
+
+/**
+ * A counted message: the singular id for exactly 1, else the plural id with
+ * {count}. Both are whole messages from the deck, never stitched together.
+ */
+export function plural(count: number, one: PlainCopyId, many: CountCopyId): string {
+  if (count === 1) return COPY[one];
+  return COPY[many].replace("{count}", String(count));
+}
