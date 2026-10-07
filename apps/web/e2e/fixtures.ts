@@ -14,7 +14,11 @@ export function serverState(): ServerState {
   return State.parse(JSON.parse(readFileSync(E2E_STATE, "utf8")));
 }
 
-/** Each bootstrap invite works once, so tests take the next unused one. */
+/**
+ * Each bootstrap invite works once, so tests take the next unused one. The
+ * counter is a plain file read and written without a lock: it is only safe
+ * because playwright.config.ts runs with workers: 1.
+ */
 export function nextInvite(): string {
   const state = serverState();
   const counter = `${E2E_STATE}.used`;
@@ -34,10 +38,19 @@ export async function signIn(page: Page): Promise<string> {
   return url.pathname;
 }
 
-/** Pins the phone's clock to the server's start time; it then ticks normally. */
+/** Pins a page's clock to the server's start time (E2E_NOW); it then ticks normally. */
+export async function pinClock(page: Page): Promise<void> {
+  await page.clock.install({ time: new Date(serverState().now) });
+}
+
+/**
+ * Overrides `page` so each test's browser clock starts at the server's E2E_NOW.
+ * Pages from `browser.newContext()` do not go through this fixture: call
+ * `pinClock` on them.
+ */
 export const test = base.extend({
   page: async ({ page }, use) => {
-    await page.clock.install({ time: new Date(serverState().now) });
+    await pinClock(page);
     await use(page);
   },
 });

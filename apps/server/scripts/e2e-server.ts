@@ -67,6 +67,7 @@ writeFileSync(env.E2E_STATE, JSON.stringify({ publishDir, invites, now: env.E2E_
 const shutdown = async () => {
   publisher.close();
   await app.close();
+  rmSync(publishDir, { recursive: true, force: true });
   process.exit(0);
 };
 process.once("SIGTERM", () => void shutdown());
