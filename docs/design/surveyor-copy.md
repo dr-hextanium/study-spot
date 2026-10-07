@@ -542,6 +542,7 @@ Strings the built screens needed beyond the sections above: short header forms f
 | common.save_failed | This phone couldn't save that. Check what you have, then try again. | 70 | storage timed out and nothing was queued |
 | spot.conflict.open | Open the conflict | 20 | accessible name of the conflict banner's Open button |
 | spot.failed.open | Open the unsaved changes | 26 | accessible name of the failed banner's Open button |
+| photos.alt | Photo of this spot | 20 | alt text of a spot photo |
 | new.building.offline | The building list loads once you're online. | 50 | first run offline |
 
 ## Pending questions

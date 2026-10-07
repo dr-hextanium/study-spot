@@ -82,7 +82,7 @@ function ServerPhoto(props: { photo: SurveyPhoto; view: SpotView }) {
       {url === null ? (
         <div className="photo__img photo__img--empty" />
       ) : (
-        <img className="photo__img" src={url} alt="" />
+        <img className="photo__img" src={url} alt={t("photos.alt")} />
       )}
       <div className="stamp-row">
         {photo.is_cover ? (
@@ -117,7 +117,7 @@ function LocalPhoto(props: { photo: PendingPhoto }) {
       {url === null ? (
         <div className="photo__img photo__img--empty" />
       ) : (
-        <img className="photo__img" src={url} alt="" />
+        <img className="photo__img" src={url} alt={t("photos.alt")} />
       )}
       <div className="stamp-row">
         <StampChip tone={props.photo.state === "failed" ? "red" : "blue"}>
