@@ -7,7 +7,7 @@ import {
   TABLE_CONFIG,
   type TableConfig,
 } from "@study-spot/core";
-import { COPY, type SpotView, t } from "@study-spot/ui-logic";
+import { type SpotView, t } from "@study-spot/ui-logic";
 import {
   AMENITY_COPY,
   CALLS_OPTIONS,
@@ -133,7 +133,7 @@ export function SeatingEditor({ view }: EditorProps) {
               {SEAT_TYPE.map((type: SeatType) => (
                 <Check
                   key={type}
-                  label={COPY[SEAT_TYPE_COPY[type]]}
+                  label={t(SEAT_TYPE_COPY[type])}
                   checked={types.some((s) => s.type === type)}
                   onChange={(on) =>
                     set(
@@ -151,7 +151,7 @@ export function SeatingEditor({ view }: EditorProps) {
               {TABLE_CONFIG.map((c: TableConfig) => (
                 <Check
                   key={c}
-                  label={COPY[TABLE_COPY[c]]}
+                  label={t(TABLE_COPY[c])}
                   checked={tables.includes(c)}
                   onChange={(on) => set("table_configs", toggle(tables, c, on))}
                 />
@@ -327,7 +327,7 @@ export function AmenitiesEditor({ view }: EditorProps) {
             {AMENITY.map((a: Amenity) => (
               <Stepper
                 key={a}
-                label={COPY[AMENITY_COPY[a]]}
+                label={t(AMENITY_COPY[a])}
                 value={minutes(a)}
                 min={0}
                 max={60}

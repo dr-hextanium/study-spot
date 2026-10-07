@@ -1,5 +1,5 @@
 import { DAY_TYPE, TIME_BLOCK } from "@study-spot/core";
-import { COPY, type PlainCopyId, type SpotView, t } from "@study-spot/ui-logic";
+import { type PlainCopyId, type SpotView, t } from "@study-spot/ui-logic";
 import { useState } from "react";
 import { cellKey, cellsOf, type Grid, nextBucket, toGrid } from "../../lib/estimates.ts";
 import { BUCKET_COPY } from "../../lib/fields.ts";
@@ -49,7 +49,7 @@ export function EstimatesEditor({ view }: { view: SpotView }) {
                   {DAY_TYPE.map((day) => {
                     const bucket = grid[cellKey(day, block)];
                     const label =
-                      bucket === null ? t("estimates.bucket.unset") : COPY[BUCKET_COPY[bucket]];
+                      bucket === null ? t("estimates.bucket.unset") : t(BUCKET_COPY[bucket]);
                     return (
                       <td key={day}>
                         <button
