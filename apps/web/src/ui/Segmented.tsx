@@ -11,6 +11,8 @@ type Props<V extends string> = {
   error?: string | undefined;
   /** "row" for up to 4 short options; "list" stacks long options on ruled lines. */
   layout?: "row" | "list";
+  /** Keeps the label for screen readers when a heading above already says it. */
+  hideLabel?: boolean;
 };
 
 /**
@@ -25,6 +27,7 @@ export function Segmented<V extends string>({
   helper,
   error,
   layout = "row",
+  hideLabel = false,
 }: Props<V>) {
   const name = useId();
   const labelId = useId();
@@ -34,7 +37,7 @@ export function Segmented<V extends string>({
       className={`field segmented segmented--${layout}${error === undefined ? "" : " field--error"}`}
       aria-describedby={helper !== undefined || error !== undefined ? helpId : undefined}
     >
-      <legend className="label field__label" id={labelId}>
+      <legend className={`label field__label${hideLabel ? " visually-hidden" : ""}`} id={labelId}>
         {label}
       </legend>
       <div className="segmented__options">

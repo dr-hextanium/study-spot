@@ -193,3 +193,12 @@ test("removing access clears that surveyor's shown sign-in link", async () => {
   expect(await screen.findByText(t("admin.revoke.done", { name: "Riley" }))).toBeTruthy();
   expect(screen.queryByText(note)).toBeNull();
 });
+
+test("the invite section names itself once: the segmented label is for screen readers only", async () => {
+  renderRoute(testApp({ me: ADMIN }), "/survey/admin");
+  const group = await screen.findByRole("group", { name: t("admin.invite.title") });
+  const legend = group.querySelector("legend");
+  expect(legend?.className).toContain("visually-hidden");
+  const heading = screen.getByRole("heading", { name: t("admin.invite.title") });
+  expect(heading.className).not.toContain("visually-hidden");
+});

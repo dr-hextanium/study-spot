@@ -75,6 +75,7 @@ function InviteSection(props: { online: boolean }) {
     <Section id="admin-invite" title={t("admin.invite.title")}>
       <Segmented
         label={t("admin.invite.title")}
+        hideLabel
         options={[
           { value: "surveyor", label: t("admin.invite.role.surveyor") },
           { value: "admin", label: t("admin.invite.role.admin") },
