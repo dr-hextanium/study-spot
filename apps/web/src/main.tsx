@@ -10,11 +10,17 @@ import { StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { AppProvider } from "./app/AppProvider.tsx";
 import { createAppDeps } from "./app/deps.ts";
+import { scrollKey } from "./app/scrollKey.ts";
 import { parseWebEnv } from "./env.ts";
 import { routeTree } from "./routeTree.gen.ts";
 import { watchSystemTheme } from "./ui/themePref.ts";
 
-export const router = createRouter({ routeTree, defaultPreload: false, scrollRestoration: true });
+export const router = createRouter({
+  routeTree,
+  defaultPreload: false,
+  scrollRestoration: true,
+  getScrollRestorationKey: scrollKey,
+});
 
 declare module "@tanstack/react-router" {
   interface Register {
