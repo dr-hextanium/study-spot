@@ -13,7 +13,7 @@ export function Screen(props: { children: ReactNode; action?: ReactNode }) {
       >
         {props.children}
       </main>
-      {props.action === undefined ? null : <div className="pinned">{props.action}</div>}
+      {props.action === undefined ? null : <footer className="pinned">{props.action}</footer>}
     </>
   );
 }
