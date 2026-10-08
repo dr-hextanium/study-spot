@@ -66,6 +66,10 @@
   flex-wrap: wrap;
   gap: var(--space-xxs) var(--space-sm);
   font-size: var(--fontSize-small);
+  /* One row and a half: the half row shows there is more to scroll to. */
+  max-height: calc(var(--size-tapTarget) * 1.5);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .blockers a {
