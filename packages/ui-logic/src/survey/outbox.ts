@@ -106,7 +106,7 @@ export type Outbox = ReturnType<typeof createOutbox>;
 export function createOutbox(deps: OutboxDeps) {
   const store = createOutboxStore(deps);
   const lock = deps.lock ?? createLocalLock();
-  let liveness = deps.liveness ?? createLocalLiveness(deps.cache);
+  let liveness = deps.liveness ?? createLocalLiveness(deps.cache, deps.ids);
   const signal = deps.signal ?? createLocalSignal(deps.cache);
   /** Queue changes, the pick of the next write, and its result write never interleave. */
   const locked = <T>(fn: () => Promise<T>): Promise<T> => lock.run(OUTBOX_LOCK, fn);
@@ -561,7 +561,7 @@ export function createOutbox(deps: OutboxDeps) {
       self = await liveness.hold();
     } catch {
       // Web Locks failed: this tab then answers for itself only, like a browser without them.
-      liveness = createLocalLiveness(deps.cache);
+      liveness = createLocalLiveness(deps.cache, deps.ids);
       self = await liveness.hold();
     }
     try {

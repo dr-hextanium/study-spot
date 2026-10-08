@@ -1,11 +1,14 @@
 import { expect, test } from "bun:test";
 import { createLocalLiveness, createLocalSignal } from "../src/index.ts";
+import { sequentialIds } from "./fakes.ts";
+
+const ids = () => sequentialIds("7000");
 
 test("local liveness: an owner is alive while it holds, per shared scope", async () => {
   const scope = {};
-  const a = createLocalLiveness(scope);
-  const b = createLocalLiveness(scope);
-  const other = createLocalLiveness({});
+  const a = createLocalLiveness(scope, ids());
+  const b = createLocalLiveness(scope, ids());
+  const other = createLocalLiveness({}, ids());
   const idA = await a.hold();
   expect(await a.hold()).toBe(idA);
   expect(await b.alive(idA)).toBe(true);
@@ -29,4 +32,16 @@ test("local signal reaches the other subscribers on the same scope, not the post
   stopB();
   a.post();
   expect(got).toEqual(["b"]);
+});
+
+test("local liveness names its owner from the injected ids, not a counter", async () => {
+  const scope = {};
+  const seq = sequentialIds("7100");
+  const a = createLocalLiveness(scope, seq);
+  const b = createLocalLiveness(scope, seq);
+  const idA = await a.hold();
+  const idB = await b.hold();
+  expect(idA).toMatch(/^[0-9a-f-]{36}$/);
+  expect(idA).not.toBe(idB);
+  expect(idA).not.toMatch(/^local-/);
 });
