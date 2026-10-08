@@ -21,6 +21,7 @@ const SAMPLE: Readonly<Record<string, string>> = {
   count: "12",
   date: "Oct 15",
   day: "Weekdays",
+  done: "4",
   field: "outlet coverage",
   fields: "directions, seat count",
   meters: "120",
@@ -33,6 +34,7 @@ const SAMPLE: Readonly<Record<string, string>> = {
   spot: "SAC Lounge",
   term: "Fall 2026",
   time: "Oct 15, 3:40 PM",
+  total: "6",
   what: "Power and signal for SAC Lounge",
 };
 

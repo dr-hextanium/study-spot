@@ -4,15 +4,16 @@ import { expect, pinClock, signIn, test } from "./fixtures.ts";
 test("an invite link signs this phone in and lands on the spot list", async ({ page }) => {
   await signIn(page);
   await expect(page.getByRole("button", { name: "All synced" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Needs attention" })).toBeVisible();
-  // The server seeds published spots, so the oldest-checks list has a row with its date.
-  const oldest = page.getByRole("region", { name: "Oldest checks" });
-  const rows = oldest.getByRole("listitem");
-  await expect(rows.first()).toBeVisible();
-  await expect(rows.first()).toContainText(/Last checked [A-Z][a-z]{2} \d{1,2}/);
+  await page.getByRole("button", { name: /^Needs you/ }).click();
+  await expect(page.getByRole("region", { name: "Needs you" })).toBeVisible();
+  await page.getByRole("button", { name: /^All \d/ }).click();
+  // The server seeds published spots, so the list has a row with its check date on the right.
+  const all = page.getByRole("region", { name: "All" });
+  const dated = all.getByRole("listitem").filter({ hasText: /[A-Z][a-z]{2} \d{1,2}/ });
+  await expect(dated.first()).toBeVisible();
 });
 
-test("at 360 px nothing scrolls sideways and the postmark stays on screen", async ({ page }) => {
+test("at 360 px nothing scrolls sideways and the sync status stays on screen", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await signIn(page);
   await page.context().setOffline(true);
@@ -21,7 +22,10 @@ test("at 360 px nothing scrolls sideways and the postmark stays on screen", asyn
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBe(0);
-  const mark = await page.getByRole("button", { name: "Offline" }).boundingBox();
+  const mark = await page
+    .locator(".actionbar")
+    .getByRole("button", { name: "Offline" })
+    .boundingBox();
   expect(mark).not.toBeNull();
   expect(mark?.x).toBeGreaterThanOrEqual(0);
   expect((mark?.x ?? 0) + (mark?.width ?? 0)).toBeLessThanOrEqual(360);
@@ -41,9 +45,7 @@ test("an iPhone browser tab shows the open-in-the-app note", async ({ browser })
   await context.close();
 });
 
-test("dark mode and reduced motion keep the header band apart from the page", async ({
-  browser,
-}) => {
+test("dark mode and reduced motion paint the shell in dark paper", async ({ browser }) => {
   const context = await browser.newContext({
     colorScheme: "dark",
     reducedMotion: "reduce",
@@ -53,11 +55,15 @@ test("dark mode and reduced motion keep the header band apart from the page", as
   await page.addInitScript(() => localStorage.setItem("perch.theme", "dark"));
   await pinClock(page);
   await signIn(page);
-  const [band, body] = await page.evaluate(() => [
-    getComputedStyle(document.querySelector(".band") ?? document.body).backgroundColor,
+  // Home is on the Seawolf shell: no ink band. Dark paper behind, a paper action bar, light ink on top.
+  const [bar, body, ink] = await page.evaluate(() => [
+    getComputedStyle(document.querySelector(".actionbar") ?? document.body).backgroundColor,
     getComputedStyle(document.body).backgroundColor,
+    getComputedStyle(document.querySelector(".large-title") ?? document.body).color,
   ]);
-  expect(band).not.toBe(body);
+  expect(body).toBe("rgb(21, 19, 19)");
+  expect(bar).toBe(body);
+  expect(ink).toBe("rgb(238, 234, 232)");
   const transition = await page.evaluate(() => {
     const probe = document.createElement("button");
     probe.className = "btn btn--primary";

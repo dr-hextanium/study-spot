@@ -558,6 +558,26 @@ Strings the built screens needed beyond the sections above: short header forms f
 | theme.light | Light | 8 | |
 | theme.dark | Dark | 8 | |
 | theme.system | System | 8 | follows the phone |
+| common.actions | Actions | 10 | opens the Actions sheet |
+| home.filter.label | Show | 8 | accessible name of the filter chips |
+| home.filter.all | All | 6 | |
+| home.filter.attention | Needs you | 12 | |
+| home.filter.drafts | Drafts | 8 | |
+| home.filter.due | Due | 6 | never checked or over 90 days |
+| home.search.label | Search spots | 16 | |
+| home.empty.attention | Nothing needs you. | 24 | |
+| home.empty.due | Nothing is due. | 20 | |
+| home.empty.search | No spots match. | 20 | |
+| home.keep_going | Keep going | 14 | card caption |
+| home.keep_going.next | Next: {section} · {count} left | 40 | |
+| home.keep_going.ready | Ready to publish | 20 | |
+| home.fact.conflict | Conflict | 10 | red pill |
+| home.fact.failed | Didn't save | 12 | red pill |
+| home.fact.unreviewed | Edited by {name} | 30 | |
+| home.fact.hours | No {term} hours | 24 | |
+| home.fact.progress | {done}/{total} | 6 | |
+| home.fact.draft | Draft | 8 | progress unknown |
+| progress.label | {done} of {total} done | 20 | step bar accessible name |
 
 ## Pending questions
 

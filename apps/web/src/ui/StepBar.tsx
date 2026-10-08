@@ -1,4 +1,4 @@
-export type StepState = "done" | "current" | "todo";
+import type { StepState } from "@study-spot/ui-logic";
 
 /** One 4 px segment per required section: done ink, current red, todo mist. */
 export function StepBar(props: { steps: readonly StepState[]; label: string }) {

@@ -1,14 +1,20 @@
 import AxeBuilder from "@axe-core/playwright";
+import { draftSpot, tokenOf } from "./api.ts";
 import { expect, signIn, test } from "./fixtures.ts";
 import { layoutProblems, WIDTHS } from "./layout.ts";
 
 /** Converted routes; each redesign task adds its own. */
-const ROUTES: string[] = [];
+const ROUTES: string[] = ["/survey"];
 
 test("converted screens, light and dark: no overflow, no clipped text, 44 px hit areas, axe clean", async ({
   page,
 }) => {
   await signIn(page);
+  // A long name so truncation is exercised on Home.
+  await draftSpot(
+    await tokenOf(page),
+    "The Very Long Named Graduate Reading Room on the Second Floor East",
+  );
   for (const theme of ["light", "dark"] as const) {
     // The boot script reads this on every load, so each goto below paints in this theme.
     await page.evaluate((t) => localStorage.setItem("perch.theme", t), theme);

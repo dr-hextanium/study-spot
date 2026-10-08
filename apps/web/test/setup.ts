@@ -17,4 +17,5 @@ if (typeof HTMLDialogElement !== "undefined" && !("showModal" in HTMLDialogEleme
 
 afterEach(() => {
   cleanup();
+  sessionStorage.clear();
 });

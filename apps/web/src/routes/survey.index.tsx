@@ -1,6 +1,4 @@
-import { t } from "@study-spot/ui-logic";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
 import { useSession } from "../hooks/useSession.ts";
 import { Home } from "../screens/Home.tsx";
 
@@ -10,22 +8,8 @@ function HomeRoute() {
   const { me } = useSession();
   return (
     <Home
-      {...(me?.role === "admin"
-        ? {
-            admin: (
-              <Link to="/survey/admin" className="btn btn--secondary">
-                <span className="btn__label">{t("home.admin")}</span>
-              </Link>
-            ),
-          }
-        : {})}
+      isAdmin={me?.role === "admin"}
       spotLink={(id) => ({ to: "/survey/spots/$id", params: { id } })}
-      action={
-        <Link to="/survey/spots/new" className="btn btn--primary btn--wide">
-          <Plus aria-hidden="true" size={20} strokeWidth={2.5} />
-          <span className="btn__label">{t("home.new_spot")}</span>
-        </Link>
-      }
     />
   );
 }

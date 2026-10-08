@@ -3,13 +3,16 @@ import type { SpotSummary, SurveyorPublic } from "@study-spot/core";
 import { surveySpotFixture } from "../../core/test/fixtures/survey-spot.ts";
 import {
   buildSpotView,
+  nextAfter,
   type OutboxSnapshot,
   OVERVIEW_ORDER,
   publishReadiness,
   REQUIRED_PARTS,
+  REQUIRED_SECTIONS,
   reviewAction,
   type SpotView,
   sectionStatuses,
+  stepProgress,
   surveyHome,
   syncHeader,
 } from "../src/index.ts";
@@ -239,8 +242,22 @@ test("home: attention by urgency, oldest checks first, drafts with part counts",
   ]);
   expect(home.stale.map((r) => r.name)).toEqual(["Never", "Bo's edit", "Broken", "Hours gap"]);
   expect(home.drafts).toEqual([
-    { spotId: ids(5), name: "Draft", localOnly: false, requiredDone: 6 },
-    { spotId: LOCAL, name: "SAC Lounge", localOnly: true, requiredDone: 1 },
+    expect.objectContaining({
+      spotId: ids(5),
+      name: "Draft",
+      localOnly: false,
+      editedByMe: true,
+      lastSeq: null,
+      progress: expect.objectContaining({ done: 5, total: 6 }),
+    }),
+    expect.objectContaining({
+      spotId: LOCAL,
+      name: "SAC Lounge",
+      localOnly: true,
+      editedByMe: true,
+      updatedAt: null,
+      progress: expect.objectContaining({ total: 6 }),
+    }),
   ]);
 });
 
@@ -312,4 +329,55 @@ test("the sync header never says all synced while unreadable writes exist", () =
   };
   expect(syncHeader(base)).toEqual({ kind: "unreadable", count: 2 });
   expect(syncHeader({ ...base, online: false })).toEqual({ kind: "unreadable", count: 2 });
+});
+
+test("the step bar has one step per section needed to publish, hours excluded", () => {
+  expect(REQUIRED_SECTIONS).toEqual([
+    "identity",
+    "access",
+    "seating",
+    "power",
+    "environment",
+    "use_fit",
+  ]);
+  const p = stepProgress(view());
+  expect(p.total).toBe(6);
+  expect(p.steps).toHaveLength(6);
+});
+
+test("progress marks the first unfinished section current, or the one being edited", () => {
+  const v = view([], {
+    seat_count: null,
+    missing: ["seat_count", "noise_policy"],
+    noise_policy: null,
+  });
+  expect(stepProgress(v)).toEqual({
+    steps: ["done", "done", "current", "done", "todo", "done"],
+    done: 4,
+    total: 6,
+    next: "seating",
+  });
+  expect(stepProgress(v, "use_fit").steps).toEqual([
+    "done",
+    "done",
+    "todo",
+    "done",
+    "todo",
+    "current",
+  ]);
+  expect(stepProgress(v, "photos").steps[2]).toBe("current");
+});
+
+test("next after: the next unfinished required section, wrapping, never itself", () => {
+  const v = view([], {
+    seat_count: null,
+    missing: ["seat_count", "noise_policy"],
+    noise_policy: null,
+  });
+  expect(nextAfter(v, "seating")).toBe("environment");
+  expect(nextAfter(v, "environment")).toBe("seating");
+  expect(nextAfter(v, "use_fit")).toBe("seating");
+  expect(nextAfter(v, "hours")).toBeNull();
+  const done = view([], { seat_count: 112, missing: [] });
+  expect(nextAfter(done, "identity")).toBeNull();
 });
