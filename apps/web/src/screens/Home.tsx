@@ -1,7 +1,6 @@
 import type { AttentionRow, DraftRow, OutboxSnapshot, StaleRow } from "@study-spot/ui-logic";
 import { plural, t } from "@study-spot/ui-logic";
 import { type ReactNode, useEffect, useState } from "react";
-import { useDeps } from "../app/AppProvider.tsx";
 import { useOnline } from "../hooks/useOnline.ts";
 import { useOutboxSnapshot } from "../hooks/useOutbox.ts";
 import { useCampusTz } from "../hooks/useQueries.ts";
