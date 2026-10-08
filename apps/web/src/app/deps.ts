@@ -38,9 +38,20 @@ import { createSessionState, type SessionState } from "./sessionState.ts";
 
 export type AppDeps = {
   api: SurveyApi;
+  /**
+   * The session store. buildAppDeps subscribes `resumeOnNewSession` to it, and
+   * that subscription is what makes `join()` resume the outbox and reads, in this
+   * tab and others. Any other way to build AppDeps must do the same.
+   */
   session: SessionState;
   auth: AuthState;
   outbox: Outbox;
+  /**
+   * Signs this phone out, no UI yet: stops the outbox (no send starts after it),
+   * clears the survey query cache in memory and on disk, then clears the session.
+   * Queued writes stay in IndexedDB for the next sign-in to send.
+   */
+  signOut(): Promise<void>;
   /** The outbox's start(): its first sync pass of this page load has ended once it resolves. */
   started: Promise<void>;
   queryClient: QueryClient;
@@ -111,6 +122,43 @@ export function resumeOnNewSession(deps: {
   });
 }
 
+/** Signs out: stop sending, drop cached server data, then drop the session. */
+export function createSignOut(deps: {
+  session: SessionState;
+  outbox: Outbox;
+  queryClient: QueryClient;
+  persister: Persister;
+}): () => Promise<void> {
+  return async () => {
+    deps.outbox.stop();
+    deps.queryClient.clear();
+    // The copy is a cache: a failed removal costs only a stale snapshot.
+    try {
+      await deps.persister.removeClient();
+    } catch {
+      // Nothing to do: the in-memory copy is already gone.
+    }
+    deps.session.clear();
+  };
+}
+
+/** The persisted survey query cache, kept in `cache` (IndexedDB on the phone). */
+export function createSurveyPersister(cache: KeyValueCache): Persister {
+  // The persisted copy is a cache: a storage failure (quota, timeout) costs only the copy.
+  return createAsyncStoragePersister({
+    storage: createPersistStorage(cache),
+    key: "query:survey",
+    throttleTime: 250,
+    deserialize: (raw) => {
+      try {
+        return sanitizePersisted(JSON.parse(raw));
+      } catch {
+        return sanitizePersisted(null);
+      }
+    },
+  });
+}
+
 /**
  * The one AppDeps of this page. A second outbox would share this tab's id and
  * Web Lock name, so a hot reload of this module must hand back the first one:
@@ -160,24 +208,13 @@ function buildAppDeps(env: { apiBaseUrl: string; dataBaseUrl: string }): AppDeps
   const queryClient = createQueryClient();
   resumeOnNewSession({ session, auth, outbox, queryClient });
   outbox.onApplied((spot: SurveySpot) => applyServerSpot(queryClient, spot));
-  // The persisted copy is a cache: a storage failure (quota, timeout) costs only the copy.
-  const persister = createAsyncStoragePersister({
-    storage: createPersistStorage(stores.cache),
-    key: "query:survey",
-    throttleTime: 250,
-    deserialize: (raw) => {
-      try {
-        return sanitizePersisted(JSON.parse(raw));
-      } catch {
-        return sanitizePersisted(null);
-      }
-    },
-  });
+  const persister = createSurveyPersister(stores.cache);
   return {
     api,
     session,
     auth,
     outbox,
+    signOut: createSignOut({ session, outbox, queryClient, persister }),
     started: outbox.start(),
     queryClient,
     persister,

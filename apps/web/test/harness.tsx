@@ -13,7 +13,6 @@ import {
   type Http,
   type HttpRequest,
 } from "@study-spot/ui-logic";
-import type { Persister } from "@tanstack/react-query-persist-client";
 import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/react-router";
 import { type RenderResult, render } from "@testing-library/react";
 import type { ReactNode } from "react";
@@ -30,7 +29,13 @@ import {
 } from "../../../packages/ui-logic/test/fakes.ts";
 import { AppProvider } from "../src/app/AppProvider.tsx";
 import { createAuthState } from "../src/app/authState.ts";
-import { type AppDeps, createQueryClient, resumeOnNewSession } from "../src/app/deps.ts";
+import {
+  type AppDeps,
+  createQueryClient,
+  createSignOut,
+  createSurveyPersister,
+  resumeOnNewSession,
+} from "../src/app/deps.ts";
 import { applyServerSpot } from "../src/app/serverCache.ts";
 import { createSessionState } from "../src/app/sessionState.ts";
 import { browserImageKit } from "../src/lib/photo.ts";
@@ -107,12 +112,6 @@ export class TestServer implements Http {
   }
 }
 
-const noPersister: Persister = {
-  persistClient: async () => {},
-  restoreClient: async () => undefined,
-  removeClient: async () => {},
-};
-
 export type TestApp = {
   deps: AppDeps;
   server: TestServer;
@@ -155,15 +154,17 @@ export function testApp(
   });
   outbox.onApplied((spot) => applyServerSpot(queryClient, spot));
   const auth = createAuthState();
+  const persister = createSurveyPersister(cache);
   resumeOnNewSession({ session, auth, outbox, queryClient });
   const deps: AppDeps = {
     api,
     session,
     auth,
     outbox,
+    signOut: createSignOut({ session, outbox, queryClient, persister }),
     started: outbox.start(),
     queryClient,
-    persister: noPersister,
+    persister,
     cache,
     blobs,
     network,

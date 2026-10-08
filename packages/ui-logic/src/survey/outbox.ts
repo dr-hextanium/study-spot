@@ -537,54 +537,56 @@ export function createOutbox(deps: OutboxDeps) {
     signal.post();
   }
 
+  /** Loads the queue, resets writes cut off mid-send, and starts listening for triggers. */
+  async function start(): Promise<void> {
+    stopped = false;
+    ready = false;
+    // Reading the queue needs neither the liveness hold nor the lock, so it goes first.
+    load();
+    // Triggers listen from the start, whatever happens to the steps below.
+    unsubscribe = [
+      signal.subscribe(() => {
+        void refresh().catch(() => undefined);
+        void sync();
+      }),
+      deps.network.subscribe((online) => {
+        emit({ online });
+        if (online) void sync();
+      }),
+      deps.foreground.subscribe(() => void sync()),
+    ];
+    // The network may have changed between createOutbox and subscribing.
+    emit({ online: deps.network.online() });
+    try {
+      self = await liveness.hold();
+    } catch {
+      // Web Locks failed: this tab then answers for itself only, like a browser without them.
+      liveness = createLocalLiveness(deps.cache);
+      self = await liveness.hold();
+    }
+    try {
+      await locked(async () => {
+        for (const r of await store.list()) {
+          // A live tab's in-flight write is left alone; a gone tab's goes back in the queue.
+          if (r.state === "syncing" && r.owner !== self && !(await sendingElsewhere(r))) {
+            await store.put({ ...r, state: "pending" });
+          }
+        }
+        for (const moved of rewriteSpotIds(await store.list(), await store.idMap())) {
+          await store.put(moved);
+        }
+      });
+      signal.post();
+    } catch {
+      // Storage trouble: the queue is untouched; the next pass or read tries again.
+    }
+    ready = true;
+    await refresh().catch(() => undefined);
+    await sync();
+  }
+
   return {
-    /** Loads the queue, resets writes cut off mid-send, and starts listening for triggers. */
-    async start(): Promise<void> {
-      stopped = false;
-      ready = false;
-      // Reading the queue needs neither the liveness hold nor the lock, so it goes first.
-      load();
-      // Triggers listen from the start, whatever happens to the steps below.
-      unsubscribe = [
-        signal.subscribe(() => {
-          void refresh().catch(() => undefined);
-          void sync();
-        }),
-        deps.network.subscribe((online) => {
-          emit({ online });
-          if (online) void sync();
-        }),
-        deps.foreground.subscribe(() => void sync()),
-      ];
-      // The network may have changed between createOutbox and subscribing.
-      emit({ online: deps.network.online() });
-      try {
-        self = await liveness.hold();
-      } catch {
-        // Web Locks failed: this tab then answers for itself only, like a browser without them.
-        liveness = createLocalLiveness(deps.cache);
-        self = await liveness.hold();
-      }
-      try {
-        await locked(async () => {
-          for (const r of await store.list()) {
-            // A live tab's in-flight write is left alone; a gone tab's goes back in the queue.
-            if (r.state === "syncing" && r.owner !== self && !(await sendingElsewhere(r))) {
-              await store.put({ ...r, state: "pending" });
-            }
-          }
-          for (const moved of rewriteSpotIds(await store.list(), await store.idMap())) {
-            await store.put(moved);
-          }
-        });
-        signal.post();
-      } catch {
-        // Storage trouble: the queue is untouched; the next pass or read tries again.
-      }
-      ready = true;
-      await refresh().catch(() => undefined);
-      await sync();
-    },
+    start,
     stop(): void {
       stopped = true;
       ready = false;
@@ -708,10 +710,11 @@ export function createOutbox(deps: OutboxDeps) {
       signal.post();
       await refresh();
     },
-    /** After signing in again on this phone. */
+    /** After signing in again on this phone. Starts the outbox again if stop() ended it (sign-out). */
     resume(): void {
       emit({ signedOut: false });
-      void sync();
+      if (stopped) void start();
+      else void sync();
     },
     syncNow: (): Promise<void> => sync(),
     /** Resolves when the current pass (if any) ends, without asking for another. */
