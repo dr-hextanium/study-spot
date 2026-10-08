@@ -11,7 +11,7 @@ import { Banner } from "../ui/Banner.tsx";
 import { Button } from "../ui/Button.tsx";
 import { TextField } from "../ui/Field.tsx";
 import { HeaderBand } from "../ui/HeaderBand.tsx";
-import { Screen } from "../ui/Screen.tsx";
+import { LegacyScreen } from "../ui/Screen.tsx";
 import { ConfirmSheet } from "../ui/Sheet.tsx";
 
 type Problem = "invalid" | "expired" | "used" | "name" | "storage" | "generic" | null;
@@ -143,7 +143,7 @@ export function Invite(props: { token: string; relogin: boolean }) {
   return (
     <>
       <HeaderBand title={t("app.name")} />
-      <Screen
+      <LegacyScreen
         action={
           blocked ? undefined : (
             <Button variant="primary" wide disabled={busy || !online} onClick={() => void accept()}>
@@ -175,7 +175,7 @@ export function Invite(props: { token: string; relogin: boolean }) {
         ) : null}
         {problem !== null && problem !== "name" ? <Banner>{PROBLEM_TEXT[problem]()}</Banner> : null}
         {!online && !blocked ? <Banner tone="note">{t("invite.offline")}</Banner> : null}
-      </Screen>
+      </LegacyScreen>
       <ConfirmSheet
         open={held !== null}
         title={t("invite.switch.title", { name: held?.owner ?? "" })}

@@ -12,7 +12,7 @@ import { shrinkPhoto } from "../../lib/photo.ts";
 import { Banner } from "../../ui/Banner.tsx";
 import { Button } from "../../ui/Button.tsx";
 import { PhotoImage } from "../../ui/PhotoImage.tsx";
-import { Screen } from "../../ui/Screen.tsx";
+import { LegacyScreen } from "../../ui/Screen.tsx";
 import { Sheet } from "../../ui/Sheet.tsx";
 import { StampChip } from "../../ui/StampChip.tsx";
 import { SurveyHeader } from "../SurveyHeader.tsx";
@@ -183,7 +183,7 @@ export function PhotosEditor({ view }: { view: SpotView }) {
         title={t("section.photos.name")}
         back={{ to: "/survey/spots/$id", params: { id: view.spot.id } }}
       />
-      <Screen
+      <LegacyScreen
         action={
           <>
             <Button
@@ -254,7 +254,7 @@ export function PhotosEditor({ view }: { view: SpotView }) {
             e.currentTarget.value = "";
           }}
         />
-      </Screen>
+      </LegacyScreen>
       <Sheet
         open={checklist !== null}
         title={t("photos.checklist.title")}

@@ -8,7 +8,7 @@ import { type LocationState, spotPoint } from "../lib/location.ts";
 import { spotSlug } from "../lib/slug.ts";
 import { Button } from "../ui/Button.tsx";
 import { TextField } from "../ui/Field.tsx";
-import { Screen } from "../ui/Screen.tsx";
+import { LegacyScreen } from "../ui/Screen.tsx";
 import { BuildingPicker, LAST_BUILDING_KEY } from "./BuildingPicker.tsx";
 import { LocationButton } from "./LocationButton.tsx";
 import { SurveyHeader } from "./SurveyHeader.tsx";
@@ -88,7 +88,7 @@ export function NewSpot() {
   return (
     <>
       <SurveyHeader title={t("new.title")} back={{ to: "/survey" }} />
-      <Screen
+      <LegacyScreen
         action={
           <>
             {saveFailed ? (
@@ -144,7 +144,7 @@ export function NewSpot() {
           multiline
           maxLength={2000}
         />
-      </Screen>
+      </LegacyScreen>
     </>
   );
 }

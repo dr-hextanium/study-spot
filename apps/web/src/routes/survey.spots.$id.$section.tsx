@@ -7,7 +7,7 @@ import { useOutboxSnapshot } from "../hooks/useOutbox.ts";
 import { type SpotViewState, useSpotView } from "../hooks/useSpotView.ts";
 import { EDITORS } from "../screens/editors/index.tsx";
 import { SurveyHeader } from "../screens/SurveyHeader.tsx";
-import { Screen } from "../ui/Screen.tsx";
+import { LegacyScreen } from "../ui/Screen.tsx";
 
 type Ready = Extract<SpotViewState, { kind: "ready" }>;
 
@@ -61,11 +61,11 @@ function SectionRoute() {
     return (
       <>
         <SurveyHeader title={t("app.name")} back={{ to: "/survey" }} />
-        <Screen>
+        <LegacyScreen>
           <p className="lede">
             {state.kind === "missing" ? t("spot.not_found") : t("common.loading")}
           </p>
-        </Screen>
+        </LegacyScreen>
       </>
     );
   }

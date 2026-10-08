@@ -15,7 +15,7 @@ import { dateTime } from "../lib/format.ts";
 import { Banner } from "../ui/Banner.tsx";
 import { Button } from "../ui/Button.tsx";
 import { PhotoImage } from "../ui/PhotoImage.tsx";
-import { GroupHeading, Screen } from "../ui/Screen.tsx";
+import { GroupHeading, LegacyScreen } from "../ui/Screen.tsx";
 import { Segmented } from "../ui/Segmented.tsx";
 import { ConfirmSheet } from "../ui/Sheet.tsx";
 import { StampChip } from "../ui/StampChip.tsx";
@@ -355,13 +355,13 @@ export function Admin() {
   return (
     <>
       <SurveyHeader title={t("admin.title")} back={{ to: "/survey" }} />
-      <Screen>
+      <LegacyScreen>
         {online ? null : <Banner tone="note">{t("error.network_admin")}</Banner>}
         <InviteSection online={online} />
         <PublishSection online={online} />
         <PhotosSection online={online} />
         <SurveyorsSection online={online} />
-      </Screen>
+      </LegacyScreen>
     </>
   );
 }

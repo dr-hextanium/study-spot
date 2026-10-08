@@ -20,7 +20,7 @@ import { Banner } from "../ui/Banner.tsx";
 import { Button } from "../ui/Button.tsx";
 import { Postmark } from "../ui/Postmark.tsx";
 import { RuledRow } from "../ui/RuledRow.tsx";
-import { GroupHeading, Screen } from "../ui/Screen.tsx";
+import { GroupHeading, LegacyScreen } from "../ui/Screen.tsx";
 import { ConfirmSheet } from "../ui/Sheet.tsx";
 import { StampChip } from "../ui/StampChip.tsx";
 import { SurveyHeader } from "./SurveyHeader.tsx";
@@ -113,11 +113,11 @@ export function Overview(props: { id: string; write: string | undefined }) {
     return (
       <>
         <SurveyHeader title={t("app.name")} back={{ to: "/survey" }} />
-        <Screen>
+        <LegacyScreen>
           <p className="lede">
             {state.kind === "missing" ? t("spot.not_found") : t("common.loading")}
           </p>
-        </Screen>
+        </LegacyScreen>
       </>
     );
   }
@@ -230,7 +230,7 @@ function Ready(props: {
   return (
     <>
       <SurveyHeader title={spot.official_name} back={{ to: "/survey" }} />
-      <Screen action={action}>
+      <LegacyScreen action={action}>
         <Stamps spot={spot} view={view} />
         {conflicts.length > 0 ? (
           <Banner
@@ -296,7 +296,7 @@ function Ready(props: {
             {online ? null : <p className="field__helper">{t("error.network_admin")}</p>}
           </section>
         ) : null}
-      </Screen>
+      </LegacyScreen>
       {open?.state === "conflict" ? (
         <ConflictSheet
           record={open}

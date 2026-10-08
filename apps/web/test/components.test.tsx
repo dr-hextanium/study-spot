@@ -7,7 +7,7 @@ import { Banner } from "../src/ui/Banner.tsx";
 import { Button } from "../src/ui/Button.tsx";
 import { TextField } from "../src/ui/Field.tsx";
 import { Postmark } from "../src/ui/Postmark.tsx";
-import { Screen } from "../src/ui/Screen.tsx";
+import { LegacyScreen } from "../src/ui/Screen.tsx";
 import { Segmented } from "../src/ui/Segmented.tsx";
 import { ConfirmSheet } from "../src/ui/Sheet.tsx";
 import { StampChip } from "../src/ui/StampChip.tsx";
@@ -208,9 +208,9 @@ test("every filled stamp tone has a readable text color rule", () => {
 
 test("the pinned action sits inside a landmark, so no content is left outside one", () => {
   render(
-    <Screen action={<Button variant="primary">New spot</Button>}>
+    <LegacyScreen action={<Button variant="primary">New spot</Button>}>
       <p>Body</p>
-    </Screen>,
+    </LegacyScreen>,
   );
   const landmark = screen.getByRole("contentinfo");
   expect(landmark.className).toContain("pinned");

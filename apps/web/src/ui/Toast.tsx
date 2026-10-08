@@ -1,4 +1,7 @@
-/** One short confirmation at a time, announced politely, above the pinned action. */
+import { Check } from "lucide-react";
+import { Icon } from "./Icon.tsx";
+
+/** One short confirmation at a time, announced politely, above the action bar. */
 export function Toast(props: {
   message: { text: string; key: number } | null;
   onDismiss: () => void;
@@ -7,7 +10,8 @@ export function Toast(props: {
     <div className="toast-region" aria-live="polite" aria-atomic="true">
       {props.message === null ? null : (
         <button key={props.message.key} type="button" className="toast" onClick={props.onDismiss}>
-          {props.message.text}
+          <Icon icon={Check} />
+          <span>{props.message.text}</span>
         </button>
       )}
     </div>

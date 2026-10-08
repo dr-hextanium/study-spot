@@ -8,7 +8,7 @@ import { useSurveyHome } from "../hooks/useSurveyHome.ts";
 import { shortDate } from "../lib/format.ts";
 import { Banner } from "../ui/Banner.tsx";
 import { RuledRow } from "../ui/RuledRow.tsx";
-import { GroupHeading, Screen } from "../ui/Screen.tsx";
+import { GroupHeading, LegacyScreen } from "../ui/Screen.tsx";
 import { SurveyHeader } from "./SurveyHeader.tsx";
 import type { SpotLinkFor } from "./spotLink.ts";
 
@@ -86,7 +86,7 @@ export function Home(props: { spotLink?: SpotLinkFor; action?: ReactNode; admin?
   return (
     <>
       <SurveyHeader title={t("home.title")} />
-      <Screen action={props.action}>
+      <LegacyScreen action={props.action}>
         {props.admin === undefined ? null : <nav className="home-admin">{props.admin}</nav>}
         {pendingAtOpen > 0 ? (
           <Banner tone="note">
@@ -150,7 +150,7 @@ export function Home(props: { spotLink?: SpotLinkFor; action?: ReactNode; admin?
             />
           ))}
         </List>
-      </Screen>
+      </LegacyScreen>
     </>
   );
 }

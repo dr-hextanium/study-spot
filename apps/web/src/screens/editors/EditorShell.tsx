@@ -8,7 +8,7 @@ import { useToasts } from "../../hooks/useToasts.tsx";
 import { sectionName } from "../../lib/format.ts";
 import { Banner } from "../../ui/Banner.tsx";
 import { Button } from "../../ui/Button.tsx";
-import { Screen } from "../../ui/Screen.tsx";
+import { LegacyScreen } from "../../ui/Screen.tsx";
 import { ConfirmSheet } from "../../ui/Sheet.tsx";
 import { SurveyHeader } from "../SurveyHeader.tsx";
 
@@ -114,7 +114,7 @@ export function EditorShell<S extends SurveySection>({
         title={sectionName(section)}
         back={{ to: "/survey/spots/$id", params: { id: view.spot.id } }}
       />
-      <Screen
+      <LegacyScreen
         action={
           <>
             <Button variant="primary" wide onClick={() => void save(false)}>
@@ -134,7 +134,7 @@ export function EditorShell<S extends SurveySection>({
         {invalid ? <Banner>{t("editor.invalid")}</Banner> : null}
         {failed ? <Banner>{t("common.save_failed")}</Banner> : null}
         {children(api)}
-      </Screen>
+      </LegacyScreen>
       <ConfirmSheet
         open={cleared !== null}
         title={t("editor.unpublish.title")}
