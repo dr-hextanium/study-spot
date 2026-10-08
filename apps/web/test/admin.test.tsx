@@ -1,6 +1,6 @@
 import { t } from "@study-spot/ui-logic";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";
 import { SEATING } from "../../../packages/ui-logic/test/builders.ts";
 import { ME, renderRoute, testApp } from "./harness.tsx";
@@ -201,4 +201,29 @@ test("the invite section names itself once: the segmented label is for screen re
   expect(legend?.className).toContain("visually-hidden");
   const heading = screen.getByRole("heading", { name: t("admin.invite.title") });
   expect(heading.className).not.toContain("visually-hidden");
+});
+
+test("a pending photo whose image did not load says so instead of showing an empty box", async () => {
+  const spot = surveySpotFixture({ status: "published", version: 3 });
+  const app = testApp({ me: ADMIN, spots: [spot] });
+  app.server.admin.photos.push({
+    id: "8c1f0a52-7a0e-4f55-9b8e-2f1d3c4b5a69",
+    spot_id: spot.id,
+    url: null,
+    taken_at: "2026-10-12T18:00:00.000Z",
+    is_cover: false,
+    uploaded_by: null,
+    approved: false,
+    approved_at: null,
+    spot_name: spot.official_name,
+    uploaded_by_name: "Riley",
+  });
+  vi.stubGlobal("fetch", async () => new Response(null, { status: 404 }));
+  try {
+    renderRoute(app, "/survey/admin");
+    expect(await screen.findByText(t("photos.unavailable"))).toBeTruthy();
+    expect(t("photos.unavailable")).toBe("Image unavailable");
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

@@ -231,6 +231,17 @@
   background: var(--color-surface);
 }
 
+.photo__img--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo__missing {
+  color: var(--color-textMuted);
+  font-size: var(--fontSize-small);
+}
+
 .photo__actions {
   display: flex;
   flex-wrap: wrap;

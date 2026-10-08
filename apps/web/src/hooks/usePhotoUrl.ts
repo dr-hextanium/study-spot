@@ -8,15 +8,19 @@ import { useDeps } from "../app/AppProvider.tsx";
  * synced yet, or from the signed image route (unapproved photos have no public
  * URL, and an <img> cannot send the bearer token).
  */
-export function usePhotoUrl(
-  source: { photoId: string } | { clientWriteId: string },
-): string | null {
+export function usePhotoUrl(source: { photoId: string } | { clientWriteId: string }): {
+  url: string | null;
+  missing: boolean;
+} {
   const { blobs, session, apiBaseUrl } = useDeps();
   const [url, setUrl] = useState<string | null>(null);
+  // True once the bytes were asked for and none came: not found, refused, or offline.
+  const [missing, setMissing] = useState(false);
   const key = "photoId" in source ? `server:${source.photoId}` : `local:${source.clientWriteId}`;
   useEffect(() => {
     // The previous photo's URL is revoked by the old cleanup; never show it.
     setUrl(null);
+    setMissing(false);
     let live = true;
     let made: string | null = null;
     const load = async (): Promise<Uint8Array | null> => {
@@ -33,15 +37,18 @@ export function usePhotoUrl(
     };
     load()
       .then((bytes) => {
-        if (!live || bytes === null) return;
+        if (!live) return;
+        if (bytes === null) return setMissing(true);
         made = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: PHOTO_CONTENT_TYPE }));
         setUrl(made);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (live) setMissing(true);
+      });
     return () => {
       live = false;
       if (made !== null) URL.revokeObjectURL(made);
     };
   }, [key, blobs, session, apiBaseUrl]);
-  return url;
+  return { url, missing };
 }

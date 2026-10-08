@@ -11,6 +11,7 @@ import { useToasts } from "../../hooks/useToasts.tsx";
 import { shrinkPhoto } from "../../lib/photo.ts";
 import { Banner } from "../../ui/Banner.tsx";
 import { Button } from "../../ui/Button.tsx";
+import { PhotoImage } from "../../ui/PhotoImage.tsx";
 import { Screen } from "../../ui/Screen.tsx";
 import { Sheet } from "../../ui/Sheet.tsx";
 import { StampChip } from "../../ui/StampChip.tsx";
@@ -49,7 +50,7 @@ function ServerPhoto(props: { photo: SurveyPhoto; view: SpotView }) {
   const { me } = useSession();
   const online = useOnline();
   const toasts = useToasts();
-  const url = usePhotoUrl({ photoId: photo.id });
+  const source = usePhotoUrl({ photoId: photo.id });
   const own = me !== null && me.role !== "admin" && photo.uploaded_by === me.id;
   const [approving, setApproving] = useState(false);
   async function approve() {
@@ -79,11 +80,7 @@ function ServerPhoto(props: { photo: SurveyPhoto; view: SpotView }) {
   }
   return (
     <li className="photo">
-      {url === null ? (
-        <div className="photo__img photo__img--empty" />
-      ) : (
-        <img className="photo__img" src={url} alt={t("photos.alt")} />
-      )}
+      <PhotoImage source={source} alt={t("photos.alt")} />
       <div className="stamp-row">
         {photo.is_cover ? (
           <StampChip tone="ink" filled>
@@ -111,14 +108,10 @@ function ServerPhoto(props: { photo: SurveyPhoto; view: SpotView }) {
 }
 
 function LocalPhoto(props: { photo: PendingPhoto }) {
-  const url = usePhotoUrl({ clientWriteId: props.photo.client_write_id });
+  const source = usePhotoUrl({ clientWriteId: props.photo.client_write_id });
   return (
     <li className="photo">
-      {url === null ? (
-        <div className="photo__img photo__img--empty" />
-      ) : (
-        <img className="photo__img" src={url} alt={t("photos.alt")} />
-      )}
+      <PhotoImage source={source} alt={t("photos.alt")} />
       <div className="stamp-row">
         <StampChip tone={props.photo.state === "failed" ? "red" : "blue"}>
           {props.photo.state === "failed" ? t("spot.section.failed") : t("photos.not_synced")}

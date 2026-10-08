@@ -14,6 +14,7 @@ import { useToasts } from "../hooks/useToasts.tsx";
 import { dateTime } from "../lib/format.ts";
 import { Banner } from "../ui/Banner.tsx";
 import { Button } from "../ui/Button.tsx";
+import { PhotoImage } from "../ui/PhotoImage.tsx";
 import { GroupHeading, Screen } from "../ui/Screen.tsx";
 import { Segmented } from "../ui/Segmented.tsx";
 import { ConfirmSheet } from "../ui/Sheet.tsx";
@@ -263,14 +264,10 @@ function PendingPhoto(props: {
   onReject: (id: string) => void;
   onApprove: (id: string) => void;
 }) {
-  const url = usePhotoUrl({ photoId: props.photo.id });
+  const source = usePhotoUrl({ photoId: props.photo.id });
   return (
     <li className="photo">
-      {url === null ? (
-        <div className="photo__img photo__img--empty" />
-      ) : (
-        <img className="photo__img" src={url} alt="" />
-      )}
+      <PhotoImage source={source} alt="" />
       <p>
         {t("admin.photos.from", {
           spot: props.photo.spot_name,

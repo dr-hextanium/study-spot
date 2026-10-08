@@ -393,6 +393,7 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | photos.too_big | That photo is still too large after shrinking. Try another shot. | 70 | |
 | photos.unreadable | Couldn't read that image. Try taking it again. | 50 | |
 | photos.empty | No photos yet. Students see the cover first. | 50 | |
+| photos.unavailable | Image unavailable | 20 | in place of a photo whose bytes did not load |
 
 ## Conflict view
 

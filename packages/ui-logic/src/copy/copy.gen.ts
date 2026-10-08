@@ -299,6 +299,7 @@ export const COPY = {
   "photos.too_big": "That photo is still too large after shrinking. Try another shot.",
   "photos.unreadable": "Couldn't read that image. Try taking it again.",
   "photos.empty": "No photos yet. Students see the cover first.",
+  "photos.unavailable": "Image unavailable",
   "conflict.title": "Two versions of {section}",
   "conflict.body": "{name} changed this while your edit was waiting. Pick which version to keep.",
   "conflict.body_unknown":
@@ -735,6 +736,7 @@ export const COPY_MAX = {
   "photos.too_big": 70,
   "photos.unreadable": 50,
   "photos.empty": 50,
+  "photos.unavailable": 20,
   "conflict.title": 32,
   "conflict.body": 90,
   "conflict.body_unknown": 84,
