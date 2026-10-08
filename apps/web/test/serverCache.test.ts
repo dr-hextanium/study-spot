@@ -9,6 +9,7 @@ import {
   newerSpot,
   sanitizePersisted,
   shouldPersistQuery,
+  summaryOf,
 } from "../src/app/serverCache.ts";
 import { CAMPUS, summary } from "./harness.tsx";
 
@@ -93,4 +94,40 @@ test("a survey query whose refetch failed is still persisted while it holds data
   const admin = qc.getQueryCache().build(qc, { queryKey: keys.surveyors });
   admin.setData({ surveyors: [] });
   expect(shouldPersistQuery(admin)).toBe(false);
+});
+
+test("a list persisted before covers existed still restores, with no covers", () => {
+  const { cover_photo_id: _dropped, ...legacyRow } = summary(v(3));
+  const entry = {
+    queryKey: ["survey", "spots"],
+    queryHash: "l",
+    state: { data: { term: null, spots: [legacyRow] } },
+  };
+  const restored = sanitizePersisted({
+    timestamp: 5,
+    buster: "survey-1",
+    clientState: { mutations: [], queries: [entry] },
+  });
+  expect(restored.clientState.queries).toHaveLength(1);
+  const data = restored.clientState.queries[0]?.state.data as SpotList;
+  expect(data.spots[0]?.cover_photo_id).toBeNull();
+});
+
+test("the list row of a server spot carries its approved cover only", () => {
+  const base = v(3);
+  const photo = (approved: boolean, is_cover: boolean) => ({
+    id: "5b0f7c1e-2b7a-4c39-9a51-3f6f4f0f2a21",
+    spot_id: base.id,
+    url: null,
+    taken_at: "2026-10-01T15:00:00.000Z",
+    is_cover,
+    uploaded_by: null,
+    approved,
+    approved_at: approved ? "2026-10-02T15:00:00.000Z" : null,
+  });
+  const of = (p: ReturnType<typeof photo>) =>
+    summaryOf({ ...base, photos: [p] }, undefined, "Melville Library").cover_photo_id;
+  expect(of(photo(true, true))).toBe("5b0f7c1e-2b7a-4c39-9a51-3f6f4f0f2a21");
+  expect(of(photo(false, true))).toBeNull();
+  expect(of(photo(true, false))).toBeNull();
 });

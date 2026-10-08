@@ -119,9 +119,11 @@ const EMPTY: PersistedClient = {
 export function sanitizePersisted(raw: unknown): PersistedClient {
   const parsed = Envelope.safeParse(raw);
   if (!parsed.success) return EMPTY;
-  const kept = parsed.data.clientState.queries.filter((q) => {
+  const kept = parsed.data.clientState.queries.flatMap((q) => {
     const entry = KEY_SCHEMAS.find((e) => e.match(q.queryKey));
-    return entry?.schema.safeParse(q.state.data).success === true;
+    const data = entry?.schema.safeParse(q.state.data);
+    // Keep the parsed value, so defaults added since it was stored are filled in.
+    return data?.success === true ? [{ ...q, state: { ...q.state, data: data.data } }] : [];
   });
   // The envelope and every kept query's data are checked above; the other fields
   // are TanStack's own dehydrated query state, passed through as stored.
