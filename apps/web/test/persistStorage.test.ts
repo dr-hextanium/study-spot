@@ -57,3 +57,18 @@ test("a snapshot with no queries is never written over a stored one", async () =
   await storage.setItem("k", snapshot([]));
   expect(await cache.get("k")).toBe(good);
 });
+
+test("after a failed restore, a retry write that has fewer queries than the stored one is dropped", async () => {
+  const cache = new FlakyCache();
+  const two = snapshot([{ queryKey: ["survey", "spots"] }, { queryKey: ["survey", "campus"] }]);
+  await cache.set("k", two);
+  cache.failGet = true;
+  const storage = createPersistStorage(cache);
+  expect(await storage.getItem("k")).toBeNull();
+  cache.failGet = false;
+  await storage.setItem("k", snapshot([{ queryKey: ["survey", "campus"] }]));
+  expect(await cache.get("k")).toBe(two);
+  const three = snapshot([{}, {}, {}]);
+  await storage.setItem("k", three);
+  expect(await cache.get("k")).toBe(three);
+});

@@ -24,8 +24,11 @@ export function createPersistStorage(cache: KeyValueCache) {
     },
     setItem: async (key: string, value: string): Promise<void> => {
       if (!restored) {
+        // The retry read tells what is stored. A snapshot built from a half-loaded client
+        // (fewer queries than the stored one) would wipe the offline spot list, so it waits.
         try {
-          await cache.get(key);
+          const stored = await cache.get(key);
+          if (stored !== null && queryCount(value) < queryCount(stored)) return;
           restored = true;
         } catch {
           return;
@@ -38,15 +41,19 @@ export function createPersistStorage(cache: KeyValueCache) {
   };
 }
 
-/** True for a persisted client whose dehydrated queries are empty. Unparseable text is not judged. */
 function hasNoQueries(value: string): boolean {
+  return queryCount(value) === 0;
+}
+
+/** Number of dehydrated queries in a persisted client; unparseable text counts as unknown (-1 never blocks). */
+function queryCount(value: string): number {
   try {
     const parsed: unknown = JSON.parse(value);
-    if (typeof parsed !== "object" || parsed === null || !("clientState" in parsed)) return false;
+    if (typeof parsed !== "object" || parsed === null || !("clientState" in parsed)) return -1;
     const state = parsed.clientState;
-    if (typeof state !== "object" || state === null || !("queries" in state)) return false;
-    return Array.isArray(state.queries) && state.queries.length === 0;
+    if (typeof state !== "object" || state === null || !("queries" in state)) return -1;
+    return Array.isArray(state.queries) ? state.queries.length : -1;
   } catch {
-    return false;
+    return -1;
   }
 }
