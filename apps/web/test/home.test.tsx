@@ -46,7 +46,7 @@ test("a draft made offline shows under Drafts with its step count", async () => 
   const drafts = screen.getByRole("region", { name: t("home.filter.drafts") });
   expect(await within(drafts).findByText("Basement Carrels")).toBeTruthy();
   expect(within(drafts).getByText(t("home.fact.progress", { done: 2, total: 6 }))).toBeTruthy();
-  expect(screen.getByRole("button", { name: t("sync.offline") })).toBeTruthy();
+  expect(screen.getByRole("button", { name: t("sync.short.offline") })).toBeTruthy();
 });
 
 test("the sync sheet lists changes on the phone and warns about other phones", async () => {
@@ -55,7 +55,7 @@ test("the sync sheet lists changes on the phone and warns about other phones", a
   renderRoute(app, "/survey");
   await app.deps.started;
   await app.deps.outbox.createSpot(identity({ official_name: "Basement Carrels" }));
-  fireEvent.click(await screen.findByRole("button", { name: t("sync.offline") }));
+  fireEvent.click(await screen.findByRole("button", { name: t("sync.short.offline") }));
   const sheet = await screen.findByRole("dialog", { name: t("sync.sheet.title") });
   expect(within(sheet).getByText(t("sync.offline"))).toBeTruthy();
   expect(
@@ -73,7 +73,7 @@ test("an unreadable stored change is counted, listed, and can be discarded", asy
   renderRoute(app, "/survey");
   const banner = await screen.findByRole("status");
   expect(within(banner).getByText(t("home.unreadable_one"))).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: t("sync.unreadable_one") }));
+  fireEvent.click(screen.getByRole("button", { name: t("sync.short.unreadable", { count: 1 }) }));
   const sheet = await screen.findByRole("dialog", { name: t("sync.sheet.title") });
   fireEvent.click(await within(sheet).findByRole("button", { name: t("common.discard") }));
   fireEvent.click(await screen.findByRole("button", { name: t("failed.discard") }));
@@ -86,7 +86,9 @@ test("the sync sheet never says everything is on the server while unreadable wri
   await app.cache.set("outbox:w:broken", "{not json");
   vi.spyOn(app.deps.outbox, "unreadableKeys").mockRejectedValue(new Error("idb down"));
   renderRoute(app, "/survey");
-  fireEvent.click(await screen.findByRole("button", { name: t("sync.unreadable_one") }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: t("sync.short.unreadable", { count: 1 }) }),
+  );
   const sheet = await screen.findByRole("dialog", { name: t("sync.sheet.title") });
   expect(within(sheet).queryByText(t("sync.sheet.empty"))).toBeNull();
 });

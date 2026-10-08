@@ -1,6 +1,6 @@
 import type { SyncHeader } from "@study-spot/ui-logic";
 import { CircleAlert, Cloud, CloudCheck, CloudOff, type LucideIcon, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useSyncHeader } from "../hooks/useOutbox.ts";
 import { headerLong, headerText } from "../lib/format.ts";
 import { IconButton } from "../ui/Button.tsx";
@@ -31,6 +31,7 @@ function iconFor(h: SyncHeader): LucideIcon {
  */
 export function SyncStatus(props: { variant: "icon" | "bar" }) {
   const header = useSyncHeader();
+  const descId = useId();
   const [open, setOpen] = useState(false);
   const icon = iconFor(header);
   const long = headerLong(header);
@@ -49,16 +50,19 @@ export function SyncStatus(props: { variant: "icon" | "bar" }) {
         <button
           type="button"
           className={`btn btn--ghost sync sync--bar${trouble ? " sync--trouble" : ""}${spin ? " sync--busy" : ""}`}
-          aria-label={long}
+          aria-describedby={descId}
           aria-haspopup="dialog"
           onClick={() => setOpen(true)}
         >
           <Icon icon={icon} />
-          <span className="btn__label" aria-hidden="true">
-            {headerText(header)}
-          </span>
+          <span className="btn__label">{headerText(header)}</span>
         </button>
       )}
+      {props.variant === "bar" ? (
+        <span id={descId} className="visually-hidden">
+          {long}
+        </span>
+      ) : null}
       <SyncSheet open={open} onClose={() => setOpen(false)} />
     </>
   );

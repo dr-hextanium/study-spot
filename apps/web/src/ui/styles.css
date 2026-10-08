@@ -1315,6 +1315,7 @@ div.row {
 
 .stepbar {
   display: flex;
+  align-items: center;
   gap: 6px;
   padding-top: 6px;
 }
@@ -1330,7 +1331,9 @@ div.row {
   background: var(--color-ink);
 }
 
+/* Taller as well as red, so the current step is not shown by color alone. */
 .stepbar__step--current {
+  height: 6px;
   background: var(--color-red);
 }
 
