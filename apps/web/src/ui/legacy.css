@@ -1,0 +1,36 @@
+/* Temporary: pre-redesign variables mapped onto Seawolf. Deleted in the last redesign task. */
+:root {
+  --color-background: var(--color-paper);
+  --color-surface: var(--color-mist);
+  --color-text: var(--color-ink);
+  --color-textMuted: var(--color-muted);
+  --color-border: var(--color-line);
+  --color-borderStrong: var(--color-edge);
+  --color-accent: var(--color-ink);
+  --color-onAccent: var(--color-paper);
+  --color-success: var(--color-ink);
+  --color-warning: var(--color-red);
+  --color-danger: var(--color-red);
+  --color-focus: var(--color-red);
+  --color-onSuccess: var(--color-paper);
+  --color-onWarning: var(--color-onRed);
+  --color-onDanger: var(--color-onRed);
+  --color-shell: var(--color-ink);
+  --color-onShell: var(--color-paper);
+  --color-focusOnShell: var(--color-paper);
+  --color-airmail: var(--color-ink);
+  --fontSize-title: 20px;
+  --fontSize-heading: 24px;
+  --fontSize-display: 32px;
+  --space-line: 44px;
+  --radius-none: 0px;
+  --radius-card: 4px;
+  --radius-control: 4px;
+  --size-line: 44px;
+  --size-header: 48px;
+  --size-postmark: 36px;
+  --size-rule: 1px;
+  --duration-stamp: 160ms;
+  --easing-stamp: cubic-bezier(0.3, 1.4, 0.5, 1);
+  --easing-exit: cubic-bezier(0.4, 0, 1, 1);
+}

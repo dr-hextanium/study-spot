@@ -11,7 +11,8 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@fontsource/public-sans": "^5.3.0",
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
     "@study-spot/core": "workspace:*",
     "@study-spot/ui-logic": "workspace:*",
     "@tanstack/query-async-storage-persister": "^5.104.1",
