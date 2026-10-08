@@ -13,6 +13,7 @@ import {
   CalendarCheck,
   Camera,
   Check,
+  ChevronRight,
   CircleAlert,
   CircleCheck,
   Ellipsis,
@@ -334,11 +335,13 @@ function Ready(props: {
             {readiness.missing.map(({ field, section }) => {
               const text = t("spot.publish.blocked.item", { field: fieldLabel(field) });
               return section === null ? (
-                <Row key={field} title={text} />
+                <Row key={field} title={text} lead={<Icon icon={CalendarCheck} />} />
               ) : (
                 <Row
                   key={field}
                   title={text}
+                  lead={<Icon icon={SECTION_ICON[section]} />}
+                  end={<Icon icon={ChevronRight} />}
                   link={{ to: "/survey/spots/$id/$section", params: { id: spot.id, section } }}
                 />
               );
