@@ -442,6 +442,7 @@ select {
 
 .segmented__option input {
   position: absolute;
+  z-index: 1;
   inset: 0;
   opacity: 0;
   margin: 0;
@@ -653,6 +654,7 @@ select {
 
 .tag input {
   position: absolute;
+  z-index: 1;
   inset: 0;
   opacity: 0;
   margin: 0;
@@ -719,6 +721,7 @@ select {
 
 .check input {
   position: absolute;
+  z-index: 1;
   inset: 0;
   opacity: 0;
   margin: 0;
