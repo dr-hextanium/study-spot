@@ -1,6 +1,7 @@
 import { t } from "@study-spot/ui-logic";
-import { Minus, Plus } from "lucide-react";
+import { CircleAlert, type LucideIcon, Minus, Plus } from "lucide-react";
 import { useEffect, useId, useState } from "react";
+import { Icon } from "./Icon.tsx";
 
 type Props = {
   label: string;
@@ -13,6 +14,7 @@ type Props = {
   suffix?: string;
   helper?: string | undefined;
   error?: string | undefined;
+  icon?: LucideIcon | undefined;
 };
 
 /** A number with Less and More buttons, and a keypad field for typing it outright. */
@@ -26,6 +28,7 @@ export function Stepper({
   suffix,
   helper,
   error,
+  icon,
 }: Props) {
   const inputId = useId();
   const labelId = useId();
@@ -59,6 +62,7 @@ export function Stepper({
   return (
     <fieldset className={`field stepper${error === undefined ? "" : " field--error"}`}>
       <legend className="label field__label" id={labelId}>
+        {icon === undefined ? null : <Icon icon={icon} size={16} />}
         {label}
       </legend>
       <div className="stepper__row">
@@ -69,7 +73,7 @@ export function Stepper({
           disabled={value !== null && value <= min}
           onClick={() => bump(-1)}
         >
-          <Minus aria-hidden="true" size={20} strokeWidth={2.25} />
+          <Icon icon={Minus} />
         </button>
         <input
           id={inputId}
@@ -95,11 +99,12 @@ export function Stepper({
           disabled={value !== null && value >= max}
           onClick={() => bump(1)}
         >
-          <Plus aria-hidden="true" size={20} strokeWidth={2.25} />
+          <Icon icon={Plus} />
         </button>
       </div>
       {error !== undefined ? (
         <p className="field__error" id={helpId}>
+          <Icon icon={CircleAlert} size={16} />
           {error}
         </p>
       ) : helper !== undefined ? (

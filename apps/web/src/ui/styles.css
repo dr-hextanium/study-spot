@@ -313,104 +313,131 @@ select {
   color: var(--color-textMuted);
 }
 
-/* Fields: printed label on the rule, ballpoint entry */
+/* Fields: icon + label above, paper input, hairline below */
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xxs);
+  gap: var(--space-xs);
   min-width: 0;
   margin: 0;
-  padding: 0 0 var(--space-xs);
+  padding: var(--space-md) 0;
   border: 0;
-  border-bottom: var(--size-rule) solid var(--color-border);
+  border-bottom: 1px solid var(--color-line);
 }
 
 .field__label {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
   gap: var(--space-xs);
-  padding: var(--space-xs) 0 0;
+  padding: 0;
+  color: var(--color-ink);
+  font-size: var(--fontSize-label);
+  font-weight: 600;
+}
+
+.field__label > svg {
+  flex: none;
+  color: var(--color-muted);
 }
 
 .field__optional {
-  color: var(--color-textMuted);
+  margin-left: auto;
+  color: var(--color-muted);
+  font-size: var(--fontSize-small);
   font-weight: 500;
-  letter-spacing: 0.04em;
 }
 
 .field__helper {
-  color: var(--color-textMuted);
+  color: var(--color-muted);
   font-size: var(--fontSize-small);
 }
 
 .field__error {
-  color: var(--color-danger);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--color-red);
   font-size: var(--fontSize-small);
   font-weight: 600;
 }
 
 .input {
   width: 100%;
-  min-height: var(--size-tapTarget);
+  min-height: var(--size-control);
   padding: var(--space-xs) var(--space-sm);
-  border: var(--size-rule) solid var(--color-borderStrong);
-  border-radius: var(--radius-control);
-  background: var(--color-background);
-  color: var(--color-accent);
-  font-size: var(--fontSize-body);
+  border: 1px solid var(--color-edge);
+  border-radius: var(--radius-m);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: var(--fontSize-input);
+  transition: border-color var(--duration-fast) var(--easing-standard);
 }
 
 .input::placeholder {
-  color: var(--color-textMuted);
+  color: var(--color-muted);
   opacity: 1;
 }
 
+@media (hover: hover) {
+  .input:hover:not(:focus-visible) {
+    background: var(--color-hover);
+  }
+}
+
 .input:focus-visible {
-  outline-offset: 0;
-  border-color: var(--color-focus);
+  outline: none;
+  border-color: var(--color-red);
+  box-shadow: 0 0 0 1px var(--color-red);
 }
 
 .input--multiline {
-  min-height: calc(var(--size-line) * 2);
+  min-height: calc(var(--size-control) * 2);
   resize: vertical;
   line-height: var(--lineHeight-body);
 }
 
 .field--error .input {
-  border-color: var(--color-danger);
-  border-width: 2px;
+  border-color: var(--color-red);
+  box-shadow: 0 0 0 1px var(--color-red);
 }
 
-/* Segmented control */
+/* Segmented control: a mist track, a paper thumb that glides after the press */
 
 .segmented__options {
-  display: flex;
-  border: var(--size-rule) solid var(--color-borderStrong);
-  border-radius: var(--radius-control);
-  overflow: hidden;
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  padding: 4px;
+  border-radius: var(--radius-m);
+  background: var(--color-mist);
+  isolation: isolate;
+  touch-action: manipulation;
 }
 
-.segmented--list .segmented__options {
-  flex-direction: column;
-  border: 0;
-  border-radius: 0;
+.segmented__thumb {
+  position: absolute;
+  z-index: -1;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / var(--n, 1));
+  transform: translateX(calc(var(--i, 0) * 100%));
+  border-radius: 9px;
+  background: var(--color-paper);
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--color-ink) 12%, transparent);
+  transition: transform 180ms var(--easing-standard);
+}
+
+[data-empty] > .segmented__thumb {
+  opacity: 0;
 }
 
 .segmented__option {
   position: relative;
-  flex: 1 1 0;
   min-width: 0;
   display: flex;
-}
-
-.segmented__option + .segmented__option {
-  border-left: var(--size-rule) solid var(--color-borderStrong);
-}
-
-.segmented--list .segmented__option + .segmented__option {
-  border-left: 0;
-  border-top: var(--size-rule) solid var(--color-border);
 }
 
 .segmented__option input {
@@ -426,19 +453,42 @@ select {
   display: grid;
   place-items: center;
   min-height: var(--size-tapTarget);
-  padding: var(--space-xxs) var(--space-xs);
+  padding: 0 var(--space-xs);
+  border-radius: 9px;
+  color: var(--color-muted);
   text-align: center;
-  font-size: var(--fontSize-small);
+  font-size: var(--fontSize-label);
   font-weight: 600;
   line-height: var(--lineHeight-tight);
+  transition:
+    color var(--duration-fast) var(--easing-standard),
+    background-color var(--duration-fast) var(--easing-standard),
+    transform var(--duration-fast) var(--easing-standard);
+}
+
+/* Long options stack as ruled radio rows, no thumb */
+
+.segmented--list .segmented__options {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.segmented--list .segmented__option + .segmented__option {
+  border-top: 1px solid var(--color-line);
 }
 
 .segmented--list .segmented__option span {
   place-items: center start;
+  min-height: 48px;
+  padding-left: calc(var(--space-lg) + var(--space-sm));
+  border-radius: var(--radius-s);
+  color: var(--color-ink);
   text-align: left;
   font-size: var(--fontSize-body);
   font-weight: 500;
-  padding-left: calc(var(--space-lg) + var(--space-xs));
 }
 
 .segmented--list .segmented__option span::before {
@@ -446,99 +496,280 @@ select {
   position: absolute;
   left: 2px;
   top: 50%;
-  width: 18px;
-  height: 18px;
-  margin-top: -9px;
-  border: 2px solid var(--color-borderStrong);
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  border: 1.5px solid var(--color-edge);
   border-radius: 50%;
-}
-
-.segmented__option input:focus-visible + span {
-  outline: 2px solid var(--color-focus);
-  outline-offset: -4px;
-}
-
-.segmented__option input:checked + span {
-  background: var(--color-accent);
-  color: var(--color-onAccent);
-}
-
-.segmented--list .segmented__option input:checked + span {
-  background: transparent;
-  color: var(--color-accent);
+  transition: background-color var(--duration-fast) var(--easing-standard);
 }
 
 .segmented--list .segmented__option input:checked + span::before {
-  border-color: var(--color-accent);
-  background: radial-gradient(circle, var(--color-accent) 0 4px, transparent 5px);
+  border-color: var(--color-ink);
+  background: radial-gradient(circle, var(--color-paper) 0 3px, var(--color-ink) 3.5px);
+}
+
+@media (hover: hover) {
+  .segmented--list .segmented__option:hover input + span {
+    background: var(--color-hover);
+  }
+}
+
+.segmented__option input:focus-visible + span {
+  outline: 2px solid var(--color-red);
+  outline-offset: -2px;
+}
+
+.segmented__option input:checked + span {
+  color: var(--color-ink);
+}
+
+.segmented__option:active input:not(:checked) + span {
+  color: var(--color-ink);
+  transform: scale(var(--press-control));
+}
+
+@media (hover: hover) {
+  .segmented__option:hover input:not(:checked) + span {
+    color: var(--color-ink);
+    background: color-mix(in oklab, var(--color-paper) 45%, transparent);
+  }
 }
 
 /* Stepper */
 
 .stepper__row {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  align-self: flex-start;
   gap: var(--space-xs);
+  padding: 4px;
+  border-radius: var(--radius-m);
+  background: var(--color-mist);
 }
 
 .stepper__btn {
+  position: relative;
   flex: none;
   display: grid;
   place-items: center;
-  width: var(--size-tapTarget);
-  height: var(--size-tapTarget);
-  border: var(--size-rule) solid var(--color-borderStrong);
-  border-radius: var(--radius-control);
-  background: var(--color-background);
-  color: var(--color-text);
+  width: var(--size-thumb);
+  height: var(--size-thumb);
+  border: 0;
+  border-radius: var(--radius-s);
+  background: var(--color-paper);
+  color: var(--color-ink);
   cursor: pointer;
+  transition:
+    transform var(--duration-fast) var(--easing-standard),
+    background-color var(--duration-fast) var(--easing-standard);
+}
+
+.stepper__btn::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+}
+
+.stepper__btn:active:not(:disabled) {
+  transform: scale(var(--press-control));
+  background: var(--color-mistHover);
+}
+
+@media (hover: hover) {
+  .stepper__btn:hover:not(:disabled) {
+    background: var(--color-hover);
+  }
+}
+
+.stepper__btn:focus-visible {
+  outline: 2px solid var(--color-red);
+  outline-offset: 2px;
 }
 
 .stepper__btn:disabled {
-  color: var(--color-textMuted);
-  border-color: var(--color-border);
+  color: var(--color-muted);
+  opacity: 0.55;
   cursor: default;
 }
 
-.stepper__input {
-  width: 6.5rem;
+.stepper__input.input {
+  width: 64px;
+  min-height: var(--size-thumb);
+  padding: 0 4px;
+  border-color: transparent;
+  background: transparent;
   text-align: center;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: var(--fontSize-figure);
+  font-variant-numeric: tabular-nums;
+}
+
+.stepper__input.input:focus-visible {
+  border-color: var(--color-red);
+  background: var(--color-paper);
 }
 
 .stepper__unit {
-  color: var(--color-accent);
+  padding-right: var(--space-xs);
+  color: var(--color-muted);
   font-weight: 600;
 }
 
-/* Checkbox line */
+/* Tag groups and tag toggles */
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.tag {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--color-edge);
+  border-radius: var(--radius-pill);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: var(--fontSize-label);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--easing-standard),
+    color var(--duration-fast) var(--easing-standard),
+    border-color var(--duration-fast) var(--easing-standard),
+    transform var(--duration-fast) var(--easing-standard);
+}
+
+.tag::before {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+
+.tag input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.tag:has(input:checked) {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+.tag:active {
+  transform: scale(var(--press-control));
+}
+
+@media (hover: hover) {
+  .tag:hover:not(:has(input:checked)) {
+    background: var(--color-hover);
+  }
+
+  .tag:hover:has(input:checked) {
+    background: var(--color-inkHover);
+  }
+}
+
+.tag:has(input:focus-visible) {
+  outline: 2px solid var(--color-red);
+  outline-offset: 2px;
+}
+
+/* Checkbox row: label left, switch right */
 
 .check {
   position: relative;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-sm);
-  min-height: var(--size-line);
-  padding: var(--space-sm) 0;
-  border-bottom: var(--size-rule) solid var(--color-border);
+  min-height: 48px;
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid var(--color-line);
   cursor: pointer;
-}
-
-.check input {
-  flex: none;
-  width: 22px;
-  height: 22px;
-  margin: 1px 0 0;
+  transition: background-color var(--duration-fast) var(--easing-standard);
 }
 
 .check__text {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
 .check__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
   font-weight: 600;
+}
+
+.check__label > svg {
+  flex: none;
+  color: var(--color-muted);
+}
+
+.check input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.check__switch {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  background: var(--color-mist);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+  transition: background-color var(--duration-base) var(--easing-standard);
+}
+
+.check__switch::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  transition: transform var(--duration-base) var(--easing-standard);
+}
+
+.check input:checked ~ .check__switch {
+  background: var(--color-ink);
+}
+
+.check input:checked ~ .check__switch::before {
+  background: var(--color-paper);
+  transform: translateX(18px);
+}
+
+@media (hover: hover) {
+  .check:hover .check__switch {
+    background: var(--color-mistHover);
+  }
+
+  .check:hover input:checked ~ .check__switch {
+    background: var(--color-inkHover);
+  }
+}
+
+.check:has(input:focus-visible) .check__switch {
+  outline: 2px solid var(--color-red);
+  outline-offset: 2px;
 }
 
 /* Buttons */

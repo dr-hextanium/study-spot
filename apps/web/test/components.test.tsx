@@ -5,6 +5,7 @@ import { expect, test, vi } from "vitest";
 import { dateTime, headerText, postmarkState, shortDate } from "../src/lib/format.ts";
 import { Banner } from "../src/ui/Banner.tsx";
 import { Button } from "../src/ui/Button.tsx";
+import { Check } from "../src/ui/Check.tsx";
 import { TextField } from "../src/ui/Field.tsx";
 import { Postmark } from "../src/ui/Postmark.tsx";
 import { LegacyScreen } from "../src/ui/Screen.tsx";
@@ -215,4 +216,67 @@ test("the pinned action sits inside a landmark, so no content is left outside on
   const landmark = screen.getByRole("contentinfo");
   expect(landmark.className).toContain("pinned");
   expect(landmark.querySelector("button")?.textContent).toBe("New spot");
+});
+
+function Harness(props: { initial: "a" | "b" | null; onCommit: (v: "a" | "b") => void }) {
+  const [v, setV] = useState(props.initial);
+  return (
+    <Segmented
+      label="Pick"
+      options={[
+        { value: "a", label: "A" },
+        { value: "b", label: "B" },
+      ]}
+      value={v}
+      onChange={(x) => {
+        props.onCommit(x);
+        setV(x);
+      }}
+    />
+  );
+}
+
+test("segmented shows the choice on pointerdown and commits once on pointerup", () => {
+  const commit = vi.fn();
+  render(<Harness initial="a" onCommit={commit} />);
+  const b = screen.getByRole("radio", { name: "B" });
+  const label = b.closest("label");
+  if (label === null) throw new Error("no label");
+  fireEvent.pointerDown(label, { isPrimary: true, button: 0, pointerId: 1 });
+  expect((b as HTMLInputElement).checked).toBe(true);
+  expect(commit).not.toHaveBeenCalled();
+  fireEvent.pointerUp(label, { isPrimary: true, button: 0, pointerId: 1 });
+  expect(commit).toHaveBeenCalledTimes(1);
+  expect(commit).toHaveBeenCalledWith("b");
+  fireEvent.click(b);
+  expect(commit).toHaveBeenCalledTimes(1);
+});
+
+test("a cancelled press (a scroll) puts the choice back and commits nothing, even when empty", () => {
+  for (const initial of ["a", null] as const) {
+    const commit = vi.fn();
+    const { unmount } = render(<Harness initial={initial} onCommit={commit} />);
+    const b = screen.getByRole("radio", { name: "B" });
+    const label = b.closest("label");
+    if (label === null) throw new Error("no label");
+    fireEvent.pointerDown(label, { isPrimary: true, button: 0, pointerId: 2 });
+    expect((b as HTMLInputElement).checked).toBe(true);
+    fireEvent.pointerCancel(window, { pointerId: 2 });
+    expect((b as HTMLInputElement).checked).toBe(false);
+    expect(commit).not.toHaveBeenCalled();
+    unmount();
+  }
+});
+
+test("keyboard and assistive tech still choose through the native radio", () => {
+  const commit = vi.fn();
+  render(<Harness initial="a" onCommit={commit} />);
+  fireEvent.click(screen.getByRole("radio", { name: "B" }));
+  expect(commit).toHaveBeenCalledWith("b");
+});
+
+test("tag checks are native checkboxes with a 44 px hit area class", () => {
+  render(<Check variant="tag" label="Carrels" checked={false} onChange={() => {}} />);
+  const box = screen.getByRole("checkbox", { name: "Carrels" });
+  expect(box.closest("label")?.className).toContain("tag");
 });
