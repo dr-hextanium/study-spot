@@ -143,7 +143,7 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | spot.status.unreviewed | Unreviewed | 12 | chip |
 | spot.status.reviewed | Reviewed by {name} | 30 | chip |
 | spot.group.required | Needed to publish | 20 | section group heading |
-| spot.group.extras | Photos and busyness | 22 | |
+| spot.group.extras | Extras | 10 | |
 | spot.group.optional | Optional now | 16 | |
 | spot.section.missing | Missing | 10 | section state |
 | spot.section.partial | Partly done | 12 | |
@@ -579,6 +579,21 @@ Strings the built screens needed beyond the sections above: short header forms f
 | home.checked | Checked {date} | 20 | row subtitle under an attention fact |
 | home.fact.draft | Draft | 8 | progress unknown |
 | progress.label | {done} of {total} done | 20 | step bar accessible name |
+| spot.progress.next | {done} of {total} · Next: {section} | 40 | under the step bar |
+| spot.progress.complete | {done} of {total} done | 20 | |
+| spot.next | Next: {section} | 30 | action bar, ink |
+| spot.meta.floor | Floor {floor} | 16 | |
+| spot.publish.blocked.reason | Can't publish yet: {count} missing | 36 | described-by of the disabled Publish |
+| spot.actions.next_missing | Open next missing: {section} | 44 | Actions sheet |
+| spot.actions.add_photo | Add a photo | 14 | Actions sheet |
+| spot.actions.walk | Check each section | 20 | Actions sheet; opens each needed section in turn |
+| spot.actions.walk.hint | Open every needed section, one after another | 44 | under Check each section |
+| spot.fact.seats | {count} seats | 12 | |
+| spot.fact.outlets | {percent}% near outlets | 22 | |
+| spot.fact.hours | {term} hours | 22 | |
+| spot.fact.blocks | {count} of {total} blocks | 20 | busyness |
+| spot.fact.photos_one | 1 photo | 10 | |
+| spot.fact.photos | {count} photos | 12 | |
 
 ## Pending questions
 

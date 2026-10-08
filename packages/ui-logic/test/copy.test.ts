@@ -24,6 +24,7 @@ const SAMPLE: Readonly<Record<string, string>> = {
   done: "4",
   field: "outlet coverage",
   fields: "directions, seat count",
+  floor: "2",
   meters: "120",
   minutes: "15",
   name: "Jordan Rivera",
