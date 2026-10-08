@@ -117,7 +117,10 @@ test("rows show the fact, or a red Missing, and the step line says what is next"
       selector: ".progress-line",
     }),
   ).toBeTruthy();
-  expect(screen.getByRole("img", { name: /of 6 done|of \d done/ })).toBeTruthy();
+  const bar = screen.getByRole("img", { name: /^\d of 6 done$/ });
+  // DRAFT lacks directions (Basics) and seat count (Seating); the other four are done.
+  expect(bar.getAttribute("aria-label")).toBe("4 of 6 done");
+  expect(document.querySelector(".progress-line")?.textContent?.startsWith("4 of 6")).toBe(true);
   expect(screen.getByRole("region", { name: t("spot.group.required") })).toBeTruthy();
   expect(screen.getByRole("region", { name: t("spot.group.extras") })).toBeTruthy();
 });

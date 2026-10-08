@@ -108,6 +108,9 @@ test("a refusal banner is an alert and a note is a status", () => {
   );
   expect(screen.getByRole("alert").textContent).toBe("No");
   expect(screen.getByRole("status").textContent).toBe("Heads up");
+  // A refusal carries an icon by default; a note stays plain.
+  expect(screen.getByRole("alert").querySelector("svg.banner__icon")).not.toBeNull();
+  expect(screen.getByRole("status").querySelector("svg")).toBeNull();
 });
 
 test("the header postmark uses the short forms that fit a 360 px phone", () => {
