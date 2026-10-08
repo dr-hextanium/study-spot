@@ -1342,9 +1342,9 @@ div.row {
 .keep {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-top: 6px;
-  padding: 16px;
+  gap: var(--space-sm);
+  margin-top: var(--space-xxs);
+  padding: var(--space-md);
   border: var(--size-rule) solid var(--color-line);
   border-radius: var(--radius-l);
   color: inherit;
@@ -1380,6 +1380,7 @@ div.row {
 
 .keep__name {
   font-family: var(--font-display);
+  /* 21 px: the spec's Newsreader 21 for the pick's name, between group (20) and figure (22). */
   font-size: 21px;
   line-height: var(--lineHeight-snug);
 }
@@ -1394,10 +1395,10 @@ div.row {
 .search {
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 44px;
-  margin-top: 14px;
-  padding: 0 12px;
+  gap: var(--space-xs);
+  height: var(--size-tapTarget);
+  margin-top: var(--space-sm);
+  padding: 0 var(--space-sm);
   border-radius: var(--radius-m);
   background: var(--color-mist);
   color: var(--color-muted);
@@ -1423,13 +1424,16 @@ div.row {
 }
 
 .chips {
+  /* Drawn 32 px; the ::before below makes the hit area 44 px. */
+  --chip-h: 32px;
   display: flex;
   min-width: auto;
   margin-block: 0;
   border: 0;
-  gap: 6px;
+  gap: var(--space-xxs);
   margin-inline: calc(var(--space-gutter) * -1);
-  padding: 10px var(--space-gutter) 4px;
+  /* Block padding at least as large as the 6 px hit-area overhang, or the row scrolls vertically. */
+  padding: var(--space-xs) var(--space-gutter);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -1443,9 +1447,9 @@ div.row {
   flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 12px;
+  gap: var(--space-xxs);
+  height: var(--chip-h);
+  padding: 0 var(--space-sm);
   border: var(--size-rule) solid var(--color-line);
   border-radius: var(--radius-pill);
   background: transparent;
@@ -1457,11 +1461,10 @@ div.row {
     transform var(--duration-fast) var(--easing-standard);
 }
 
-/* Drawn 32 px, hit 44 px. */
 .chip::before {
   content: "";
   position: absolute;
-  inset: -6px 0;
+  inset: calc((var(--chip-h) - var(--size-tapTarget)) / 2) 0;
 }
 
 .chip:active {

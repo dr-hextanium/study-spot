@@ -1,5 +1,12 @@
+import { tokens } from "@study-spot/ui-logic";
 import { draftSpot, tokenOf } from "./api.ts";
 import { expect, pinClock, signIn, test } from "./fixtures.ts";
+
+/** "#151313" as the computed-style form "rgb(21, 19, 19)". */
+function rgb(hex: string): string {
+  const n = Number.parseInt(hex.slice(1), 16);
+  return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`;
+}
 
 test("an invite link signs this phone in and lands on the spot list", async ({ page }) => {
   await signIn(page);
@@ -22,6 +29,9 @@ test("at 360 px nothing scrolls sideways and the sync status stays on screen", a
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBe(0);
+  // The chips' 44 px hit areas must not make the row scroll vertically.
+  const chips = await page.locator(".chips").evaluate((e) => e.scrollHeight - e.clientHeight);
+  expect(chips).toBe(0);
   const mark = await page
     .locator(".actionbar")
     .getByRole("button", { name: "Offline" })
@@ -56,14 +66,14 @@ test("dark mode and reduced motion paint the shell in dark paper", async ({ brow
   await pinClock(page);
   await signIn(page);
   // Home is on the Seawolf shell: no ink band. Dark paper behind, a paper action bar, light ink on top.
-  const [bar, body, ink] = await page.evaluate(() => [
-    getComputedStyle(document.querySelector(".actionbar") ?? document.body).backgroundColor,
-    getComputedStyle(document.body).backgroundColor,
-    getComputedStyle(document.querySelector(".large-title") ?? document.body).color,
-  ]);
-  expect(body).toBe("rgb(21, 19, 19)");
+  await expect(page.locator(".actionbar")).toBeVisible();
+  await expect(page.locator(".large-title")).toBeVisible();
+  const bar = await page.locator(".actionbar").evaluate((e) => getComputedStyle(e).backgroundColor);
+  const ink = await page.locator(".large-title").evaluate((e) => getComputedStyle(e).color);
+  const body = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  expect(body).toBe(rgb(tokens.color.dark.paper));
   expect(bar).toBe(body);
-  expect(ink).toBe("rgb(238, 234, 232)");
+  expect(ink).toBe(rgb(tokens.color.dark.ink));
   const transition = await page.evaluate(() => {
     const probe = document.createElement("button");
     probe.className = "btn btn--primary";
