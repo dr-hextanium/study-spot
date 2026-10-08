@@ -15,6 +15,7 @@ import {
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { QueryClient } from "@tanstack/react-query";
 import type { Persister } from "@tanstack/react-query-persist-client";
+import { z } from "zod";
 import {
   browserIds,
   browserTimers,
@@ -123,8 +124,17 @@ export function resumeOnNewSession(deps: {
   });
 }
 
+/**
+ * Who the queued writes belong to after a sign-out cleared the session. Written only
+ * when the queue is not empty; the invite flow compares it with the next surveyor.
+ */
+export const OWNER_KEY = "outbox:owner";
+export const QueueOwner = z.object({ id: z.string(), display_name: z.string() });
+export type QueueOwner = z.infer<typeof QueueOwner>;
+
 /** Signs out: stop sending, drop cached server data, then drop the session. */
 export function createSignOut(deps: {
+  cache: KeyValueCache;
   session: SessionState;
   outbox: Outbox;
   queryClient: QueryClient;
@@ -132,6 +142,15 @@ export function createSignOut(deps: {
 }): () => Promise<void> {
   return async () => {
     deps.outbox.stop();
+    const me = deps.session.current();
+    if (me !== null && deps.outbox.getSnapshot().records.length > 0) {
+      const owner: QueueOwner = { id: me.surveyor.id, display_name: me.surveyor.display_name };
+      try {
+        await deps.cache.set(OWNER_KEY, JSON.stringify(owner));
+      } catch {
+        // Without the note the next join is not asked; the queue itself is untouched.
+      }
+    }
     deps.queryClient.clear();
     // The copy is a cache: a failed removal costs only a stale snapshot.
     try {
@@ -215,7 +234,7 @@ function buildAppDeps(env: { apiBaseUrl: string; dataBaseUrl: string }): AppDeps
     session,
     auth,
     outbox,
-    signOut: createSignOut({ session, outbox, queryClient, persister }),
+    signOut: createSignOut({ cache: stores.cache, session, outbox, queryClient, persister }),
     started: outbox.start(),
     queryClient,
     persister,

@@ -161,7 +161,7 @@ export function testApp(
     session,
     auth,
     outbox,
-    signOut: createSignOut({ session, outbox, queryClient, persister }),
+    signOut: createSignOut({ cache, session, outbox, queryClient, persister }),
     started: outbox.start(),
     queryClient,
     persister,

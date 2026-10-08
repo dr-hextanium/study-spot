@@ -3,6 +3,7 @@ import { t } from "@study-spot/ui-logic";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
+import { OWNER_KEY, QueueOwner } from "../app/deps.ts";
 import { useOnline } from "../hooks/useOnline.ts";
 import { useSession } from "../hooks/useSession.ts";
 import { isIos, isStandalone } from "../lib/platform.ts";
@@ -30,7 +31,7 @@ const PROBLEM_TEXT: Record<Exclude<Problem, null>, () => string> = {
  * would use it up.
  */
 export function Invite(props: { token: string; relogin: boolean }) {
-  const { api, session, outbox } = useDeps();
+  const { api, session, outbox, cache } = useDeps();
   const { join } = useSession();
   const navigate = useNavigate();
   const online = useOnline();
@@ -40,7 +41,7 @@ export function Invite(props: { token: string; relogin: boolean }) {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<Problem>(tokenOk ? null : "invalid");
   /** The server accepted the link (it is spent) but a different surveyor holds this phone's queue. */
-  const [held, setHeld] = useState<AcceptInviteResponse | null>(null);
+  const [held, setHeld] = useState<{ accepted: AcceptInviteResponse; owner: string } | null>(null);
   const ios = isIos(navigator) && !isStandalone(window);
 
   async function accept() {
@@ -56,12 +57,14 @@ export function Invite(props: { token: string; relogin: boolean }) {
     );
     setBusy(false);
     switch (res.kind) {
-      case "ok":
-        if (await holdsOtherQueue(res.value)) {
-          setHeld(res.value);
+      case "ok": {
+        const owner = await otherQueueOwner(res.value);
+        if (owner !== null) {
+          setHeld({ accepted: res.value, owner });
           return;
         }
         return finish(res.value);
+      }
       case "gone":
         return setProblem(
           res.code === "invite_expired"
@@ -85,29 +88,48 @@ export function Invite(props: { token: string; relogin: boolean }) {
   /**
    * The accept answer is the first place the surveyor's id shows, so this runs after the
    * server spent the link and before the session is saved: nothing is sent under the new
-   * token until the user chooses. An unknown queue (the read failed) counts as non-empty.
+   * token until the user chooses. The queue's owner is the stored session, or, after a
+   * sign-out, the note signOut left. Returns that owner's name when a different surveyor's
+   * writes are queued, else null. An unknown queue (the read failed) counts as non-empty.
    */
-  async function holdsOtherQueue(accepted: AcceptInviteResponse): Promise<boolean> {
+  async function otherQueueOwner(accepted: AcceptInviteResponse): Promise<string | null> {
     const stored = session.current();
-    if (stored === null || stored.surveyor.id === accepted.surveyor.id) return false;
+    let owner: { id: string; name: string } | null =
+      stored === null ? null : { id: stored.surveyor.id, name: stored.surveyor.display_name };
+    if (owner === null) {
+      try {
+        const raw = await cache.get(OWNER_KEY);
+        const parsed = raw === null ? null : QueueOwner.safeParse(JSON.parse(raw));
+        if (parsed?.success) owner = { id: parsed.data.id, name: parsed.data.display_name };
+      } catch {
+        // An unreadable note is no note.
+      }
+    }
+    if (owner === null || owner.id === accepted.surveyor.id) return null;
     try {
       await outbox.reload();
     } catch {
-      if (!outbox.getSnapshot().loaded) return true;
+      if (!outbox.getSnapshot().loaded) return owner.name;
     }
-    return outbox.getSnapshot().records.length > 0;
+    return outbox.getSnapshot().records.length > 0 ? owner.name : null;
   }
 
   async function finish(accepted: AcceptInviteResponse) {
     if (!join(accepted)) return setProblem("storage");
+    // The session is the owner again; the note from a sign-out is spent.
+    await cache.delete(OWNER_KEY).catch(() => undefined);
     await navigate({ to: "/survey", replace: true });
   }
 
   async function discardAndJoin(accepted: AcceptInviteResponse) {
     setBusy(true);
     try {
+      // Stop first and let a send already in flight end, so no old-token write lands after the choice.
+      outbox.stop();
+      await outbox.idle();
       await outbox.discardAll();
     } catch {
+      outbox.resume();
       setBusy(false);
       return setProblem("generic");
     }
@@ -156,10 +178,10 @@ export function Invite(props: { token: string; relogin: boolean }) {
       </Screen>
       <ConfirmSheet
         open={held !== null}
-        title={t("invite.switch.title", { name: session.current()?.surveyor.display_name ?? "" })}
+        title={t("invite.switch.title", { name: held?.owner ?? "" })}
         body={t("invite.switch.body", {
-          name: session.current()?.surveyor.display_name ?? "",
-          new: held?.surveyor.display_name ?? "",
+          name: held?.owner ?? "",
+          new: held?.accepted.surveyor.display_name ?? "",
         })}
         action={t("invite.switch.discard")}
         cancel={t("common.cancel")}
@@ -170,7 +192,7 @@ export function Invite(props: { token: string; relogin: boolean }) {
           void navigate({ to: "/survey", replace: true });
         }}
         onConfirm={() => {
-          if (held !== null) void discardAndJoin(held);
+          if (held !== null) void discardAndJoin(held.accepted);
         }}
       />
     </>

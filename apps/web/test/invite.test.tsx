@@ -186,3 +186,78 @@ test("a different surveyor joining a phone with an empty queue is not asked", as
   await waitFor(() => expect(view.router.state.location.pathname).toBe("/survey"));
   expect(app.deps.session.current()?.surveyor.display_name).toBe("Jordan");
 });
+
+test("Discard stops the outbox and waits for an in-flight send before dropping the queue", async () => {
+  const { app } = await switchSetup(OTHER);
+  const dialog = await screen.findByRole("dialog", {
+    name: t("invite.switch.title", { name: "Ana" }),
+  });
+  const order: string[] = [];
+  let release = () => {};
+  const gate = new Promise<void>((r) => {
+    release = r;
+  });
+  const { outbox } = app.deps;
+  vi.spyOn(outbox, "stop").mockImplementation(() => void order.push("stop"));
+  vi.spyOn(outbox, "idle").mockImplementation(async () => {
+    order.push("idle");
+    await gate;
+  });
+  const real = outbox.discardAll.bind(outbox);
+  vi.spyOn(outbox, "discardAll").mockImplementation(async () => {
+    order.push("discardAll");
+    await real();
+  });
+  fireEvent.click(within(dialog).getByRole("button", { name: t("invite.switch.discard") }));
+  await waitFor(() => expect(order).toEqual(["stop", "idle"]));
+  expect(outbox.getSnapshot().records).toHaveLength(1);
+  release();
+  await waitFor(() => expect(order).toEqual(["stop", "idle", "discardAll"]));
+  await waitFor(() => expect(app.deps.session.token()).toBe(NEW_TOKEN));
+});
+
+async function signedOutWithQueue(who: typeof ME) {
+  const spot = surveySpotFixture({ version: 3 });
+  const app = testApp({ spots: [spot] });
+  await app.deps.started;
+  app.deps.outbox.stop();
+  await app.deps.outbox.enqueue({ kind: "spot.section", spot_id: spot.id, payload: SEATING }, 3);
+  await app.deps.signOut();
+  const original = app.server.send.bind(app.server);
+  vi.spyOn(app.server, "send").mockImplementation(async (req) =>
+    req.url.endsWith("/auth/accept")
+      ? { status: 200, text: JSON.stringify({ token: NEW_TOKEN, surveyor: who }) }
+      : original(req),
+  );
+  const view = renderRoute(app, `${LINK}?relogin=1`);
+  return { app, view };
+}
+
+test("after a sign-out with a queue, a different surveyor is asked, naming the old owner", async () => {
+  const { app } = await signedOutWithQueue(OTHER);
+  expect(app.deps.session.current()).toBeNull();
+  expect(await app.cache.get("outbox:owner")).not.toBeNull();
+  fireEvent.click(await screen.findByRole("button", { name: t("invite.relogin.action") }));
+  const dialog = await screen.findByRole("dialog", {
+    name: t("invite.switch.title", { name: "Ana" }),
+  });
+  fireEvent.click(within(dialog).getByRole("button", { name: t("invite.switch.discard") }));
+  await waitFor(() => expect(app.deps.session.token()).toBe(NEW_TOKEN));
+  expect(app.deps.outbox.getSnapshot().records).toEqual([]);
+  expect(await app.cache.get("outbox:owner")).toBeNull();
+});
+
+test("after a sign-out with a queue, the same surveyor joins with no prompt and the key goes", async () => {
+  const { app, view } = await signedOutWithQueue(ME);
+  fireEvent.click(await screen.findByRole("button", { name: t("invite.relogin.action") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe("/survey"));
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(await app.cache.get("outbox:owner")).toBeNull();
+});
+
+test("signOut with an empty queue leaves no owner key", async () => {
+  const app = testApp();
+  await app.deps.started;
+  await app.deps.signOut();
+  expect(await app.cache.get("outbox:owner")).toBeNull();
+});
