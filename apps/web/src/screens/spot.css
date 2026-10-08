@@ -58,33 +58,9 @@
   font-weight: 600;
 }
 
+/* The "Can't publish yet" sheet: one 48 px row per blocker, links where a section can fix it. */
 .blockers {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xxs) var(--space-sm);
-  font-size: var(--fontSize-small);
-  /* One row and a half: the half row shows there is more to scroll to. */
-  max-height: calc(var(--size-tapTarget) * 1.5);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.blockers a {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--size-tapTarget);
-  color: var(--color-danger);
-  font-weight: 600;
-}
-
-.admin-actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  padding-top: var(--space-md);
+  margin-bottom: var(--space-xs);
 }
 
 .spot-name {

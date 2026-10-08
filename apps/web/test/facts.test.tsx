@@ -80,7 +80,7 @@ test("the row end: sync trouble beats missing, missing beats the fact", () => {
     [{ fill: "done" }, null, t("spot.section.done")],
   ];
   for (const [over, fact, text] of cases) {
-    const { unmount } = render(<>{sectionEnd(status(over), fact)}</>);
+    const { unmount } = render(sectionEnd(status(over), fact));
     expect(screen.getByText(text)).toBeTruthy();
     unmount();
   }

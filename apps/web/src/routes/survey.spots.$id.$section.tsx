@@ -13,6 +13,12 @@ type Ready = Extract<SpotViewState, { kind: "ready" }>;
 
 const Section = z.enum([...SURVEY_SECTION, "photos"]);
 
+/**
+ * `?walk=1` marks a guided walk over the sections needed to publish (started from
+ * the overview's Actions sheet). Anything else is ignored, never an error.
+ */
+const Search = z.object({ walk: z.literal(1).optional().catch(undefined) });
+
 export const Route = createFileRoute("/survey/spots/$id/$section")({
   params: {
     parse: (raw) => {
@@ -23,6 +29,7 @@ export const Route = createFileRoute("/survey/spots/$id/$section")({
     },
     stringify: (p) => ({ id: p.id, section: p.section }),
   },
+  validateSearch: Search,
   component: SectionRoute,
 });
 

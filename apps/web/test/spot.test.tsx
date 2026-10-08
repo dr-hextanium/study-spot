@@ -47,16 +47,129 @@ test("a new spot is created on the phone and opens its overview, then moves to i
   expect(created?.lat).toBe(40.9154);
 });
 
-test("an incomplete draft lists what is missing as links and cannot publish", async () => {
+/** Opens the Actions sheet from the action bar and returns it. */
+async function openActions() {
+  fireEvent.click(await screen.findByRole("button", { name: t("common.actions") }));
+  return screen.findByRole("dialog", { name: t("common.actions") });
+}
+
+test("a blocked draft: Publish stays focusable, says why, and lists every blocker", async () => {
   const app = testApp({ spots: [DRAFT] });
   renderRoute(app, at(DRAFT));
-  const missing = await screen.findByRole("link", {
+  const publish = await screen.findByRole("button", { name: t("spot.publish") });
+  expect(publish.getAttribute("aria-disabled")).toBe("true");
+  expect(publish).toHaveProperty("disabled", false);
+  const reason = document.getElementById(publish.getAttribute("aria-describedby") ?? "");
+  expect(reason?.textContent).toBe(t("spot.publish.blocked.reason", { count: 2 }));
+  fireEvent.click(publish);
+  const sheet = await screen.findByRole("dialog", { name: t("spot.publish.blocked.title") });
+  const seats = within(sheet).getByRole("link", {
     name: t("spot.publish.blocked.item", { field: t("field.seat_count") }),
   });
-  expect(missing.getAttribute("href")).toBe(`${at(DRAFT)}/seating`);
-  expect(screen.getByRole("button", { name: t("spot.publish") })).toHaveProperty("disabled", true);
+  expect(seats.getAttribute("href")).toBe(`${at(DRAFT)}/seating`);
+  // Directions are an identity field, so they link too; nothing queued by tapping Publish.
+  expect(
+    within(sheet).getByRole("link", {
+      name: t("spot.publish.blocked.item", { field: t("field.directions") }),
+    }),
+  ).toBeTruthy();
+  expect(app.deps.outbox.getSnapshot().records).toEqual([]);
+});
+
+test("a draft with no check at all names it as a blocker without a link", async () => {
+  const unchecked = surveySpotFixture({
+    status: "draft",
+    verified: {},
+    missing: ["last_verified"],
+  });
+  renderRoute(testApp({ spots: [unchecked] }), at(unchecked));
+  fireEvent.click(await screen.findByRole("button", { name: t("spot.publish") }));
+  const sheet = await screen.findByRole("dialog", { name: t("spot.publish.blocked.title") });
+  expect(
+    within(sheet).getByText(t("spot.publish.blocked.item", { field: t("field.last_verified") })),
+  ).toBeTruthy();
+  expect(within(sheet).queryByRole("link")).toBeNull();
+});
+
+test("the next button opens the first missing section", async () => {
+  const app = testApp({ spots: [DRAFT] });
+  const view = renderRoute(app, at(DRAFT));
+  // Directions (identity) come before seat count, so identity is the first section with a gap.
+  fireEvent.click(
+    await screen.findByRole("link", {
+      name: t("spot.next", { section: t("section.identity.name") }),
+    }),
+  );
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(DRAFT)}/identity`));
+});
+
+test("rows show the fact, or a red Missing, and the step line says what is next", async () => {
+  renderRoute(testApp({ spots: [DRAFT] }), at(DRAFT));
+  const seating = await screen.findByRole("link", { name: /Seating/ });
+  expect(within(seating).getByText(t("spot.section.missing"))).toBeTruthy();
   const required = screen.getByRole("region", { name: t("spot.group.required") });
-  expect(within(required).getAllByText(t("spot.section.missing")).length).toBeGreaterThan(0);
+  const identity = within(required).getAllByRole("link")[0];
+  expect(identity?.getAttribute("href")).toBe(`${at(DRAFT)}/identity`);
+  // Identity lacks directions, so it says Missing instead of showing a fact.
+  expect(within(identity as HTMLElement).getByText(t("spot.section.missing"))).toBeTruthy();
+  expect(
+    screen.getByText(new RegExp(`Next: ${t("section.identity.name")}`), {
+      selector: ".progress-line",
+    }),
+  ).toBeTruthy();
+  expect(screen.getByRole("img", { name: /of 6 done|of \d done/ })).toBeTruthy();
+  expect(screen.getByRole("region", { name: t("spot.group.required") })).toBeTruthy();
+  expect(screen.getByRole("region", { name: t("spot.group.extras") })).toBeTruthy();
+});
+
+test("a filled-in row shows its fact on the right", async () => {
+  const full = surveySpotFixture({ status: "draft", seat_count: 64, floor: "3" });
+  renderRoute(testApp({ spots: [full] }), at(full));
+  const seating = await screen.findByRole("link", { name: /Seating/ });
+  expect(within(seating).getByText("64 seats")).toBeTruthy();
+  expect(within(screen.getByRole("link", { name: /Basics/ })).getByText("Floor 3")).toBeTruthy();
+});
+
+test("every spot shows when it was last checked, or that it never was", async () => {
+  const checked = surveySpotFixture({
+    status: "published",
+    verified: { identity: "2026-09-01T15:00:00.000Z", seating: "2026-10-01T15:00:00.000Z" },
+  });
+  const never = surveySpotFixture({ status: "draft", verified: {}, missing: ["last_verified"] });
+  const first = renderRoute(testApp({ spots: [checked] }), at(checked));
+  expect(await screen.findByText(t("spot.section.verified", { date: "Sep 1" }))).toBeTruthy();
+  first.unmount();
+  renderRoute(testApp({ spots: [never] }), at(never));
+  expect(await screen.findByText(t("home.stale.never"))).toBeTruthy();
+});
+
+test("Actions lists next missing, a photo, and the guided walk", async () => {
+  const app = testApp({ spots: [DRAFT] });
+  const view = renderRoute(app, at(DRAFT));
+  const sheet = await openActions();
+  expect(
+    within(sheet).getByRole("link", {
+      name: t("spot.actions.next_missing", { section: t("section.identity.name") }),
+    }),
+  ).toBeTruthy();
+  expect(
+    within(sheet)
+      .getByRole("link", { name: t("spot.actions.add_photo") })
+      .getAttribute("href"),
+  ).toBe(`${at(DRAFT)}/photos`);
+  expect(within(sheet).queryByRole("button", { name: t("spot.unpublish") })).toBeNull();
+  fireEvent.click(within(sheet).getByRole("link", { name: new RegExp(t("spot.actions.walk")) }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(DRAFT)}/identity`));
+  // The walk only navigates: nothing was marked checked or queued, and the editor accepts the param.
+  expect(view.router.state.location.search).toEqual({ walk: 1 });
+  expect(app.deps.outbox.getSnapshot().records).toEqual([]);
+  expect(await screen.findByRole("button", { name: t("editor.save") })).toBeTruthy();
+});
+
+test("an unknown walk value is ignored, not an error", async () => {
+  const view = renderRoute(testApp({ spots: [DRAFT] }), `${at(DRAFT)}/identity?walk=banana`);
+  expect(await screen.findByRole("button", { name: t("editor.save") })).toBeTruthy();
+  expect(view.router.state.location.search).toEqual({});
 });
 
 test("a complete draft publishes through the queue and says so", async () => {
@@ -218,7 +331,8 @@ test("an admin unpublishes a published spot after confirming, online only", asyn
   const published = surveySpotFixture({ status: "published" });
   const app = testApp({ spots: [published], me: { ...ME, role: "admin" } });
   renderRoute(app, at(published));
-  fireEvent.click(await screen.findByRole("button", { name: t("spot.unpublish") }));
+  const sheet = await openActions();
+  fireEvent.click(within(sheet).getByRole("button", { name: t("spot.unpublish") }));
   const confirm = await screen.findByRole("dialog", {
     name: t("spot.unpublish.confirm.title", { name: published.official_name }),
   });
@@ -641,7 +755,7 @@ test("a write queued before the surveyor's own unpublish is not a conflict with 
     3,
   );
   renderRoute(app, at(published));
-  fireEvent.click(await screen.findByRole("button", { name: t("spot.unpublish") }));
+  fireEvent.click(within(await openActions()).getByRole("button", { name: t("spot.unpublish") }));
   const confirm = await screen.findByRole("dialog", {
     name: t("spot.unpublish.confirm.title", { name: published.official_name }),
   });

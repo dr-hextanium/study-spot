@@ -10,6 +10,8 @@ type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className"> & {
   variant?: ButtonVariant;
   /** Full width, for the action bar and sheet actions. */
   wide?: boolean;
+  /** Takes the free width of the action bar. */
+  grow?: boolean;
   icon?: ReactNode;
   trailingIcon?: ReactNode;
   children: ReactNode;
@@ -19,13 +21,16 @@ type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className"> & {
 export function Button({
   variant = "ink",
   wide = false,
+  grow = false,
   icon,
   trailingIcon,
   children,
   ...rest
 }: Props) {
   const name = variant === "secondary" ? "ink" : variant;
-  const cls = ["btn", `btn--${name}`, wide ? "btn--wide" : ""].filter(Boolean).join(" ");
+  const cls = ["btn", `btn--${name}`, wide ? "btn--wide" : "", grow ? "actionbar__main" : ""]
+    .filter(Boolean)
+    .join(" ");
   return (
     <button type="button" {...rest} className={cls}>
       {icon}
