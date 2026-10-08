@@ -392,7 +392,8 @@ export function syncHeader(s: OutboxSnapshot): SyncHeader {
   return s.syncing ? { kind: "syncing", count: waiting } : { kind: "pending", count: waiting };
 }
 
-type Row = { spotId: string; name: string };
+/** `coverPhotoId` is the spot's approved cover, for the thumbnail; null when none or only on this phone. */
+type Row = { spotId: string; name: string; coverPhotoId: string | null };
 export type AttentionRow = Row &
   (
     | { reason: "conflict" }
@@ -453,38 +454,52 @@ export function surveyHome(
     const seqs = records.filter((r) => r.spot_id === spotId).map((r) => r.seq);
     return seqs.length === 0 ? null : Math.max(...seqs);
   };
-  const flag = (spotId: string, name: string): boolean => {
+  const flag = (spotId: string, name: string, coverPhotoId: string | null): boolean => {
     const mine = records.filter((r) => r.spot_id === spotId);
     if (mine.some((r) => r.state === "conflict")) {
-      attention.push({ spotId, name, reason: "conflict" });
+      attention.push({ spotId, name, coverPhotoId, reason: "conflict" });
       return true;
     }
     const failed = mine.filter((r) => r.state === "failed").length;
-    if (failed > 0) attention.push({ spotId, name, reason: "failed", count: failed });
+    if (failed > 0) attention.push({ spotId, name, coverPhotoId, reason: "failed", count: failed });
     return failed > 0;
   };
 
   for (const s of list?.spots ?? []) {
     const name = nameOf(s.id, s.official_name);
-    if (!flag(s.id, name)) {
+    const coverPhotoId = s.cover_photo_id;
+    if (!flag(s.id, name, coverPhotoId)) {
       if (
         s.review_state === "unreviewed" &&
         s.last_edited_by !== null &&
         s.last_edited_by !== me.id &&
         s.last_edited_by_name !== null
       ) {
-        attention.push({ spotId: s.id, name, reason: "unreviewed", editor: s.last_edited_by_name });
+        attention.push({
+          spotId: s.id,
+          name,
+          coverPhotoId,
+          reason: "unreviewed",
+          editor: s.last_edited_by_name,
+        });
       } else if (s.status === "published" && !s.hours_confirmed && term !== null) {
-        attention.push({ spotId: s.id, name, reason: "hours_unconfirmed", term: term.name });
+        attention.push({
+          spotId: s.id,
+          name,
+          coverPhotoId,
+          reason: "hours_unconfirmed",
+          term: term.name,
+        });
       }
     }
     if (s.status === "published") {
-      stale.push({ spotId: s.id, name, oldestVerifiedAt: s.oldest_verified_at });
+      stale.push({ spotId: s.id, name, coverPhotoId, oldestVerifiedAt: s.oldest_verified_at });
     } else {
       const detail = details.get(s.id) ?? null;
       drafts.push({
         spotId: s.id,
         name,
+        coverPhotoId,
         localOnly: false,
         progress: progressOf(buildSpotView(detail, records, s.id, term)),
         updatedAt: s.updated_at,
@@ -496,10 +511,11 @@ export function surveyHome(
   for (const r of records) {
     if (r.kind !== "spot.create" || !isLocalId(r.spot_id)) continue;
     const name = nameOf(r.spot_id, r.payload.identity.official_name);
-    flag(r.spot_id, name);
+    flag(r.spot_id, name, null);
     drafts.push({
       spotId: r.spot_id,
       name,
+      coverPhotoId: null,
       localOnly: true,
       progress: progressOf(buildSpotView(null, records, r.spot_id, term)),
       updatedAt: null,

@@ -42,6 +42,7 @@ export type HomeFact =
 export type HomeRow = {
   spotId: string;
   name: string;
+  coverPhotoId: string | null;
   fact: HomeFact;
   checked: { at: string | null } | null;
 };
@@ -88,9 +89,13 @@ export function homeList(
   const q = normalize(opts.query.trim());
   const match = (r: { name: string }) => q === "" || normalize(r.name).includes(q);
   const checkedOf = new Map(home.stale.map((s) => [s.spotId, { at: s.oldestVerifiedAt }]));
-  const row = (r: { spotId: string; name: string }, fact: HomeFact): HomeRow => ({
+  const row = (
+    r: { spotId: string; name: string; coverPhotoId: string | null },
+    fact: HomeFact,
+  ): HomeRow => ({
     spotId: r.spotId,
     name: r.name,
+    coverPhotoId: r.coverPhotoId,
     fact,
     checked: checkedOf.get(r.spotId) ?? null,
   });

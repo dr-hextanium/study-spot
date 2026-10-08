@@ -1256,6 +1256,46 @@ div.row {
   color: var(--color-muted);
 }
 
+/* The slot is a zero-width box the observer can see; the negative margin cancels the row's gap until an image arrives. */
+.thumb-slot {
+  display: block;
+  flex: none;
+  width: 0;
+  height: 40px;
+  margin-inline-end: calc(var(--space-sm) * -1);
+}
+
+.thumb-slot:has(img) {
+  width: auto;
+  height: auto;
+  margin-inline-end: 0;
+}
+
+.thumb {
+  display: block;
+  object-fit: cover;
+  border-radius: var(--radius-s);
+  background: var(--color-mist);
+  transition: opacity var(--duration-base) var(--easing-standard);
+}
+
+@starting-style {
+  .thumb {
+    opacity: 0;
+  }
+}
+
+.thumb--row {
+  width: 40px;
+  height: 40px;
+}
+
+.thumb--card {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-m);
+}
+
 .pill {
   flex: none;
   display: inline-flex;

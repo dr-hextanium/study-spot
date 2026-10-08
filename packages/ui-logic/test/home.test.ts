@@ -5,6 +5,7 @@ const NOW = new Date("2026-10-07T16:00:00Z");
 const days = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString();
 const draft = (over: Partial<DraftRow> & { spotId: string; name: string }): DraftRow => ({
   localOnly: false,
+  coverPhotoId: null,
   progress: null,
   updatedAt: null,
   editedByMe: false,
@@ -21,7 +22,9 @@ test("due: never checked, unreadable, or checked more than 90 days ago", () => {
 });
 
 const HOME: SurveyHome = {
-  attention: [{ spotId: "a", name: "Melville Library, 2nd floor", reason: "conflict" }],
+  attention: [
+    { spotId: "a", name: "Melville Library, 2nd floor", reason: "conflict", coverPhotoId: null },
+  ],
   drafts: [
     draft({
       spotId: "d",
@@ -31,9 +34,9 @@ const HOME: SurveyHome = {
     draft({ spotId: "a", name: "Melville Library, 2nd floor" }),
   ],
   stale: [
-    { spotId: "n", name: "North Reading Room", oldestVerifiedAt: null },
-    { spotId: "o", name: "Old Lounge", oldestVerifiedAt: days(120) },
-    { spotId: "f", name: "Fresh Café", oldestVerifiedAt: days(2) },
+    { spotId: "n", name: "North Reading Room", oldestVerifiedAt: null, coverPhotoId: null },
+    { spotId: "o", name: "Old Lounge", oldestVerifiedAt: days(120), coverPhotoId: null },
+    { spotId: "f", name: "Fresh Café", oldestVerifiedAt: days(2), coverPhotoId: null },
   ],
   unreadable: 0,
 };
@@ -81,12 +84,32 @@ test("keep going: the draft with the newest write on this phone, else my latest 
   expect(keepGoing([])).toBeNull();
 });
 
+test("a row carries its cover to the list", () => {
+  const COVER = "5b0f7c1e-2b7a-4c39-9a51-3f6f4f0f2a21";
+  const home: SurveyHome = {
+    ...HOME,
+    stale: [{ spotId: "c", name: "Covered", oldestVerifiedAt: days(2), coverPhotoId: COVER }],
+    drafts: [draft({ spotId: "e", name: "Draft", coverPhotoId: COVER })],
+  };
+  const { rows } = homeList(home, { filter: "all", query: "", now: NOW });
+  expect(rows.map((r) => [r.spotId, r.coverPhotoId])).toEqual([
+    ["a", null],
+    ["e", COVER],
+    ["c", COVER],
+  ]);
+});
+
 test("a published spot keeps its check date when an attention fact leads", () => {
   const home: SurveyHome = {
     ...HOME,
     stale: [
       ...HOME.stale,
-      { spotId: "a", name: "Melville Library, 2nd floor", oldestVerifiedAt: days(40) },
+      {
+        spotId: "a",
+        name: "Melville Library, 2nd floor",
+        oldestVerifiedAt: days(40),
+        coverPhotoId: null,
+      },
     ],
   };
   const { rows } = homeList(home, { filter: "all", query: "", now: NOW });

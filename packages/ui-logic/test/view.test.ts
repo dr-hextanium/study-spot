@@ -215,12 +215,19 @@ function summary(over: Partial<SpotSummary>): SpotSummary {
   };
 }
 
+const COVER = "5b0f7c1e-2b7a-4c39-9a51-3f6f4f0f2a21";
+
 test("home: attention by urgency, oldest checks first, drafts with part counts", () => {
   const ids = (n: number) => `8d0f7c1e-2b7a-4c39-9a51-3f6f4f0f2a2${n}`;
   const list = {
     term: TERM,
     spots: [
-      summary({ id: ids(1), official_name: "Hours gap", hours_confirmed: false }),
+      summary({
+        id: ids(1),
+        official_name: "Hours gap",
+        hours_confirmed: false,
+        cover_photo_id: COVER,
+      }),
       summary({
         id: ids(2),
         official_name: "Bo's edit",
@@ -230,7 +237,7 @@ test("home: attention by urgency, oldest checks first, drafts with part counts",
       }),
       summary({ id: ids(3), official_name: "Broken" }),
       summary({ id: ids(4), official_name: "Never", oldest_verified_at: null }),
-      summary({ id: ids(5), official_name: "Draft", status: "draft" }),
+      summary({ id: ids(5), official_name: "Draft", status: "draft", cover_photo_id: COVER }),
     ],
   };
   const records = [section(ids(3), SEATING, { state: "failed" }), create(LOCAL)];
@@ -242,6 +249,10 @@ test("home: attention by urgency, oldest checks first, drafts with part counts",
     ["Hours gap", "hours_unconfirmed"],
   ]);
   expect(home.stale.map((r) => r.name)).toEqual(["Never", "Bo's edit", "Broken", "Hours gap"]);
+  // Covers ride along on every kind of row; a draft only on this phone has none.
+  expect(home.attention.map((r) => r.coverPhotoId)).toEqual([null, null, COVER]);
+  expect(home.stale.map((r) => r.coverPhotoId)).toEqual([null, null, null, COVER]);
+  expect(home.drafts.map((r) => r.coverPhotoId)).toEqual([COVER, null]);
   expect(home.drafts).toEqual([
     expect.objectContaining({
       spotId: ids(5),

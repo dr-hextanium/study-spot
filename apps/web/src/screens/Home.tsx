@@ -20,6 +20,7 @@ import { sectionName } from "../lib/format.ts";
 import { useHomeState } from "../lib/homeState.ts";
 import { Banner } from "../ui/Banner.tsx";
 import { IconButton } from "../ui/Button.tsx";
+import { CoverThumb } from "../ui/CoverThumb.tsx";
 import { FilterChips } from "../ui/FilterChips.tsx";
 import { Icon } from "../ui/Icon.tsx";
 import { Row } from "../ui/Row.tsx";
@@ -133,6 +134,9 @@ export function Home(props: { spotLink?: SpotLinkFor; isAdmin: boolean }) {
       ) : null}
       {keep !== null && link !== undefined ? (
         <Link {...link(keep.spotId)} className="keep">
+          {keep.coverPhotoId === null ? null : (
+            <CoverThumb photoId={keep.coverPhotoId} size="card" />
+          )}
           <span className="keep__text">
             <span className="keep__caption">{t("home.keep_going")}</span>
             <span className="keep__name truncate">{keep.name}</span>
@@ -184,6 +188,9 @@ export function Home(props: { spotLink?: SpotLinkFor; isAdmin: boolean }) {
                 key={row.spotId}
                 title={row.name}
                 compact
+                {...(row.coverPhotoId === null
+                  ? {}
+                  : { lead: <CoverThumb photoId={row.coverPhotoId} size="row" /> })}
                 end={homeFactEnd(row.fact, tz)}
                 {...(homeFactSub(row, tz) === undefined ? {} : { sub: homeFactSub(row, tz) })}
                 {...(link === undefined ? {} : { link: link(row.spotId) })}

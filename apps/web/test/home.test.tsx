@@ -288,3 +288,94 @@ test("home state reads only a known filter and a short query", () => {
     expect(readHomeState(raw)).toEqual({ filter: "all", query: "" });
   }
 });
+
+const COVER_ID = "5b0f7c1e-2b7a-4c39-9a51-3f6f4f0f2a21";
+const withCover = (over: { approved: boolean }) =>
+  surveySpotFixture({
+    id: "6f1d1a2e-6c55-4b5b-8b0e-0d7f4f5c1a02",
+    slug: "covered",
+    official_name: "Covered Lounge",
+    status: "published",
+    verified: { identity: "2026-09-01T15:00:00.000Z" },
+    photos: [
+      {
+        id: COVER_ID,
+        spot_id: "6f1d1a2e-6c55-4b5b-8b0e-0d7f4f5c1a02",
+        url: null,
+        taken_at: "2026-09-01T15:00:00.000Z",
+        is_cover: true,
+        uploaded_by: null,
+        approved: over.approved,
+        approved_at: over.approved ? "2026-09-02T15:00:00.000Z" : null,
+      },
+    ],
+  });
+
+function rowOf(name: string): HTMLElement {
+  const row = screen.getByText(name).closest("a");
+  if (row === null) throw new Error(`no row for ${name}`);
+  return row;
+}
+
+test("a spot with an approved cover shows its thumbnail once loaded; without one, text only", async () => {
+  const requested: string[] = [];
+  vi.stubGlobal("fetch", async (url: string) => {
+    requested.push(url);
+    return new Response(new Uint8Array([0xff, 0xd8, 0xff]), { status: 200 });
+  });
+  // jsdom has no object URLs; put these on for this test only.
+  const had = { create: "createObjectURL" in URL, revoke: "revokeObjectURL" in URL };
+  URL.createObjectURL = () => "blob:cover";
+  URL.revokeObjectURL = () => {};
+  try {
+    renderRoute(testApp({ spots: [withCover({ approved: true }), PUBLISHED] }), "/survey");
+    await screen.findByText("Covered Lounge");
+    await waitFor(() => expect(rowOf("Covered Lounge").querySelector("img.thumb")).not.toBeNull());
+    expect(rowOf("SAC Lounge").querySelector("img")).toBeNull();
+    expect(requested).toHaveLength(1);
+    expect(requested[0]).toContain(`/survey/photos/${COVER_ID}/image`);
+  } finally {
+    if (!had.create) Reflect.deleteProperty(URL, "createObjectURL");
+    if (!had.revoke) Reflect.deleteProperty(URL, "revokeObjectURL");
+    vi.unstubAllGlobals();
+  }
+});
+
+test("a cover that is not approved is never asked for", async () => {
+  const fetchSpy = vi.fn(async () => new Response(null, { status: 404 }));
+  vi.stubGlobal("fetch", fetchSpy);
+  try {
+    renderRoute(testApp({ spots: [withCover({ approved: false })] }), "/survey");
+    await screen.findByText("Covered Lounge");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(document.querySelector("img.thumb")).toBeNull();
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+test("while a cover loads, offline, or missing, the row is text only with no error", async () => {
+  for (const answer of [
+    () => new Promise<Response>(() => {}),
+    () => Promise.reject(new Error("network down")),
+    () => Promise.resolve(new Response(null, { status: 404 })),
+  ]) {
+    vi.stubGlobal("fetch", answer);
+    try {
+      const { unmount } = renderRoute(
+        testApp({ spots: [withCover({ approved: true })] }),
+        "/survey",
+      );
+      await screen.findByText("Covered Lounge");
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(document.querySelector("img")).toBeNull();
+      expect(screen.queryByRole("alert")).toBeNull();
+      expect(rowOf("Covered Lounge").textContent).not.toMatch(/unavailable|error/i);
+      unmount();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  }
+});
