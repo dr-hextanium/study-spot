@@ -103,7 +103,17 @@ export class TestServer implements Http {
     published: number;
     warnings: string[];
     photos: PendingPhoto[];
-  } = { surveyors: [], invites: [], published: 0, warnings: [], photos: [] };
+    publishFails: boolean;
+    inviteGate: Promise<void> | null;
+  } = {
+    surveyors: [],
+    invites: [],
+    published: 0,
+    warnings: [],
+    photos: [],
+    publishFails: false,
+    inviteGate: null,
+  };
   constructor(spots: SurveySpot[]) {
     this.inner = new FakeSurveyServer(spots);
   }
@@ -124,6 +134,7 @@ export class TestServer implements Http {
     if (req.method === "GET" && path === "/survey/campus") {
       return { status: 200, text: JSON.stringify(CAMPUS) };
     }
+    if (path === "/admin/invites" && this.admin.inviteGate !== null) await this.admin.inviteGate;
     const admin = this.adminRoute(
       req.method,
       path,
@@ -167,6 +178,9 @@ export class TestServer implements Http {
       return ok(s);
     }
     if (path === "/admin/publish") {
+      if (method === "POST" && this.admin.publishFails) {
+        return { status: 500, text: '{"error":"internal"}' };
+      }
       if (method === "POST") this.admin.published += 1;
       const published = this.admin.published > 0;
       return ok({

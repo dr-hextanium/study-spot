@@ -1,7 +1,7 @@
 import type { SurveyorRole } from "@study-spot/core";
 import { publishWarningText, t } from "@study-spot/ui-logic";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { keys } from "../app/keys.ts";
 import { unwrap } from "../app/queries.ts";
@@ -40,7 +40,9 @@ function CreatedLink(props: { url: string; note: string }) {
       <Button
         onClick={async () => {
           const result = await share.share({ title: t("app.name"), url: props.url });
-          toasts.show(result === "failed" ? t("error.generic") : t("admin.invite.copied"));
+          // "shared" means the share sheet took it: nothing to claim about a copy.
+          if (result === "copied") toasts.show(t("admin.invite.copied"));
+          else if (result === "failed") toasts.show(t("admin.invite.copy_failed"));
         }}
       >
         {t("admin.invite.copy")}
@@ -54,10 +56,20 @@ function InviteSection(props: { online: boolean }) {
   const toasts = useToasts();
   const [role, setRole] = useState<SurveyorRole>("surveyor");
   const [url, setUrl] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const inFlight = useRef(false);
   async function create() {
-    const res = await api.createInvite({ role });
-    if (res.kind === "ok") setUrl(res.value.url);
-    else toasts.show(t("error.generic"));
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setBusy(true);
+    try {
+      const res = await api.createInvite({ role });
+      if (res.kind === "ok") setUrl(res.value.url);
+      else toasts.show(t("error.generic"));
+    } finally {
+      inFlight.current = false;
+      setBusy(false);
+    }
   }
   return (
     <Section id="admin-invite" title={t("admin.invite.title")}>
@@ -70,7 +82,7 @@ function InviteSection(props: { online: boolean }) {
         value={role}
         onChange={setRole}
       />
-      <Button variant="primary" disabled={!props.online} onClick={() => void create()}>
+      <Button variant="primary" disabled={!props.online || busy} onClick={() => void create()}>
         {t("admin.invite.create")}
       </Button>
       {url === null ? null : <CreatedLink url={url} note={t("admin.invite.created")} />}
@@ -89,15 +101,25 @@ function SurveyorsSection(props: { online: boolean }) {
     queryFn: async () => unwrap(await api.listSurveyors(), qd.onUnauthorized),
     enabled: props.online,
   });
-  const [relogin, setRelogin] = useState<{ name: string; url: string } | null>(null);
+  const [relogin, setRelogin] = useState<{ id: string; name: string; url: string } | null>(null);
   const [revoking, setRevoking] = useState<{ id: string; name: string } | null>(null);
   const others = (surveyors.data?.surveyors ?? []).filter((s) => s.id !== me?.id);
 
+  const linking = useRef(false);
+  const [linkBusy, setLinkBusy] = useState(false);
   async function newLink(s: { id: string; role: SurveyorRole; display_name: string }) {
-    // The role is kept: an admin's sign-in link signs them in as an admin again.
-    const res = await api.createInvite({ role: s.role, surveyor_id: s.id });
-    if (res.kind === "ok") setRelogin({ name: s.display_name, url: res.value.url });
-    else toasts.show(t("error.generic"));
+    if (linking.current) return;
+    linking.current = true;
+    setLinkBusy(true);
+    try {
+      // The role is kept: an admin's sign-in link signs them in as an admin again.
+      const res = await api.createInvite({ role: s.role, surveyor_id: s.id });
+      if (res.kind === "ok") setRelogin({ id: s.id, name: s.display_name, url: res.value.url });
+      else toasts.show(t("error.generic"));
+    } finally {
+      linking.current = false;
+      setLinkBusy(false);
+    }
   }
   async function revoke() {
     const target = revoking;
@@ -105,6 +127,8 @@ function SurveyorsSection(props: { online: boolean }) {
     if (target === null) return;
     const res = await api.revokeSurveyor(target.id);
     if (res.kind !== "ok") return toasts.show(t("error.generic"));
+    // A sign-in link already shown for them would now lead nowhere.
+    setRelogin((shown) => (shown?.id === target.id ? null : shown));
     toasts.show(t("admin.revoke.done", { name: target.name }));
     await qc.invalidateQueries({ queryKey: keys.surveyors });
   }
@@ -129,7 +153,7 @@ function SurveyorsSection(props: { online: boolean }) {
               </span>
             </span>
             <span className="entry__actions">
-              <Button disabled={!props.online} onClick={() => void newLink(s)}>
+              <Button disabled={!props.online || linkBusy} onClick={() => void newLink(s)}>
                 {t("admin.invite.relogin")}
               </Button>
               {s.active ? (
@@ -167,6 +191,7 @@ function SurveyorsSection(props: { online: boolean }) {
 
 function PublishSection(props: { online: boolean }) {
   const { api } = useDeps();
+  const toasts = useToasts();
   const qd = useQueryDeps();
   const qc = useQueryClient();
   const tz = useCampusTz();
@@ -182,6 +207,7 @@ function PublishSection(props: { online: boolean }) {
     const res = await api.publishNow();
     setRunning(false);
     if (res.kind === "ok") qc.setQueryData(keys.publish, res.value);
+    else toasts.show(t("error.generic"));
   }
   const s = status.data;
   return (

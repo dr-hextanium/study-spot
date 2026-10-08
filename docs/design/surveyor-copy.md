@@ -431,6 +431,7 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | admin.invite.created | Link works once and expires in 48 hours. | 50 | |
 | admin.invite.copy | Copy link | 12 | |
 | admin.invite.copied | Link copied | 14 | toast |
+| admin.invite.copy_failed | Couldn't copy. Select the link and copy it by hand. | 60 | toast |
 | admin.invite.relogin | New sign-in link | 18 | per surveyor; for lost phones |
 | admin.surveyors.title | Surveyors | 12 | |
 | admin.surveyors.empty | Just you so far. | 20 | |

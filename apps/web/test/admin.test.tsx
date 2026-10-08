@@ -35,7 +35,7 @@ test("an admin creates an invite link and copies it", async () => {
 
 test("a new sign-in link keeps the surveyor's role, and removing access asks first", async () => {
   const app = testApp({ me: ADMIN });
-  app.server.admin.surveyors.push(ADMIN, RILEY);
+  app.server.admin.surveyors.push({ ...ADMIN }, { ...RILEY });
   renderRoute(app, "/survey/admin");
   const list = await screen.findByRole("region", { name: t("admin.surveyors.title") });
   fireEvent.click(await within(list).findByRole("button", { name: t("admin.invite.relogin") }));
@@ -109,4 +109,87 @@ test("approving or rejecting a photo adopts the spot, so a queued write is not a
   });
   await waitFor(() => expect(app.deps.outbox.getSnapshot().records).toEqual([]));
   expect(app.server.inner.spot(spot.id).version).toBe(6);
+});
+
+function withShare(app: ReturnType<typeof testApp>, result: "copied" | "shared" | "failed") {
+  Object.assign(app.deps, { share: { share: async () => result } });
+}
+
+test("Copy link says copied only when it was copied", async () => {
+  const app = testApp({ me: ADMIN });
+  withShare(app, "shared");
+  renderRoute(app, "/survey/admin");
+  fireEvent.click(await screen.findByRole("button", { name: t("admin.invite.create") }));
+  fireEvent.click(await screen.findByRole("button", { name: t("admin.invite.copy") }));
+  await new Promise((r) => setTimeout(r, 50));
+  expect(screen.queryByText(t("admin.invite.copied"))).toBeNull();
+  expect(screen.queryByText(t("admin.invite.copy_failed"))).toBeNull();
+});
+
+test("a failed copy tells the admin to copy by hand", async () => {
+  const app = testApp({ me: ADMIN });
+  withShare(app, "failed");
+  renderRoute(app, "/survey/admin");
+  fireEvent.click(await screen.findByRole("button", { name: t("admin.invite.create") }));
+  fireEvent.click(await screen.findByRole("button", { name: t("admin.invite.copy") }));
+  expect(await screen.findByText(t("admin.invite.copy_failed"))).toBeTruthy();
+  expect(screen.queryByText(t("admin.invite.copied"))).toBeNull();
+});
+
+test("a failed Publish now shows an error", async () => {
+  const app = testApp({ me: ADMIN });
+  app.server.admin.publishFails = true;
+  renderRoute(app, "/survey/admin");
+  fireEvent.click(await screen.findByRole("button", { name: t("admin.publish.now") }));
+  expect(await screen.findByText(t("error.generic"))).toBeTruthy();
+});
+
+test("a double tap on Create link issues one invite", async () => {
+  const app = testApp({ me: ADMIN });
+  let open: () => void = () => undefined;
+  app.server.admin.inviteGate = new Promise<void>((r) => {
+    open = r;
+  });
+  renderRoute(app, "/survey/admin");
+  const create = await screen.findByRole("button", { name: t("admin.invite.create") });
+  fireEvent.click(create);
+  fireEvent.click(create);
+  open();
+  expect(await screen.findByText(t("admin.invite.created"))).toBeTruthy();
+  expect(app.server.admin.invites).toHaveLength(1);
+});
+
+test("a double tap on New sign-in link issues one invite", async () => {
+  const app = testApp({ me: ADMIN });
+  app.server.admin.surveyors.push({ ...ADMIN }, { ...RILEY });
+  let open: () => void = () => undefined;
+  app.server.admin.inviteGate = new Promise<void>((r) => {
+    open = r;
+  });
+  renderRoute(app, "/survey/admin");
+  const link = await screen.findByRole("button", { name: t("admin.invite.relogin") });
+  fireEvent.click(link);
+  fireEvent.click(link);
+  open();
+  expect(
+    await screen.findByText(t("admin.invite.relogin.created", { name: "Riley" })),
+  ).toBeTruthy();
+  expect(app.server.admin.invites).toHaveLength(1);
+});
+
+test("removing access clears that surveyor's shown sign-in link", async () => {
+  const app = testApp({ me: ADMIN });
+  app.server.admin.surveyors.push({ ...ADMIN }, { ...RILEY });
+  renderRoute(app, "/survey/admin");
+  const list = await screen.findByRole("region", { name: t("admin.surveyors.title") });
+  fireEvent.click(await within(list).findByRole("button", { name: t("admin.invite.relogin") }));
+  const note = t("admin.invite.relogin.created", { name: "Riley" });
+  expect(await screen.findByText(note)).toBeTruthy();
+  fireEvent.click(within(list).getByRole("button", { name: t("admin.revoke") }));
+  const confirm = await screen.findByRole("dialog", {
+    name: t("admin.revoke.confirm.title", { name: "Riley" }),
+  });
+  fireEvent.click(within(confirm).getByRole("button", { name: t("admin.revoke.confirm.action") }));
+  expect(await screen.findByText(t("admin.revoke.done", { name: "Riley" }))).toBeTruthy();
+  expect(screen.queryByText(note)).toBeNull();
 });
