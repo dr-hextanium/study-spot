@@ -1,5 +1,5 @@
 ---
-version: 1
+version: 2
 slug: "apps-web"
 primary_target: "apps/web"
 related_targets: []
@@ -7,36 +7,36 @@ related_targets: []
 
 # Surface brief: survey mode (apps/web /survey/*)
 
-Scope: surveyor screens of the Perch PWA (`/invite/$token`, `/survey`, `/survey/spots/new`, `/survey/spots/$id`, `/survey/spots/$id/$section`, `/survey/admin`). Visitor mode: Operate. Student screens come later in the same world.
+Scope: surveyor screens of the Perch PWA (`/invite/$token`, `/survey`, `/survey/spots/new`, `/survey/spots/$id`, `/survey/spots/$id/$section`, `/survey/admin`). Visitor mode: Operate. Spec: `docs/superpowers/specs/2026-10-07-surveyor-redesign.md`.
 
-Audience and task: 3 to 5 student surveyors, one-handed on phones, outdoors in sun and in dim basements, creating and checking study spots in under 5 minutes, offline first. Flow and copy: `docs/design/surveyor-journey.md`, `docs/design/surveyor-copy.md`.
+Audience and task: 3 to 5 student surveyors, one-handed on phones, outdoors in sun and in dim basements, creating and checking study spots in under 5 minutes, offline first; admins also on laptops. Flow and copy: `docs/design/surveyor-journey.md`, `docs/design/surveyor-copy.md`.
 
-Constraints: 44 px minimum targets; WCAG 2.2 AA in light and dark (survey light body text 7:1); system controls; no paper texture, no handwriting fonts, no university marks; no em-dashes.
+Constraints: 44 px minimum hit areas; WCAG 2.2 AA in light and dark (ink on paper 7:1 for sunlight); one red-filled button per screen; no status hues; no university marks; no em-dashes.
 
-Physical scene: a phone held at arm's length in direct afternoon sun, then in a fluorescent-lit basement at 11pm. Light scheme by default, dark follows the system.
+Physical scene: a phone held at arm's length in direct afternoon sun, then in a fluorescent-lit basement at 11pm; a laptop at a club meeting. Light by default, with a manual light, dark or system switch.
 
 ## Direction contract
 
-THESIS: Every spot is filled in like the written side of a postcard: printed labels on ruled lines, your answers in ink, status as rubber-stamp marks. It refuses the settings-app pattern of grey grouped cards with chevrons.
+THESIS: Seawolf. A quiet tool that says more with less: a big serif title, compact rows with the fact on the right, one red thing that needs you. It refuses decoration: no stamps, no postmarks, no ruled lines, no ink band, no colored status chips.
 
-OWN-WORLD: Flat white card stock, ink black text, hairline rules on a 44 px line grid, a solid ink header band like the printed "POST CARD" heading. Printed labels are small caps in Public Sans; entered values are ballpoint blue in the system face. Stamp red for cancel and danger, postal green for checked. Postmark rings for verification state: solid when checked this term, dashed when stale, struck when never. Square-ish 4 px corners, no shadows except sheets.
+OWN-WORLD: Four colors (paper, ink, Stony Brook red, mist) and oklab mixes of them. Newsreader for large titles, group headers, bar titles and figures; Instrument Sans for everything else. Lucide icons at 1.75 stroke. Radius 12 on controls and rows, 20 on cards, 22 on sheets. Hairlines at ink 10 percent. Shadows only on sheets, the floating action bar and the segmented thumb.
 
-STORY: The surveyor sees what is filled in, what is missing, and what is checked, on one ruled sheet per spot. They trust their entries are kept because the sync postmark in the header says so. They act by filling the next empty line.
+STORY: The surveyor sees what is left (the step bar), what needs them (red), and what is done (the facts on the right). They trust their entries are kept because the sync status in the action bar or top bar says so. They act with one thumb on the action bar.
 
-FIRST VIEWPORT: Spot overview on a 390 by 844 phone. Ink header band (48 px): back, spot name, sync postmark at right. Below, a status stamp row (DRAFT or PUBLISHED, reviewed state). Then the ruled sheet: one 44 px ruled row per section, small-caps label left, value summary in blue or "Missing" in stamp red, postmark ring at right. Required sections first. Publish is a full-width ink button pinned 16 px above the home indicator, disabled state lists what's missing above it.
+FIRST VIEWPORT: Spot overview on a 390 by 844 phone. A 52 px top bar (back, sync), the spot name as a 34 px Newsreader title, a Draft pill with "Building · Floor N · Checked Oct 1", the step bar and "4 of 6 · Next: Seating". Below that, groups of 52 px rows: section icon, name, and on the right the fact or a red Missing pill. The action bar is pinned: Next: Seating (ink), Publish (red, aria-disabled with a reason while blocked), Actions.
 
-FORM: Divided back (candidate 6 of 7 grounded postcard traditions), raised by state-by-form, real baseline grid, ballpoint for entered data. Seed key b7d216f8.
+FORM: Raycast list density with Notion page calm. Progress is a 4 px step bar, one segment per required section: done is ink, current is red, todo is mist.
 
-FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+FINISH: unreviewed and undocumented is unfinished. This build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance.
 
 ## Signature interaction
 
-Stamping: when a section is saved or checked, its postmark ring lands with a 160 ms press (scale 1.06 to 1, slight overshoot) and the date fills in. Reduced motion: no scale, 120 ms fade.
+Instant choice: segmented controls show the new choice on pointerdown and the paper thumb glides there (180 ms); rows press to 0.985; sheets slide up (320 ms); the large title hands off to the bar title as it scrolls away (220 ms). Reduced motion: no transforms, 80 ms fades.
 
 ## Unresolved
 
-Student mode surfaces (postcard fronts, stamps for noise policy) are designed in build step 5 within this world.
+Student mode surfaces will be designed in this system (decision 12 is an open question for the owner). Bulk check of every section is an open question.
 
 ## Components to derive in the web UI plan
 
-Built inside this contract, documented into DESIGN.md at finish: button (ink primary, outline secondary, stamp-red destructive), field (label in small caps on the rule, value in ballpoint blue, borderStrong outline when focused or editable), segmented control, stepper with keypad entry, sheet (the only element with elevation: one soft shadow), ruled list row (44 px), status stamp chip (outlined by default; filled uses the on* tokens), toast, postmark ring (solid, dashed, struck). Header band content uses onShell and focusOnShell only.
+Built inside this contract, documented into DESIGN.md at finish: top bar with large-title handoff, action bar, row (with optional cover thumbnail), pill (mist, red), step bar, button (primary red, ink, quiet, ghost, danger), icon button, search field, filter chips with counts, segmented control, stepper with keypad entry, tag toggles, field (icon plus label, help, error), sheet (bottom on phones, centered dialog from 768 px), toast, theme switch.
