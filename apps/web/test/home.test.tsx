@@ -168,3 +168,14 @@ test("the unsynced-changes banner goes away once the queue syncs", async () => {
   });
   await waitFor(() => expect(screen.queryByText(text)).toBeNull());
 });
+
+test("the unsynced-changes banner does not wait for the first sync pass to end", async () => {
+  const app = testApp();
+  app.network.set(false);
+  await app.deps.started;
+  await app.deps.outbox.createSpot(identity());
+  // A pass that never ends (a slow first send): the banner follows the loaded queue, not `started`.
+  app.deps = { ...app.deps, started: new Promise<void>(() => {}) };
+  renderRoute(app, "/survey");
+  expect(await screen.findByText(t("sync.leave_warning_one"))).toBeTruthy();
+});

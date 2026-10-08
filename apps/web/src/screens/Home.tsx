@@ -38,26 +38,20 @@ function draftText(row: DraftRow): string | undefined {
 }
 
 /**
- * Writes still waiting, shown only when some were still queued once this page
- * load's first sync pass ended (journey edge 9). It follows the live queue, so
- * it goes away once they sync.
+ * Writes still waiting, shown only when some were queued when this screen first
+ * saw the loaded queue (journey edge 9). The decision is made once, on the first
+ * snapshot with `loaded` true: before that, an empty queue is a default, not a
+ * fact. It follows the live queue after that, so it goes away once they sync.
  */
 function usePendingAfterOpen(): number {
-  const { started, outbox } = useDeps();
   const snapshot = useOutboxSnapshot();
-  const [leftAtOpen, setLeftAtOpen] = useState(false);
+  const [leftAtOpen, setLeftAtOpen] = useState<boolean | null>(null);
+  const loaded = snapshot.loaded;
+  const left = waiting(snapshot) > 0;
   useEffect(() => {
-    let live = true;
-    started
-      .then(() => {
-        if (live) setLeftAtOpen(waiting(outbox.getSnapshot()) > 0);
-      })
-      .catch(() => undefined);
-    return () => {
-      live = false;
-    };
-  }, [started, outbox]);
-  return leftAtOpen ? waiting(snapshot) : 0;
+    if (loaded) setLeftAtOpen((decided) => decided ?? left);
+  }, [loaded, left]);
+  return leftAtOpen === true ? waiting(snapshot) : 0;
 }
 
 function waiting(snapshot: OutboxSnapshot): number {
