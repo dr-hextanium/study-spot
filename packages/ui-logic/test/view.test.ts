@@ -15,6 +15,7 @@ import {
   stepProgress,
   surveyHome,
   syncHeader,
+  walkNext,
 } from "../src/index.ts";
 import {
   create,
@@ -393,4 +394,17 @@ test("next after: the next unfinished required section, wrapping, never itself",
   expect(nextAfter(v, "hours")).toBeNull();
   const done = view([], { seat_count: 112, missing: [] });
   expect(nextAfter(done, "identity")).toBeNull();
+});
+
+test("walkNext goes forward through unchecked required sections and skips checked ones", () => {
+  expect(walkNext(["identity"], "identity")).toBe("access");
+  expect(walkNext(["identity", "access"], "access")).toBe("seating");
+  // Skips a section already checked in this walk.
+  expect(walkNext(["identity", "seating"], "identity")).toBe("access");
+  expect(walkNext(["identity", "access", "seating"], "access")).toBe("power");
+  // Wraps to an earlier section left unchecked, and ends when none is left.
+  expect(walkNext(["use_fit"], "use_fit")).toBe("identity");
+  expect(walkNext([...REQUIRED_SECTIONS], "use_fit")).toBeNull();
+  // An optional section is not part of the walk's order.
+  expect(walkNext([], "hours")).toBe(REQUIRED_SECTIONS[0] ?? null);
 });

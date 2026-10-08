@@ -327,6 +327,19 @@ export function nextAfter(view: SpotView, current: OverviewSection): SurveySecti
   return order.find((x) => fillOf(view, x) !== "done") ?? null;
 }
 
+/**
+ * Where a guided walk goes next: the first required section after `current`, wrapping, that has
+ * not been checked in this walk. Null when every required section has been.
+ */
+export function walkNext(
+  checked: readonly SurveySection[],
+  current: OverviewSection,
+): SurveySection | null {
+  const i = isRequiredSection(current) ? REQUIRED_SECTIONS.indexOf(current) : -1;
+  const order = [...REQUIRED_SECTIONS.slice(i + 1), ...REQUIRED_SECTIONS.slice(0, i + 1)];
+  return order.find((x) => x !== current && !checked.includes(x)) ?? null;
+}
+
 /** Every overview row, in display order, with fill, check date, and sync state. */
 export function sectionStatuses(view: SpotView, opts: { now: Date; tz: string }): SectionStatus[] {
   const today = campusDate(opts.now, opts.tz);

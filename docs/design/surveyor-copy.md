@@ -200,7 +200,12 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | id | text | max chars | notes |
 |---|---|---|---|
 | editor.save | Save | 10 | primary, pinned bottom |
-| editor.verify | Checked, nothing changed | 26 | secondary; stamps verification |
+| editor.verify | Nothing changed | 18 | secondary; stamps verification |
+| editor.save_next | Save and next | 16 | primary when a next section exists |
+| editor.progress.after | {done} of {total} · After this: {section} | 46 | under the step bar |
+| editor.progress | {done} of {total} | 10 | when nothing is left after this one |
+| editor.walk.done | Checked 1 section | 20 | toast at the end of a guided walk; count variant: editor.walk.done_many |
+| editor.walk.done_many | Checked {count} sections | 26 | |
 | editor.verify.done | Marked as checked | 20 | toast |
 | editor.verify.hours_missing | Add hours for {term} before marking this checked. | 60 | server 422: spot has hours but none for the current term |
 | editor.saved | Saved | 10 | toast when online |
