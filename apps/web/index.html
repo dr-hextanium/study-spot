@@ -3,12 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#16181d" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2b2e35" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#FBFAF9" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Perch" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <script id="theme-boot">
+      // Applies the stored theme before first paint. Same rules as src/ui/themePref.ts.
+      (() => {
+        var pref = "light";
+        var s = null;
+        try {
+          s = localStorage.getItem("perch.theme");
+          if (s === "dark" || s === "system") pref = s;
+        } catch (e) {}
+        var root = document.documentElement;
+        var dark =
+          pref === "dark" ||
+          (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (pref === "system") root.removeAttribute("data-theme");
+        else root.setAttribute("data-theme", pref);
+        var cs = document.querySelector('meta[name="color-scheme"]');
+        if (cs) cs.setAttribute("content", pref === "system" ? "light dark" : pref);
+        var tc = document.querySelector('meta[name="theme-color"]');
+        if (tc) tc.setAttribute("content", dark ? "#151313" : "#FBFAF9");
+      })();
+    </script>
     <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>Perch survey</title>

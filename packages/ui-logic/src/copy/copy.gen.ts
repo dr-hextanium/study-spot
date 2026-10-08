@@ -444,6 +444,10 @@ export const COPY = {
   "spot.failed.open": "Open the unsaved changes",
   "photos.alt": "Photo of this spot",
   "new.building.offline": "The building list loads once you're online.",
+  "theme.label": "Theme",
+  "theme.light": "Light",
+  "theme.dark": "Dark",
+  "theme.system": "System",
 } as const;
 
 export const COPY_MAX = {
@@ -870,4 +874,8 @@ export const COPY_MAX = {
   "spot.failed.open": 26,
   "photos.alt": 20,
   "new.building.offline": 50,
+  "theme.label": 8,
+  "theme.light": 8,
+  "theme.dark": 8,
+  "theme.system": 8,
 } as const satisfies Record<keyof typeof COPY, number>;

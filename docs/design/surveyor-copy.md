@@ -550,6 +550,15 @@ Strings the built screens needed beyond the sections above: short header forms f
 | photos.alt | Photo of this spot | 20 | alt text of a spot photo |
 | new.building.offline | The building list loads once you're online. | 50 | first run offline |
 
+## Redesign (2026-10-07)
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| theme.label | Theme | 8 | Actions sheet |
+| theme.light | Light | 8 | |
+| theme.dark | Dark | 8 | |
+| theme.system | System | 8 | follows the phone |
+
 ## Pending questions
 
 - Floor naming at Stony Brook (e.g. "Lower level" vs "B") should come from the first survey walk; the floor field is free text for now.
