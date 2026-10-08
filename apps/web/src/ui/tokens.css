@@ -42,6 +42,8 @@
   --size-row: 52px;
   --size-control: 46px;
   --size-thumb: 40px;
+  --size-tag: 36px;
+  --size-choice: 48px;
   --size-column: 680px;
   --duration-fast: 120ms;
   --duration-base: 220ms;
