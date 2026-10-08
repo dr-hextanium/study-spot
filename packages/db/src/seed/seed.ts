@@ -1,8 +1,10 @@
+import { createHash } from "node:crypto";
 import type { Db } from "../client.ts";
 import {
   building,
   campus,
   forecast,
+  photo_blob,
   spot,
   spot_amenity,
   spot_estimate,
@@ -15,7 +17,14 @@ import {
   term,
   walk_matrix,
 } from "../schema/index.ts";
-import { SEED_ADMIN, SEED_BUILDINGS, SEED_CAMPUS, SEED_TERMS, SEED_WALK } from "./data.ts";
+import {
+  SEED_ADMIN,
+  SEED_BUILDINGS,
+  SEED_CAMPUS,
+  SEED_PHOTO_JPEG,
+  SEED_TERMS,
+  SEED_WALK,
+} from "./data.ts";
 
 export type SeedSpotSlug =
   | "central-reading-room"
@@ -206,10 +215,23 @@ export async function seed(db: Db): Promise<SeedIds> {
       ),
     );
 
+    const blobOf = (base64: string) => {
+      const bytes = new Uint8Array(Buffer.from(base64, "base64"));
+      return {
+        sha256: createHash("sha256").update(bytes).digest("hex"),
+        bytes,
+        content_type: "image/jpeg",
+        byte_size: bytes.byteLength,
+      };
+    };
+    const coverBlob = blobOf(SEED_PHOTO_JPEG.cover);
+    const pendingBlob = blobOf(SEED_PHOTO_JPEG.pending);
+    await tx.insert(photo_blob).values([coverBlob, pendingBlob]);
     await tx.insert(spot_photo).values([
       {
         spot_id: crr,
         url: "https://example.org/sample/crr-1.jpg",
+        blob_sha256: coverBlob.sha256,
         taken_at: VERIFIED_AT,
         is_cover: true,
         uploaded_by: admin.id,
@@ -219,6 +241,7 @@ export async function seed(db: Db): Promise<SeedIds> {
       {
         spot_id: crr,
         url: "https://example.org/sample/crr-2-unapproved.jpg",
+        blob_sha256: pendingBlob.sha256,
         taken_at: VERIFIED_AT,
         uploaded_by: admin.id,
       },

@@ -325,7 +325,8 @@ test("an unapproved cover photo never reaches the bundle or the uploaded files",
 
   const outcome = await ctx.publisher.runNow();
   if (!outcome.ok) throw new Error(outcome.error);
-  expect(outcome.uploaded.some((p) => p.startsWith("photos/"))).toBe(false);
+  // The seed's approved cover is uploaded; this unapproved one is not.
+  expect(outcome.uploaded).not.toContain(`photos/${sha}.jpg`);
   expect(existsSync(join(ctx.publishDir, `photos/${sha}.jpg`))).toBe(false);
   const pointer = BundlePointer.parse(readJson(ctx.publishDir, "bundle-latest.json"));
   const raw = readFileSync(join(ctx.publishDir, pointer.url), "utf8");

@@ -131,7 +131,11 @@ test("the survey list carries an approved cover's id, and nothing else", async (
     return row.id;
   };
   const ids = ctx.ids.spotIds;
-  // The seed's own photos have no bytes, so only these four are candidates.
+  const [seedCover] = await ctx.db
+    .select({ id: spot_photo.id })
+    .from(spot_photo)
+    .where(and(eq(spot_photo.spot_id, ids["central-reading-room"]), eq(spot_photo.is_cover, true)));
+  // The seed already gives Central Reading Room an approved cover with bytes.
   const a = await photo(ids["sac-lounge"], { is_cover: true, approved: true });
   await photo(ids["union-draft"], { is_cover: true, approved: false });
   await photo(ids["kelly-rcc"], { is_cover: false, approved: true });
@@ -145,7 +149,7 @@ test("the survey list carries an approved cover's id, and nothing else", async (
   expect(cover("sac-lounge")).toBe(a);
   expect(cover("union-draft")).toBeNull();
   expect(cover("kelly-rcc")).toBeNull();
-  expect(cover("central-reading-room")).toBeNull();
+  expect(cover("central-reading-room")).toBe(seedCover?.id);
   expect(list.spots.some((s) => s.slug === "other-spot")).toBe(false);
 });
 
