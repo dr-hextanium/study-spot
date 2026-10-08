@@ -26,6 +26,7 @@ const SAMPLE: Readonly<Record<string, string>> = {
   meters: "120",
   minutes: "15",
   name: "Jordan Rivera",
+  new: "Ana Lopez",
   percent: "100",
   reason: "seat count is required",
   section: "Power and signal",

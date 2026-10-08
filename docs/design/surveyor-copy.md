@@ -517,6 +517,9 @@ Strings the built screens needed beyond the sections above: short header forms f
 | invite.relogin.title | Sign in on this phone | 24 | link for an existing surveyor; no name asked |
 | invite.relogin.body | This link signs you back in. Your name and role stay the same. | 70 | |
 | invite.relogin.action | Sign in | 10 | primary |
+| invite.switch.title | Unsynced changes from {name} | 40 | confirm when a different surveyor joins a phone with a non-empty queue |
+| invite.switch.body | This phone holds changes {name} has not synced. Cancel keeps them, but this link is used up, so you will need a new one to join as {new}. | 150 | the server already accepted the link, so Cancel cannot reuse it |
+| invite.switch.discard | Discard their changes and join | 34 | destructive confirm action |
 | photos.approve | Approve | 10 | any surveyor but the uploader |
 | photos.approve.own | You took this, so someone else approves it. | 50 | |
 | photos.approve.done | Photo approved | 16 | toast |

@@ -671,6 +671,17 @@ export function createOutbox(deps: OutboxDeps) {
         for (const d of doomed) await store.remove(d.client_write_id);
       }),
     /**
+     * Drops every queued write and its photo bytes, for a phone handed to another surveyor.
+     * One step under the lock, so no write is picked between two removals.
+     */
+    async discardAll(): Promise<void> {
+      await locked(async () => {
+        for (const r of await store.list()) await store.remove(r.client_write_id);
+      });
+      await refresh();
+      signal.post();
+    },
+    /**
      * Keep mine: send again on top of the server's version, with a new id.
      * Keep theirs: drop the write and adopt the server's spot.
      * Writes queued behind it chain from the server's version either way.

@@ -1,4 +1,4 @@
-import { OpaqueToken } from "@study-spot/core";
+import { type AcceptInviteResponse, OpaqueToken } from "@study-spot/core";
 import { t } from "@study-spot/ui-logic";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -11,6 +11,7 @@ import { Button } from "../ui/Button.tsx";
 import { TextField } from "../ui/Field.tsx";
 import { HeaderBand } from "../ui/HeaderBand.tsx";
 import { Screen } from "../ui/Screen.tsx";
+import { ConfirmSheet } from "../ui/Sheet.tsx";
 
 type Problem = "invalid" | "expired" | "used" | "name" | "storage" | "generic" | null;
 
@@ -29,7 +30,7 @@ const PROBLEM_TEXT: Record<Exclude<Problem, null>, () => string> = {
  * would use it up.
  */
 export function Invite(props: { token: string; relogin: boolean }) {
-  const { api } = useDeps();
+  const { api, session, outbox } = useDeps();
   const { join } = useSession();
   const navigate = useNavigate();
   const online = useOnline();
@@ -38,6 +39,8 @@ export function Invite(props: { token: string; relogin: boolean }) {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<Problem>(tokenOk ? null : "invalid");
+  /** The server accepted the link (it is spent) but a different surveyor holds this phone's queue. */
+  const [held, setHeld] = useState<AcceptInviteResponse | null>(null);
   const ios = isIos(navigator) && !isStandalone(window);
 
   async function accept() {
@@ -54,9 +57,11 @@ export function Invite(props: { token: string; relogin: boolean }) {
     setBusy(false);
     switch (res.kind) {
       case "ok":
-        if (!join(res.value)) return setProblem("storage");
-        await navigate({ to: "/survey", replace: true });
-        return;
+        if (await holdsOtherQueue(res.value)) {
+          setHeld(res.value);
+          return;
+        }
+        return finish(res.value);
       case "gone":
         return setProblem(
           res.code === "invite_expired"
@@ -75,6 +80,40 @@ export function Invite(props: { token: string; relogin: boolean }) {
       default:
         return setProblem("generic");
     }
+  }
+
+  /**
+   * The accept answer is the first place the surveyor's id shows, so this runs after the
+   * server spent the link and before the session is saved: nothing is sent under the new
+   * token until the user chooses. An unknown queue (the read failed) counts as non-empty.
+   */
+  async function holdsOtherQueue(accepted: AcceptInviteResponse): Promise<boolean> {
+    const stored = session.current();
+    if (stored === null || stored.surveyor.id === accepted.surveyor.id) return false;
+    try {
+      await outbox.reload();
+    } catch {
+      if (!outbox.getSnapshot().loaded) return true;
+    }
+    return outbox.getSnapshot().records.length > 0;
+  }
+
+  async function finish(accepted: AcceptInviteResponse) {
+    if (!join(accepted)) return setProblem("storage");
+    await navigate({ to: "/survey", replace: true });
+  }
+
+  async function discardAndJoin(accepted: AcceptInviteResponse) {
+    setBusy(true);
+    try {
+      await outbox.discardAll();
+    } catch {
+      setBusy(false);
+      return setProblem("generic");
+    }
+    setBusy(false);
+    setHeld(null);
+    await finish(accepted);
   }
 
   const relogin = !askName;
@@ -115,6 +154,25 @@ export function Invite(props: { token: string; relogin: boolean }) {
         {problem !== null && problem !== "name" ? <Banner>{PROBLEM_TEXT[problem]()}</Banner> : null}
         {!online && !blocked ? <Banner tone="note">{t("invite.offline")}</Banner> : null}
       </Screen>
+      <ConfirmSheet
+        open={held !== null}
+        title={t("invite.switch.title", { name: session.current()?.surveyor.display_name ?? "" })}
+        body={t("invite.switch.body", {
+          name: session.current()?.surveyor.display_name ?? "",
+          new: held?.surveyor.display_name ?? "",
+        })}
+        action={t("invite.switch.discard")}
+        cancel={t("common.cancel")}
+        destructive
+        onCancel={() => {
+          // The link is spent and its token is dropped; the phone stays signed in as before.
+          setHeld(null);
+          void navigate({ to: "/survey", replace: true });
+        }}
+        onConfirm={() => {
+          if (held !== null) void discardAndJoin(held);
+        }}
+      />
     </>
   );
 }

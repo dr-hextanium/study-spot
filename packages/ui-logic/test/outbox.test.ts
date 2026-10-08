@@ -1079,3 +1079,18 @@ test("noteServerVersion: a queued write rebases onto the surveyor's own admin bu
   const store = createOutboxStore({ cache: t.cache, blobs: t.blobs, clock: t.clock });
   expect(await store.version(SPOT_A)).toBe(5);
 });
+
+test("discardAll drops every queued write and photo, and sends nothing", async () => {
+  const t = setup([]);
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const local = await box.createSpot(identity());
+  await box.addPhoto(local, null, JPEG, new Date("2026-10-05T15:59:00Z"));
+  await box.enqueue(power(local), null);
+  await box.discardAll();
+  expect(box.getSnapshot().records).toEqual([]);
+  t.network.set(true);
+  await box.idle();
+  expect(t.sent()).toEqual([]);
+});
