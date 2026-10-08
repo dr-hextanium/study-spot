@@ -1041,3 +1041,22 @@ test("a second publish enqueue returns the id of the one already queued", async 
   const review = await box.enqueue({ kind: "spot.review", spot_id: SPOT_A, payload: {} }, 3);
   expect(await box.enqueue({ kind: "spot.review", spot_id: SPOT_A, payload: {} }, 3)).toBe(review);
 });
+
+test("stop() during a send: no further write is picked afterwards", async () => {
+  const t = setup([
+    surveySpotFixture({ id: SPOT_A, version: 3 }),
+    surveySpotFixture({ id: SPOT_B, version: 3 }),
+  ]);
+  const box = t.make();
+  await box.start();
+  t.network.set(false);
+  await box.enqueue(power(SPOT_A), 3);
+  await box.enqueue(power(SPOT_B), 3);
+  const held = t.server.holdNext();
+  t.network.set(true);
+  await held.arrived;
+  box.stop();
+  held.release();
+  await box.idle();
+  expect(t.sent()).toEqual([`PUT /survey/spots/${SPOT_A}/power`]);
+});

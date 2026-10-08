@@ -471,6 +471,8 @@ export function createOutbox(deps: OutboxDeps) {
     let held = false;
     try {
       for (;;) {
+        // stop() (sign-out) can land during a send; nothing new starts after it.
+        if (stopped) break;
         const { next: picked, held: heldNow } = await pick(skipped);
         held = heldNow;
         if (picked === null) break;
