@@ -50,6 +50,7 @@ test("dark mode and reduced motion keep the header band apart from the page", as
     viewport: { width: 390, height: 844 },
   });
   const page = await context.newPage();
+  await page.addInitScript(() => localStorage.setItem("perch.theme", "dark"));
   await pinClock(page);
   await signIn(page);
   const [band, body] = await page.evaluate(() => [
@@ -65,7 +66,8 @@ test("dark mode and reduced motion keep the header band apart from the page", as
     probe.remove();
     return duration;
   });
-  expect(transition).toBe("0s");
+  // Reduced motion keeps color and opacity fades, at 80 ms (decision 20).
+  expect(transition).toBe("0.08s");
   await context.close();
 });
 
