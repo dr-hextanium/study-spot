@@ -87,7 +87,7 @@ test("dark mode and reduced motion paint the shell in dark paper", async ({ brow
   await context.close();
 });
 
-test("the blocked overview's pinned panel leaves the section rows in view, with 44 px links", async ({
+test("the blocked overview's action bar stays small, and its sheet lists every blocker as a 44 px link", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 375, height: 667 });
@@ -95,20 +95,28 @@ test("the blocked overview's pinned panel leaves the section rows in view, with 
   const spot = await draftSpot(await tokenOf(page), `Blocked ${Date.now()}`);
   await page.goto(`/survey/spots/${spot.id}`);
   await expect(page.getByRole("heading", { name: spot.official_name, level: 1 })).toBeVisible();
-  const panel = page.locator(".pinned");
-  await expect(panel.getByText("Can't publish yet")).toBeVisible();
-  const box = await panel.boundingBox();
-  expect(box?.height ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(667 * 0.3);
-  const links = panel.getByRole("link");
+  const bar = page.getByRole("contentinfo");
+  const barBox = await bar.boundingBox();
+  expect(barBox?.height ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(667 * 0.3);
+  // Publish is not disabled (it stays focusable and says why) but it does not publish.
+  const publish = bar.getByRole("button", { name: "Publish", exact: true });
+  await expect(publish).toHaveAttribute("aria-disabled", "true");
+  await expect(publish).toHaveAccessibleDescription(/Can't publish yet: \d+ missing/);
+  // aria-disabled is not "enabled" to Playwright's click, so press it the way a keyboard does.
+  await publish.focus();
+  await page.keyboard.press("Enter");
+  const sheet = page.getByRole("dialog", { name: "Can't publish yet" });
+  await expect(sheet).toBeVisible();
+  const links = sheet.getByRole("link");
   expect(await links.count()).toBeGreaterThan(4);
   // Every blocker is still reachable: scroll to the last one, then it is a 44 px tap target.
   const last = links.last();
   await last.scrollIntoViewIfNeeded();
   const lastBox = await last.boundingBox();
   expect(lastBox?.height ?? 0).toBeGreaterThanOrEqual(44);
-  const panelBox = await panel.boundingBox();
-  expect(lastBox?.y ?? 0).toBeGreaterThanOrEqual(panelBox?.y ?? 0);
+  const sheetBox = await sheet.boundingBox();
+  expect(lastBox?.y ?? 0).toBeGreaterThanOrEqual(sheetBox?.y ?? 0);
   expect((lastBox?.y ?? 0) + (lastBox?.height ?? 0)).toBeLessThanOrEqual(
-    (panelBox?.y ?? 0) + (panelBox?.height ?? 0),
+    (sheetBox?.y ?? 0) + (sheetBox?.height ?? 0),
   );
 });

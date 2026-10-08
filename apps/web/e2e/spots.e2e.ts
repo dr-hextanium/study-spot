@@ -76,7 +76,7 @@ test("acceptance 1: a spot made offline with every required field and a photo sy
 
   await page.context().setOffline(false);
   await expect(page.getByRole("button", { name: "All synced" })).toBeVisible({ timeout: 60_000 });
-  await expect(page.locator(".stamp-row").getByText("Published", { exact: true })).toBeVisible();
+  await expect(page.locator(".meta").getByText("Published", { exact: true })).toBeVisible();
   const id = new URL(page.url()).pathname.split("/").at(-1) ?? "";
   expect(id).toMatch(/^[0-9a-f-]{36}$/);
   const token = await tokenOf(page);
@@ -204,7 +204,7 @@ test("acceptance 3: a second surveyor can mark a spot reviewed; the one who edit
   await reviewer.context.close();
 });
 
-test("a 60-character spot name at 360 px truncates in the header and nothing scrolls sideways", async ({
+test("a 60-character spot name at 360 px wraps in the large title and nothing scrolls sideways", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 740 });
@@ -219,9 +219,13 @@ test("a 60-character spot name at 360 px truncates in the header and nothing scr
     el.scrollWidth > el.clientWidth,
   ]);
   expect(overflow).toBe(0);
-  expect(clipped).toBe(true);
+  // The large title wraps, so the whole name stays readable instead of clipping (spec 5).
+  expect(clipped).toBe(false);
   await expect(page.getByRole("button", { name: "All synced" })).toBeInViewport();
-  // Blockers wrap as 44 px links that stay inside the screen.
+  // Blockers are 44 px links that stay inside the screen.
+  // aria-disabled is not "enabled" to Playwright's click, so press it the way a keyboard does.
+  await page.getByRole("button", { name: "Publish", exact: true }).focus();
+  await page.keyboard.press("Enter");
   const blockers = page.locator(".blockers a");
   await expect(blockers.first()).toBeVisible();
   for (const box of await blockers.evaluateAll((els) =>
