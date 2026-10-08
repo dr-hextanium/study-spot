@@ -43,6 +43,29 @@ When a decision changes, update the relevant context file and append to the deci
 
 - Preplan your tool calls, and group independent ones into one batch where it makes sense. Wait for the whole batch to return before reading any result. Every turn re-reads the full context, so fewer turns means fewer tokens.
 
+## Visual Verification
+
+Run after a batch of UI changes, not after every edit. `/verify-ui` runs the loop; the `visual-reviewer` agent reads the screenshots so images stay out of the main session.
+
+**Ports:** 5173 belongs to another local app and 5199/8790 are the owner's live preview; never touch them. Use 5299 (web) and 8890 (API). Stop only servers you started, by PID.
+
+**Servers:**
+- API: `cd apps/server && E2E_PORT=8890 E2E_WEB_ORIGIN=http://localhost:5299 E2E_STATE=$CLAUDE_JOB_DIR/tmp/verify-state.json node scripts/e2e-server.ts` (in-memory seed data, single-use invite links in the state file)
+- Web: `cd apps/web && VITE_API_BASE_URL=http://127.0.0.1:8890 VITE_DATA_BASE_URL=http://data.localhost:8788 bunx vite --host 127.0.0.1 --port 5299 --strictPort`
+
+**Loop, in order:**
+1. `cd apps/web && VERIFY_WEB=http://localhost:5299 VERIFY_INVITE=<n> node scripts/verify-ui.ts <stateFile> [route ...]`: console errors, failed requests, horizontal overflow, axe, and screenshots at 375, 768, and 1440 px. Each invite index is single use.
+2. Screenshots in light mode: wait for sheets and toasts to settle and capture with animations disabled; prefer element captures. `magick mogrify -resize '1024x>' .claude/tmp/screenshots/*.png`, then review only the screens you changed.
+3. Lighthouse (performance, accessibility) on a production build in its own dir, never `apps/web/dist`: `bunx vite build --outDir <tmp>/dist-preview`, `bunx vite preview --outDir <tmp>/dist-preview --port 4299`, then `npx -y lighthouse http://localhost:4299/survey --only-categories=accessibility,performance --chrome-flags="--headless=new"`. Dev-server performance scores mean nothing.
+4. Self-critique against `apps/web/.impeccable/surfaces/apps-web.md` and `packages/ui-logic/src/tokens.ts` (and DESIGN.md once it exists).
+5. Only after this passes: `/impeccable critique` and `/impeccable audit`.
+
+**Tools:** Playwright CLI (the script) for routine checks; Playwright MCP only for exploratory sessions. Browser on localhost only. Never use MCP `browser_evaluate` or other arbitrary-code tools.
+
+**Done for a UI task:** console clean, axe zero violations, no horizontal overflow at any width, screenshots reviewed at all three widths, deviations from tokens or the contract listed.
+
+**Cleanup:** empty `.claude/tmp/screenshots/` when the task is done.
+
 ## Writing conventions
 
 - Never use em-dashes in UI copy, docs, comments, or commit messages. Use commas or colons.
