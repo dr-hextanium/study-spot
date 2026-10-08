@@ -49,6 +49,7 @@ export function summaryOf(
     updated_at: spot.updated_at,
     oldest_verified_at: oldestVerified(spot),
     hours_confirmed: spot.hours.length > 0,
+    cover_photo_id: spot.photos.find((p) => p.is_cover && p.approved)?.id ?? null,
   };
 }
 

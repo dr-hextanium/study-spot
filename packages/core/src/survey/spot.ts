@@ -168,6 +168,8 @@ export const SpotSummary = z.object({
   oldest_verified_at: IsoDateTime.nullable(),
   /** True when the spot has at least one hours row for the current term. */
   hours_confirmed: z.boolean(),
+  /** The approved cover photo, for list thumbnails; null when none. Defaulted so lists stored by older app versions still parse. */
+  cover_photo_id: z.uuid().nullable().default(null),
 });
 export type SpotSummary = z.infer<typeof SpotSummary>;
 

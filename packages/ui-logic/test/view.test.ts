@@ -210,6 +210,7 @@ function summary(over: Partial<SpotSummary>): SpotSummary {
     updated_at: "2026-10-05T15:00:00.000Z",
     oldest_verified_at: "2026-10-01T15:00:00.000Z",
     hours_confirmed: true,
+    cover_photo_id: null,
     ...over,
   };
 }
