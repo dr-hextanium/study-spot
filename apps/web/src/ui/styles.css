@@ -1523,6 +1523,14 @@ div.row {
 
 .actionbar--stacked .actionbar__inner {
   display: grid;
+  gap: var(--space-xs);
+}
+
+.actionbar__note {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--fontSize-small);
+  text-align: center;
 }
 
 @media (min-width: 768px) {
@@ -1736,6 +1744,21 @@ div.row {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.editor-name {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--fontSize-label);
+  overflow-wrap: anywhere;
+}
+
+.editor-meta .stepbar {
+  margin-top: var(--space-md);
+}
+
+.editor-meta .meta {
+  margin-top: var(--space-xs);
 }
 
 .progress-line {

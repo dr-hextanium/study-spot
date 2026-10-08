@@ -15,6 +15,19 @@ const DRAFT = surveySpotFixture({
   seat_count: null,
   missing: ["directions", "seat_count"],
 });
+const TWO_GAPS = surveySpotFixture({
+  status: "draft",
+  seat_count: null,
+  noise_policy: null,
+  missing: ["seat_count", "noise_policy"],
+});
+const ONE_GAP = surveySpotFixture({
+  status: "draft",
+  seat_count: null,
+  missing: ["seat_count"],
+});
+const FULL = surveySpotFixture({ status: "draft" });
+const SAVE = /^Save( and next)?$/;
 const at = (spot: SurveySpot) => `/survey/spots/${spot.id}`;
 
 test("a new spot is created on the phone and opens its overview, then moves to its real id", async () => {
@@ -166,12 +179,12 @@ test("Actions lists next missing, a photo, and the guided walk", async () => {
   // The walk only navigates: nothing was marked checked or queued, and the editor accepts the param.
   expect(view.router.state.location.search).toEqual({ walk: 1 });
   expect(app.deps.outbox.getSnapshot().records).toEqual([]);
-  expect(await screen.findByRole("button", { name: t("editor.save") })).toBeTruthy();
+  expect(await screen.findByRole("button", { name: t("editor.save_next") })).toBeTruthy();
 });
 
 test("an unknown walk value is ignored, not an error", async () => {
   const view = renderRoute(testApp({ spots: [DRAFT] }), `${at(DRAFT)}/identity?walk=banana`);
-  expect(await screen.findByRole("button", { name: t("editor.save") })).toBeTruthy();
+  expect(await screen.findByRole("button", { name: SAVE })).toBeTruthy();
   expect(view.router.state.location.search).toEqual({});
 });
 
@@ -202,20 +215,20 @@ test("the last editor sees why someone else reviews; a teammate gets Looks right
 });
 
 test("saving a section queues it, toasts, and returns to the overview", async () => {
-  const app = testApp({ spots: [DRAFT] });
-  const view = renderRoute(app, `${at(DRAFT)}/seating`);
+  const app = testApp({ spots: [ONE_GAP] });
+  const view = renderRoute(app, `${at(ONE_GAP)}/seating`);
   const seats = await screen.findByRole("textbox", { name: t("seating.seat_count.label") });
   fireEvent.change(seats, { target: { value: "40" } });
   fireEvent.click(screen.getByRole("button", { name: t("editor.save") }));
-  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(DRAFT)));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(ONE_GAP)));
   expect(await screen.findByText(t("editor.saved"))).toBeTruthy();
-  expect(app.server.inner.spot(DRAFT.id).seat_count).toBe(40);
+  expect(app.server.inner.spot(ONE_GAP.id).seat_count).toBe(40);
 });
 
 test("an empty required field shows its message and nothing is queued", async () => {
   const app = testApp({ spots: [DRAFT] });
   renderRoute(app, `${at(DRAFT)}/seating`);
-  fireEvent.click(await screen.findByRole("button", { name: t("editor.save") }));
+  fireEvent.click(await screen.findByRole("button", { name: SAVE }));
   expect(await screen.findByText(t("editor.invalid"))).toBeTruthy();
   expect(screen.getByText(t("seating.seat_count.invalid"))).toBeTruthy();
   expect(app.deps.outbox.getSnapshot().records).toEqual([]);
@@ -586,13 +599,13 @@ test("publishing offline queues it and says it goes live after syncing", async (
 });
 
 test("saving does not trip the leave guard on the way back", async () => {
-  const app = testApp({ spots: [DRAFT] });
-  const view = renderRoute(app, `${at(DRAFT)}/seating`);
+  const app = testApp({ spots: [ONE_GAP] });
+  const view = renderRoute(app, `${at(ONE_GAP)}/seating`);
   fireEvent.change(await screen.findByRole("textbox", { name: t("seating.seat_count.label") }), {
     target: { value: "40" },
   });
   fireEvent.click(screen.getByRole("button", { name: t("editor.save") }));
-  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(DRAFT)));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(ONE_GAP)));
   expect(screen.queryByRole("dialog", { name: t("editor.discard_changes.title") })).toBeNull();
 });
 
@@ -715,17 +728,17 @@ test("a section that does not exist is not found", async () => {
 });
 
 test("a save that throws names the problem and stays on the editor", async () => {
-  const app = testApp({ spots: [DRAFT] });
+  const app = testApp({ spots: [ONE_GAP] });
   app.deps.outbox.enqueue = async () => {
     throw new Error("indexeddb timeout");
   };
-  const view = renderRoute(app, `${at(DRAFT)}/seating`);
+  const view = renderRoute(app, `${at(ONE_GAP)}/seating`);
   fireEvent.change(await screen.findByRole("textbox", { name: t("seating.seat_count.label") }), {
     target: { value: "40" },
   });
   fireEvent.click(screen.getByRole("button", { name: t("editor.save") }));
   expect((await screen.findByRole("alert")).textContent).toBe(t("common.save_failed"));
-  expect(view.router.state.location.pathname).toBe(`${at(DRAFT)}/seating`);
+  expect(view.router.state.location.pathname).toBe(`${at(ONE_GAP)}/seating`);
 });
 
 test("a retry or discard that throws says so instead of closing silently", async () => {
@@ -773,4 +786,135 @@ test("a write queued before the surveyor's own unpublish is not a conflict with 
   });
   await waitFor(() => expect(app.deps.outbox.getSnapshot().records).toEqual([]));
   expect(app.server.inner.spot(published.id).version).toBe(5);
+});
+
+async function setSeats(value: string) {
+  fireEvent.change(await screen.findByRole("textbox", { name: t("seating.seat_count.label") }), {
+    target: { value },
+  });
+}
+
+test("Save and next goes to the next unfinished required section", async () => {
+  const app = testApp({ spots: [TWO_GAPS] });
+  const view = renderRoute(app, `${at(TWO_GAPS)}/seating`);
+  await setSeats("40");
+  fireEvent.click(screen.getByRole("button", { name: t("editor.save_next") }));
+  await waitFor(() =>
+    expect(view.router.state.location.pathname).toBe(`${at(TWO_GAPS)}/environment`),
+  );
+  expect(view.router.state.location.search).toEqual({});
+  expect(await screen.findByRole("heading", { level: 1, name: "Noise and feel" })).toBeTruthy();
+  await waitFor(() => expect(app.server.inner.spot(TWO_GAPS.id).seat_count).toBe(40));
+});
+
+test("with nothing left after this one, the button is Save and returns to the overview", async () => {
+  const app = testApp({ spots: [ONE_GAP] });
+  const view = renderRoute(app, `${at(ONE_GAP)}/seating`);
+  await setSeats("40");
+  expect(screen.queryByRole("button", { name: t("editor.save_next") })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: t("editor.save") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(ONE_GAP)));
+});
+
+test("an optional section saves back to the overview", async () => {
+  const app = testApp({ spots: [TWO_GAPS] });
+  const view = renderRoute(app, `${at(TWO_GAPS)}/late_night`);
+  expect(screen.queryByRole("button", { name: t("editor.save_next") })).toBeNull();
+  fireEvent.click(await screen.findByRole("button", { name: t("editor.save") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(TWO_GAPS)));
+});
+
+test("Nothing changed checks the section and returns to the overview", async () => {
+  const app = testApp({ spots: [TWO_GAPS] });
+  const view = renderRoute(app, `${at(TWO_GAPS)}/access`);
+  fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(TWO_GAPS)));
+  expect(await screen.findByText(t("editor.verify.done"))).toBeTruthy();
+});
+
+test("the editor shows progress, what comes next, and when the section was last checked", async () => {
+  renderRoute(testApp({ spots: [TWO_GAPS] }), `${at(TWO_GAPS)}/seating`);
+  expect(await screen.findByRole("img", { name: "4 of 6 done" })).toBeTruthy();
+  expect(screen.getByText(`4 of 6 · After this: ${t("section.environment.name")}`)).toBeTruthy();
+  expect(screen.getByText(t("home.stale.never"))).toBeTruthy();
+});
+
+test("with nothing after it the progress line is just the count", async () => {
+  renderRoute(testApp({ spots: [FULL] }), `${at(FULL)}/identity`);
+  expect(await screen.findByText("6 of 6")).toBeTruthy();
+  expect(screen.getByText(/^Checked [A-Z][a-z]{2} \d{1,2}$/)).toBeTruthy();
+});
+
+test("a guided walk checks each section in turn, then returns with a toast", async () => {
+  const app = testApp({ spots: [FULL] });
+  // Offline, so every check stays queued where this test can read it.
+  app.network.set(false);
+  const view = renderRoute(app, `${at(FULL)}/identity?walk=1`);
+  for (const section of ["access", "seating", "power", "environment", "use_fit"]) {
+    // Not marked checked until this section is opened and answered.
+    fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+    await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(FULL)}/${section}`));
+    expect(view.router.state.location.search).toEqual({ walk: 1 });
+  }
+  // The last one is plain Save: nothing is left.
+  expect(screen.queryByRole("button", { name: t("editor.save_next") })).toBeNull();
+  expect(screen.getByRole("button", { name: t("editor.save") })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: t("editor.verify") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(FULL)));
+  expect(view.router.state.location.search).toEqual({});
+  expect(await screen.findByText("Checked 6 sections")).toBeTruthy();
+  // Each section was checked on its own: one verify write per required section.
+  const groups = app.deps.outbox
+    .getSnapshot()
+    .records.flatMap((r) => (r.kind === "spot.verify" ? r.payload.groups : []));
+  expect(groups.sort()).toEqual([
+    "access",
+    "environment",
+    "identity",
+    "power",
+    "seating",
+    "use_fit",
+  ]);
+});
+
+test("in a walk, Save goes to the next section and keeps the walk", async () => {
+  const app = testApp({ spots: [TWO_GAPS] });
+  const view = renderRoute(app, `${at(TWO_GAPS)}/seating?walk=1`);
+  await setSeats("40");
+  expect(screen.getByRole("button", { name: t("editor.save_next") })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: t("editor.save_next") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(TWO_GAPS)}/power`));
+  expect(view.router.state.location.search).toEqual({ walk: 1 });
+});
+
+test("a walk skips sections already checked in it", async () => {
+  const app = testApp({ spots: [FULL] });
+  const view = renderRoute(app, `${at(FULL)}/seating?walk=1`);
+  const go = async (section: string, title: string) => {
+    await view.router.navigate({
+      to: "/survey/spots/$id/$section",
+      params: { id: FULL.id, section: section as "identity" },
+      search: { walk: 1 },
+    });
+    await screen.findByRole("heading", { level: 1, name: title });
+  };
+  const verify = async (expected: string) => {
+    fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+    await waitFor(() =>
+      expect(view.router.state.location.pathname).toBe(`${at(FULL)}/${expected}`),
+    );
+  };
+  await verify("power"); // seating checked
+  await go("identity", t("section.identity.name"));
+  await verify("access"); // identity checked
+  await verify("power"); // access checked; seating is skipped, it was checked first
+  await verify("environment"); // power checked; the walk goes on past the ones already done
+});
+
+test("without ?walk=1 nothing is walked and no walk toast shows", async () => {
+  const app = testApp({ spots: [FULL] });
+  const view = renderRoute(app, `${at(FULL)}/use_fit`);
+  fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(FULL)));
+  expect(screen.queryByText(/^Checked \d+ sections?$/)).toBeNull();
 });

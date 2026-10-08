@@ -1,11 +1,12 @@
-import { SURVEY_SECTION } from "@study-spot/core";
+import { SURVEY_SECTION, type SurveySection } from "@study-spot/core";
 import { SpotRef, t } from "@study-spot/ui-logic";
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { useOutboxSnapshot } from "../hooks/useOutbox.ts";
 import { type SpotViewState, useSpotView } from "../hooks/useSpotView.ts";
 import { EDITORS } from "../screens/editors/index.tsx";
+import { WalkContext } from "../screens/editors/walk.ts";
 import { SurveyHeader } from "../screens/SurveyHeader.tsx";
 import { LegacyScreen } from "../ui/Screen.tsx";
 
@@ -42,6 +43,23 @@ function SectionRoute() {
   const keyId = useRef(id);
   if (keyId.current !== id && snapshot.idMap[keyId.current] !== id) keyId.current = id;
   const navigate = useNavigate();
+  const { walk } = Route.useSearch();
+  // Sections checked in this walk. They live here, above the editors, so each editor's own
+  // remount (a fresh form per section) does not forget them; leaving the route ends the walk.
+  const [checked, setChecked] = useState<readonly SurveySection[]>([]);
+  useEffect(() => {
+    if (walk === undefined) setChecked([]);
+  }, [walk]);
+  const walking = useMemo(
+    () =>
+      walk === 1
+        ? {
+            checked,
+            mark: (s: SurveySection) => setChecked((c) => (c.includes(s) ? c : [...c, s])),
+          }
+        : null,
+    [walk, checked],
+  );
   // The last ready screen and where it is moving to, so an editor with unsaved edits
   // stays mounted while a draft made offline moves from its local id to the real one.
   const held = useRef<{ ready: Ready; to: string | null } | null>(null);
@@ -60,6 +78,7 @@ function SectionRoute() {
       void navigate({
         to: "/survey/spots/$id/$section",
         params: { id: state.to, section },
+        search: (prev) => prev,
         replace: true,
       });
     }
@@ -78,5 +97,9 @@ function SectionRoute() {
   }
   const Editor = EDITORS[section];
   // A fresh form each time an editor opens, but not when a draft's id moves.
-  return <Editor key={`${section}:${keyId.current}`} view={shown.view} />;
+  return (
+    <WalkContext.Provider value={walking}>
+      <Editor key={`${section}:${keyId.current}`} view={shown.view} />
+    </WalkContext.Provider>
+  );
 }

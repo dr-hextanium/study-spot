@@ -14,6 +14,8 @@ export function Screen(props: {
   trailing?: ReactNode;
   meta?: ReactNode;
   action?: ReactNode;
+  /** Stack the action bar's buttons: a wide primary over a quiet one. */
+  stacked?: boolean;
   children: ReactNode;
 }) {
   const { ref, scrolled } = useLargeTitle();
@@ -37,7 +39,11 @@ export function Screen(props: {
           {props.children}
         </div>
       </main>
-      {props.action === undefined ? null : <ActionBar>{props.action}</ActionBar>}
+      {props.action === undefined ? null : (
+        <ActionBar {...(props.stacked === undefined ? {} : { stacked: props.stacked })}>
+          {props.action}
+        </ActionBar>
+      )}
     </>
   );
 }
