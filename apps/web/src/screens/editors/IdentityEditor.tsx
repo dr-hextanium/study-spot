@@ -1,4 +1,5 @@
 import { isLocalId, type SpotView, t } from "@study-spot/ui-logic";
+import { Layers, Signpost, Snowflake, Tag, Trees, Type } from "lucide-react";
 import { useState } from "react";
 import { useCampus } from "../../hooks/useQueries.ts";
 import { type LocationState, spotPoint } from "../../lib/location.ts";
@@ -30,6 +31,7 @@ export function IdentityEditor({ view }: { view: SpotView }) {
           <>
             <TextField
               label={t("new.official_name.label")}
+              icon={Type}
               helper={t("new.official_name.helper")}
               error={errorFor(form.errors, "official_name")}
               value={v.official_name ?? ""}
@@ -38,6 +40,7 @@ export function IdentityEditor({ view }: { view: SpotView }) {
             />
             <TextField
               label={t("new.common_name.label")}
+              icon={Tag}
               optional={t("common.optional")}
               value={v.common_name ?? ""}
               onChange={(x) => set("common_name", x.trim() === "" ? null : x)}
@@ -58,6 +61,7 @@ export function IdentityEditor({ view }: { view: SpotView }) {
             />
             <TextField
               label={t("new.floor.label")}
+              icon={Layers}
               helper={t("new.floor.helper")}
               error={errorFor(form.errors, "floor")}
               value={v.floor ?? ""}
@@ -80,6 +84,7 @@ export function IdentityEditor({ view }: { view: SpotView }) {
             />
             <TextField
               label={t("new.directions.label")}
+              icon={Signpost}
               helper={t("new.directions.helper")}
               placeholder={t("new.directions.placeholder")}
               value={v.directions ?? ""}
@@ -89,11 +94,13 @@ export function IdentityEditor({ view }: { view: SpotView }) {
             />
             <Check
               label={t("identity.outdoor.label")}
+              icon={Trees}
               checked={v.outdoor === true}
               onChange={(x) => set("outdoor", x)}
             />
             <Check
               label={t("identity.seasonal.label")}
+              icon={Snowflake}
               checked={v.seasonal === true}
               onChange={(x) => set("seasonal", x)}
             />
