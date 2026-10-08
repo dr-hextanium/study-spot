@@ -1060,3 +1060,22 @@ test("stop() during a send: no further write is picked afterwards", async () => 
   await box.idle();
   expect(t.sent()).toEqual([`PUT /survey/spots/${SPOT_A}/power`]);
 });
+
+test("noteServerVersion: a queued write rebases onto the surveyor's own admin bump, and never lowers", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  await box.enqueue(power(SPOT_A), 3);
+  // The surveyor's own unpublish bumped the spot to 4 outside the outbox.
+  t.server.bump(SPOT_A, { status: "draft" });
+  await box.noteServerVersion(SPOT_A, 4);
+  await box.noteServerVersion(SPOT_A, 2);
+  t.network.set(true);
+  await box.idle();
+  await box.syncNow();
+  expect(t.bases()).toEqual([4]);
+  expect(box.getSnapshot().records).toEqual([]);
+  const store = createOutboxStore({ cache: t.cache, blobs: t.blobs, clock: t.clock });
+  expect(await store.version(SPOT_A)).toBe(5);
+});

@@ -5,6 +5,7 @@ import {
   type SpotSummary,
   SurveySpot,
 } from "@study-spot/core";
+import type { Outbox } from "@study-spot/ui-logic";
 import type { QueryClient } from "@tanstack/react-query";
 import type { PersistedClient } from "@tanstack/react-query-persist-client";
 import { z } from "zod";
@@ -139,4 +140,22 @@ export function shouldPersistQuery(q: {
   state: { data: unknown };
 }): boolean {
   return q.queryKey[0] === "survey" && q.state.data !== undefined;
+}
+
+/**
+ * A spot the server returned for this surveyor's own admin action (unpublish, photo
+ * approval or rejection). Updates the cached copy and the outbox's stored version, as
+ * a sent write's answer does, so a write queued on the spot is not a conflict with it.
+ */
+export async function adoptServerSpot(
+  qc: QueryClient,
+  outbox: Pick<Outbox, "noteServerVersion">,
+  spot: SurveySpot,
+): Promise<void> {
+  applyServerSpot(qc, spot);
+  try {
+    await outbox.noteServerVersion(spot.id, spot.version);
+  } catch {
+    // Storage trouble: the worst case is the conflict this call prevents.
+  }
 }

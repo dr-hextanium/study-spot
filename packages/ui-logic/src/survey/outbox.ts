@@ -710,6 +710,26 @@ export function createOutbox(deps: OutboxDeps) {
       signal.post();
       await refresh();
     },
+    /**
+     * The server changed a spot outside the outbox (this surveyor's own unpublish or photo
+     * approval) and answered with its new version. Stores it the way a sent write's answer
+     * is, and moves an unsent write's pinned base version up to it, so the write is not
+     * a conflict with the surveyor's own action. Never lowers a version.
+     */
+    async noteServerVersion(spotId: string, version: number): Promise<void> {
+      await locked(async () => {
+        await raiseVersion(spotId, version);
+        for (const r of await store.list()) {
+          if (r.spot_id !== spotId || r.state !== "pending") continue;
+          if (r.base_version === null || r.base_version >= version) continue;
+          if (r.kind === "spot.section" || r.kind === "spot.verify" || r.kind === "spot.review") {
+            await store.put({ ...r, base_version: version });
+          }
+        }
+      });
+      await refresh();
+      signal.post();
+    },
     /** After signing in again on this phone. Starts the outbox again if stop() ended it (sign-out). */
     resume(): void {
       emit({ signedOut: false });

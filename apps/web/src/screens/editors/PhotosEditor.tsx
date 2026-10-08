@@ -3,7 +3,7 @@ import { type PendingPhoto, type SpotView, t } from "@study-spot/ui-logic";
 import { Camera, ImagePlus } from "lucide-react";
 import { useRef, useState } from "react";
 import { useDeps } from "../../app/AppProvider.tsx";
-import { applyServerSpot } from "../../app/serverCache.ts";
+import { adoptServerSpot } from "../../app/serverCache.ts";
 import { useOnline } from "../../hooks/useOnline.ts";
 import { usePhotoUrl } from "../../hooks/usePhotoUrl.ts";
 import { useSession } from "../../hooks/useSession.ts";
@@ -64,7 +64,7 @@ function ServerPhoto(props: { photo: SurveyPhoto; view: SpotView }) {
   async function approveOnce() {
     const res = await api.approvePhoto(photo.id, { client_write_id: crypto.randomUUID() });
     if (res.kind === "ok") {
-      applyServerSpot(queryClient, res.value);
+      await adoptServerSpot(queryClient, outbox, res.value);
       toasts.show(t("photos.approve.done"));
     } else {
       toasts.show(t("error.generic"));

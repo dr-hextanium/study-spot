@@ -10,7 +10,7 @@ import {
 import { Link, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
-import { applyServerSpot } from "../app/serverCache.ts";
+import { adoptServerSpot } from "../app/serverCache.ts";
 import { useOnline } from "../hooks/useOnline.ts";
 import { useSession } from "../hooks/useSession.ts";
 import { type SpotViewState, useSpotView } from "../hooks/useSpotView.ts";
@@ -175,7 +175,7 @@ function Ready(props: {
   async function unpublish() {
     setUnpublishing(false);
     const res = await api.unpublish(spot.id, { client_write_id: crypto.randomUUID() });
-    if (res.kind === "ok") applyServerSpot(queryClient, res.value);
+    if (res.kind === "ok") await adoptServerSpot(queryClient, outbox, res.value);
     else toasts.show(t("error.generic"));
   }
 

@@ -104,8 +104,8 @@ export class TestServer implements Http {
     }
     const unpublish = /^\/survey\/spots\/([^/]+)\/unpublish$/.exec(path);
     if (unpublish?.[1] !== undefined && req.method === "POST") {
-      const spot = { ...this.inner.spot(unpublish[1]), status: "draft" as const };
-      this.inner.spots.set(spot.id, spot);
+      // Like the server: an unpublish is a write and bumps the version.
+      const spot = this.inner.bump(unpublish[1], { status: "draft" });
       return { status: 200, text: JSON.stringify(spot) };
     }
     return this.inner.send(req);

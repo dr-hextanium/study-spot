@@ -1,6 +1,6 @@
 import type { SurveySpot } from "@study-spot/core";
 import { t } from "@study-spot/ui-logic";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";
 import { identity, SEATING } from "../../../packages/ui-logic/test/builders.ts";
@@ -628,4 +628,32 @@ test("a retry or discard that throws says so instead of closing silently", async
   const confirm = await screen.findByRole("dialog", { name: t("failed.discard") });
   fireEvent.click(within(confirm).getByRole("button", { name: t("failed.discard") }));
   expect(await screen.findByText(t("common.save_failed"))).toBeTruthy();
+});
+
+test("a write queued before the surveyor's own unpublish is not a conflict with it", async () => {
+  const published = surveySpotFixture({ status: "published", version: 3 });
+  const app = testApp({ spots: [published], me: { ...ME, role: "admin" } });
+  await app.deps.started;
+  // Nothing sends while the outbox is stopped, so the write waits at the version the surveyor saw.
+  app.deps.outbox.stop();
+  await app.deps.outbox.enqueue(
+    { kind: "spot.section", spot_id: published.id, payload: SEATING },
+    3,
+  );
+  renderRoute(app, at(published));
+  fireEvent.click(await screen.findByRole("button", { name: t("spot.unpublish") }));
+  const confirm = await screen.findByRole("dialog", {
+    name: t("spot.unpublish.confirm.title", { name: published.official_name }),
+  });
+  fireEvent.click(
+    within(confirm).getByRole("button", { name: t("spot.unpublish.confirm.action") }),
+  );
+  await waitFor(() => expect(app.server.inner.spot(published.id).version).toBe(4));
+  await screen.findByText(t("spot.status.draft"));
+  await act(async () => {
+    app.deps.outbox.resume();
+    await app.deps.outbox.idle();
+  });
+  await waitFor(() => expect(app.deps.outbox.getSnapshot().records).toEqual([]));
+  expect(app.server.inner.spot(published.id).version).toBe(5);
 });
