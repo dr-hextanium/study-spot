@@ -723,16 +723,22 @@ export function createOutbox(deps: OutboxDeps) {
     },
     /**
      * The server changed a spot outside the outbox (this surveyor's own unpublish or photo
-     * approval) and answered with its new version. Stores it the way a sent write's answer
-     * is, and moves an unsent write's pinned base version up to it, so the write is not
-     * a conflict with the surveyor's own action. Never lowers a version.
+     * approval) and answered with its new version. Adopts it only when it is exactly one past
+     * the version this phone knows: then it stores it and moves an unsent write's base version
+     * up, so the write is not a conflict with the surveyor's own action. Anything else changes
+     * nothing, so a real conflict surfaces. Never lowers a version.
      */
     async noteServerVersion(spotId: string, version: number): Promise<void> {
       await locked(async () => {
+        // Unpublish and approve carry no base version, so only a bump of exactly one past
+        // what this phone knows can be the surveyor's own. A bigger jump hides someone
+        // else's edit, which must still surface as a conflict.
+        const stored = await store.version(spotId);
+        if (stored !== null && stored !== version - 1) return;
         await raiseVersion(spotId, version);
         for (const r of await store.list()) {
           if (r.spot_id !== spotId || r.state !== "pending") continue;
-          if (r.base_version === null || r.base_version >= version) continue;
+          if (r.base_version !== version - 1) continue;
           if (r.kind === "spot.section" || r.kind === "spot.verify" || r.kind === "spot.review") {
             await store.put({ ...r, base_version: version });
           }

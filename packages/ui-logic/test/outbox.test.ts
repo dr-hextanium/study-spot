@@ -1094,3 +1094,19 @@ test("discardAll drops every queued write and photo, and sends nothing", async (
   await box.idle();
   expect(t.sent()).toEqual([]);
 });
+
+test("noteServerVersion: another surveyor's edit between is still a conflict (3, 4 theirs, 5 mine)", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  await box.enqueue(power(SPOT_A), 3);
+  t.server.bump(SPOT_A, { seat_count: 99 });
+  t.server.bump(SPOT_A, { status: "draft" });
+  await box.noteServerVersion(SPOT_A, 5);
+  t.network.set(true);
+  await box.idle();
+  await box.syncNow();
+  expect(t.bases()).toEqual([3]);
+  expect(box.getSnapshot().records.map((r) => r.state)).toEqual(["conflict"]);
+});
