@@ -671,12 +671,13 @@ export function createOutbox(deps: OutboxDeps) {
         for (const d of doomed) await store.remove(d.client_write_id);
       }),
     /**
-     * Drops every queued write and its photo bytes, for a phone handed to another surveyor.
+     * Drops every queued write (unreadable ones too) and its photo bytes, for a phone handed to another surveyor.
      * One step under the lock, so no write is picked between two removals.
      */
     async discardAll(): Promise<void> {
       await locked(async () => {
         for (const r of await store.list()) await store.remove(r.client_write_id);
+        for (const key of await store.unreadable()) await store.removeUnreadable(key);
       });
       await refresh();
       signal.post();

@@ -1110,3 +1110,17 @@ test("noteServerVersion: another surveyor's edit between is still a conflict (3,
   expect(t.bases()).toEqual([3]);
   expect(box.getSnapshot().records.map((r) => r.state)).toEqual(["conflict"]);
 });
+
+test("discardAll also removes unreadable records", async () => {
+  const t = setup();
+  const garbage = "outbox:w:00000000-0000-4000-9999-000000000002";
+  await t.cache.set(garbage, "{not json");
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  await box.enqueue(power(SPOT_A), 3);
+  await box.discardAll();
+  expect(await box.unreadableKeys()).toEqual([]);
+  expect(box.getSnapshot().unreadable).toBe(0);
+  expect(box.getSnapshot().records).toEqual([]);
+});
