@@ -80,3 +80,20 @@ test("keep going: the draft with the newest write on this phone, else my latest 
   expect(keepGoing([e])).toBeNull();
   expect(keepGoing([])).toBeNull();
 });
+
+test("a published spot keeps its check date when an attention fact leads", () => {
+  const home: SurveyHome = {
+    ...HOME,
+    stale: [
+      ...HOME.stale,
+      { spotId: "a", name: "Melville Library, 2nd floor", oldestVerifiedAt: days(40) },
+    ],
+  };
+  const { rows } = homeList(home, { filter: "all", query: "", now: NOW });
+  expect(rows.find((r) => r.spotId === "a")).toMatchObject({
+    fact: { kind: "conflict" },
+    checked: { at: days(40) },
+  });
+  expect(rows.find((r) => r.spotId === "d")?.checked).toBeNull();
+  expect(rows.find((r) => r.spotId === "n")?.checked).toEqual({ at: null });
+});

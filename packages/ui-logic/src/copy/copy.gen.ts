@@ -466,6 +466,7 @@ export const COPY = {
   "home.fact.unreviewed": "Edited by {name}",
   "home.fact.hours": "No {term} hours",
   "home.fact.progress": "{done}/{total}",
+  "home.checked": "Checked {date}",
   "home.fact.draft": "Draft",
   "progress.label": "{done} of {total} done",
 } as const;
@@ -916,6 +917,7 @@ export const COPY_MAX = {
   "home.fact.unreviewed": 30,
   "home.fact.hours": 24,
   "home.fact.progress": 6,
+  "home.checked": 20,
   "home.fact.draft": 8,
   "progress.label": 20,
 } as const satisfies Record<keyof typeof COPY, number>;

@@ -576,6 +576,7 @@ Strings the built screens needed beyond the sections above: short header forms f
 | home.fact.unreviewed | Edited by {name} | 30 | |
 | home.fact.hours | No {term} hours | 24 | |
 | home.fact.progress | {done}/{total} | 6 | |
+| home.checked | Checked {date} | 20 | row subtitle under an attention fact |
 | home.fact.draft | Draft | 8 | progress unknown |
 | progress.label | {done} of {total} done | 20 | step bar accessible name |
 

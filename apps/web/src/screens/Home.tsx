@@ -15,7 +15,7 @@ import { useOnline } from "../hooks/useOnline.ts";
 import { useOutboxSnapshot } from "../hooks/useOutbox.ts";
 import { useCampusTz } from "../hooks/useQueries.ts";
 import { useSurveyHome } from "../hooks/useSurveyHome.ts";
-import { homeFactEnd } from "../lib/facts.tsx";
+import { homeFactEnd, homeFactSub } from "../lib/facts.tsx";
 import { sectionName } from "../lib/format.ts";
 import { useHomeState } from "../lib/homeState.ts";
 import { Banner } from "../ui/Banner.tsx";
@@ -185,6 +185,7 @@ export function Home(props: { spotLink?: SpotLinkFor; isAdmin: boolean }) {
                 title={row.name}
                 compact
                 end={homeFactEnd(row.fact, tz)}
+                {...(homeFactSub(row, tz) === undefined ? {} : { sub: homeFactSub(row, tz) })}
                 {...(link === undefined ? {} : { link: link(row.spotId) })}
               />
             ))}

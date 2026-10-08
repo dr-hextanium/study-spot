@@ -1,4 +1,4 @@
-import { type HomeFact, t } from "@study-spot/ui-logic";
+import { type HomeFact, type HomeRow, t } from "@study-spot/ui-logic";
 import { CircleAlert, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { Pill } from "../ui/Pill.tsx";
@@ -36,4 +36,16 @@ export function homeFactEnd(fact: HomeFact, tz: string): ReactNode {
     case "never_checked":
       return <span className="fact">{t("home.stale.never")}</span>;
   }
+}
+
+/**
+ * The row subtitle: every published spot shows when it was checked. A row whose
+ * end already is the check date needs no second line.
+ */
+export function homeFactSub(row: HomeRow, tz: string): string | undefined {
+  if (row.checked === null) return undefined;
+  if (row.fact.kind === "checked" || row.fact.kind === "never_checked") return undefined;
+  return row.checked.at === null
+    ? t("home.stale.never")
+    : t("home.checked", { date: shortDate(row.checked.at, tz) });
 }

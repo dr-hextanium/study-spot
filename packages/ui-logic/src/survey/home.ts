@@ -38,7 +38,13 @@ export type HomeFact =
   | { kind: "checked"; at: string }
   | { kind: "never_checked" };
 
-export type HomeRow = { spotId: string; name: string; fact: HomeFact };
+/** `checked` is null for a draft; for a published spot `at` is its oldest check, null when never checked. */
+export type HomeRow = {
+  spotId: string;
+  name: string;
+  fact: HomeFact;
+  checked: { at: string | null } | null;
+};
 
 function attentionFact(r: AttentionRow): HomeFact {
   switch (r.reason) {
@@ -81,10 +87,12 @@ export function homeList(
 ): { rows: HomeRow[]; counts: Record<HomeFilter, number> } {
   const q = normalize(opts.query.trim());
   const match = (r: { name: string }) => q === "" || normalize(r.name).includes(q);
+  const checkedOf = new Map(home.stale.map((s) => [s.spotId, { at: s.oldestVerifiedAt }]));
   const row = (r: { spotId: string; name: string }, fact: HomeFact): HomeRow => ({
     spotId: r.spotId,
     name: r.name,
     fact,
+    checked: checkedOf.get(r.spotId) ?? null,
   });
   const attention = home.attention.filter(match).map((r) => row(r, attentionFact(r)));
   const drafts = home.drafts.filter(match).map((d) => row(d, draftFact(d)));

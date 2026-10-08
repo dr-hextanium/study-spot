@@ -33,6 +33,8 @@ test("a teammate's unreviewed spot needs attention and lists by oldest check", a
   fireEvent.click(screen.getByRole("button", { name: /^All \d/ }));
   const all = screen.getByRole("region", { name: t("home.filter.all") });
   expect(within(all).getByText("Jan 2")).toBeTruthy();
+  // The published spot with an attention fact still shows when it was checked.
+  expect(within(all).getByText(t("home.checked", { date: "Sep 1" }))).toBeTruthy();
 });
 
 test("a draft made offline shows under Drafts with its step count", async () => {
@@ -186,7 +188,7 @@ test("the unsynced-changes banner does not wait for the first sync pass to end",
 });
 
 const OTHER_EDITOR = "2c1e5b7a-0c2d-4f5e-9a1b-3c4d5e6f7a8b";
-const CONFLICT_DRAFT = surveySpotFixture({
+const LOBBY_DRAFT = surveySpotFixture({
   id: "6f1d1a2e-6c55-4b5b-8b0e-0d7f4f5c1a03",
   slug: "union-lobby",
   official_name: "Union Lobby Tables",
@@ -214,7 +216,7 @@ const FRESH = surveySpotFixture({
 });
 
 test("filter chips switch the list and show counts", async () => {
-  renderRoute(testApp({ spots: [PUBLISHED, CONFLICT_DRAFT, STALE, FRESH] }), "/survey");
+  renderRoute(testApp({ spots: [PUBLISHED, LOBBY_DRAFT, STALE, FRESH] }), "/survey");
   const all = await screen.findByRole("button", { name: /^All 4$/ });
   expect(all.getAttribute("aria-pressed")).toBe("true");
   fireEvent.click(screen.getByRole("button", { name: /^Drafts 1$/ }));
@@ -223,8 +225,9 @@ test("filter chips switch the list and show counts", async () => {
   expect(screen.getByRole("button", { name: /^Drafts 1$/ }).getAttribute("aria-pressed")).toBe(
     "true",
   );
-  fireEvent.click(screen.getByRole("button", { name: /^Due/ }));
+  fireEvent.click(screen.getByRole("button", { name: /^Due 1$/ }));
   const due = screen.getByRole("region", { name: t("home.filter.due") });
+  expect(within(due).getByText("Melville Old Lounge")).toBeTruthy();
   expect(within(due).queryByText("Fresh Room")).toBeNull();
 });
 
@@ -256,18 +259,18 @@ test("filter and search come back after leaving Home", async () => {
 });
 
 test("keep going names the draft and what is next", async () => {
-  const app = testApp({ spots: [CONFLICT_DRAFT] });
+  const app = testApp({ spots: [LOBBY_DRAFT] });
   renderRoute(app, "/survey");
   await app.deps.started;
   await app.deps.outbox.enqueue(
-    { kind: "spot.section", spot_id: CONFLICT_DRAFT.id, payload: POWER },
-    CONFLICT_DRAFT.version,
+    { kind: "spot.section", spot_id: LOBBY_DRAFT.id, payload: POWER },
+    LOBBY_DRAFT.version,
   );
   await act(async () => {
-    app.deps.queryClient.setQueryData(keys.spot(CONFLICT_DRAFT.id), CONFLICT_DRAFT);
+    app.deps.queryClient.setQueryData(keys.spot(LOBBY_DRAFT.id), LOBBY_DRAFT);
   });
   expect(await screen.findByRole("link", { name: /Keep going.*Union Lobby Tables/ })).toBeTruthy();
-  expect(screen.getByText(/Next: Seating · \d left/)).toBeTruthy();
+  expect(screen.getByText("Next: Seating · 1 left")).toBeTruthy();
 });
 
 test("home state reads only a known filter and a short query", () => {
