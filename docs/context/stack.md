@@ -61,3 +61,5 @@ apps/mobile       Expo app. Do not create until the v1 gate in [roadmap.md](road
 
 ### Hosting
 Free or near-free tiers. Open source repository from day one.
+
+The inline theme boot script in `apps/web/index.html` needs its sha256 in any future `script-src` CSP.

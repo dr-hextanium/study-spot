@@ -35,7 +35,9 @@ Instant choice: segmented controls show the new choice on pointerdown and the pa
 
 ## Unresolved
 
-Student mode surfaces will be designed in this system (decision 12 is an open question for the owner). Bulk check of every section is an open question.
+Student mode keeps the postcard idea (decision 12); its surfaces are designed separately.
+
+Decided: "Check every section" is a guided walk. It opens each section in turn, and Nothing changed moves to the next one.
 
 ## Components to derive in the web UI plan
 
