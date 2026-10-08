@@ -15,7 +15,8 @@
       "!apps/web/dev-dist",
       "!apps/web/test-results",
       "!apps/web/playwright-report",
-      "!apps/web/e2e/.state"
+      "!apps/web/e2e/.state",
+      "!.superpowers"
     ]
   },
   "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
