@@ -115,3 +115,27 @@ test("a session saved in another tab resumes this tab's sync", async () => {
   expect(app.deps.outbox.getSnapshot().signedOut).toBe(false);
   expect(app.deps.session.token()).toBe(NEW_TOKEN);
 });
+
+test("saving the same token again does not resume a signed-out outbox", async () => {
+  const app = testApp();
+  app.server.unauthorized = true;
+  renderRoute(app, "/survey");
+  await act(async () => {
+    await app.deps.outbox.createSpot(identity());
+  });
+  await screen.findByText(t("auth.expired.title"));
+  expect(app.deps.outbox.getSnapshot().signedOut).toBe(true);
+  const me = app.deps.session.current();
+  if (me === null) throw new Error("no session");
+  act(() => {
+    app.deps.session.save({ token: me.token, surveyor: me.surveyor });
+  });
+  expect(app.deps.outbox.getSnapshot().signedOut).toBe(true);
+  expect(app.deps.auth.signedOut()).toBe(true);
+  // A fresh token resumes.
+  app.server.unauthorized = false;
+  act(() => {
+    app.deps.session.save({ token: NEW_TOKEN, surveyor: me.surveyor });
+  });
+  await waitFor(() => expect(app.deps.outbox.getSnapshot().signedOut).toBe(false));
+});

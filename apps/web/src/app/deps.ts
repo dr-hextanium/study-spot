@@ -98,7 +98,7 @@ export function createQueryClient(): QueryClient {
 }
 
 /**
- * Signing in again, in this tab or another, resumes this tab: reads and the
+ * Signing in again with a new token, in this tab or another, resumes this tab: reads and the
  * outbox leave their signed-out state and the survey queries load again. The
  * session store is the one place all tabs agree on, so this listens there.
  */
@@ -112,10 +112,11 @@ export function resumeOnNewSession(deps: {
   let last = session.token();
   return session.subscribe(() => {
     const token = session.token();
-    const wasOut = auth.signedOut() || outbox.getSnapshot().signedOut;
     const changed = token !== last;
     last = token;
-    if (token === null || !(changed || wasOut)) return;
+    // A save of the same token proves nothing new: the server refused it, so a
+    // re-login hands out a fresh one. Resuming on it would only fail again.
+    if (token === null || !changed) return;
     auth.reset();
     outbox.resume();
     void queryClient.invalidateQueries();
