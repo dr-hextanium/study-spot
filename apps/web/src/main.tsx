@@ -2,6 +2,7 @@ import "@fontsource/public-sans/latin-600.css";
 import "@fontsource/public-sans/latin-700.css";
 import "./ui/styles.css";
 import "./screens/spot.css";
+import "./screens/admin.css";
 import { t, tokens } from "@study-spot/ui-logic";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";

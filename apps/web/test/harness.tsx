@@ -16,6 +16,7 @@ import {
 import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/react-router";
 import { type RenderResult, render } from "@testing-library/react";
 import type { ReactNode } from "react";
+import { z } from "zod";
 import { FakeSurveyServer } from "../../../packages/ui-logic/test/fakeServer.ts";
 import {
   FakeForeground,
@@ -42,6 +43,19 @@ import { browserImageKit } from "../src/lib/photo.ts";
 import { routeTree } from "../src/routeTree.gen.ts";
 
 export const API = "https://api.example";
+export type PendingPhoto = {
+  id: string;
+  spot_id: string;
+  url: string | null;
+  taken_at: string;
+  is_cover: boolean;
+  uploaded_by: string | null;
+  approved: boolean;
+  approved_at: string | null;
+  spot_name: string;
+  uploaded_by_name: string | null;
+};
+const Invite = z.object({ role: z.string(), surveyor_id: z.string().optional() });
 export const TOKEN = "a".repeat(43);
 export const ME: SurveyorPublic = {
   id: "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed",
@@ -82,6 +96,14 @@ export class TestServer implements Http {
   offline = false;
   unauthorized = false;
   readonly reads: string[] = [];
+  /** Admin routes, answered from this state. */
+  readonly admin: {
+    surveyors: SurveyorPublic[];
+    invites: z.infer<typeof Invite>[];
+    published: number;
+    warnings: string[];
+    photos: PendingPhoto[];
+  } = { surveyors: [], invites: [], published: 0, warnings: [], photos: [] };
   constructor(spots: SurveySpot[]) {
     this.inner = new FakeSurveyServer(spots);
   }
@@ -102,6 +124,12 @@ export class TestServer implements Http {
     if (req.method === "GET" && path === "/survey/campus") {
       return { status: 200, text: JSON.stringify(CAMPUS) };
     }
+    const admin = this.adminRoute(
+      req.method,
+      path,
+      req.body?.kind === "json" ? req.body.json : null,
+    );
+    if (admin !== null) return admin;
     const unpublish = /^\/survey\/spots\/([^/]+)\/unpublish$/.exec(path);
     if (unpublish?.[1] !== undefined && req.method === "POST") {
       // Like the server: an unpublish is a write and bumps the version.
@@ -109,6 +137,58 @@ export class TestServer implements Http {
       return { status: 200, text: JSON.stringify(spot) };
     }
     return this.inner.send(req);
+  }
+
+  /** Admin routes, answered from `admin`. Null when the path is not an admin route. */
+  private adminRoute(method: string, path: string, json: string | null): FetchResponse | null {
+    const ok = (body: unknown): FetchResponse => ({ status: 200, text: JSON.stringify(body) });
+    if (path === "/admin/invites" && method === "POST") {
+      const body = Invite.parse(JSON.parse(json ?? "{}"));
+      this.admin.invites.push(body);
+      const hint = body.surveyor_id === undefined ? "" : "?relogin=1";
+      return ok({
+        url: `https://perch.example/invite/${"d".repeat(43)}${hint}`,
+        expires_at: "2026-10-15T18:00:00.000Z",
+      });
+    }
+    if (path === "/admin/surveyors" && method === "GET") {
+      return ok({
+        surveyors: this.admin.surveyors.map((s) => ({
+          ...s,
+          created_at: "2026-10-01T00:00:00.000Z",
+        })),
+      });
+    }
+    const revoke = /^\/admin\/surveyors\/([^/]+)\/revoke$/.exec(path);
+    if (revoke !== null && method === "POST") {
+      const s = this.admin.surveyors.find((x) => x.id === revoke[1]);
+      if (s === undefined) return { status: 404, text: '{"error":"not_found"}' };
+      s.active = false;
+      return ok(s);
+    }
+    if (path === "/admin/publish") {
+      if (method === "POST") this.admin.published += 1;
+      const published = this.admin.published > 0;
+      return ok({
+        dirty: !published,
+        running: false,
+        last_published_at: published ? "2026-10-13T18:00:00.000Z" : null,
+        last_hash: null,
+        last_attempt_at: null,
+        warnings: this.admin.warnings,
+        last_error: null,
+      });
+    }
+    if (path === "/admin/photos/pending") return ok({ photos: this.admin.photos });
+    const review = /^\/survey\/photos\/([^/]+)\/(approve|reject)$/.exec(path);
+    if (review !== null && method === "POST") {
+      const photo = this.admin.photos.find((p) => p.id === review[1]);
+      if (photo === undefined) return { status: 404, text: '{"error":"not_found"}' };
+      this.admin.photos = this.admin.photos.filter((p) => p.id !== photo.id);
+      // Like the server: approving or rejecting is a write and bumps the version.
+      return ok(this.inner.bump(photo.spot_id));
+    }
+    return null;
   }
 }
 

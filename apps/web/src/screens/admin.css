@@ -1,0 +1,32 @@
+/* Admin screen of survey mode. Tokens only. */
+
+.admin-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.created-link {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  padding: var(--space-sm) 0;
+  border-bottom: var(--size-rule) solid var(--color-border);
+}
+
+.created-link__url {
+  font-family: var(--font-mono);
+  font-size: var(--fontSize-small);
+  font-weight: 500;
+  user-select: all;
+}
+
+.entry--stack {
+  flex-wrap: wrap;
+}
+
+.entry__name {
+  display: block;
+  font-weight: 600;
+}
