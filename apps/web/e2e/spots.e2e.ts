@@ -6,8 +6,14 @@ import { expect, pinClock, signIn, test } from "./fixtures.ts";
 import { bigJpeg, GPS_MARK, jpegMarkers, withExif } from "./photo.ts";
 
 async function saveSection(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Save", exact: true })).toBeHidden();
+  const before = page.url();
+  await page.getByRole("button", { name: /^Save( and next)?$/ }).click();
+  await expect(page).not.toHaveURL(before);
+  // Save and next lands on the next editor; these flows want the overview, so step back to it.
+  if (/\/survey\/spots\/[^/]+\/[a-z_]+$/.test(page.url())) {
+    await page.getByRole("link", { name: "Back" }).click();
+  }
+  await expect(page).toHaveURL(/\/survey\/spots\/[^/]+$/);
 }
 
 async function openSection(page: Page, name: string): Promise<void> {
@@ -238,4 +244,22 @@ test("a 60-character spot name at 360 px wraps in the large title and nothing sc
     expect(box.left).toBeGreaterThanOrEqual(0);
     expect(box.right).toBeLessThanOrEqual(360);
   }
+});
+
+test("the guided walk checks each section in turn and ends on the overview with a toast", async ({
+  page,
+}) => {
+  await signIn(page);
+  const spot = await completeSpot(await tokenOf(page), `Walk ${Date.now()}`);
+  await page.goto(`/survey/spots/${spot.id}`);
+  await page.getByRole("button", { name: "Actions" }).click();
+  await page.getByRole("link", { name: /Check each section/ }).click();
+  await expect(page).toHaveURL(/\/identity\?walk=1$/);
+  for (const section of ["access", "seating", "power", "environment", "use_fit"]) {
+    await page.getByRole("button", { name: "Nothing changed" }).click();
+    await expect(page).toHaveURL(new RegExp(`/${section}\\?walk=1$`));
+  }
+  await page.getByRole("button", { name: "Nothing changed" }).click();
+  await expect(page).toHaveURL(new RegExp(`/survey/spots/${spot.id}$`));
+  await expect(page.getByText("Checked 6 sections")).toBeVisible();
 });

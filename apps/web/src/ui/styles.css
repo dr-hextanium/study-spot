@@ -547,7 +547,7 @@ select {
 
 .stepper__input.input {
   width: 64px;
-  min-height: var(--size-thumb);
+  min-height: var(--size-tapTarget);
   padding: 0 var(--space-xxs);
   border-color: transparent;
   background: transparent;
