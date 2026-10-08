@@ -76,8 +76,16 @@ export function Segmented<V extends string>({
             onPointerDown={(e) => {
               if (e.isPrimary && e.button === 0) setPending(o.value);
             }}
-            onPointerUp={() => {
-              if (pending === o.value && value !== o.value) onChange(o.value);
+            onPointerUp={(e) => {
+              // Touch pointers are captured, so this fires on the pressed label even
+              // when the finger lifts elsewhere: commit only inside its bounds.
+              const r = e.currentTarget.getBoundingClientRect();
+              const inside =
+                e.clientX >= r.left &&
+                e.clientX <= r.right &&
+                e.clientY >= r.top &&
+                e.clientY <= r.bottom;
+              if (inside && pending === o.value && value !== o.value) onChange(o.value);
             }}
           >
             <input

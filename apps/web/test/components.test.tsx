@@ -280,3 +280,38 @@ test("tag checks are native checkboxes with a 44 px hit area class", () => {
   const box = screen.getByRole("checkbox", { name: "Carrels" });
   expect(box.closest("label")?.className).toContain("tag");
 });
+
+function labelOf(name: string): HTMLLabelElement {
+  const l = screen.getByRole("radio", { name }).closest("label");
+  if (l === null) throw new Error("no label");
+  return l;
+}
+
+test("a release outside the pressed option (captured touch) commits nothing and reverts", () => {
+  const commit = vi.fn();
+  render(<Harness initial="a" onCommit={commit} />);
+  const b = labelOf("B");
+  b.getBoundingClientRect = () => new DOMRect(0, 0, 100, 44);
+  fireEvent.pointerDown(b, { isPrimary: true, button: 0, pointerId: 3, clientX: 50, clientY: 20 });
+  fireEvent.pointerUp(b, { isPrimary: true, button: 0, pointerId: 3, clientX: 300, clientY: 20 });
+  expect(commit).not.toHaveBeenCalled();
+  expect((screen.getByRole("radio", { name: "B" }) as HTMLInputElement).checked).toBe(false);
+});
+
+test("a release on a different option commits nothing and reverts", () => {
+  const commit = vi.fn();
+  render(<Harness initial="a" onCommit={commit} />);
+  fireEvent.pointerDown(labelOf("B"), { isPrimary: true, button: 0, pointerId: 4 });
+  fireEvent.pointerUp(labelOf("A"), { isPrimary: true, button: 0, pointerId: 4 });
+  expect(commit).not.toHaveBeenCalled();
+  expect((screen.getByRole("radio", { name: "B" }) as HTMLInputElement).checked).toBe(false);
+});
+
+test("a pointerup after a pointercancel commits nothing", () => {
+  const commit = vi.fn();
+  render(<Harness initial="a" onCommit={commit} />);
+  fireEvent.pointerDown(labelOf("B"), { isPrimary: true, button: 0, pointerId: 5 });
+  fireEvent.pointerCancel(window, { pointerId: 5 });
+  fireEvent.pointerUp(labelOf("B"), { isPrimary: true, button: 0, pointerId: 5 });
+  expect(commit).not.toHaveBeenCalled();
+});
