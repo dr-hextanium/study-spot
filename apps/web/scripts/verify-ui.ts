@@ -9,7 +9,7 @@ import { chromium, type Page } from "@playwright/test";
  * route and width: console errors, horizontal overflow, a screenshot, and axe.
  * Usage: node scripts/verify-ui.ts <stateFile> [route ...]
  */
-const WEB = process.env.VERIFY_WEB ?? "http://localhost:5199";
+const WEB = process.env.VERIFY_WEB ?? "http://localhost:5299";
 const OUT = join(import.meta.dirname, "../../../.claude/tmp/screenshots");
 const WIDTHS = [375, 768, 1440] as const;
 
@@ -64,7 +64,7 @@ for (const route of routes) {
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     const name = `${route.replaceAll("/", "_").replace(/^_/, "") || "root"}@${width}.png`;
-    await page.screenshot({ path: join(OUT, name) });
+    await page.screenshot({ path: join(OUT, name), animations: "disabled" });
     const axe = await new AxeBuilder({ page }).analyze();
     const issues = axe.violations.map(
       (v) => `${v.id} (${v.impact ?? "?"}) at ${v.nodes.map((n) => n.target.join(" ")).join("; ")}`,
