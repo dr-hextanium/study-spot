@@ -1,9 +1,65 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { Page } from "@playwright/test";
 import { parseBundle } from "@study-spot/core";
 import { completeSpot, getSpot, tokenOf } from "./api.ts";
 import { expect, serverState, signIn, test } from "./fixtures.ts";
 import { bigJpeg } from "./photo.ts";
+
+/** True once the persisted query cache holds the spot list entry and this spot's own query. */
+function cacheHolds(page: Page, name: string, id: string): Promise<boolean> {
+  return page.evaluate(
+    ({ name, id }) =>
+      new Promise<boolean>((resolve) => {
+        try {
+          const open = indexedDB.open("study-spot");
+          // A fresh database means the app has not stored anything: abort rather than create one.
+          open.onupgradeneeded = () => {
+            open.transaction?.abort();
+          };
+          open.onblocked = () => resolve(false);
+          open.onerror = () => resolve(false);
+          open.onsuccess = () => {
+            const db = open.result;
+            try {
+              const all = db.transaction("kv").objectStore("kv").getAll();
+              all.onerror = () => {
+                db.close();
+                resolve(false);
+              };
+              all.onsuccess = () => {
+                db.close();
+                const found = (all.result as unknown[]).some((v) => {
+                  if (typeof v !== "string" || !v.includes(name)) return false;
+                  try {
+                    const snap: unknown = JSON.parse(v);
+                    const queries =
+                      typeof snap === "object" && snap !== null && "clientState" in snap
+                        ? (snap as { clientState: { queries?: { queryKey?: unknown[] }[] } })
+                            .clientState.queries
+                        : undefined;
+                    return (
+                      Array.isArray(queries) &&
+                      queries.some((q) => q.queryKey?.join("/") === `survey/spot/${id}`)
+                    );
+                  } catch {
+                    return false;
+                  }
+                });
+                resolve(found);
+              };
+            } catch {
+              db.close();
+              resolve(false);
+            }
+          };
+        } catch {
+          resolve(false);
+        }
+      }),
+    { name, id },
+  );
+}
 
 test("acceptance 2: after Publish now the data site's bundle has the spot and its approved cover", async ({
   page,
@@ -26,19 +82,31 @@ test("acceptance 2: after Publish now the data site's bundle has the spot and it
 
   await page.goto("/survey/admin");
   await page.getByRole("button", { name: "Publish now" }).click();
-  await expect(page.getByText("Up to date")).toBeVisible({ timeout: 60_000 });
-
   const dir = serverState().publishDir;
-  const pointer = JSON.parse(readFileSync(join(dir, "bundle-latest.json"), "utf8")) as {
-    url: string;
-  };
-  const parsed = parseBundle(JSON.parse(readFileSync(join(dir, pointer.url), "utf8")));
-  if (!parsed.ok) throw new Error(parsed.detail);
-  const published = parsed.bundle.spots.find((s) => s.id === spot.id);
-  expect(published?.official_name).toBe(spot.official_name);
   const cover = (await getSpot(token, spot.id)).photos.find((p) => p.is_cover);
   expect(cover?.url).toMatch(/^http:\/\/data\.localhost:8788\/photos\/[0-9a-f]{64}\.jpg$/);
-  expect(JSON.stringify(published)).toContain(cover?.url ?? "missing");
+  // Poll the files themselves: the page's status text may already match before the click lands.
+  await expect
+    .poll(
+      () => {
+        try {
+          const pointer = JSON.parse(readFileSync(join(dir, "bundle-latest.json"), "utf8")) as {
+            url: string;
+          };
+          const parsed = parseBundle(JSON.parse(readFileSync(join(dir, pointer.url), "utf8")));
+          if (!parsed.ok) return "unparseable";
+          const published = parsed.bundle.spots.find((s) => s.id === spot.id);
+          if (published?.official_name !== spot.official_name) return "spot missing";
+          return JSON.stringify(published).includes(cover?.url ?? "missing")
+            ? "ok"
+            : "cover missing";
+        } catch {
+          return "no bundle yet";
+        }
+      },
+      { timeout: 60_000 },
+    )
+    .toBe("ok");
 });
 
 test("an admin invites a surveyor, issues a sign-in link that skips the name, and removes access", async ({
@@ -54,31 +122,36 @@ test("an admin invites a surveyor, issues a sign-in link that skips the name, an
   await expect(page.getByRole("button", { name: "Link copied" })).toBeVisible();
 
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  const newbie = await phone.newPage();
-  await newbie.goto(new URL(link).pathname);
-  await newbie.getByRole("textbox", { name: "Your name" }).fill("Jordan Rivera");
-  await newbie.getByRole("button", { name: "Join" }).click();
-  await expect(newbie.getByRole("heading", { name: "Spots", level: 1 })).toBeVisible();
-
-  await page.reload();
-  const row = page.getByRole("listitem").filter({ hasText: "Jordan Rivera" });
-  await row.getByRole("button", { name: "New sign-in link" }).click();
-  const relogin = new URL(await page.locator(".created-link__url").last().innerText());
-  expect(relogin.search).toBe("?relogin=1");
   const second = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  const lostPhone = await second.newPage();
-  await lostPhone.goto(`${relogin.pathname}${relogin.search}`);
-  await expect(lostPhone.getByRole("textbox")).toHaveCount(0);
-  await lostPhone.getByRole("button", { name: "Sign in" }).click();
-  await expect(lostPhone.getByRole("heading", { name: "Spots", level: 1 })).toBeVisible();
+  try {
+    const newbie = await phone.newPage();
+    await newbie.goto(new URL(link).pathname);
+    await newbie.getByRole("textbox", { name: "Your name" }).fill("Jordan Rivera");
+    await newbie.getByRole("button", { name: "Join" }).click();
+    await expect(newbie.getByRole("heading", { name: "Spots", level: 1 })).toBeVisible();
 
-  await row.getByRole("button", { name: "Remove access" }).click();
-  await page.getByRole("dialog").getByRole("button", { name: "Remove access" }).click();
-  await expect(page.getByText("Jordan Rivera removed")).toBeVisible();
-  await newbie.reload();
-  await expect(newbie.getByText("Sign in again")).toBeVisible();
-  await phone.close();
-  await second.close();
+    await page.reload();
+    const row = page.getByRole("listitem").filter({ hasText: "Jordan Rivera" });
+    await row.getByRole("button", { name: "New sign-in link" }).click();
+    const relogin = new URL(await page.locator(".created-link__url").last().innerText());
+    expect(relogin.search).toBe("?relogin=1");
+    const lostPhone = await second.newPage();
+    await lostPhone.goto(`${relogin.pathname}${relogin.search}`);
+    await expect(lostPhone.getByRole("textbox")).toHaveCount(0);
+    await lostPhone.getByRole("button", { name: "Sign in" }).click();
+    await expect(lostPhone.getByRole("heading", { name: "Spots", level: 1 })).toBeVisible();
+
+    await row.getByRole("button", { name: "Remove access" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Remove access" }).click();
+    await expect(page.getByText("Jordan Rivera removed")).toBeVisible();
+    await newbie.reload();
+    await expect(newbie.getByText("Sign in again")).toBeVisible();
+    await lostPhone.reload();
+    await expect(lostPhone.getByText("Sign in again")).toBeVisible();
+  } finally {
+    await phone.close();
+    await second.close();
+  }
 });
 
 test("the app opens offline from the service worker with the cached list and spot", async ({
@@ -92,48 +165,19 @@ test("the app opens offline from the service worker with the cached list and spo
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
+  const controlled = () => page.evaluate(() => navigator.serviceWorker.controller !== null);
+  await expect
+    .poll(controlled, { timeout: 5_000 })
+    .toBe(true)
+    .catch(async () => {
+      await page.reload();
+      await expect.poll(controlled, { timeout: 10_000 }).toBe(true);
+    });
   await page.goto(`/survey/spots/${spot.id}`);
   await expect(page.getByRole("heading", { name: spot.official_name, level: 1 })).toBeVisible();
   // The persister writes on a throttle: go offline only once the stored snapshot holds the list and this spot's own query.
   await expect
-    .poll(
-      () =>
-        page.evaluate(
-          ({ name, id }) =>
-            new Promise<boolean>((resolve) => {
-              const open = indexedDB.open("study-spot");
-              open.onerror = () => resolve(false);
-              open.onsuccess = () => {
-                const db = open.result;
-                const all = db.transaction("kv").objectStore("kv").getAll();
-                all.onerror = () => {
-                  db.close();
-                  resolve(false);
-                };
-                all.onsuccess = () => {
-                  db.close();
-                  resolve(
-                    all.result.some((v) => {
-                      if (typeof v !== "string") return false;
-                      try {
-                        const queries: { queryKey: unknown[] }[] =
-                          JSON.parse(v).clientState.queries;
-                        return (
-                          v.includes(name) &&
-                          queries.some((q) => q.queryKey.join("/") === `survey/spot/${id}`)
-                        );
-                      } catch {
-                        return false;
-                      }
-                    }),
-                  );
-                };
-              };
-            }),
-          { name: spot.official_name, id: spot.id },
-        ),
-      { timeout: 15_000 },
-    )
+    .poll(() => cacheHolds(page, spot.official_name, spot.id), { timeout: 15_000 })
     .toBe(true);
   await page.context().setOffline(true);
   await page.goto("/survey");
@@ -163,7 +207,11 @@ test("a tab closed mid-send leaves its change to the other tab, which sends it",
   await expect(page.getByRole("button", { name: "Syncing 1" })).toBeVisible();
   await page.close();
 
-  // No reload: the second tab's recheck timer (15 s) finds the dead tab's write.
+  // The second tab sees the write waiting, then (no reload) its 15 s recheck sends it.
+  const token = await tokenOf(second);
+  await expect(second.getByRole("button", { name: /Syncing|waiting/ })).toBeVisible();
+  await expect
+    .poll(async () => (await getSpot(token, spot.id)).seat_count, { timeout: 45_000 })
+    .toBe(77);
   await expect(second.getByRole("button", { name: "All synced" })).toBeVisible({ timeout: 45_000 });
-  expect((await getSpot(await tokenOf(second), spot.id)).seat_count).toBe(77);
 });
