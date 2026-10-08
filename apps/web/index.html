@@ -16,7 +16,7 @@
         try {
           s = localStorage.getItem("perch.theme");
           if (s === "dark" || s === "system") pref = s;
-        } catch (e) {}
+        } catch {}
         var root = document.documentElement;
         var dark =
           pref === "dark" ||

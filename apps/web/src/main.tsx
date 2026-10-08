@@ -12,6 +12,7 @@ import { AppProvider } from "./app/AppProvider.tsx";
 import { createAppDeps } from "./app/deps.ts";
 import { parseWebEnv } from "./env.ts";
 import { routeTree } from "./routeTree.gen.ts";
+import { watchSystemTheme } from "./ui/themePref.ts";
 
 export const router = createRouter({ routeTree, defaultPreload: false, scrollRestoration: true });
 
@@ -21,6 +22,7 @@ declare module "@tanstack/react-router" {
   }
 }
 
+watchSystemTheme();
 const root = document.getElementById("root");
 if (root === null) throw new Error("missing #root");
 const parsed = parseWebEnv(import.meta.env);

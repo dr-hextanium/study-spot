@@ -979,12 +979,16 @@ select {
   *,
   *::before,
   *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must beat every component rule */
     transition-property: opacity, background-color, color, border-color !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must beat every component rule */
     transition-duration: var(--duration-reduced) !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must beat every component rule */
     animation: none !important;
   }
 
-  :active {
+  .btn:active {
+    /* biome-ignore lint/complexity/noImportantStyles: press feedback must not scale under reduced motion */
     transform: none !important;
   }
 }

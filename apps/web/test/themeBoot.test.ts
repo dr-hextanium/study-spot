@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { tokens } from "@study-spot/ui-logic";
 import { afterEach, expect, test, vi } from "vitest";
-import { applyThemePref, storeThemePref } from "../src/ui/themePref.ts";
+import { applyThemePref, storeThemePref, watchSystemTheme } from "../src/ui/themePref.ts";
 
 const html = readFileSync(join(import.meta.dirname, "../index.html"), "utf8");
 const boot = /<script id="theme-boot">([\s\S]*?)<\/script>/.exec(html)?.[1] ?? "";
@@ -66,4 +66,27 @@ test("storing a pref persists it and applies it at once", () => {
   storeThemePref("dark");
   expect(localStorage.getItem("perch.theme")).toBe("dark");
   expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+});
+
+test("the OS listener moves theme-color in system mode without any component mounted", () => {
+  let fire: () => void = () => undefined;
+  const mq = {
+    matches: false,
+    addEventListener: (_: string, l: () => void) => {
+      fire = l;
+    },
+    removeEventListener: () => undefined,
+  };
+  page(false);
+  vi.stubGlobal("matchMedia", () => mq);
+  localStorage.setItem("perch.theme", "system");
+  const stop = watchSystemTheme();
+  mq.matches = true;
+  fire();
+  expect(meta("theme-color")?.toUpperCase()).toBe(tokens.color.dark.paper.toUpperCase());
+  localStorage.setItem("perch.theme", "light");
+  mq.matches = false;
+  fire();
+  expect(meta("theme-color")?.toUpperCase()).toBe(tokens.color.dark.paper.toUpperCase());
+  stop();
 });

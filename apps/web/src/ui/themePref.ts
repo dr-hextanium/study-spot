@@ -5,7 +5,7 @@ import {
   type ThemePref,
   tokens,
 } from "@study-spot/ui-logic";
-import { useEffect, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 
 const DARK = "(prefers-color-scheme: dark)";
 const listeners = new Set<() => void>();
@@ -55,15 +55,22 @@ function subscribe(l: () => void): () => void {
   return () => listeners.delete(l);
 }
 
-/** The device's theme pref and a setter. While it is "system", OS changes update the theme-color meta. */
+/**
+ * Registers the OS color-scheme listener once, from main.tsx. While the pref is
+ * "system" the theme-color meta follows the OS, with or without a ThemeSwitch mounted.
+ */
+export function watchSystemTheme(): () => void {
+  if (typeof matchMedia !== "function") return () => undefined;
+  const mq = matchMedia(DARK);
+  const sync = () => {
+    if (currentThemePref() === "system") applyThemePref("system", document, mq.matches);
+  };
+  mq.addEventListener("change", sync);
+  return () => mq.removeEventListener("change", sync);
+}
+
+/** The device's theme pref and a setter. */
 export function useThemePref(): [ThemePref, (p: ThemePref) => void] {
   const pref = useSyncExternalStore(subscribe, currentThemePref, () => "light" as const);
-  useEffect(() => {
-    if (pref !== "system" || typeof matchMedia !== "function") return;
-    const mq = matchMedia(DARK);
-    const sync = () => applyThemePref("system");
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, [pref]);
   return [pref, storeThemePref];
 }
