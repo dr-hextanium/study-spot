@@ -376,6 +376,7 @@ function Ready(props: {
             <Row
               title={t("spot.review")}
               lead={<Icon icon={CircleCheck} />}
+              disabled={queuing}
               onClick={() => {
                 setActions(false);
                 void markReviewed();

@@ -78,6 +78,8 @@ export const tokens: Tokens = {
   size: {
     tapTarget: 44,
     bar: 52,
+    actionBar: 88,
+    updateCard: 72,
     row: 52,
     control: 46,
     thumb: 40,

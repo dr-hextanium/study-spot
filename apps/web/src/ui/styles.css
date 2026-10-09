@@ -846,7 +846,7 @@ fieldset.field > legend.field__label {
 
 .toast-region {
   position: fixed;
-  inset: auto 0 calc(96px + env(safe-area-inset-bottom));
+  inset: auto 0 calc(var(--size-actionBar) + var(--space-xs) + env(safe-area-inset-bottom));
   z-index: 20;
   display: flex;
   justify-content: center;
@@ -891,7 +891,7 @@ fieldset.field > legend.field__label {
 
 .update {
   position: fixed;
-  inset: auto var(--space-gutter) calc(88px + env(safe-area-inset-bottom));
+  inset: auto var(--space-gutter) calc(var(--size-actionBar) + env(safe-area-inset-bottom));
   z-index: 30;
   display: flex;
   align-items: center;
@@ -935,7 +935,7 @@ fieldset.field > legend.field__label {
 
 /* The toast steps up while the update card is showing. */
 body:has(.update) .toast-region {
-  bottom: calc(160px + env(safe-area-inset-bottom));
+  bottom: calc(var(--size-actionBar) + var(--size-updateCard) + env(safe-area-inset-bottom));
 }
 
 .note-card {
@@ -987,7 +987,7 @@ body:has(.update) .toast-region {
 }
 
 .screen--seawolf.screen--with-bar {
-  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--size-actionBar) + var(--space-xs) + env(safe-area-inset-bottom));
 }
 
 .topbar {
@@ -1167,7 +1167,12 @@ div.row {
   min-height: 46px;
 }
 
-.row:active:is(a, button) {
+.row:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.row:active:is(a, button):not(:disabled) {
   background: var(--color-mist);
   transform: scale(var(--press-row));
 }
@@ -1499,7 +1504,7 @@ div.row {
 .meta__item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-xxs);
 }
 
 .editor-name {

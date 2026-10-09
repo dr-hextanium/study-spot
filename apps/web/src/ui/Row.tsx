@@ -12,6 +12,8 @@ export function Row(props: {
   compact?: boolean;
   /** A choice in a list: exposes the selected state to assistive tech. */
   pressed?: boolean;
+  /** A button row that cannot be pressed right now (a write is being queued). */
+  disabled?: boolean;
 }) {
   const className = `row${props.compact === true ? " row--compact" : ""}`;
   const body = (
@@ -35,6 +37,7 @@ export function Row(props: {
           type="button"
           className={className}
           onClick={props.onClick}
+          disabled={props.disabled === true}
           {...(props.pressed === undefined ? {} : { "aria-pressed": props.pressed })}
         >
           {body}

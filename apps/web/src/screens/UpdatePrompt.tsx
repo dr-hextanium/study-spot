@@ -9,14 +9,22 @@ export function UpdatePrompt() {
     needRefresh: [needRefresh],
     updateServiceWorker,
   } = useRegisterSW();
-  if (!needRefresh) return null;
+  // The live region stays mounted, so the message is announced when it appears.
   return (
-    <div className="update" role="status">
-      <Icon icon={RefreshCw} />
-      <p className="update__text">{t("update.ready")}</p>
-      <button type="button" className="update__btn" onClick={() => void updateServiceWorker(true)}>
-        {t("update.reload")}
-      </button>
+    <div aria-live="polite">
+      {needRefresh ? (
+        <div className="update">
+          <Icon icon={RefreshCw} />
+          <p className="update__text">{t("update.ready")}</p>
+          <button
+            type="button"
+            className="update__btn"
+            onClick={() => void updateServiceWorker(true)}
+          >
+            {t("update.reload")}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
