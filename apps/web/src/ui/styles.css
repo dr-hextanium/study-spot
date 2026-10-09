@@ -1015,6 +1015,8 @@ body:has(.update) .toast-region {
   font-size: var(--fontSize-barTitle);
   font-weight: 500;
   opacity: 0;
+  /* Hidden until the large title scrolls away, so it is not copied twice. */
+  user-select: none;
   transform: translateY(6px);
   transition:
     opacity var(--duration-base) var(--easing-standard),
@@ -1023,7 +1025,13 @@ body:has(.update) .toast-region {
 
 .topbar--scrolled .topbar__title {
   opacity: 1;
+  user-select: auto;
   transform: none;
+}
+
+.signed-out {
+  display: grid;
+  gap: var(--space-sm);
 }
 
 .large-title {
