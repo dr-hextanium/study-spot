@@ -24,7 +24,7 @@ import { CoverThumb } from "../ui/CoverThumb.tsx";
 import { FilterChips } from "../ui/FilterChips.tsx";
 import { Icon } from "../ui/Icon.tsx";
 import { Row } from "../ui/Row.tsx";
-import { Screen } from "../ui/Screen.tsx";
+import { GroupHeading, Screen } from "../ui/Screen.tsx";
 import { Search } from "../ui/Search.tsx";
 import { Sheet } from "../ui/Sheet.tsx";
 import { StepBar } from "../ui/StepBar.tsx";
@@ -87,7 +87,7 @@ export function Home(props: { spotLink?: SpotLinkFor; isAdmin: boolean }) {
     label: t(`home.filter.${value}`),
     count: counts[value],
   }));
-  const listName = t(`home.filter.${state.filter}`);
+  const listHeadingId = "home-list-heading";
   const empty =
     state.query.trim() !== ""
       ? t("home.empty.search")
@@ -179,7 +179,10 @@ export function Home(props: { spotLink?: SpotLinkFor; isAdmin: boolean }) {
           {plural(data.unreadable, "home.unreadable_one", "home.unreadable")}
         </Banner>
       ) : null}
-      <section aria-label={listName}>
+      <section aria-labelledby={listHeadingId}>
+        {firstRun ? null : (
+          <GroupHeading id={listHeadingId}>{t(`home.group.${state.filter}`)}</GroupHeading>
+        )}
         {empty === null || rows.length > 0 ? null : <p className="empty">{empty}</p>}
         {rows.length === 0 ? null : (
           <ul className="row-list">

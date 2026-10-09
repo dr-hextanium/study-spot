@@ -187,7 +187,7 @@ test("the app opens offline from the service worker with the cached list and spo
   await page.context().setOffline(true);
   await page.goto("/survey");
   await expect(page.getByRole("button", { name: "Offline" })).toBeVisible();
-  const stale = page.getByRole("region", { name: "All" });
+  const stale = page.getByRole("region", { name: "All spots" });
   await expect(stale.getByText(spot.official_name)).toBeVisible();
   await stale.getByText(spot.official_name).click();
   await expect(page.getByRole("heading", { name: spot.official_name, level: 1 })).toBeVisible();

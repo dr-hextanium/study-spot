@@ -15,7 +15,7 @@ test("an invite link signs this phone in and lands on the spot list", async ({ p
   await expect(page.getByRole("region", { name: "Needs you" })).toBeVisible();
   await page.getByRole("button", { name: /^All \d/ }).click();
   // The server seeds published spots, so the list has a row with its check date on the right.
-  const all = page.getByRole("region", { name: "All" });
+  const all = page.getByRole("region", { name: "All spots" });
   const dated = all.getByRole("listitem").filter({ hasText: /[A-Z][a-z]{2} \d{1,2}/ });
   await expect(dated.first()).toBeVisible();
 });

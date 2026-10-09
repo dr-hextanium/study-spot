@@ -545,6 +545,10 @@ Strings the built screens needed beyond the sections above: short header forms f
 | home.filter.drafts | Drafts | 8 | |
 | home.filter.due | Due | 6 | never checked or over 90 days |
 | home.search.label | Search spots | 16 | |
+| home.group.all | All spots | 14 | list heading, Newsreader 20 |
+| home.group.attention | Needs you | 12 | list heading |
+| home.group.drafts | Drafts | 8 | list heading |
+| home.group.due | Due | 6 | list heading |
 | home.empty.attention | Nothing needs you. | 24 | |
 | home.empty.due | Nothing is due. | 20 | |
 | home.empty.search | No spots match. | 20 | |

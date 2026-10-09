@@ -25,13 +25,25 @@ test("first run with nothing on the server explains what a spot is", async () =>
   expect(screen.getByText(t("home.empty.attention"))).toBeTruthy();
 });
 
+test("the list is headed by the active filter", async () => {
+  renderRoute(testApp({ spots: [PUBLISHED, STALE] }), "/survey");
+  const heading = await screen.findByRole("heading", { level: 2, name: t("home.group.all") });
+  expect(heading.className).toContain("group-heading");
+  for (const filter of ["attention", "drafts", "due"] as const) {
+    fireEvent.click(
+      screen.getByRole("button", { name: new RegExp(`^${t(`home.filter.${filter}`)}`) }),
+    );
+    expect(screen.getByRole("heading", { level: 2, name: t(`home.group.${filter}`) })).toBeTruthy();
+  }
+});
+
 test("a teammate's unreviewed spot needs attention and lists by oldest check", async () => {
   renderRoute(testApp({ spots: [PUBLISHED, STALE] }), "/survey");
   fireEvent.click(await screen.findByRole("button", { name: /^Needs you/ }));
-  const attention = screen.getByRole("region", { name: t("home.filter.attention") });
+  const attention = screen.getByRole("region", { name: t("home.group.attention") });
   expect(within(attention).getByText(t("home.fact.unreviewed", { name: "Jordan" }))).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: /^All \d/ }));
-  const all = screen.getByRole("region", { name: t("home.filter.all") });
+  const all = screen.getByRole("region", { name: t("home.group.all") });
   expect(within(all).getByText("Jan 2")).toBeTruthy();
   // The published spot with an attention fact still shows when it was checked.
   expect(within(all).getByText(t("home.checked", { date: "Sep 1" }))).toBeTruthy();
@@ -45,7 +57,7 @@ test("a draft made offline shows under Drafts with its step count", async () => 
   const local = await app.deps.outbox.createSpot(identity({ official_name: "Basement Carrels" }));
   await app.deps.outbox.enqueue({ kind: "spot.section", spot_id: local, payload: POWER }, null);
   fireEvent.click(await screen.findByRole("button", { name: /^Drafts/ }));
-  const drafts = screen.getByRole("region", { name: t("home.filter.drafts") });
+  const drafts = screen.getByRole("region", { name: t("home.group.drafts") });
   expect(await within(drafts).findByText("Basement Carrels")).toBeTruthy();
   expect(within(drafts).getByText(t("home.fact.progress", { done: 2, total: 6 }))).toBeTruthy();
   expect(screen.getByRole("button", { name: t("sync.short.offline") })).toBeTruthy();
@@ -151,7 +163,7 @@ test("a draft's step count appears when its detail reaches the cache later", asy
   const app = testApp({ spots: [DRAFT] });
   renderRoute(app, "/survey");
   fireEvent.click(await screen.findByRole("button", { name: /^Drafts/ }));
-  const drafts = screen.getByRole("region", { name: t("home.filter.drafts") });
+  const drafts = screen.getByRole("region", { name: t("home.group.drafts") });
   expect(await within(drafts).findByText("Quiet Nook")).toBeTruthy();
   expect(within(drafts).queryByText(/^\d\/6$/)).toBeNull();
   expect(within(drafts).getByText(t("home.fact.draft"))).toBeTruthy();
@@ -220,13 +232,13 @@ test("filter chips switch the list and show counts", async () => {
   const all = await screen.findByRole("button", { name: /^All 4$/ });
   expect(all.getAttribute("aria-pressed")).toBe("true");
   fireEvent.click(screen.getByRole("button", { name: /^Drafts 1$/ }));
-  const drafts = screen.getByRole("region", { name: t("home.filter.drafts") });
+  const drafts = screen.getByRole("region", { name: t("home.group.drafts") });
   expect(within(drafts).getAllByRole("link")).toHaveLength(1);
   expect(screen.getByRole("button", { name: /^Drafts 1$/ }).getAttribute("aria-pressed")).toBe(
     "true",
   );
   fireEvent.click(screen.getByRole("button", { name: /^Due 1$/ }));
-  const due = screen.getByRole("region", { name: t("home.filter.due") });
+  const due = screen.getByRole("region", { name: t("home.group.due") });
   expect(within(due).getByText("Melville Old Lounge")).toBeTruthy();
   expect(within(due).queryByText("Fresh Room")).toBeNull();
 });
@@ -235,7 +247,7 @@ test("search narrows the rows and the counts", async () => {
   renderRoute(testApp({ spots: [PUBLISHED, STALE, FRESH] }), "/survey");
   const box = await screen.findByRole("searchbox", { name: t("home.search.label") });
   fireEvent.change(box, { target: { value: "melv" } });
-  const all = screen.getByRole("region", { name: t("home.filter.all") });
+  const all = screen.getByRole("region", { name: t("home.group.all") });
   expect(within(all).getAllByRole("link")).toHaveLength(1);
   expect(screen.getByRole("button", { name: /^All 1$/ })).toBeTruthy();
   fireEvent.change(box, { target: { value: "zzz" } });
