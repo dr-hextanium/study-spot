@@ -1,6 +1,7 @@
 import type { SurveyorRole } from "@study-spot/core";
 import { publishWarningText, t } from "@study-spot/ui-logic";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Copy, Ellipsis, Shield, TriangleAlert, UserCog } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { keys } from "../app/keys.ts";
@@ -13,13 +14,15 @@ import { useSession } from "../hooks/useSession.ts";
 import { useToasts } from "../hooks/useToasts.tsx";
 import { dateTime } from "../lib/format.ts";
 import { Banner } from "../ui/Banner.tsx";
-import { Button } from "../ui/Button.tsx";
+import { Button, IconButton } from "../ui/Button.tsx";
+import { Icon } from "../ui/Icon.tsx";
 import { PhotoImage } from "../ui/PhotoImage.tsx";
-import { GroupHeading, LegacyScreen } from "../ui/Screen.tsx";
+import { Pill } from "../ui/Pill.tsx";
+import { Row } from "../ui/Row.tsx";
+import { GroupHeading, Screen } from "../ui/Screen.tsx";
 import { Segmented } from "../ui/Segmented.tsx";
-import { ConfirmSheet } from "../ui/Sheet.tsx";
-import { StampChip } from "../ui/StampChip.tsx";
-import { SurveyHeader } from "./SurveyHeader.tsx";
+import { ConfirmSheet, Sheet } from "../ui/Sheet.tsx";
+import { SyncStatus } from "./SyncStatus.tsx";
 
 function Section(props: { id: string; title: string; children: ReactNode }) {
   return (
@@ -36,9 +39,11 @@ function CreatedLink(props: { url: string; note: string }) {
   const toasts = useToasts();
   return (
     <div className="created-link">
-      <p className="entered created-link__url">{props.url}</p>
+      <p className="created-link__url">{props.url}</p>
       <p className="field__helper">{props.note}</p>
       <Button
+        variant="quiet"
+        icon={<Icon icon={Copy} />}
         onClick={async () => {
           const result = await share.share({ title: t("app.name"), url: props.url });
           // "shared" means the share sheet took it: nothing to claim about a copy.
@@ -76,6 +81,7 @@ function InviteSection(props: { online: boolean }) {
     <Section id="admin-invite" title={t("admin.invite.title")}>
       <Segmented
         label={t("admin.invite.title")}
+        icon={UserCog}
         hideLabel
         options={[
           { value: "surveyor", label: t("admin.invite.role.surveyor") },
@@ -104,6 +110,12 @@ function SurveyorsSection(props: { online: boolean }) {
     enabled: props.online,
   });
   const [relogin, setRelogin] = useState<{ id: string; name: string; url: string } | null>(null);
+  const [selected, setSelected] = useState<{
+    id: string;
+    name: string;
+    role: SurveyorRole;
+    active: boolean;
+  } | null>(null);
   const [revoking, setRevoking] = useState<{ id: string; name: string } | null>(null);
   const others = (surveyors.data?.surveyors ?? []).filter((s) => s.id !== me?.id);
 
@@ -123,6 +135,11 @@ function SurveyorsSection(props: { online: boolean }) {
       setLinkBusy(false);
     }
   }
+  function closeActions() {
+    setSelected(null);
+    // A link shown for one surveyor is not left behind for the next sheet.
+    setRelogin(null);
+  }
   async function revoke() {
     const target = revoking;
     setRevoking(null);
@@ -140,43 +157,59 @@ function SurveyorsSection(props: { online: boolean }) {
       {surveyors.data !== undefined && others.length === 0 ? (
         <p className="empty">{t("admin.surveyors.empty")}</p>
       ) : null}
-      <ul className="ruled-list">
+      <ul className="row-list">
         {others.map((s) => (
-          <li key={s.id} className="entry entry--stack">
-            <span className="entry__text">
-              <span className="entry__name">{s.display_name}</span>
-              <span className="stamp-row">
+          <Row
+            key={s.id}
+            title={s.display_name}
+            end={
+              <>
                 {s.role === "admin" ? (
-                  <StampChip tone="ink">{t("admin.surveyors.admin_badge")}</StampChip>
+                  <Pill icon={Shield}>{t("admin.surveyors.admin_badge")}</Pill>
                 ) : null}
-                {s.active ? null : (
-                  <StampChip tone="red">{t("admin.surveyors.inactive")}</StampChip>
-                )}
-              </span>
-            </span>
-            <span className="entry__actions">
-              <Button disabled={!props.online || linkBusy} onClick={() => void newLink(s)}>
-                {t("admin.invite.relogin")}
-              </Button>
-              {s.active ? (
-                <Button
-                  variant="quiet"
-                  disabled={!props.online}
-                  onClick={() => setRevoking({ id: s.id, name: s.display_name })}
-                >
-                  {t("admin.revoke")}
-                </Button>
-              ) : null}
-            </span>
-          </li>
+                {s.active ? null : <Pill tone="red">{t("admin.surveyors.inactive")}</Pill>}
+                <IconButton
+                  icon={Ellipsis}
+                  label={t("admin.surveyor.actions", { name: s.display_name })}
+                  onClick={() =>
+                    setSelected({ id: s.id, name: s.display_name, role: s.role, active: s.active })
+                  }
+                />
+              </>
+            }
+          />
         ))}
       </ul>
-      {relogin === null ? null : (
-        <CreatedLink
-          url={relogin.url}
-          note={t("admin.invite.relogin.created", { name: relogin.name })}
-        />
-      )}
+      <Sheet open={selected !== null} title={selected?.name ?? ""} onClose={closeActions}>
+        {selected === null ? null : (
+          <>
+            <Button
+              disabled={!props.online || linkBusy}
+              onClick={() => void newLink({ ...selected, display_name: selected.name })}
+            >
+              {t("admin.invite.relogin")}
+            </Button>
+            {selected.active ? (
+              <Button
+                variant="danger"
+                disabled={!props.online}
+                onClick={() => {
+                  setRevoking({ id: selected.id, name: selected.name });
+                  setSelected(null);
+                }}
+              >
+                {t("admin.revoke")}
+              </Button>
+            ) : null}
+            {relogin === null || relogin.id !== selected.id ? null : (
+              <CreatedLink
+                url={relogin.url}
+                note={t("admin.invite.relogin.created", { name: relogin.name })}
+              />
+            )}
+          </>
+        )}
+      </Sheet>
       <ConfirmSheet
         open={revoking !== null}
         title={t("admin.revoke.confirm.title", { name: revoking?.name ?? "" })}
@@ -206,8 +239,7 @@ function PublishSection(props: { online: boolean }) {
   });
   async function publishNow() {
     setRunning(true);
-    const res = await api.publishNow();
-    setRunning(false);
+    const res = await api.publishNow().finally(() => setRunning(false));
     if (res.kind === "ok") qc.setQueryData(keys.publish, res.value);
     else toasts.show(t("error.generic"));
   }
@@ -216,16 +248,16 @@ function PublishSection(props: { online: boolean }) {
     <Section id="admin-publish" title={t("admin.publish.title")}>
       {s === undefined ? null : (
         <>
-          <p>
-            {s.last_published_at === null
-              ? t("admin.publish.never")
-              : t("admin.publish.last", { time: dateTime(s.last_published_at, tz) })}
-          </p>
-          <div className="stamp-row">
+          <div className="admin-stats">
+            <p className="admin-stat">
+              {s.last_published_at === null
+                ? t("admin.publish.never")
+                : t("admin.publish.last", { time: dateTime(s.last_published_at, tz) })}
+            </p>
             {s.dirty ? (
-              <StampChip tone="amber">{t("admin.publish.dirty")}</StampChip>
+              <Pill tone="red">{t("admin.publish.dirty")}</Pill>
             ) : (
-              <StampChip tone="green">{t("admin.publish.clean")}</StampChip>
+              <Pill>{t("admin.publish.clean")}</Pill>
             )}
           </div>
           {s.last_error === null ? null : (
@@ -234,13 +266,14 @@ function PublishSection(props: { online: boolean }) {
           {s.warnings.length === 0 ? null : (
             <>
               <p className="label">{t("admin.publish.warnings.title")}</p>
-              <ul className="ruled-list">
+              <ul className="row-list">
                 {s.warnings.map((w) => (
-                  <li key={w} className="entry">
-                    <span className="entry__text">
-                      {publishWarningText(w, list.data?.spots ?? [])}
-                    </span>
-                  </li>
+                  <Row
+                    key={w}
+                    compact
+                    lead={<Icon icon={TriangleAlert} className="admin-warn" />}
+                    title={publishWarningText(w, list.data?.spots ?? [])}
+                  />
                 ))}
               </ul>
             </>
@@ -248,7 +281,6 @@ function PublishSection(props: { online: boolean }) {
         </>
       )}
       <Button
-        variant="primary"
         disabled={!props.online || running || s?.running === true}
         onClick={() => void publishNow()}
       >
@@ -267,22 +299,21 @@ function PendingPhoto(props: {
   const source = usePhotoUrl({ photoId: props.photo.id });
   return (
     <li className="photo">
-      <PhotoImage source={source} alt="" />
-      <p>
+      <div className="photo__frame">
+        <PhotoImage source={source} alt="" />
+      </div>
+      <p className="admin-photo__from">
         {t("admin.photos.from", {
           spot: props.photo.spot_name,
           name: props.photo.uploaded_by_name ?? t("common.unknown"),
         })}
       </p>
-      <div className="photo__actions">
-        <Button
-          variant="primary"
-          disabled={!props.online}
-          onClick={() => props.onApprove(props.photo.id)}
-        >
+      <div className="photo__actions admin-photo__actions">
+        <Button wide disabled={!props.online} onClick={() => props.onApprove(props.photo.id)}>
           {t("admin.photos.approve")}
         </Button>
         <Button
+          wide
           variant="danger"
           disabled={!props.online}
           onClick={() => props.onReject(props.photo.id)}
@@ -353,15 +384,16 @@ function PhotosSection(props: { online: boolean }) {
 export function Admin() {
   const online = useOnline();
   return (
-    <>
-      <SurveyHeader title={t("admin.title")} back={{ to: "/survey" }} />
-      <LegacyScreen>
-        {online ? null : <Banner tone="note">{t("error.network_admin")}</Banner>}
-        <InviteSection online={online} />
-        <PublishSection online={online} />
-        <PhotosSection online={online} />
-        <SurveyorsSection online={online} />
-      </LegacyScreen>
-    </>
+    <Screen
+      title={t("admin.title")}
+      back={{ to: "/survey" }}
+      trailing={<SyncStatus variant="icon" />}
+    >
+      {online ? null : <Banner tone="note">{t("error.network_admin")}</Banner>}
+      <InviteSection online={online} />
+      <PublishSection online={online} />
+      <PhotosSection online={online} />
+      <SurveyorsSection online={online} />
+    </Screen>
   );
 }

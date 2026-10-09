@@ -13,6 +13,14 @@ const RILEY = {
   active: true,
 };
 
+async function openActions(name: string) {
+  const list = await screen.findByRole("region", { name: t("admin.surveyors.title") });
+  fireEvent.click(
+    await within(list).findByRole("button", { name: t("admin.surveyor.actions", { name }) }),
+  );
+  return screen.findByRole("dialog", { name });
+}
+
 test("only admins reach the admin screen, and home links to it for them", async () => {
   const view = renderRoute(testApp(), "/survey/admin");
   await waitFor(() => expect(view.router.state.location.pathname).toBe("/survey"));
@@ -37,19 +45,35 @@ test("a new sign-in link keeps the surveyor's role, and removing access asks fir
   const app = testApp({ me: ADMIN });
   app.server.admin.surveyors.push({ ...ADMIN }, { ...RILEY });
   renderRoute(app, "/survey/admin");
-  const list = await screen.findByRole("region", { name: t("admin.surveyors.title") });
-  fireEvent.click(await within(list).findByRole("button", { name: t("admin.invite.relogin") }));
+  const sheet = await openActions("Riley");
+  fireEvent.click(within(sheet).getByRole("button", { name: t("admin.invite.relogin") }));
   expect(
     await screen.findByText(t("admin.invite.relogin.created", { name: "Riley" })),
   ).toBeTruthy();
   expect(app.server.admin.invites).toEqual([{ role: "surveyor", surveyor_id: RILEY.id }]);
-  fireEvent.click(within(list).getByRole("button", { name: t("admin.revoke") }));
+  fireEvent.click(within(sheet).getByRole("button", { name: t("admin.revoke") }));
   const confirm = await screen.findByRole("dialog", {
     name: t("admin.revoke.confirm.title", { name: "Riley" }),
   });
   fireEvent.click(within(confirm).getByRole("button", { name: t("admin.revoke.confirm.action") }));
   expect(await screen.findByText(t("admin.revoke.done", { name: "Riley" }))).toBeTruthy();
   expect(app.server.admin.surveyors.find((s) => s.id === RILEY.id)?.active).toBe(false);
+});
+
+test("a surveyor row shows the name and role, with actions behind one button", async () => {
+  const app = testApp({ me: ADMIN });
+  const name = "Riley Okafor-Lindqvist";
+  app.server.admin.surveyors.push({ ...ADMIN }, { ...RILEY, display_name: name, role: "admin" });
+  renderRoute(app, "/survey/admin");
+  const label = await screen.findByText(name);
+  const row = label.closest("li");
+  if (row === null) throw new Error("no row");
+  expect(within(row).getByText(t("admin.surveyors.admin_badge")).className).toContain("pill");
+  expect(within(row).getAllByRole("button")).toHaveLength(1);
+  fireEvent.click(within(row).getByRole("button", { name: t("admin.surveyor.actions", { name }) }));
+  const sheet = await screen.findByRole("dialog", { name });
+  expect(within(sheet).getByRole("button", { name: t("admin.invite.relogin") })).toBeTruthy();
+  expect(within(sheet).getByRole("button", { name: t("admin.revoke") })).toBeTruthy();
 });
 
 test("publish status reads the server's warnings in the deck's words, and Publish now runs it", async () => {
@@ -167,7 +191,8 @@ test("a double tap on New sign-in link issues one invite", async () => {
     open = r;
   });
   renderRoute(app, "/survey/admin");
-  const link = await screen.findByRole("button", { name: t("admin.invite.relogin") });
+  const sheet = await openActions("Riley");
+  const link = within(sheet).getByRole("button", { name: t("admin.invite.relogin") });
   fireEvent.click(link);
   fireEvent.click(link);
   open();
@@ -181,11 +206,11 @@ test("removing access clears that surveyor's shown sign-in link", async () => {
   const app = testApp({ me: ADMIN });
   app.server.admin.surveyors.push({ ...ADMIN }, { ...RILEY });
   renderRoute(app, "/survey/admin");
-  const list = await screen.findByRole("region", { name: t("admin.surveyors.title") });
-  fireEvent.click(await within(list).findByRole("button", { name: t("admin.invite.relogin") }));
+  const sheet = await openActions("Riley");
+  fireEvent.click(within(sheet).getByRole("button", { name: t("admin.invite.relogin") }));
   const note = t("admin.invite.relogin.created", { name: "Riley" });
   expect(await screen.findByText(note)).toBeTruthy();
-  fireEvent.click(within(list).getByRole("button", { name: t("admin.revoke") }));
+  fireEvent.click(within(sheet).getByRole("button", { name: t("admin.revoke") }));
   const confirm = await screen.findByRole("dialog", {
     name: t("admin.revoke.confirm.title", { name: "Riley" }),
   });

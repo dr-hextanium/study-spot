@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { completeSpot, draftSpot, tokenOf } from "./api.ts";
+import { completeSpot, draftSpot, surveyorInvite, tokenOf } from "./api.ts";
 import { expect, signIn, test } from "./fixtures.ts";
 import { layoutProblems, WIDTHS } from "./layout.ts";
 
@@ -8,7 +8,10 @@ const ROUTES: string[] = ["/survey"];
 
 test("converted screens, light and dark: no overflow, no clipped text, 44 px hit areas, axe clean", async ({
   page,
+  browser,
 }) => {
+  // Every route is loaded at three widths in two themes with an axe pass each.
+  test.setTimeout(240_000);
   await signIn(page);
   // A long name so truncation is exercised on Home.
   const token = await tokenOf(page);
@@ -17,10 +20,24 @@ test("converted screens, light and dark: no overflow, no clipped text, 44 px hit
     "The Very Long Named Graduate Reading Room on the Second Floor East",
   );
   const published = await completeSpot(token, `Layout Published ${Date.now()}`, { publish: true });
+  // Admin: a long-named admin surveyor, so the Admin pill is tested against a squeezed name.
+  const joiner = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  try {
+    const p = await joiner.newPage();
+    await p.goto(await surveyorInvite(token, "admin"));
+    await p
+      .getByRole("textbox", { name: "Your name" })
+      .fill("Alexandria Bartholomew Montgomery-Featherstonehaugh");
+    await p.getByRole("button", { name: "Join" }).click();
+    await expect(p.getByRole("heading", { name: "Spots", level: 1 })).toBeVisible();
+  } finally {
+    await joiner.close();
+  }
   // Overviews: a long-named draft (every blocker, a Missing pill per row) and a published spot.
   // Editors: a draft with gaps (Save and next, step bar, tag groups) and a published spot.
   const routes = [
     ...ROUTES,
+    "/survey/admin",
     `/survey/spots/${long.id}`,
     `/survey/spots/${published.id}`,
     `/survey/spots/${long.id}/seating`,

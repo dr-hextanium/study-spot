@@ -132,7 +132,9 @@ test("an admin invites a surveyor, issues a sign-in link that skips the name, an
 
     await page.reload();
     const row = page.getByRole("listitem").filter({ hasText: "Jordan Rivera" });
-    await row.getByRole("button", { name: "New sign-in link" }).click();
+    await row.getByRole("button", { name: "Actions for Jordan Rivera" }).click();
+    const actions = page.getByRole("dialog", { name: "Jordan Rivera" });
+    await actions.getByRole("button", { name: "New sign-in link" }).click();
     const relogin = new URL(await page.locator(".created-link__url").last().innerText());
     expect(relogin.search).toBe("?relogin=1");
     const lostPhone = await second.newPage();
@@ -141,8 +143,11 @@ test("an admin invites a surveyor, issues a sign-in link that skips the name, an
     await lostPhone.getByRole("button", { name: "Sign in" }).click();
     await expect(lostPhone.getByRole("heading", { name: "Spots", level: 1 })).toBeVisible();
 
-    await row.getByRole("button", { name: "Remove access" }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Remove access" }).click();
+    await actions.getByRole("button", { name: "Remove access" }).click();
+    await page
+      .getByRole("dialog", { name: "Remove Jordan Rivera?" })
+      .getByRole("button", { name: "Remove access" })
+      .click();
     await expect(page.getByText("Jordan Rivera removed")).toBeVisible();
     await newbie.reload();
     await expect(newbie.getByText("Sign in again")).toBeVisible();
