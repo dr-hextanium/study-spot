@@ -116,7 +116,13 @@ function SurveyorsSection(props: { online: boolean }) {
     role: SurveyorRole;
     active: boolean;
   } | null>(null);
+  // The sheet keeps showing the last surveyor while it slides out, so it never goes blank.
+  const [lastSelected, setLastSelected] = useState(selected);
+  if (selected !== null && selected !== lastSelected) setLastSelected(selected);
+  const shown = selected ?? lastSelected;
   const [revoking, setRevoking] = useState<{ id: string; name: string } | null>(null);
+  const [lastRevoking, setLastRevoking] = useState(revoking);
+  if (revoking !== null && revoking !== lastRevoking) setLastRevoking(revoking);
   const others = (surveyors.data?.surveyors ?? []).filter((s) => s.id !== me?.id);
 
   const linking = useRef(false);
@@ -180,28 +186,28 @@ function SurveyorsSection(props: { online: boolean }) {
           />
         ))}
       </ul>
-      <Sheet open={selected !== null} title={selected?.name ?? ""} onClose={closeActions}>
-        {selected === null ? null : (
+      <Sheet open={selected !== null} title={shown?.name ?? ""} onClose={closeActions}>
+        {shown === null ? null : (
           <>
             <Button
               disabled={!props.online || linkBusy}
-              onClick={() => void newLink({ ...selected, display_name: selected.name })}
+              onClick={() => void newLink({ ...shown, display_name: shown.name })}
             >
               {t("admin.invite.relogin")}
             </Button>
-            {selected.active ? (
+            {shown.active ? (
               <Button
                 variant="danger"
                 disabled={!props.online}
                 onClick={() => {
-                  setRevoking({ id: selected.id, name: selected.name });
-                  setSelected(null);
+                  setRevoking({ id: shown.id, name: shown.name });
+                  closeActions();
                 }}
               >
                 {t("admin.revoke")}
               </Button>
             ) : null}
-            {relogin === null || relogin.id !== selected.id ? null : (
+            {relogin === null || relogin.id !== shown.id ? null : (
               <CreatedLink
                 url={relogin.url}
                 note={t("admin.invite.relogin.created", { name: relogin.name })}
@@ -212,7 +218,7 @@ function SurveyorsSection(props: { online: boolean }) {
       </Sheet>
       <ConfirmSheet
         open={revoking !== null}
-        title={t("admin.revoke.confirm.title", { name: revoking?.name ?? "" })}
+        title={t("admin.revoke.confirm.title", { name: (revoking ?? lastRevoking)?.name ?? "" })}
         body={t("admin.revoke.confirm.body")}
         action={t("admin.revoke.confirm.action")}
         cancel={t("common.cancel")}
