@@ -91,6 +91,8 @@ function SectionRoute() {
         params: { id: state.to, section },
         search: (prev) => prev,
         replace: true,
+        // The same editor under its draft's real id, maybe mid-edit: no cross-fade.
+        viewTransition: false,
       });
     }
   }, [state, section, navigate]);

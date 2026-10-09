@@ -105,7 +105,13 @@ export function Overview(props: { id: string; write: string | undefined }) {
   const navigate = useNavigate();
   useEffect(() => {
     if (state.kind === "redirect") {
-      void navigate({ to: "/survey/spots/$id", params: { id: state.to }, replace: true });
+      // The same screen under its real id: no cross-fade.
+      void navigate({
+        to: "/survey/spots/$id",
+        params: { id: state.to },
+        replace: true,
+        viewTransition: false,
+      });
     }
   }, [state, navigate]);
   if (state.kind !== "ready") {

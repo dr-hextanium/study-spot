@@ -10,6 +10,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { AppProvider } from "./app/AppProvider.tsx";
 import { createAppDeps } from "./app/deps.ts";
 import { scrollKey } from "./app/scrollKey.ts";
+import { defaultViewTransition } from "./app/transitions.ts";
 import { parseWebEnv } from "./env.ts";
 import { routeTree } from "./routeTree.gen.ts";
 import { watchSystemTheme } from "./ui/themePref.ts";
@@ -19,9 +20,7 @@ export const router = createRouter({
   defaultPreload: false,
   scrollRestoration: true,
   getScrollRestorationKey: scrollKey,
-  // A change of screen cross-fades (styles.css, "Route transitions"). A change of search
-  // only (a sheet opening from ?write=) is not typed, so it swaps at once.
-  defaultViewTransition: { types: ({ pathChanged }) => (pathChanged ? ["route"] : false) },
+  defaultViewTransition,
 });
 
 declare module "@tanstack/react-router" {

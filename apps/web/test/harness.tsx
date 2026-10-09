@@ -39,6 +39,7 @@ import {
 } from "../src/app/deps.ts";
 import { applyServerSpot } from "../src/app/serverCache.ts";
 import { createSessionState } from "../src/app/sessionState.ts";
+import { defaultViewTransition } from "../src/app/transitions.ts";
 import { browserImageKit } from "../src/lib/photo.ts";
 import { routeTree } from "../src/routeTree.gen.ts";
 
@@ -311,6 +312,7 @@ export function renderRoute(app: TestApp, path: string): RenderResult & { router
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [path] }),
+    defaultViewTransition,
   });
   const result = render(
     <AppProvider deps={app.deps}>
