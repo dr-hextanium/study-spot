@@ -1124,3 +1124,33 @@ test("discardAll also removes unreadable records", async () => {
   expect(box.getSnapshot().unreadable).toBe(0);
   expect(box.getSnapshot().records).toEqual([]);
 });
+
+test("one spot's writes stay in order: a failed write holds the later ones until it is sent", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const first = await box.enqueue(power(SPOT_A), 3);
+  const second = await box.enqueue(seating(SPOT_A), 3);
+  const third = await box.enqueue(
+    { kind: "spot.verify", spot_id: SPOT_A, payload: { groups: ["power"] } },
+    3,
+  );
+  // The first write is refused with a 5xx and then a 4xx; nothing queued behind it may land.
+  t.server.failWith.push(500);
+  t.network.set(true);
+  await box.idle();
+  expect(t.server.executed).toEqual([]);
+  t.server.failWith.push(422);
+  await box.syncNow();
+  expect(t.server.executed).toEqual([]);
+  expect(box.getSnapshot().records.map((r) => [r.client_write_id, r.state])).toEqual([
+    [first, "failed"],
+    [second, "pending"],
+    [third, "pending"],
+  ]);
+  await box.retry(first);
+  await box.idle();
+  expect(t.server.executed).toEqual([first, second, third]);
+  expect(box.getSnapshot().records).toEqual([]);
+});

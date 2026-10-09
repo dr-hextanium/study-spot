@@ -55,3 +55,5 @@ bundle_state(campus_id, dirty, write_seq, last_published_at, last_hash, last_dep
 Floor penalty added to walk_matrix lookups at query time. Walk matrix precomputed once from OpenStreetMap footpaths; campus is small enough that no live routing engine is needed.
 
 Implementation: this model is written as a Drizzle schema in `packages/db`. Enums in [spot-schema.md](spot-schema.md) become Postgres enums via Drizzle `pgEnum`. Multi-valued attributes use child tables as above, not arrays or JSON, except `preset.filters_json`, which is validated by a Zod schema before write.
+
+Client queue note: the surveyor's offline outbox (`packages/ui-logic/src/survey/outbox.ts`) sends each spot's writes strictly in order and chains each `base_version` from the previous answer. When the surveyor's own unpublish or photo approval bumps a spot by exactly one, `noteServerVersion` rebases the writes still queued. A write already in flight is not rebased: if such a bump lands while it is on the wire, the server answers 409 and the surveyor resolves one conflict with Keep mine. This is accepted so a real edit by another surveyor can never be hidden.

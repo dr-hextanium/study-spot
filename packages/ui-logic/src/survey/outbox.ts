@@ -728,6 +728,11 @@ export function createOutbox(deps: OutboxDeps) {
      * the version this phone knows: then it stores it and moves an unsent write's base version
      * up, so the write is not a conflict with the surveyor's own action. Anything else changes
      * nothing, so a real conflict surfaces. Never lowers a version.
+     *
+     * Known limit: a write already in flight (sent, answer not yet back) is not rebased. If the
+     * surveyor's own bump lands while it is on the wire, the server answers 409 and the
+     * surveyor sees one conflict to resolve with Keep mine. Rebasing it here could hide a real
+     * conflict, because the server may have judged it against the old base already.
      */
     async noteServerVersion(spotId: string, version: number): Promise<void> {
       await locked(async () => {
