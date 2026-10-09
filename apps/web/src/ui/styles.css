@@ -281,8 +281,21 @@ select {
   gap: var(--space-xs);
   padding: 0;
   color: var(--color-ink);
-  font-size: var(--fontSize-label);
+  /* Direction A: the field label is sans and sentence case, not the serif small caps of .label. */
+  font-family: var(--font-body);
+  font-size: var(--fontSize-body);
   font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* A legend sits on the fieldset's top edge, so the field's top padding goes on the legend. */
+fieldset.field {
+  padding-top: 0;
+}
+
+fieldset.field > legend.field__label {
+  padding: var(--space-md) 0 var(--space-xs);
 }
 
 .field__label > svg {
@@ -1751,6 +1764,10 @@ div.row {
   color: var(--color-muted);
   font-size: var(--fontSize-label);
   overflow-wrap: anywhere;
+}
+
+.editor-meta {
+  margin-bottom: var(--space-md);
 }
 
 .editor-meta .stepbar {
