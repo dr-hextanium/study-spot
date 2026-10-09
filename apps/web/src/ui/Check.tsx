@@ -61,7 +61,7 @@ export function TagGroup(props: {
 }) {
   return (
     <fieldset className="field">
-      <legend className="label field__label">
+      <legend className="field__label">
         {props.icon === undefined ? null : <Icon icon={props.icon} size={16} />}
         {props.label}
       </legend>

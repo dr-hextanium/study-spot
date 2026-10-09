@@ -57,7 +57,7 @@ export function Segmented<V extends string>({
       className={`field segmented segmented--${layout}${error === undefined ? "" : " field--error"}`}
       aria-describedby={helper !== undefined || error !== undefined ? helpId : undefined}
     >
-      <legend className={`label field__label${hideLabel ? " visually-hidden" : ""}`} id={labelId}>
+      <legend className={`field__label${hideLabel ? " visually-hidden" : ""}`} id={labelId}>
         {icon === undefined ? null : <Icon icon={icon} size={16} />}
         {label}
       </legend>

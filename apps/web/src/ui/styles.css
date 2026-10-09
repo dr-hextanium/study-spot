@@ -77,17 +77,6 @@ select {
   color: inherit;
 }
 
-/* Field and group labels. */
-.label {
-  font-family: var(--font-display);
-  font-size: var(--fontSize-label);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  line-height: var(--lineHeight-tight);
-  color: var(--color-ink);
-}
-
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -134,7 +123,6 @@ select {
   gap: var(--space-xs);
   padding: 0;
   color: var(--color-ink);
-  /* Direction A: the field label is sans and sentence case, not the serif small caps of .label. */
   font-family: var(--font-body);
   font-size: var(--fontSize-body);
   font-weight: 600;

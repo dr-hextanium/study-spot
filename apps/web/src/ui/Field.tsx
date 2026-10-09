@@ -22,7 +22,7 @@ export function Field({ label, helper, error, optional, icon, children }: FieldP
   const describedBy = error !== undefined || helper !== undefined ? helpId : undefined;
   return (
     <div className={`field${error === undefined ? "" : " field--error"}`}>
-      <label className="label field__label" htmlFor={inputId}>
+      <label className="field__label" htmlFor={inputId}>
         {icon === undefined ? null : <Icon icon={icon} size={16} />}
         {label}
         {optional === undefined ? null : <span className="field__optional">{optional}</span>}

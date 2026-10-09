@@ -276,7 +276,7 @@ function PublishSection(props: { online: boolean }) {
           )}
           {s.warnings.length === 0 ? null : (
             <>
-              <p className="label">{t("admin.publish.warnings.title")}</p>
+              <p className="field__label">{t("admin.publish.warnings.title")}</p>
               <ul className="row-list">
                 {s.warnings.map((w) => (
                   <Row

@@ -38,12 +38,12 @@ export function BuildingPicker({ buildings, value, onChange, error }: Props) {
     <div className={`field${error === undefined ? "" : " field--error"}`}>
       {/* Offline there is no input, so the label must not point at one. */}
       {buildings === undefined ? (
-        <p className="label field__label">
+        <p className="field__label">
           <Icon icon={Building2} size={16} />
           {t("new.building.label")}
         </p>
       ) : (
-        <p className="label field__label" aria-hidden="true">
+        <p className="field__label" aria-hidden="true">
           <Icon icon={Building2} size={16} />
           {t("new.building.label")}
         </p>

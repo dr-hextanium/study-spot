@@ -61,7 +61,7 @@ export function Stepper({
   };
   return (
     <fieldset className={`field stepper${error === undefined ? "" : " field--error"}`}>
-      <legend className="label field__label" id={labelId}>
+      <legend className="field__label" id={labelId}>
         {icon === undefined ? null : <Icon icon={icon} size={16} />}
         {label}
       </legend>
