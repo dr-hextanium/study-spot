@@ -28,6 +28,10 @@ test("converted screens, light and dark: no overflow, no clipped text, 44 px hit
     `/survey/spots/${published.id}/identity`,
     `/survey/spots/${published.id}/access`,
     `/survey/spots/${published.id}/late_night`,
+    `/survey/spots/${published.id}/hours`,
+    `/survey/spots/${published.id}/estimates`,
+    `/survey/spots/${published.id}/photos`,
+    `/survey/spots/${long.id}/hours`,
   ];
   for (const theme of ["light", "dark"] as const) {
     // The boot script reads this on every load, so each goto below paints in this theme.
