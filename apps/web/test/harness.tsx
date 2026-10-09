@@ -108,6 +108,8 @@ export class TestServer implements Http {
     /** Report a never-published bundle as not dirty, as the server does before any write. */
     neverDirty: boolean;
     inviteGate: Promise<void> | null;
+    /** Holds the spot list answer until it settles. */
+    listGate: Promise<void> | null;
     /** Holds approve and reject answers until it settles. */
     reviewGate: Promise<void> | null;
     /** Approve and reject requests received. */
@@ -121,6 +123,7 @@ export class TestServer implements Http {
     publishFails: false,
     neverDirty: false,
     inviteGate: null,
+    listGate: null,
     reviewGate: null,
     reviews: 0,
   };
@@ -139,6 +142,7 @@ export class TestServer implements Http {
     if (this.unauthorized) return { status: 401, text: '{"error":"unauthorized"}' };
     if (req.method === "GET") this.reads.push(path);
     if (req.method === "GET" && path === "/survey/spots") {
+      if (this.admin.listGate !== null) await this.admin.listGate;
       return { status: 200, text: JSON.stringify(this.list()) };
     }
     if (req.method === "GET" && path === "/survey/campus") {

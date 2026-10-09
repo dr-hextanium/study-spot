@@ -250,7 +250,9 @@ function PublishSection(props: { online: boolean }) {
     else toasts.show(t("error.generic"));
   }
   const s = status.data;
-  const waiting = (list.data?.spots ?? []).filter((x) => x.status === "published").length;
+  // Null until the list exists: a count of zero would claim there is nothing waiting.
+  const waiting =
+    list.data === undefined ? null : list.data.spots.filter((x) => x.status === "published").length;
   return (
     <Section id="admin-publish" title={t("admin.publish.title")}>
       {s === undefined ? null : (
@@ -265,8 +267,11 @@ function PublishSection(props: { online: boolean }) {
               <Pill tone="red">{t("admin.publish.dirty")}</Pill>
             ) : s.last_published_at === null ? (
               // Nothing has ever been published, so "Up to date" would be untrue.
-              // The server reports no change count, so say how many spots are waiting.
-              <Pill>{plural(waiting, "admin.publish.first", "admin.publish.first_many")}</Pill>
+              // The server reports no change count, so say how many spots are waiting,
+              // once that is known and not zero.
+              waiting === null || waiting === 0 ? null : (
+                <Pill>{plural(waiting, "admin.publish.first", "admin.publish.first_many")}</Pill>
+              )
             ) : (
               <Pill>{t("admin.publish.clean")}</Pill>
             )}

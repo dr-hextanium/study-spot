@@ -101,6 +101,31 @@ test("never published and nothing dirty: no Up to date, the spots waiting instea
   expect(screen.queryByText(t("admin.publish.first"))).toBeNull();
 });
 
+test("never published: no spot count until the list has loaded, and none for an empty list", async () => {
+  const live = surveySpotFixture({ status: "published", version: 3 });
+  let release: () => void = () => {};
+  const app = testApp({ me: ADMIN, spots: [live] });
+  app.server.admin.neverDirty = true;
+  app.server.admin.listGate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  renderRoute(app, "/survey/admin");
+  expect(await screen.findByText(t("admin.publish.never"))).toBeTruthy();
+  expect(screen.queryByText(/waiting for the first publish/)).toBeNull();
+  release();
+  expect(await screen.findByText(t("admin.publish.first"))).toBeTruthy();
+});
+
+test("never published with no published spots: the never line alone, no zero count", async () => {
+  const app = testApp({ me: ADMIN, spots: [] });
+  app.server.admin.neverDirty = true;
+  renderRoute(app, "/survey/admin");
+  expect(await screen.findByText(t("admin.publish.never"))).toBeTruthy();
+  await screen.findByRole("button", { name: t("admin.publish.now") });
+  expect(screen.queryByText(/waiting for the first publish/)).toBeNull();
+  expect(screen.queryByText(t("admin.publish.clean"))).toBeNull();
+});
+
 test("offline, admin actions are disabled with the reason", async () => {
   const app = testApp({ me: ADMIN });
   app.network.set(false);
