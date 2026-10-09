@@ -105,6 +105,8 @@ export class TestServer implements Http {
     warnings: string[];
     photos: PendingPhoto[];
     publishFails: boolean;
+    /** Report a never-published bundle as not dirty, as the server does before any write. */
+    neverDirty: boolean;
     inviteGate: Promise<void> | null;
     /** Holds approve and reject answers until it settles. */
     reviewGate: Promise<void> | null;
@@ -117,6 +119,7 @@ export class TestServer implements Http {
     warnings: [],
     photos: [],
     publishFails: false,
+    neverDirty: false,
     inviteGate: null,
     reviewGate: null,
     reviews: 0,
@@ -195,7 +198,7 @@ export class TestServer implements Http {
       if (method === "POST") this.admin.published += 1;
       const published = this.admin.published > 0;
       return ok({
-        dirty: !published,
+        dirty: this.admin.neverDirty ? false : !published,
         running: false,
         last_published_at: published ? "2026-10-13T18:00:00.000Z" : null,
         last_hash: null,

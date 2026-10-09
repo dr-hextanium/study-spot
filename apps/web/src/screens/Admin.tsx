@@ -1,5 +1,5 @@
 import type { SurveyorRole } from "@study-spot/core";
-import { publishWarningText, t } from "@study-spot/ui-logic";
+import { plural, publishWarningText, t } from "@study-spot/ui-logic";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Ellipsis, Shield, TriangleAlert, UserCog } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
@@ -250,6 +250,7 @@ function PublishSection(props: { online: boolean }) {
     else toasts.show(t("error.generic"));
   }
   const s = status.data;
+  const waiting = (list.data?.spots ?? []).filter((x) => x.status === "published").length;
   return (
     <Section id="admin-publish" title={t("admin.publish.title")}>
       {s === undefined ? null : (
@@ -262,6 +263,10 @@ function PublishSection(props: { online: boolean }) {
             </p>
             {s.dirty ? (
               <Pill tone="red">{t("admin.publish.dirty")}</Pill>
+            ) : s.last_published_at === null ? (
+              // Nothing has ever been published, so "Up to date" would be untrue.
+              // The server reports no change count, so say how many spots are waiting.
+              <Pill>{plural(waiting, "admin.publish.first", "admin.publish.first_many")}</Pill>
             ) : (
               <Pill>{t("admin.publish.clean")}</Pill>
             )}

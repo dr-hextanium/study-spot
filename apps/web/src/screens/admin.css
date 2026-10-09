@@ -11,6 +11,12 @@
   margin-bottom: 0;
 }
 
+/* The role switch sits right above its button: no field hairline or padding between them. */
+.admin-section > .field {
+  padding: 0;
+  border-bottom: 0;
+}
+
 .admin-stats {
   display: flex;
   flex-wrap: wrap;

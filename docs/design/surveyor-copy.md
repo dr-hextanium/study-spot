@@ -428,7 +428,9 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | admin.publish.last | Last published {time} | 30 | |
 | admin.publish.never | Not published yet | 20 | |
 | admin.publish.dirty | Changes waiting to publish | 28 | |
-| admin.publish.clean | Up to date | 12 | |
+| admin.publish.clean | Up to date | 12 | only after a publish has run |
+| admin.publish.first | 1 spot waiting for the first publish | 40 | never published, nothing dirty; count variant: admin.publish.first_many |
+| admin.publish.first_many | {count} spots waiting for the first publish | 44 | |
 | admin.publish.now | Publish now | 14 | |
 | admin.publish.running | Publishing | 12 | |
 | admin.publish.error | Last publish failed: {reason} | 70 | |

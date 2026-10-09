@@ -60,6 +60,11 @@ test("admin: clean, and the admin badge keeps its whole text on one line", async
     expect(box.width, `badge width @${width}`).toBeGreaterThanOrEqual(48);
     // One 24 px line, not a wrapped badge.
     expect(box.height, `badge height @${width}`).toBe(24);
+    // No hairline between the role switch and Create invite link.
+    const rule = await page
+      .locator('section[aria-labelledby="admin-invite"] > .field')
+      .evaluate((el) => getComputedStyle(el).borderBottomWidth);
+    expect(rule, `role switch hairline @${width}`).toBe("0px");
   }
 });
 

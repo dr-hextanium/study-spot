@@ -87,6 +87,20 @@ test("publish status reads the server's warnings in the deck's words, and Publis
   expect(await screen.findByText(t("admin.publish.clean"))).toBeTruthy();
 });
 
+test("never published and nothing dirty: no Up to date, the spots waiting instead", async () => {
+  const live = surveySpotFixture({ status: "published", version: 3 });
+  const draft = surveySpotFixture({ id: "6f1d1a2e-6c55-4b5b-8b0e-0d7f4f5c1a09", status: "draft" });
+  const app = testApp({ me: ADMIN, spots: [live, draft] });
+  app.server.admin.neverDirty = true;
+  renderRoute(app, "/survey/admin");
+  expect(await screen.findByText(t("admin.publish.never"))).toBeTruthy();
+  expect(await screen.findByText(t("admin.publish.first"))).toBeTruthy();
+  expect(screen.queryByText(t("admin.publish.clean"))).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: t("admin.publish.now") }));
+  expect(await screen.findByText(t("admin.publish.clean"))).toBeTruthy();
+  expect(screen.queryByText(t("admin.publish.first"))).toBeNull();
+});
+
 test("offline, admin actions are disabled with the reason", async () => {
   const app = testApp({ me: ADMIN });
   app.network.set(false);
