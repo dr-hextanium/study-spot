@@ -46,19 +46,30 @@ function SectionRoute() {
   const { walk } = Route.useSearch();
   // Sections checked in this walk. They live here, above the editors, so each editor's own
   // remount (a fresh form per section) does not forget them; leaving the route ends the walk.
-  const [checked, setChecked] = useState<readonly SurveySection[]>([]);
+  // The list belongs to one spot (keyId, so a draft's local-to-real id move keeps it); another
+  // spot starts a fresh walk.
+  const [owned, setOwned] = useState<{ key: string; list: readonly SurveySection[] }>({
+    key: keyId.current,
+    list: [],
+  });
+  const key = keyId.current;
+  const checked = owned.key === key ? owned.list : [];
   useEffect(() => {
-    if (walk === undefined) setChecked([]);
-  }, [walk]);
+    if (walk === undefined) setOwned({ key, list: [] });
+  }, [walk, key]);
   const walking = useMemo(
     () =>
       walk === 1
         ? {
             checked,
-            mark: (s: SurveySection) => setChecked((c) => (c.includes(s) ? c : [...c, s])),
+            mark: (s: SurveySection) =>
+              setOwned((o) => {
+                const list = o.key === key ? o.list : [];
+                return { key, list: list.includes(s) ? list : [...list, s] };
+              }),
           }
         : null,
-    [walk, checked],
+    [walk, checked, key],
   );
   // The last ready screen and where it is moving to, so an editor with unsaved edits
   // stays mounted while a draft made offline moves from its local id to the real one.

@@ -152,8 +152,7 @@ export function EditorShell<S extends SurveySection>({
   }
   /**
    * After a save or a check: on to the next section in a walk or after Save and next, else the
-   * overview. The end of a walk says how many sections were checked; the overview shows what is
-   * still only on this phone.
+   * overview. The end of a walk says how many sections were checked, once the server has them.
    */
   async function moveOn(
     clientWriteId: string,
@@ -165,8 +164,13 @@ export function EditorShell<S extends SurveySection>({
     const endOfWalk = walk !== null && next === null;
     if (walk !== null) walk.mark(section);
     if (endOfWalk) {
+      // The last write is tracked like any other: "Checked N sections" only once the server has
+      // it, and the on-this-phone wording while it is still queued.
       const count = new Set([...walk.checked, section]).size;
-      toasts.show(plural(count, "editor.walk.done", "editor.walk.done_many"));
+      toasts.track(clientWriteId, {
+        done: { text: plural(count, "editor.walk.done", "editor.walk.done_many") },
+        waiting: { text: plural(count, "editor.walk.queued", "editor.walk.queued_many") },
+      });
     } else {
       toasts.track(clientWriteId, copy);
     }

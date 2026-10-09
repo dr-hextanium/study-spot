@@ -1,4 +1,4 @@
-import type { SurveySpot } from "@study-spot/core";
+import type { SurveySection, SurveySpot } from "@study-spot/core";
 import { t } from "@study-spot/ui-logic";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
@@ -905,7 +905,9 @@ test("a guided walk checks each section in turn, then returns with a toast", asy
   fireEvent.click(screen.getByRole("button", { name: t("editor.verify") }));
   await waitFor(() => expect(view.router.state.location.pathname).toBe(at(FULL)));
   expect(view.router.state.location.search).toEqual({});
-  expect(await screen.findByText("Checked 6 sections")).toBeTruthy();
+  // Still only on this phone, so the toast says so instead of claiming the server has it.
+  expect(await screen.findByText("Checked 6 sections, saved on this phone")).toBeTruthy();
+  expect(screen.queryByText("Checked 6 sections")).toBeNull();
   // Each section was checked on its own: one verify write per required section.
   const groups = app.deps.outbox
     .getSnapshot()
@@ -933,10 +935,10 @@ test("in a walk, Save goes to the next section and keeps the walk", async () => 
 test("a walk skips sections already checked in it", async () => {
   const app = testApp({ spots: [FULL] });
   const view = renderRoute(app, `${at(FULL)}/seating?walk=1`);
-  const go = async (section: string, title: string) => {
+  const go = async (section: SurveySection, title: string) => {
     await view.router.navigate({
       to: "/survey/spots/$id/$section",
-      params: { id: FULL.id, section: section as "identity" },
+      params: { id: FULL.id, section },
       search: { walk: 1 },
     });
     await screen.findByRole("heading", { level: 1, name: title });
@@ -960,4 +962,38 @@ test("without ?walk=1 nothing is walked and no walk toast shows", async () => {
   fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
   await waitFor(() => expect(view.router.state.location.pathname).toBe(at(FULL)));
   expect(screen.queryByText(/^Checked \d+ sections?$/)).toBeNull();
+});
+
+test("online, the walk's final toast waits for the server and then says Checked", async () => {
+  const app = testApp({ spots: [FULL] });
+  const view = renderRoute(app, `${at(FULL)}/identity?walk=1`);
+  for (const section of ["access", "seating", "power", "environment", "use_fit"]) {
+    fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+    await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(FULL)}/${section}`));
+  }
+  fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(FULL)));
+  expect(await screen.findByText("Checked 6 sections")).toBeTruthy();
+  expect(screen.queryByText(/saved on this phone/)).toBeNull();
+});
+
+test("a walk starts over when the spot changes", async () => {
+  const other = surveySpotFixture({
+    id: "7a1c2b3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+    slug: "other-spot",
+    status: "draft",
+  });
+  const app = testApp({ spots: [FULL, other] });
+  const view = renderRoute(app, `${at(FULL)}/access?walk=1`);
+  fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(FULL)}/seating`));
+  await view.router.navigate({
+    to: "/survey/spots/$id/$section",
+    params: { id: other.id, section: "identity" },
+    search: { walk: 1 },
+  });
+  await screen.findByText(other.official_name);
+  fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+  // Access was checked in the other spot's walk; here it is still to do.
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(other)}/access`));
 });

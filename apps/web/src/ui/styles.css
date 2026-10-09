@@ -1762,7 +1762,7 @@ div.row {
 .editor-name {
   margin: 0;
   color: var(--color-muted);
-  font-size: var(--fontSize-label);
+  font-size: var(--fontSize-body);
   overflow-wrap: anywhere;
 }
 

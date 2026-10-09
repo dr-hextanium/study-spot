@@ -204,8 +204,10 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | editor.save_next | Save and next | 16 | primary when a next section exists |
 | editor.progress.after | {done} of {total} · After this: {section} | 46 | under the step bar |
 | editor.progress | {done} of {total} | 10 | when nothing is left after this one |
-| editor.walk.done | Checked 1 section | 20 | toast at the end of a guided walk; count variant: editor.walk.done_many |
+| editor.walk.done | Checked 1 section | 20 | toast at the end of a guided walk, once the server has it; count variant: editor.walk.done_many |
 | editor.walk.done_many | Checked {count} sections | 26 | |
+| editor.walk.queued | Checked 1 section, saved on this phone | 42 | walk toast while the last write is still queued; count variant: editor.walk.queued_many |
+| editor.walk.queued_many | Checked {count} sections, saved on this phone | 48 | |
 | editor.verify.done | Marked as checked | 20 | toast |
 | editor.verify.hours_missing | Add hours for {term} before marking this checked. | 60 | server 422: spot has hours but none for the current term |
 | editor.saved | Saved | 10 | toast when online |
