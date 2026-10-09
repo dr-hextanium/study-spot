@@ -84,3 +84,19 @@ test("admin: surveyors load behind skeleton rows", async () => {
   act(() => g.open());
   await waitFor(() => expect(document.querySelector('[aria-busy="true"]')).toBeNull());
 });
+
+test("focus on the screen stays put when the overview skeleton gives way to the spot", async () => {
+  const spot = surveySpotFixture();
+  const app = testApp({ spots: [spot] });
+  const g = gate();
+  app.server.admin.spotGate = g.promise;
+  renderRoute(app, `/survey/spots/${spot.id}`);
+  await waitFor(() => expectSkeleton());
+  const main = document.querySelector("main");
+  expect(main).not.toBeNull();
+  act(() => main?.focus());
+  act(() => g.open());
+  expect(await screen.findByRole("heading", { level: 1, name: spot.official_name })).toBeTruthy();
+  expect(document.querySelector("main")).toBe(main);
+  expect(document.activeElement).toBe(main);
+});

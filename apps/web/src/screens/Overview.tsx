@@ -42,7 +42,7 @@ import { GroupHeading, Meta, Screen } from "../ui/Screen.tsx";
 import { ConfirmSheet, Sheet } from "../ui/Sheet.tsx";
 import { StepBar } from "../ui/StepBar.tsx";
 import { NotFound } from "./NotFound.tsx";
-import { OverviewSkeleton } from "./SpotSkeleton.tsx";
+import { OverviewSkeletonBody, SkelBar } from "./SpotSkeleton.tsx";
 import { SyncStatus } from "./SyncStatus.tsx";
 import { ConflictSheet, FailedSheet } from "./WriteSheets.tsx";
 
@@ -114,20 +114,18 @@ export function Overview(props: { id: string; write: string | undefined }) {
       });
     }
   }, [state, navigate]);
-  if (state.kind !== "ready") {
-    return state.kind === "missing" ? (
-      <NotFound message={t("spot.not_found")} sync />
-    ) : (
-      <OverviewSkeleton />
-    );
-  }
+  if (state.kind === "missing") return <NotFound message={t("spot.not_found")} sync />;
   return <Ready id={props.id} write={props.write} state={state} />;
 }
 
+/**
+ * The overview, or its skeleton while the spot is on its way. Both are this one
+ * component's Screen, so the screen (and focus on it) stays when the spot arrives.
+ */
 function Ready(props: {
   id: string;
   write: string | undefined;
-  state: Extract<SpotViewState, { kind: "ready" }>;
+  state: Exclude<SpotViewState, { kind: "missing" }>;
 }) {
   const { outbox, api, queryClient } = useDeps();
   const { me } = useSession();
@@ -138,6 +136,21 @@ function Ready(props: {
   const [unpublishing, setUnpublishing] = useState(false);
   const [blockersOpen, setBlockersOpen] = useState(false);
   const [actions, setActions] = useState(false);
+  // A second tap while the first is being queued must not queue or announce anything.
+  const [queuing, setQueuing] = useState(false);
+  if (props.state.kind !== "ready") {
+    return (
+      <Screen
+        title={t("app.name")}
+        titleHidden
+        back={{ to: "/survey" }}
+        trailing={<SyncStatus variant="icon" />}
+        action={<SkelBar />}
+      >
+        <OverviewSkeletonBody />
+      </Screen>
+    );
+  }
   const { view, statuses, readiness, review, tz, progress } = props.state;
   const { spot } = view;
   const conflicts = view.records.filter((r) => r.state === "conflict");
@@ -152,8 +165,6 @@ function Ready(props: {
       replace: r === undefined,
     });
 
-  // A second tap while the first is being queued must not queue or announce anything.
-  const [queuing, setQueuing] = useState(false);
   async function queue(
     kind: "spot.publish" | "spot.review",
     copy: {
