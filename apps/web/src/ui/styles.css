@@ -602,6 +602,8 @@ fieldset.field > legend.field__label {
   border-radius: var(--radius-m);
   background: var(--color-mist);
   color: var(--color-ink);
+  /* A link drawn as a button (New spot, Next) is a button, not underlined text. */
+  text-decoration: none;
   /* Snug, not 1: a one-line control keeps its height from min-height, and its descenders fit. */
   font: 600 var(--fontSize-body) / var(--lineHeight-snug) var(--font-body);
   cursor: pointer;
