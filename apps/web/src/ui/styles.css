@@ -1582,6 +1582,147 @@ div.row {
   justify-content: flex-start;
 }
 
+/*
+ * Skeletons: mist shapes where content is on its way, laid out like the real
+ * screen so nothing jumps when it arrives. Never data: aria-hidden, under an
+ * aria-busy region with a polite "Loading". The pulse stops under reduced motion.
+ */
+
+.skel {
+  display: block;
+  flex: none;
+  max-width: 100%;
+  height: 15px;
+  border-radius: var(--radius-s);
+  background: var(--color-mist);
+  animation: skel-pulse 1.6s var(--easing-standard) infinite;
+}
+
+@keyframes skel-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.skel--small {
+  height: 13px;
+}
+
+.skel--title {
+  /* One line of the large title: 34 px at the tight line height. */
+  height: calc(var(--fontSize-large) * var(--lineHeight-tight));
+  border-radius: var(--radius-m);
+}
+
+.skel--heading {
+  height: var(--fontSize-group);
+}
+
+.skel--pill {
+  height: 24px;
+  border-radius: var(--radius-pill);
+}
+
+.skel--chip {
+  height: 32px;
+  border-radius: var(--radius-pill);
+}
+
+.skel--icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+}
+
+.skel--control {
+  height: var(--size-control);
+  border-radius: var(--radius-m);
+}
+
+.skel--photo {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-m);
+}
+
+.skel-title,
+span.progress-line,
+span.editor-meta {
+  display: block;
+}
+
+.skel-title {
+  padding: var(--space-xs) 0 var(--space-sm);
+}
+
+.skel-group > .stepbar {
+  padding-top: var(--space-md);
+}
+
+.skel-row {
+  cursor: default;
+}
+
+.skel-row .row__text {
+  display: block;
+}
+
+.skel-bar {
+  flex: 1;
+  display: grid;
+  gap: var(--space-xs);
+}
+
+/*
+ * Route transitions (View Transitions, started by the router). Only a navigation
+ * typed "route" (the path changed) animates: the old screen fades out quickly and
+ * the new one fades in while rising 6 px. Untyped transitions, and browsers without
+ * view transition types, swap at once. Reduced motion: a near-instant fade.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+:root:active-view-transition-type(route)::view-transition-old(root) {
+  animation: route-out var(--duration-fast) var(--easing-standard) both;
+}
+
+:root:active-view-transition-type(route)::view-transition-new(root) {
+  animation: route-in 200ms var(--easing-standard) both;
+}
+
+@keyframes route-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes route-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes route-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:active-view-transition-type(route)::view-transition-old(root) {
+    animation-duration: var(--duration-reduced);
+  }
+
+  :root:active-view-transition-type(route)::view-transition-new(root) {
+    animation-name: route-fade-in;
+    animation-duration: var(--duration-reduced);
+  }
+}
+
 /* Reduced motion: nothing slides or scales; opacity and color run at 80 ms. */
 @media (prefers-reduced-motion: reduce) {
   *,

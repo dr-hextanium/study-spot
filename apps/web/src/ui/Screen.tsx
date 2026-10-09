@@ -16,6 +16,8 @@ export function Screen(props: {
   action?: ReactNode;
   /** Stack the action bar's buttons: a wide primary over a quiet one. */
   stacked?: boolean;
+  /** The h1 is for assistive tech only (a skeleton draws its shape instead). */
+  titleHidden?: boolean;
   children: ReactNode;
 }) {
   const { ref, scrolled } = useLargeTitle();
@@ -32,7 +34,7 @@ export function Screen(props: {
         className={`screen screen--seawolf${props.action === undefined ? "" : " screen--with-bar"}`}
       >
         <div className="column">
-          <h1 ref={ref} className="large-title">
+          <h1 ref={ref} className={props.titleHidden === true ? "visually-hidden" : "large-title"}>
             {props.title}
           </h1>
           {props.meta}

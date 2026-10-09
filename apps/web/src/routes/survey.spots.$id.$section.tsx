@@ -8,6 +8,7 @@ import { type SpotViewState, useSpotView } from "../hooks/useSpotView.ts";
 import { EDITORS } from "../screens/editors/index.tsx";
 import { WalkContext } from "../screens/editors/walk.ts";
 import { NotFound } from "../screens/NotFound.tsx";
+import { EditorSkeleton } from "../screens/SpotSkeleton.tsx";
 
 type Ready = Extract<SpotViewState, { kind: "ready" }>;
 
@@ -97,7 +98,7 @@ function SectionRoute() {
     return state.kind === "missing" ? (
       <NotFound message={t("spot.not_found")} sync />
     ) : (
-      <NotFound loading sync />
+      <EditorSkeleton section={section} />
     );
   }
   const Editor = EDITORS[section];

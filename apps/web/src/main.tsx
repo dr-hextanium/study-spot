@@ -19,6 +19,9 @@ export const router = createRouter({
   defaultPreload: false,
   scrollRestoration: true,
   getScrollRestorationKey: scrollKey,
+  // A change of screen cross-fades (styles.css, "Route transitions"). A change of search
+  // only (a sheet opening from ?write=) is not typed, so it swaps at once.
+  defaultViewTransition: { types: ({ pathChanged }) => (pathChanged ? ["route"] : false) },
 });
 
 declare module "@tanstack/react-router" {

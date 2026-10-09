@@ -64,3 +64,44 @@ test("back from a spot returns Home to the same filter and scroll", async ({ pag
   );
   await expect.poll(async () => Math.abs((await scrollY(page)) - 400)).toBeLessThanOrEqual(2);
 });
+
+test("a path change cross-fades as a typed route transition; a spot not here yet shows its skeleton", async ({
+  page,
+}) => {
+  // Record each view transition the router starts, and its types.
+  await page.addInitScript(() => {
+    const w = window as unknown as { __vt: string[][] };
+    w.__vt = [];
+    const start = document.startViewTransition?.bind(document);
+    if (start === undefined) return;
+    document.startViewTransition = ((
+      arg: ViewTransitionUpdateCallback | StartViewTransitionOptions,
+    ) => {
+      w.__vt.push(typeof arg === "function" ? [] : [...(arg.types ?? [])]);
+      return start(arg);
+    }) as typeof document.startViewTransition;
+  });
+  await signIn(page);
+  const spot = await draftSpot(await tokenOf(page), "Transition check");
+  await page.reload();
+  // Hold the spot's own read so the overview has to wait for it.
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(`**/survey/spots/${spot.id}`, async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page
+    .locator("ul.row-list")
+    .getByRole("link", { name: /Transition check/ })
+    .click();
+  await expect(page.locator('main [aria-busy="true"]')).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Loading" })).toHaveCount(1);
+  release();
+  await expect(page.getByRole("heading", { name: "Transition check", level: 1 })).toBeVisible();
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+  const vt = await page.evaluate(() => (window as unknown as { __vt: string[][] }).__vt);
+  expect(vt).toContainEqual(["route"]);
+});

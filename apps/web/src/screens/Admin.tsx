@@ -22,6 +22,7 @@ import { Row } from "../ui/Row.tsx";
 import { GroupHeading, Screen } from "../ui/Screen.tsx";
 import { Segmented } from "../ui/Segmented.tsx";
 import { ConfirmSheet, Sheet } from "../ui/Sheet.tsx";
+import { Loading, Skel, SkelRows } from "../ui/Skeleton.tsx";
 import { SyncStatus } from "./SyncStatus.tsx";
 
 function Section(props: { id: string; title: string; children: ReactNode }) {
@@ -159,7 +160,11 @@ function SurveyorsSection(props: { online: boolean }) {
   }
   return (
     <Section id="admin-surveyors" title={t("admin.surveyors.title")}>
-      {surveyors.isPending && props.online ? <p className="empty">{t("common.loading")}</p> : null}
+      {surveyors.isPending && surveyors.fetchStatus === "fetching" ? (
+        <Loading>
+          <SkelRows count={4} />
+        </Loading>
+      ) : null}
       {surveyors.data !== undefined && others.length === 0 ? (
         <p className="empty">{t("admin.surveyors.empty")}</p>
       ) : null}
@@ -255,6 +260,14 @@ function PublishSection(props: { online: boolean }) {
     list.data === undefined ? null : list.data.spots.filter((x) => x.status === "published").length;
   return (
     <Section id="admin-publish" title={t("admin.publish.title")}>
+      {status.isPending && status.fetchStatus === "fetching" ? (
+        <Loading>
+          <span className="admin-stats">
+            <Skel kind="title" w="60%" />
+            <Skel kind="pill" w="88px" />
+          </span>
+        </Loading>
+      ) : null}
       {s === undefined ? null : (
         <>
           <div className="admin-stats">
@@ -383,6 +396,14 @@ function PhotosSection(props: { online: boolean }) {
   const photos = pending.data?.photos ?? [];
   return (
     <Section id="admin-photos" title={t("admin.photos.title")}>
+      {pending.isPending && pending.fetchStatus === "fetching" ? (
+        <Loading>
+          <span className="photos">
+            <Skel kind="photo" />
+            <Skel kind="photo" />
+          </span>
+        </Loading>
+      ) : null}
       {pending.data !== undefined && photos.length === 0 ? (
         <p className="empty">{t("admin.photos.empty")}</p>
       ) : null}

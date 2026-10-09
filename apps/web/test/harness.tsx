@@ -110,6 +110,10 @@ export class TestServer implements Http {
     inviteGate: Promise<void> | null;
     /** Holds the spot list answer until it settles. */
     listGate: Promise<void> | null;
+    /** Holds every spot detail read until it settles. */
+    spotGate: Promise<void> | null;
+    /** Holds the surveyor list answer until it settles. */
+    surveyorsGate: Promise<void> | null;
     /** Holds approve and reject answers until it settles. */
     reviewGate: Promise<void> | null;
     /** Approve and reject requests received. */
@@ -124,6 +128,8 @@ export class TestServer implements Http {
     neverDirty: false,
     inviteGate: null,
     listGate: null,
+    spotGate: null,
+    surveyorsGate: null,
     reviewGate: null,
     reviews: 0,
   };
@@ -144,6 +150,12 @@ export class TestServer implements Http {
     if (req.method === "GET" && path === "/survey/spots") {
       if (this.admin.listGate !== null) await this.admin.listGate;
       return { status: 200, text: JSON.stringify(this.list()) };
+    }
+    if (req.method === "GET" && /^\/survey\/spots\/[^/]+$/.test(path) && this.admin.spotGate) {
+      await this.admin.spotGate;
+    }
+    if (req.method === "GET" && path === "/admin/surveyors" && this.admin.surveyorsGate) {
+      await this.admin.surveyorsGate;
     }
     if (req.method === "GET" && path === "/survey/campus") {
       return { status: 200, text: JSON.stringify(CAMPUS) };

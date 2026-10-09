@@ -27,6 +27,7 @@ import { Row } from "../ui/Row.tsx";
 import { GroupHeading, Screen } from "../ui/Screen.tsx";
 import { Search } from "../ui/Search.tsx";
 import { Sheet } from "../ui/Sheet.tsx";
+import { Loading, Skel, SkelRows } from "../ui/Skeleton.tsx";
 import { StepBar } from "../ui/StepBar.tsx";
 import { ThemeSwitch } from "../ui/ThemeSwitch.tsx";
 import { SyncSheet } from "./SyncSheet.tsx";
@@ -71,7 +72,7 @@ const EMPTY: Record<
 export function Home(props: { spotLink?: SpotLinkFor; isAdmin: boolean }) {
   const online = useOnline();
   const tz = useCampusTz();
-  const { home, noList } = useSurveyHome();
+  const { home, noList, loading } = useSurveyHome();
   const pendingAtOpen = usePendingAfterOpen();
   const [state, setState] = useHomeState();
   const [actions, setActions] = useState(false);
@@ -125,7 +126,7 @@ export function Home(props: { spotLink?: SpotLinkFor; isAdmin: boolean }) {
           {plural(pendingAtOpen, "sync.leave_warning_one", "sync.leave_warning")}
         </Banner>
       ) : null}
-      {noList && !online ? <p className="lede">{t("home.offline_first")}</p> : null}
+      {noList && !online && !loading ? <p className="lede">{t("home.offline_first")}</p> : null}
       {firstRun ? (
         <section className="first-run">
           <h2 className="group-heading">{t("home.empty.title")}</h2>
@@ -167,40 +168,56 @@ export function Home(props: { spotLink?: SpotLinkFor; isAdmin: boolean }) {
         value={state.query}
         onChange={(query) => setState({ ...state, query })}
       />
-      <FilterChips
-        label={t("home.filter.label")}
-        options={options}
-        value={state.filter}
-        onChange={(filter) => setState({ ...state, filter })}
-      />
+      {loading ? (
+        <Loading>
+          <span className="chips">
+            {["64px", "112px", "92px", "72px"].map((w) => (
+              <Skel key={w} kind="chip" w={w} />
+            ))}
+          </span>
+          <span className="group-heading">
+            <Skel kind="heading" w="32%" />
+          </span>
+          <SkelRows count={5} compact />
+        </Loading>
+      ) : (
+        <FilterChips
+          label={t("home.filter.label")}
+          options={options}
+          value={state.filter}
+          onChange={(filter) => setState({ ...state, filter })}
+        />
+      )}
       {data.unreadable > 0 ? (
         <Banner tone="note">
           {plural(data.unreadable, "home.unreadable_one", "home.unreadable")}
         </Banner>
       ) : null}
-      <section {...(firstRun ? {} : { "aria-labelledby": listHeadingId })}>
-        {firstRun ? null : (
-          <GroupHeading id={listHeadingId}>{t(`home.group.${state.filter}`)}</GroupHeading>
-        )}
-        {empty === null || rows.length > 0 ? null : <p className="empty">{empty}</p>}
-        {rows.length === 0 ? null : (
-          <ul className="row-list">
-            {rows.map((row: HomeRow) => (
-              <Row
-                key={row.spotId}
-                title={row.name}
-                compact
-                {...(row.coverPhotoId === null
-                  ? {}
-                  : { lead: <CoverThumb photoId={row.coverPhotoId} size="row" /> })}
-                end={homeFactEnd(row.fact, tz)}
-                {...(homeFactSub(row, tz) === undefined ? {} : { sub: homeFactSub(row, tz) })}
-                {...(link === undefined ? {} : { link: link(row.spotId) })}
-              />
-            ))}
-          </ul>
-        )}
-      </section>
+      {loading ? null : (
+        <section {...(firstRun ? {} : { "aria-labelledby": listHeadingId })}>
+          {firstRun ? null : (
+            <GroupHeading id={listHeadingId}>{t(`home.group.${state.filter}`)}</GroupHeading>
+          )}
+          {empty === null || rows.length > 0 ? null : <p className="empty">{empty}</p>}
+          {rows.length === 0 ? null : (
+            <ul className="row-list">
+              {rows.map((row: HomeRow) => (
+                <Row
+                  key={row.spotId}
+                  title={row.name}
+                  compact
+                  {...(row.coverPhotoId === null
+                    ? {}
+                    : { lead: <CoverThumb photoId={row.coverPhotoId} size="row" /> })}
+                  end={homeFactEnd(row.fact, tz)}
+                  {...(homeFactSub(row, tz) === undefined ? {} : { sub: homeFactSub(row, tz) })}
+                  {...(link === undefined ? {} : { link: link(row.spotId) })}
+                />
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
       <Sheet open={actions} title={t("common.actions")} onClose={() => setActions(false)}>
         <ul className="row-list">
           <Row
