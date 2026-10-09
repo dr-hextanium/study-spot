@@ -11,7 +11,7 @@ Scope: surveyor screens of the Perch PWA (`/invite/$token`, `/survey`, `/survey/
 
 Audience and task: 3 to 5 student surveyors, one-handed on phones, outdoors in sun and in dim basements, creating and checking study spots in under 5 minutes, offline first; admins also on laptops. Flow and copy: `docs/design/surveyor-journey.md`, `docs/design/surveyor-copy.md`.
 
-Constraints: 44 px minimum hit areas; WCAG 2.2 AA in light and dark (ink on paper 7:1 for sunlight); one red-filled button per screen; no status hues; no university marks; no em-dashes.
+Constraints: 44 px minimum hit areas; WCAG 2.2 AA in light and dark (ink on paper 7:1 for sunlight); one red-filled primary per screen, and removals (danger) are red-filled but never beside a red primary; no status hues; no university marks; no em-dashes.
 
 Physical scene: a phone held at arm's length in direct afternoon sun, then in a fluorescent-lit basement at 11pm; a laptop at a club meeting. Light by default, with a manual light, dark or system switch.
 

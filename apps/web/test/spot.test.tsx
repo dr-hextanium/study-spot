@@ -327,6 +327,23 @@ test("a conflict resolves both ways from the overview", async () => {
   expect(app.deps.outbox.getSnapshot().records).toEqual([]);
 });
 
+test("a failed write that can be retried: Try again is ink, so Discard is the one red fill", async () => {
+  const spot = surveySpotFixture({ version: 3 });
+  const app = testApp({ spots: [spot] });
+  await app.deps.started;
+  app.server.inner.failWith.push(403);
+  await app.deps.outbox.enqueue({ kind: "spot.section", spot_id: spot.id, payload: SEATING }, 3);
+  await app.deps.outbox.idle();
+  renderRoute(app, at(spot));
+  fireEvent.click(await screen.findByRole("button", { name: t("spot.failed.open") }));
+  const sheet = await screen.findByRole("dialog", { name: t("failed.title") });
+  const retry = within(sheet).getByRole("button", { name: t("failed.retry") });
+  const discard = within(sheet).getByRole("button", { name: t("failed.discard") });
+  expect(retry.className).toContain("btn--ink");
+  expect(discard.className).toContain("btn--danger");
+  expect(sheet.querySelector(".btn--primary")).toBeNull();
+});
+
 test("a failed write says why in deck words; an unreadable answer offers only Discard", async () => {
   const spot = surveySpotFixture({ version: 3 });
   const app = testApp({ spots: [spot] });

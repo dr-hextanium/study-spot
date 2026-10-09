@@ -652,12 +652,17 @@ fieldset.field > legend.field__label {
 }
 
 .btn--danger {
-  background: var(--color-mist);
-  color: var(--color-red);
+  background: var(--color-red);
+  color: var(--color-onRed);
+}
+
+.btn--danger:active:not(:disabled):not([aria-disabled="true"]) {
+  background: var(--color-redPress);
 }
 
 @media (hover: hover) {
-  .btn--primary:hover:not(:disabled):not([aria-disabled="true"]) {
+  .btn--primary:hover:not(:disabled):not([aria-disabled="true"]),
+  .btn--danger:hover:not(:disabled):not([aria-disabled="true"]) {
     background: var(--color-redHover);
   }
 
@@ -665,8 +670,7 @@ fieldset.field > legend.field__label {
     background: var(--color-inkHover);
   }
 
-  .btn--quiet:hover:not(:disabled):not([aria-disabled="true"]),
-  .btn--danger:hover:not(:disabled):not([aria-disabled="true"]) {
+  .btn--quiet:hover:not(:disabled):not([aria-disabled="true"]) {
     background: var(--color-mistHover);
   }
 

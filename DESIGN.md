@@ -143,12 +143,18 @@ components:
     backgroundColor: "{colors.hover}"
     textColor: "{colors.ink}"
   button-danger:
-    backgroundColor: "{colors.mist}"
-    textColor: "{colors.red}"
+    backgroundColor: "{colors.red}"
+    textColor: "{colors.onRed}"
     typography: "{typography.body-strong}"
     rounded: "{rounded.m}"
     padding: "0 18px"
     height: "46px"
+  button-danger-hover:
+    backgroundColor: "{colors.redHover}"
+    textColor: "{colors.onRed}"
+  button-danger-active:
+    backgroundColor: "{colors.redPress}"
+    textColor: "{colors.onRed}"
   icon-button:
     backgroundColor: "transparent"
     textColor: "{colors.ink}"
@@ -362,7 +368,7 @@ The app icon is a red Newsreader P on paper (`apps/web/public/icons/icon.svg`, p
 A warm off-white paper, a warm near-black ink, one deep university red, and a pale mist for fills; every other value is a mix of those four.
 
 ### Primary
-- **Seawolf Red** (`red`; `red-dark` in dark mode): the one filled primary button per screen (New spot, Publish, Keep mine, Take photo), the current segment of the step bar, the Missing and Conflict pills, the "Didn't save" pill, the banner and reason icons, field error text and borders, danger button text, the trouble state of the sync status, and every keyboard focus ring. It is also the text caret, the native accent color, and (as `redTint`) the text selection. In dark mode it lifts to a coral so it holds contrast on near-black, and the text on it flips to paper-dark (`onRed-dark`).
+- **Seawolf Red** (`red`; `red-dark` in dark mode): the one filled primary button per screen (New spot, Publish, Keep mine, Take photo), the danger button (Discard, Remove access, Reject, Unpublish), the current segment of the step bar, the Missing and Conflict pills, the "Didn't save" pill, the banner and reason icons, field error text and borders, the trouble state of the sync status, and every keyboard focus ring. It is also the text caret, the native accent color, and (as `redTint`) the text selection. In dark mode it lifts to a coral so it holds contrast on near-black, and the text on it flips to paper-dark (`onRed-dark`).
 - **On Red** (`onRed`): the label color on a red fill, white in light mode and paper-dark in dark mode.
 - **Red Tint** (`redTint`, 12 percent red into paper): the background of red pills, of the "Can't publish yet" reason box, and of selected text.
 - **Red Hover / Red Press** (`redHover`, `redPress`): red mixed toward ink for the hover and pressed states of the primary button. Never used at rest.
@@ -370,7 +376,7 @@ A warm off-white paper, a warm near-black ink, one deep university red, and a pa
 ### Neutral
 - **Paper** (`paper`): the page, the sheet, the action bar, the input field, the segmented thumb and stepper buttons. Warm, not pure white, so a sunlit screen does not glare.
 - **Ink** (`ink`): all body text, the ink button, selected tags and filter chips, the done segments of the step bar, the toast and the update card. Ink on paper clears 7:1 for sunlight.
-- **Mist** (`mist`): every quiet fill: the quiet and danger buttons, the segmented track, the stepper tray, the search field, banners, note cards, mist pills, counts, the todo step, empty photo frames and thumbnail placeholders.
+- **Mist** (`mist`): every quiet fill: the quiet button, the segmented track, the stepper tray, the search field, banners, note cards, mist pills, counts, the todo step, empty photo frames and thumbnail placeholders.
 - **Muted** (`muted`, 62 percent ink): secondary text, row subtitles and facts, helpers, placeholder text, unselected segmented labels, label icons.
 - **Line** (`line`, 10 percent ink): every hairline: under fields, between days and list options, the scrolled top bar edge, the action bar edge, the sheet actions divider, the outline of the Keep going card and filter chips, the sheet grab handle.
 - **Edge** (`edge`, 45 percent ink): the stronger stroke on inputs, unselected tags, radio rings and estimates cells; also the scrollbar thumb.
@@ -383,7 +389,7 @@ Each light token has a `-dark` twin. The dark set is the same recipe on the dark
 
 **The Four Colors Rule.** Paper, ink, red and mist, and oklab mixes of them. Nothing else enters the palette: no green for done, no amber for waiting, no blue for links. Scrims and shadows are ink mixed into transparent and are not tokens.
 
-**The Red Means You Rule.** Red appears where the surveyor has to act or look: the one primary action, the current step, a missing required section, a conflict, a failed save, an error, the focus ring. It is never decoration and never a heading color. The one primary button is the only large red fill; every other red surface is a pill, a reason box or a 6 px step.
+**The Red Means You Rule.** Red appears where the surveyor has to act or look: the one primary action, the current step, a missing required section, a conflict, a failed save, an error, the focus ring. It is never decoration and never a heading color. The large red fills are the one primary button and the danger button; a danger button never sits beside a red primary, so a red fill next to you always means one thing. Every other red surface is a pill, a reason box or a 6 px step.
 
 **The Icon Plus Red Rule.** Status is carried by an icon and, when it needs the surveyor, by red. A state is never shown by color alone: the current step is also taller, trouble pills carry an icon, a danger banner always carries its icon.
 
@@ -451,7 +457,7 @@ Plain, firm, 46 px tall, 12 px corners, Instrument Sans 600 at 15 px on the snug
 - **Ink:** the strong secondary ("Next: Seating", "Keep theirs").
 - **Quiet (mist):** ordinary secondary actions ("Looks right", Cancel).
 - **Ghost:** muted text on nothing, a hover wash; used for the sync status in the action bar.
-- **Danger:** red text on mist, never a red fill, so a destructive action does not compete with the primary.
+- **Danger:** a red fill with on-red text, hover and press like the primary, for removals (Discard, Remove access, Reject, Unpublish and every destructive confirm). It never shares a sheet or a group with a red primary: beside it the safe choice is ink (Try again) or quiet (Cancel). The admin screen therefore has no red primary; Create invite link and Approve are ink.
 - **Pressed:** moves down 1 px and scales to 0.99. **Disabled:** 45 percent opacity. A blocked Publish stays visible and is `aria-disabled` with its reason linked, and pressing it opens the "Can't publish yet" sheet.
 - **Icon button:** a 40 px transparent circle (44 px hit area), mist on hover and press, scale 0.97 on press. Back, close, sync, actions.
 
@@ -497,7 +503,7 @@ The top of Home when a draft is in progress: a 20 px-corner card outlined with a
 A 44 px mist field with a muted 18 px search icon and a 16 px input; the label doubles as placeholder and accessible name.
 
 ### Sheet and confirm sheet
-A native modal dialog: focus moves in and is trapped, Escape and the close button dismiss, the page behind is inert. On phones it is a bottom sheet (22 px top corners, up to 85 percent of the viewport, a 36 by 4 px grab handle) that slides up in 320 ms; from 768 px it is a centered 520 px dialog with 20 px corners that scales in from 0.98 and fades. A Newsreader 20 px title and a close icon head it; the body scrolls; actions are pinned below a hairline. The **confirm sheet** asks once before something that cannot be undone: a wide primary (or a wide danger when destructive) over a wide quiet Cancel.
+A native modal dialog: focus moves in and is trapped, Escape and the close button dismiss, the page behind is inert. On phones it is a bottom sheet (22 px top corners, up to 85 percent of the viewport, a 36 by 4 px grab handle) that slides up in 320 ms; from 768 px it is a centered 520 px dialog with 20 px corners that scales in from 0.98 and fades. A Newsreader 20 px title and a close icon head it; the body scrolls; actions are pinned below a hairline. The **confirm sheet** asks once before something that cannot be undone: a wide primary (or a wide red danger when destructive, the one red thing in the sheet) over a wide quiet Cancel.
 
 ### Banner
 A 44 px minimum mist box with 12 px corners and 600 text, with an optional action on the right. **Danger** always carries a red alert icon and interrupts (alert role). **Note** has no icon by default and waits to be read (status role), for offline notices and waiting changes. The related **reason** box (red tint, red icon) explains why Publish is blocked.
@@ -521,7 +527,7 @@ A three-option segmented control (Light, Dark, System), stored on this device on
 
 ### Do:
 - **Do** build every color from paper, ink, red and mist, and the oklab mixes named in the frontmatter.
-- **Do** give each screen exactly one red-filled button, the action the screen exists for; use ink, quiet, ghost or danger for everything else.
+- **Do** give each screen at most one red-filled primary, the action the screen exists for; use ink, quiet or ghost for everything else. Removals are red-filled danger buttons, never beside a red primary.
 - **Do** keep red for things that need the surveyor (missing required sections, conflicts, failed saves, errors, the current step) and for focus rings.
 - **Do** pair every status with an icon, and change shape or size as well as color where state matters (the current step is taller).
 - **Do** give every control a hit area of at least 44 px, extending an invisible area when the drawing is smaller.
@@ -534,7 +540,7 @@ A three-option segmented control (Light, Dark, System), stored on this device on
 ### Don't:
 - **Don't** add a status hue: no green for done, no amber for waiting, no blue for info. Done is ink, todo is mist, attention is red.
 - **Don't** use red as decoration, for headings, or as a large background.
-- **Don't** put a second red-filled button on a screen, and don't fill a destructive button red; danger is red text on mist.
+- **Don't** put a second red primary on a screen, or a danger button next to a red primary; demote the neighbor to ink.
 - **Don't** shadow anything that sits in the page flow; shadows are for sheets, the floating action bar and the segmented thumb.
 - **Don't** decorate: hairlines separate items, but nothing imitates a printed form (no lines to write on, no faux-printed seals or date rings), and there are no colored status chips or tracked uppercase labels.
 - **Don't** show a write as saved or synced before the server accepts it, and never show a forecast as live.

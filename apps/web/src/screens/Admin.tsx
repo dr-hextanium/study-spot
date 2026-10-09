@@ -90,7 +90,7 @@ function InviteSection(props: { online: boolean }) {
         value={role}
         onChange={setRole}
       />
-      <Button variant="primary" disabled={!props.online || busy} onClick={() => void create()}>
+      <Button variant="ink" disabled={!props.online || busy} onClick={() => void create()}>
         {t("admin.invite.create")}
       </Button>
       {url === null ? null : <CreatedLink url={url} note={t("admin.invite.created")} />}

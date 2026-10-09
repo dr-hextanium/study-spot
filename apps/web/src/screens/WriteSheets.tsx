@@ -127,7 +127,7 @@ export function FailedSheet(props: { record: WriteRecord; spotName: string; onCl
           <>
             {view.canRetry ? (
               <Button
-                variant="primary"
+                variant="ink"
                 wide
                 onClick={() => {
                   outbox.retry(record.client_write_id).then(props.onClose, failed);

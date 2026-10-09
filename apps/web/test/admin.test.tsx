@@ -30,6 +30,13 @@ test("only admins reach the admin screen, and home links to it for them", async 
   expect(await screen.findByRole("link", { name: t("home.admin") })).toBeTruthy();
 });
 
+test("admin: red fills mean removal only; Create invite link and Approve are ink", async () => {
+  renderRoute(testApp({ me: ADMIN }), "/survey/admin");
+  const create = await screen.findByRole("button", { name: t("admin.invite.create") });
+  expect(create.className).toContain("btn--ink");
+  expect(document.querySelector(".btn--primary")).toBeNull();
+});
+
 test("an admin creates an invite link and copies it", async () => {
   const app = testApp({ me: ADMIN });
   renderRoute(app, "/survey/admin");
