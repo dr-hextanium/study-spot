@@ -295,6 +295,9 @@ test("the guided walk checks each section in turn and ends on the overview with 
     await page.getByRole("button", { name: "Nothing changed" }).click();
     await expect(page).toHaveURL(new RegExp(`/${section}\\?walk=1$`));
   }
+  // Six quick checks queue six writes. Let them reach the server first: a last check that is
+  // still queued after the settle wait honestly says "saved on this phone" instead.
+  await expect(page.getByRole("button", { name: "All synced" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Nothing changed" }).click();
   await expect(page).toHaveURL(new RegExp(`/survey/spots/${spot.id}$`));
   await expect(page.getByText("Checked 6 sections", { exact: true })).toBeVisible();

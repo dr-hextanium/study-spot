@@ -807,8 +807,10 @@ test("two quick Publish taps while the server is failing show no Published toast
   app.server.inner.failFor.add(ready.id);
   fireEvent.click(publish);
   fireEvent.click(publish);
+  // The server refused the send (a 500 keeps the write queued); the pass has ended.
+  await waitFor(() => expect(app.server.inner.requests.length).toBeGreaterThan(0));
   await app.deps.outbox.idle();
-  await new Promise((r) => setTimeout(r, 50));
+  await act(async () => undefined);
   expect(screen.queryByText(t("spot.publish.done"))).toBeNull();
   expect(app.deps.outbox.getSnapshot().records.length).toBe(1);
 });
@@ -1046,6 +1048,25 @@ test("online, the walk's final toast waits for the server and then says Checked"
   await waitFor(() => expect(view.router.state.location.pathname).toBe(at(FULL)));
   expect(await screen.findByText("Checked 6 sections")).toBeTruthy();
   expect(screen.queryByText(/saved on this phone/)).toBeNull();
+});
+
+test("online, a held queue says the checks are only on this phone", async () => {
+  const app = testApp({ spots: [FULL] });
+  await app.deps.started;
+  // Online, but sending is held: the last check cannot reach the server.
+  app.deps.outbox.stop();
+  const view = renderRoute(app, `${at(FULL)}/identity?walk=1`);
+  for (const section of ["access", "seating", "power", "environment", "use_fit", null]) {
+    fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+    const to = section === null ? at(FULL) : `${at(FULL)}/${section}`;
+    await waitFor(() => expect(view.router.state.location.pathname).toBe(to));
+  }
+  expect(screen.queryByText(/^Checked \d+ sections?$/)).toBeNull();
+  // Past the settle wait it says so, instead of claiming the server has it.
+  app.clock.set(new Date(app.clock.now().getTime() + 10_000).toISOString());
+  expect(await screen.findByText("Checked 6 sections, saved on this phone")).toBeTruthy();
+  expect(screen.queryByText("Checked 6 sections")).toBeNull();
+  expect(app.deps.outbox.getSnapshot().records).toHaveLength(6);
 });
 
 test("a walk starts over when the spot changes", async () => {

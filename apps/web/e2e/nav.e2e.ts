@@ -3,6 +3,22 @@ import { expect, signIn, test } from "./fixtures.ts";
 
 const scrollY = (page: import("@playwright/test").Page) => page.evaluate(() => window.scrollY);
 
+/**
+ * Scrolls and resolves once the document's scroll event has run. The router records which
+ * element scrolled from a capture listener on the document, and a listener without capture
+ * on the same target runs after it, so the router has seen the scroll when this resolves.
+ * (Its saved positions only reach sessionStorage on pagehide, so there is nothing to poll.)
+ */
+const scrollAndSettle = (page: import("@playwright/test").Page, y: number) =>
+  page.evaluate(
+    (top) =>
+      new Promise<void>((resolve) => {
+        document.addEventListener("scroll", () => resolve(), { once: true });
+        window.scrollTo(0, top);
+      }),
+    y,
+  );
+
 test("back from an editor returns the overview to where it was; editors open at the top", async ({
   page,
 }) => {
@@ -11,10 +27,8 @@ test("back from an editor returns the overview to where it was; editors open at 
   const spot = await draftSpot(await tokenOf(page), "Scroll check");
   await page.goto(`/survey/spots/${spot.id}`);
   await expect(page.getByRole("heading", { name: "Scroll check", level: 1 })).toBeVisible();
-  await page.evaluate(() => window.scrollTo(0, 300));
+  await scrollAndSettle(page, 300);
   await expect.poll(() => scrollY(page)).toBe(300);
-  // Let the router record the position (it saves on scroll, throttled).
-  await page.waitForTimeout(250);
   // The last row sits under the pinned action at this height, so click it by script.
   await page
     .locator(`a[href="/survey/spots/${spot.id}/late_night"]`)
@@ -35,9 +49,8 @@ test("back from a spot returns Home to the same filter and scroll", async ({ pag
   await page.getByRole("button", { name: /^Drafts/ }).click();
   const list = page.getByRole("region", { name: "Drafts" });
   await expect(list.getByRole("link").nth(11)).toBeVisible();
-  await page.evaluate(() => window.scrollTo(0, 400));
+  await scrollAndSettle(page, 400);
   await expect.poll(() => scrollY(page)).toBe(400);
-  await page.waitForTimeout(250);
   await list.getByRole("link", { name: /Scroll draft 10/ }).click();
   await expect(page.getByRole("heading", { name: "Scroll draft 10", level: 1 })).toBeVisible();
   await page.getByRole("link", { name: "Back" }).click();

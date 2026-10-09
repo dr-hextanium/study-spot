@@ -49,6 +49,10 @@ export function summaryOf(
     updated_at: spot.updated_at,
     oldest_verified_at: oldestVerified(spot),
     hours_confirmed: spot.hours.length > 0,
+    // The server list also requires stored bytes (apps/server/src/spots/load.ts), which the
+    // photo shape here does not carry. Every upload stores its bytes (photos/write.ts), so an
+    // approved cover without bytes is a legacy or imported row; until the next list fetch the
+    // thumbnail then shows its fallback, and the fetch corrects the id.
     cover_photo_id: spot.photos.find((p) => p.is_cover && p.approved)?.id ?? null,
   };
 }

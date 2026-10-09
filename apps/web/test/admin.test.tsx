@@ -165,16 +165,22 @@ test("a double tap on Approve approves the photo once", async () => {
 });
 
 function withShare(app: ReturnType<typeof testApp>, result: "copied" | "shared" | "failed") {
-  Object.assign(app.deps, { share: { share: async () => result } });
+  const share = vi.fn(async () => result);
+  Object.assign(app.deps, { share: { share } });
+  return share;
 }
 
 test("Copy link says copied only when it was copied", async () => {
   const app = testApp({ me: ADMIN });
-  withShare(app, "shared");
+  const share = withShare(app, "shared");
   renderRoute(app, "/survey/admin");
   fireEvent.click(await screen.findByRole("button", { name: t("admin.invite.create") }));
   fireEvent.click(await screen.findByRole("button", { name: t("admin.invite.copy") }));
-  await new Promise((r) => setTimeout(r, 50));
+  // The share call has answered and its continuation has run: only then is "no toast" meaningful.
+  await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
+  await act(async () => {
+    await share.mock.results[0]?.value;
+  });
   expect(screen.queryByText(t("admin.invite.copied"))).toBeNull();
   expect(screen.queryByText(t("admin.invite.copy_failed"))).toBeNull();
 });
