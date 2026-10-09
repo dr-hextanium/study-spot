@@ -1,5 +1,6 @@
 import type { HoursRow } from "@study-spot/core";
 import { type PlainCopyId, type SpotView, t } from "@study-spot/ui-logic";
+import { Copy } from "lucide-react";
 import { useState } from "react";
 import {
   closesNextDay,
@@ -14,6 +15,7 @@ import {
 } from "../../lib/hours.ts";
 import { Button } from "../../ui/Button.tsx";
 import { Check } from "../../ui/Check.tsx";
+import { Icon } from "../../ui/Icon.tsx";
 import { GroupHeading } from "../../ui/Screen.tsx";
 import { EditorShell } from "./EditorShell.tsx";
 
@@ -38,11 +40,11 @@ function DayRow(props: {
   const open = hours.kind === "open" ? hours : null;
   return (
     <fieldset className={`field day${problem === null ? "" : " field--error"}`}>
-      <legend className="label field__label">{name}</legend>
+      <legend className="field__label day__name">{name}</legend>
       {open === null ? null : (
         <div className="day__times">
           <label className="day__time">
-            <span className="label">{t("hours.opens")}</span>
+            <span className="day__label">{t("hours.opens")}</span>
             <input
               className="input"
               type="time"
@@ -51,7 +53,7 @@ function DayRow(props: {
             />
           </label>
           <label className="day__time">
-            <span className="label">{t("hours.closes")}</span>
+            <span className="day__label">{t("hours.closes")}</span>
             <input
               className="input"
               type="time"
@@ -144,9 +146,15 @@ export function HoursEditor({ view }: { view: SpotView }) {
         };
         return (
           <>
-            {term === null ? null : <p className="title">{t("hours.term", { term: term.name })}</p>}
+            {term === null ? null : (
+              <p className="hours-term">{t("hours.term", { term: term.name })}</p>
+            )}
             <p className="lede">{t("hours.helper")}</p>
-            <Button onClick={() => commit(copyMonday(regular), exam, withExam)}>
+            <Button
+              variant="quiet"
+              icon={<Icon icon={Copy} />}
+              onClick={() => commit(copyMonday(regular), exam, withExam)}
+            >
               {t("hours.copy_weekdays")}
             </Button>
             <Week

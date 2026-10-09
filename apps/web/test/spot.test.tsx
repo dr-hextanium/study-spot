@@ -343,6 +343,29 @@ test("estimates cycle on tap and save only the cells set", async () => {
   });
 });
 
+test("hours: each day is its own group with a closed switch and the copy button", async () => {
+  renderRoute(testApp({ spots: [FULL] }), `${at(FULL)}/hours`);
+  const mon = await screen.findByRole("group", { name: t("hours.day.mon") });
+  expect(within(mon).getByRole("checkbox", { name: t("hours.closed") })).toBeTruthy();
+  expect(screen.getByRole("button", { name: t("hours.copy_weekdays") })).toBeTruthy();
+});
+
+test("busyness: time blocks are rows and days are columns, with no live wording", async () => {
+  const empty = surveySpotFixture({ estimates: [] });
+  renderRoute(testApp({ spots: [empty] }), `${at(empty)}/estimates`);
+  const grid = await screen.findByTestId("busyness-grid");
+  const rows = within(grid).getAllByRole("rowheader");
+  expect(rows.map((r) => r.textContent)).toEqual([
+    t("estimates.morning"),
+    t("estimates.afternoon"),
+    t("estimates.evening"),
+    t("estimates.night"),
+  ]);
+  expect(within(grid).getAllByRole("columnheader")).toHaveLength(2);
+  expect(screen.getByText(t("estimates.helper"))).toBeTruthy();
+  expect(within(grid).getAllByRole("button")).toHaveLength(8);
+});
+
 test("an admin unpublishes a published spot after confirming, online only", async () => {
   const published = surveySpotFixture({ status: "published" });
   const app = testApp({ spots: [published], me: { ...ME, role: "admin" } });

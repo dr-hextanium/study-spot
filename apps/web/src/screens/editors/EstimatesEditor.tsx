@@ -1,8 +1,10 @@
 import { DAY_TYPE, TIME_BLOCK } from "@study-spot/core";
 import { type PlainCopyId, type SpotView, t } from "@study-spot/ui-logic";
+import { Moon, Sun, Sunrise, Sunset } from "lucide-react";
 import { useState } from "react";
 import { cellKey, cellsOf, type Grid, nextBucket, toGrid } from "../../lib/estimates.ts";
 import { BUCKET_COPY } from "../../lib/fields.ts";
+import { Icon } from "../../ui/Icon.tsx";
 import { EditorShell } from "./EditorShell.tsx";
 
 const DAY_COPY: Record<(typeof DAY_TYPE)[number], PlainCopyId> = {
@@ -15,6 +17,8 @@ const BLOCK_COPY: Record<(typeof TIME_BLOCK)[number], PlainCopyId> = {
   evening: "estimates.evening",
   night: "estimates.night",
 };
+
+const BLOCK_ICON = { morning: Sunrise, afternoon: Sun, evening: Sunset, night: Moon } as const;
 
 /**
  * Busyness guesses: time blocks down, weekdays and weekends across, so a
@@ -29,12 +33,12 @@ export function EstimatesEditor({ view }: { view: SpotView }) {
         <>
           <p className="lede">{t("estimates.helper")}</p>
           {untouched ? <p className="field__helper">{t("estimates.tap_hint")}</p> : null}
-          <table className="grid">
+          <table className="grid" data-testid="busyness-grid">
             <thead>
               <tr>
                 <td />
                 {DAY_TYPE.map((day) => (
-                  <th key={day} scope="col" className="label">
+                  <th key={day} scope="col" className="grid__head">
                     {t(DAY_COPY[day])}
                   </th>
                 ))}
@@ -43,7 +47,8 @@ export function EstimatesEditor({ view }: { view: SpotView }) {
             <tbody>
               {TIME_BLOCK.map((block) => (
                 <tr key={block}>
-                  <th scope="row" className="label">
+                  <th scope="row" className="grid__head grid__block">
+                    <Icon icon={BLOCK_ICON[block]} size={16} />
                     {t(BLOCK_COPY[block])}
                   </th>
                   {DAY_TYPE.map((day) => {
