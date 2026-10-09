@@ -1605,8 +1605,18 @@ div.row {
   }
 }
 
+/* A line of text: one line box (1lh) of the surrounding type, so the skeleton is
+   as tall as the text it stands for. The mist is drawn inside clear borders, not
+   margins, so nothing collapses into the parent's margins. */
+.skel--line,
 .skel--small {
-  height: 13px;
+  height: 1lh;
+  border-block: 0.15lh solid transparent;
+  background-clip: padding-box;
+}
+
+.skel--small {
+  border-block-width: 0.2lh;
 }
 
 .skel--title {
@@ -1616,7 +1626,7 @@ div.row {
 }
 
 .skel--heading {
-  height: var(--fontSize-group);
+  height: calc(var(--fontSize-group) * var(--lineHeight-snug));
 }
 
 .skel--pill {
@@ -1659,6 +1669,12 @@ span.editor-meta {
 
 .skel-group > .stepbar {
   padding-top: var(--space-md);
+}
+
+/* As tall as a real step bar, whose current step is 6 px. */
+.skel-group .stepbar {
+  box-sizing: content-box;
+  height: 6px;
 }
 
 .skel-row {

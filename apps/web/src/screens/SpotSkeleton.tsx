@@ -1,4 +1,4 @@
-import { type OverviewSection, t } from "@study-spot/ui-logic";
+import { type OverviewSection, REQUIRED_SECTIONS } from "@study-spot/ui-logic";
 import { sectionName } from "../lib/format.ts";
 import { Screen } from "../ui/Screen.tsx";
 import { Loading, Skel, SkelRows, SkelStepBar } from "../ui/Skeleton.tsx";
@@ -30,6 +30,7 @@ export function OverviewSkeletonBody() {
         <Skel kind="pill" w="52px" />
         <Skel kind="pill" w="96px" />
         <Skel kind="small" w="120px" />
+        <Skel kind="small" w="104px" />
       </span>
       <SkelStepBar />
       <span className="progress-line">
@@ -38,9 +39,13 @@ export function OverviewSkeletonBody() {
       <span className="group-heading">
         <Skel kind="heading" w="48%" />
       </span>
-      <SkelRows count={6} lead compact />
+      <SkelRows count={REQUIRED_SECTIONS.length} lead compact />
       <span className="group-heading">
         <Skel kind="heading" w="28%" />
+      </span>
+      <SkelRows count={2} lead compact />
+      <span className="group-heading">
+        <Skel kind="heading" w="40%" />
       </span>
       <SkelRows count={3} lead compact />
     </Loading>
@@ -63,6 +68,9 @@ export function EditorSkeleton(props: { id: string; section: OverviewSection }) 
           <SkelStepBar />
           <span className="progress-line">
             <Skel kind="small" w="52%" />
+          </span>
+          <span className="meta">
+            <Skel kind="small" w="104px" />
           </span>
         </span>
         {[0, 1, 2].map((i) => (

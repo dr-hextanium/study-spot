@@ -105,3 +105,53 @@ test("a path change cross-fades as a typed route transition; a spot not here yet
   const vt = await page.evaluate(() => (window as unknown as { __vt: string[][] }).__vt);
   expect(vt).toContainEqual(["route"]);
 });
+
+/** The top of the first match inside main, in page coordinates. */
+const topOf = (page: import("@playwright/test").Page, selector: string) =>
+  page
+    .locator(`main ${selector}`)
+    .first()
+    .evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+
+test("skeletons sit where the real screen lands: overview rows and editor fields at 375", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 800 });
+  await signIn(page);
+  const token = await tokenOf(page);
+  const spot = await draftSpot(token, "Skeleton fit");
+  await page.reload();
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(`**/survey/spots/${spot.id}`, async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page
+    .locator("ul.row-list")
+    .getByRole("link", { name: /Skeleton fit/ })
+    .click();
+  await expect(page.locator('main [aria-busy="true"]')).toBeVisible();
+  const skelRow = await topOf(page, ".row");
+  release();
+  await expect(page.getByRole("heading", { name: "Skeleton fit", level: 1 })).toBeVisible();
+  expect(Math.abs((await topOf(page, ".row")) - skelRow)).toBeLessThanOrEqual(2);
+
+  const other = await draftSpot(token, "Skeleton fit editor");
+  let releaseEditor: () => void = () => undefined;
+  const heldEditor = new Promise<void>((resolve) => {
+    releaseEditor = resolve;
+  });
+  await page.route(`**/survey/spots/${other.id}`, async (route) => {
+    await heldEditor;
+    await route.continue();
+  });
+  await page.goto(`/survey/spots/${other.id}/seating`);
+  await expect(page.locator('main [aria-busy="true"]')).toBeVisible();
+  const skelField = await topOf(page, ".field");
+  releaseEditor();
+  await expect(page.locator('main [aria-busy="true"]')).toHaveCount(0);
+  expect(Math.abs((await topOf(page, ".field")) - skelField)).toBeLessThanOrEqual(2);
+});
