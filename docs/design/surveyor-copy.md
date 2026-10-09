@@ -20,13 +20,11 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | id | text | max chars | notes |
 |---|---|---|---|
 | app.name | Perch | 10 | working name |
-| app.mode.survey | Survey | 12 | label for surveyor mode |
 | common.save | Save | 12 | |
 | common.cancel | Cancel | 12 | |
 | common.back | Back | 12 | |
 | common.retry | Retry | 12 | |
 | common.discard | Discard | 12 | |
-| common.done | Done | 12 | |
 | common.optional | Optional | 12 | field suffix |
 | common.required | Required | 12 | field suffix, only where screen mixes both |
 | common.unknown | Not sure | 16 | explicit "don't know" option for optional enums |
@@ -59,8 +57,6 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | sync.what.photo | Photo for {name} | 50 | |
 | sync.what.review | Review {name} | 50 | |
 | sync.what.cover | Cover photo for {name} | 50 | |
-| sync.saved_on_phone | Saved on this phone | 24 | section status |
-| sync.synced | Synced | 12 | section status |
 | sync.leave_warning | {count} changes haven't synced yet. Leaving now keeps them on this phone. | 90 | shown on next open if still pending |
 
 ## Invite (`/invite/$token`)
@@ -89,7 +85,6 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | auth.expired.body | Your sign-in on this phone ended. Ask an admin for a new link. Your unsynced changes are kept. | 110 | |
 | nav.back_to_spots | Back to spots | 20 | not-found and missing-spot screens |
 | nav.not_found.body | Page not found. | 40 | unknown address |
-| auth.revoked.body | An admin removed this phone's access. Unsynced changes stay on this phone. | 90 | |
 
 ## Home (`/survey`)
 
@@ -98,20 +93,10 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | home.title | Spots | 12 | |
 | home.new_spot | New spot | 14 | primary |
 | home.admin | Admin | 10 | admins only |
-| home.attention.title | Needs attention | 20 | |
-| home.attention.failed | {count} changes didn't save | 34 | |
 | home.unreadable | {count} changes can't be read | 34 | attention row; stored writes that no longer parse |
-| home.attention.conflict | Changed by someone else | 30 | row subtitle |
-| home.attention.unreviewed | Unreviewed, edited by {name} | 40 | row subtitle |
-| home.attention.hours_unconfirmed | Hours not confirmed for {term} | 40 | row subtitle |
-| home.stale.title | Oldest checks | 20 | stale list |
-| home.stale.row | Last checked {date} | 30 | row subtitle; date like "Oct 5" |
 | home.stale.never | Never checked | 20 | |
-| home.drafts.title | Drafts | 12 | |
-| home.drafts.row | {count} of 7 required parts done | 36 | row subtitle; 7 = required groups |
 | home.empty.title | No spots yet | 20 | first run |
 | home.empty.body | A spot is one place you'd tell a friend to study, like a reading room or a lounge. Start with the one you're standing in. | 140 | |
-| home.attention.empty | Nothing needs attention. | 30 | |
 
 ## New spot (`/survey/spots/new`)
 
@@ -173,29 +158,17 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | id | text | max chars | notes |
 |---|---|---|---|
 | section.identity.name | Basics | 12 | API section: identity |
-| section.identity.desc | Name, building, floor, how to get there | 44 | |
 | section.access.name | Access | 12 | |
-| section.access.desc | Who can get in and how | 30 | |
 | section.hours.name | Hours | 12 | |
-| section.hours.desc | When it's open this term | 30 | |
 | section.seating.name | Seating | 12 | |
-| section.seating.desc | Seats, tables, biggest group | 30 | |
 | section.power.name | Power and signal | 18 | |
-| section.power.desc | Outlets, wifi, cell signal | 30 | |
 | section.environment.name | Noise and feel | 16 | API section: environment |
-| section.environment.desc | Noise rules, light, temperature | 34 | |
 | section.use_fit.name | House rules | 14 | API section: use_fit |
-| section.use_fit.desc | Food, group work, calls | 30 | |
 | section.amenities.name | Nearby | 12 | API section: amenities |
-| section.amenities.desc | Bathrooms, water, coffee, printers | 36 | |
 | section.accessibility.name | Accessibility | 14 | |
-| section.accessibility.desc | Step-free route, elevator, seating | 36 | |
 | section.late_night.name | Late night | 12 | |
-| section.late_night.desc | Past midnight, staffed, lit walk home | 40 | |
 | section.estimates.name | Busyness | 12 | API section: estimates |
-| section.estimates.desc | Your best guess, until we count | 34 | |
 | section.photos.name | Photos | 12 | not an API section; photos endpoint |
-| section.photos.desc | One good cover shot | 24 | |
 
 ## Section editor (shared)
 
@@ -260,13 +233,11 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | hours.opens | Opens | 8 | |
 | hours.closes | Closes | 8 | |
 | hours.closed | Closed | 8 | per-day toggle |
-| hours.last_entry | Last entry | 12 | optional |
 | hours.next_day | next day | 10 | suffix when closes before opens, e.g. "2:00 next day" |
 | hours.copy_weekdays | Copy Monday to weekdays | 26 | |
 | hours.exam.toggle | Different hours during finals | 30 | |
 | hours.exam.title | Finals hours | 14 | |
 | hours.helper | Use the posted hours. If none are posted, check the building's website. | 80 | |
-| hours.invalid.opens_midnight | Opening at midnight is 0:00, not 24:00. | 44 | |
 | hours.invalid.same_time | Opens and closes can't be the same time. Mark the day closed or 24 hours. | 80 | |
 | hours.all_day | Open 24 hours | 16 | per-day toggle |
 
@@ -423,7 +394,6 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | id | text | max chars | notes |
 |---|---|---|---|
 | failed.title | This change didn't save | 26 | |
-| failed.body.validation | The server didn't accept it: {reason} | 70 | reason from server, already user-readable |
 | failed.body.publish | Still missing: {fields} | 60 | |
 | failed.retry | Try again | 12 | |
 | failed.discard | Discard change | 16 | |
@@ -488,9 +458,7 @@ Strings the built screens needed beyond the sections above: short header forms f
 | sync.sheet.unreadable_item | A saved change this app can't read | 40 | one row per unreadable record |
 | sync.sheet.unreadable_help | These came from a newer or damaged copy of the app. Discard them if they stay. | 90 | |
 | sync.sheet.open_spot | Open spot | 12 | row action |
-| home.attention.failed_one | 1 change didn't save | 34 | singular of home.attention.failed |
 | home.unreadable_one | 1 change can't be read | 34 | singular of home.unreadable |
-| home.stale.empty | No published spots yet. | 30 | |
 | home.drafts.empty | No drafts. | 14 | |
 | home.offline_first | The spot list loads once you're online. New spots still save on this phone. | 90 | first run offline, nothing cached |
 | spot.section.on_phone | On this phone | 14 | section row sync state |
@@ -533,7 +501,6 @@ Strings the built screens needed beyond the sections above: short header forms f
 | invite.switch.body | This phone holds changes {name} has not synced. Cancel keeps them, but this link is used up, so you will need a new one to join as {new}. | 150 | the server already accepted the link, so Cancel cannot reuse it |
 | invite.switch.discard | Discard their changes and join | 34 | destructive confirm action |
 | photos.approve | Approve | 10 | any surveyor but the uploader |
-| photos.approve.own | You took this, so someone else approves it. | 50 | |
 | photos.approve.done | Photo approved | 16 | toast |
 | photos.online_only | Approving needs a connection. | 32 | |
 | photos.not_synced | Not synced yet | 16 | badge on a photo still on the phone |

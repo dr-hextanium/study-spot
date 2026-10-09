@@ -97,12 +97,8 @@ test("the deck covers the states added by review fixes", () => {
 });
 
 test("plural picks the singular id for 1 and fills count otherwise", () => {
-  expect(plural(1, "home.attention.failed_one", "home.attention.failed")).toBe(
-    "1 change didn't save",
-  );
-  expect(plural(3, "home.attention.failed_one", "home.attention.failed")).toBe(
-    "3 changes didn't save",
-  );
+  expect(plural(1, "home.unreadable_one", "home.unreadable")).toBe("1 change can't be read");
+  expect(plural(3, "home.unreadable_one", "home.unreadable")).toBe("3 changes can't be read");
   expect(plural(0, "sync.unreadable_one", "sync.unreadable")).toBe("0 changes can't be read");
   // @ts-expect-error the plural form must take exactly { count }
   plural(2, "common.save", "sync.what.create");
