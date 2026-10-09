@@ -27,6 +27,8 @@ FIRST VIEWPORT: Spot overview on a 390 by 844 phone. A 52 px top bar (back, sync
 
 FORM: Raycast list density with Notion page calm. Progress is a 4 px step bar, one segment per required section: done is ink, current is red, todo is mist.
 
+FORM seed: the direction came from the owner's choice in the live mock and font sampler (decision 20, DIRS.d), not from a concept roll.
+
 FINISH: unreviewed and undocumented is unfinished. This build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance.
 
 ## Signature interaction
