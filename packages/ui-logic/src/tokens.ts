@@ -72,14 +72,32 @@ export const tokens: Tokens = {
     large: 34,
   },
   lineHeight: { tight: 1.08, snug: 1.25, body: 1.5 },
-  space: { xxs: 4, xs: 8, sm: 12, md: 16, gutter: 20, lg: 24, xl: 32 },
+  /**
+   * The 4 px scale, plus named roles: the page gutter, the space above a group
+   * heading and below it, the padding of a field in an editor, and of a sheet.
+   */
+  space: {
+    xxs: 4,
+    xs: 8,
+    sm: 12,
+    md: 16,
+    lg: 24,
+    xl: 32,
+    gutter: 24,
+    group: 32,
+    heading: 8,
+    field: 20,
+    sheet: 20,
+  },
   radius: { s: 8, m: 12, l: 20, sheet: 22, pill: 999 },
   size: {
     tapTarget: 44,
     bar: 52,
-    actionBar: 88,
+    /** Reserved under the content for the pinned action bar, not its drawn height. */
+    actionBar: 92,
     updateCard: 72,
-    row: 52,
+    row: 56,
+    rowCompact: 48,
     control: 46,
     thumb: 40,
     tag: 36,

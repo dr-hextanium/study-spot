@@ -100,9 +100,13 @@ spacing:
   xs: "8px"
   sm: "12px"
   md: "16px"
-  gutter: "20px"
   lg: "24px"
   xl: "32px"
+  gutter: "24px"
+  group: "32px"
+  heading: "8px"
+  field: "20px"
+  sheet: "20px"
 components:
   button-primary:
     backgroundColor: "{colors.red}"
@@ -232,13 +236,13 @@ components:
     typography: "{typography.body-strong}"
     rounded: "{rounded.m}"
     padding: "8px 10px"
-    height: "52px"
+    height: "56px"
   row-hover:
     backgroundColor: "{colors.hover}"
   row-active:
     backgroundColor: "{colors.mist}"
   row-compact:
-    height: "46px"
+    height: "48px"
   row-thumb:
     backgroundColor: "{colors.mist}"
     rounded: "{rounded.s}"
@@ -277,7 +281,7 @@ components:
     height: "52px"
   action-bar:
     backgroundColor: "{colors.paper}"
-    padding: "10px 12px 14px"
+    padding: "12px 16px 16px"
   filter-chip:
     backgroundColor: "transparent"
     textColor: "{colors.ink}"
@@ -308,6 +312,7 @@ components:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
     rounded: "{rounded.sheet}"
+    padding: "12px 20px 20px"
   sheet-dialog:
     backgroundColor: "{colors.paper}"
     rounded: "{rounded.l}"
@@ -336,7 +341,7 @@ components:
     textColor: "{colors.ink}"
     typography: "{typography.body-strong}"
     rounded: "{rounded.m}"
-    height: "52px"
+    height: "56px"
   estimates-cell:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
@@ -363,7 +368,7 @@ The app icon is a red Newsreader P on paper (`apps/web/public/icons/icon.svg`, p
 **Key Characteristics:**
 - Four colors plus oklab mixes; red is the only accent and it always means something.
 - Newsreader for large titles, group headings, bar titles and figures; Chivo Mono for the stepper value and invite links; Instrument Sans for everything else.
-- Lists of 52 px rows: lead icon or thumbnail, name, and the fact or a pill on the right.
+- Lists of 56 px rows (48 px compact): lead icon or thumbnail, name, and the fact or a pill on the right.
 - One centered 680 px column on every width; phone first, no second pane.
 - Lucide icons at a 1.75 stroke, 20 px by default, 16 px beside labels.
 - Light by default, with a per-device light, dark or system switch applied before first paint.
@@ -426,9 +431,9 @@ Each light token has a `-dark` twin. The dark set is the same recipe on the dark
 
 ## Layout
 
-One column, phone first. Content sits in a centered column of 680 px maximum with 20 px side gutters on every width; laptops get the same column centered on paper, not a second pane. The document scrolls; the top bar is sticky and the action bar is pinned to the bottom, so a screen with actions reserves 88 px plus the safe area beneath its content (the action bar's reserved space, not its drawn height).
+One column, phone first. Content sits in a centered column of 680 px maximum with 24 px side gutters on every width; laptops get the same column centered on paper, not a second pane. The document scrolls; the top bar is sticky and the action bar is pinned to the bottom, so a screen with actions reserves 92 px plus the safe area beneath its content (the action bar's reserved space, not its drawn height).
 
-The rhythm is a 4 px base: 4, 8, 12, 16, 20, 24, 32. Group headings sit 24 px above their list and 6 px over it. Rows are 52 px with 12 px between lead, text and end; compact rows are 46 px. Fields are separated by 16 px of padding and a hairline rather than by boxes. Spot overview, Home and every editor follow the same order: top bar, large title, meta line, then (on spot screens) the step bar and its progress line, then groups of rows or fields.
+The rhythm is a 4 px base: 4, 8, 12, 16, 20, 24, 32, with named roles in tokens.ts: `gutter` 24, `group` 32, `heading` 8, `field` 20, `sheet` 20. Group headings sit 32 px below what comes before them and 8 px over their list. Rows are 56 px with 12 px between lead, text and end; compact rows are 48 px. Fields are separated by 20 px of padding above and below and a hairline rather than by boxes. The large title has 8 px above and 12 px below it; on spot screens the step bar sits 16 px under the meta line and the progress line 12 px under the step bar. Banners keep 16 px above and below. Sheets pad their head, body and actions 20 px at the sides, with 12 px between stacked actions. Spot overview, Home and every editor follow the same order: top bar, large title, meta line, then (on spot screens) the step bar and its progress line, then groups of rows or fields.
 
 From 768 px three things change and nothing else: sheets become centered dialogs (520 px wide), the action bar lifts off the bottom edge into a floating rounded tray inside the column, and the photo grid goes from two columns to three. Filter chips scroll horizontally edge to edge, bleeding through the gutter.
 
@@ -483,7 +488,7 @@ A 36 px pill in a wrapping group under one field label: paper with an edge strok
 A 48 px full-width line: label (with optional icon) and helper on the left, a 44 by 26 switch on the right, hairline below. The switch is a mist track with an ink knob; on, the track turns ink and the knob paper and slides 18 px.
 
 ### Row
-The unit of every list. 52 px minimum, 12 px corners, bleeding 10 px past the column so the hover wash lines up with the text. Lead (a 20 px section icon or a 40 px cover thumbnail), a 600 title with an optional muted 13 px subtitle, and an end slot holding one fact in muted 13 px or a pill. Hover washes `hover`; press washes mist and scales to 0.985. **Compact** rows are 46 px. **With cover thumb:** a 40 px, 8 px-corner image that fades in when loaded; until then the slot takes no width.
+The unit of every list. 56 px minimum, 12 px corners, bleeding 10 px past the column so the hover wash lines up with the text. Lead (a 20 px section icon or a 40 px cover thumbnail), a 600 title with an optional muted 13 px subtitle, and an end slot holding one fact in muted 13 px or a pill. Hover washes `hover`; press washes mist and scales to 0.985. **Compact** rows are 48 px. **With cover thumb:** a 40 px, 8 px-corner image that fades in when loaded; until then the slot takes no width.
 
 On the spot overview, a required section with nothing in it ends in a red **Missing** pill; an empty extra section ends in muted "None" or "Not set" instead, never red. Sync trouble beats missing, and missing beats the fact. On Home, each row carries exactly one fact: a red Conflict or Didn't save pill, a mist Unreviewed pill with an eye icon, a mist Draft pill, a progress count, or the check date.
 
@@ -497,7 +502,7 @@ One segment per required section, 6 px apart, full pills. Done is ink, todo is m
 A sticky 52 px bar (plus safe area) of translucent blurred paper: back icon button, a small Newsreader 18 px title, trailing icon buttons (sync, actions). The page's real h1 is the 34 px large title below it. When the large title scrolls out, the bar gains its hairline and the small title fades and rises 6 px into place (220 ms); the small title is hidden from assistive tech.
 
 ### Action bar
-Pinned to the bottom, at most one red button, everything within thumb reach. On phones: full-width paper with a top hairline, 10 px by 12 px padding plus safe area, buttons in a row with the main one growing. From 768 px: a floating 20 px-corner tray with a hairline and the floating tray shadow, 16 px above the bottom. **Stacked** variant puts a wide primary over a quiet one. Spot overview: "Next: Seating" (ink), Publish (red), Actions. Home: sync status, New spot (red), more.
+Pinned to the bottom, at most one red button, everything within thumb reach. On phones: full-width paper with a top hairline, 12 px above, 16 px at the sides and below plus the safe area, buttons in a row with the main one growing. From 768 px: a floating 20 px-corner tray with a hairline and the floating tray shadow, 16 px above the bottom. **Stacked** variant puts a wide primary over a quiet one. Spot overview: "Next: Seating" (ink), Publish (red), Actions. Home: sync status, New spot (red), more.
 
 ### Filter chips
 A horizontally scrolling row of 32 px pills (44 px hit area) with a line stroke, a label and a count. The count is a 24 px circle concentric with the chip's right end cap: it is inset 4 px from the top, bottom and right edge (the chip's right padding is 3 px plus its 1 px stroke), so the circle's center is the end cap's center; a two-digit count stretches it into a pill with the same caps. One is pressed: ink fill, paper text, the count tinted from the text color. Home filters: All, Needs you, Drafts, Due. A Newsreader group heading below the chips names the current filter.
@@ -521,7 +526,7 @@ One short confirmation at a time: an ink box, 44 px minimum with 12 px corners, 
 An icon in the top bar or an icon with short text as a ghost button in the action bar; either opens the "Changes on this phone" sheet, and the accessible name is always the long sentence. Cloud with a check for all synced, a slashed cloud for offline, a turning arrow while changes wait or send, a red alert for failed, unreadable or signed out. Short texts: "All synced", "Offline", "3 waiting", "2 not saved", "Signed out".
 
 ### Hours day row
-Each day is a 52 px row (day name, a muted right-aligned summary, a chevron that turns over when open) closed by a hairline. Opening it reveals a three-way segmented control (Hours, Closed, All day); in Hours mode, Opens and Closes times sit side by side, with a muted note when closing runs into the next day.
+Each day is a 56 px row (day name, a muted right-aligned summary, a chevron that turns over when open) closed by a hairline. Opening it reveals a three-way segmented control (Hours, Closed, All day); in Hours mode, Opens and Closes times sit side by side, with a muted note when closing runs into the next day.
 
 ### Estimates cell
 The busyness grid has time blocks as rows and weekdays and weekends as columns. Each cell is a 56 px, 12 px-corner paper button with an edge stroke and its bucket label at the bottom left; a fill rises from the bottom with the guess (10, 35, 60, 85 or 100 percent). An unset cell has a dashed stroke and muted text. Each tap moves the cell one bucket up; press scales to 0.97.

@@ -51,7 +51,11 @@ test("back from a spot returns Home to the same filter and scroll", async ({ pag
   await expect(list.getByRole("link").nth(11)).toBeVisible();
   await scrollAndSettle(page, 400);
   await expect.poll(() => scrollY(page)).toBe(400);
-  await list.getByRole("link", { name: /Scroll draft 10/ }).click();
+  // The row can sit under the pinned action bar at this scroll; a pointer click would
+  // scroll it into view first and change the position under test, so click by script.
+  await list
+    .getByRole("link", { name: /Scroll draft 10/ })
+    .evaluate((a) => (a as HTMLAnchorElement).click());
   await expect(page.getByRole("heading", { name: "Scroll draft 10", level: 1 })).toBeVisible();
   await page.getByRole("link", { name: "Back" }).click();
   await expect(page.getByRole("button", { name: /^Drafts/ })).toHaveAttribute(

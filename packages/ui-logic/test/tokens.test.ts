@@ -126,3 +126,40 @@ test("the mono face is self-hosted Chivo Mono, falling back to the system mono s
   expect(tokens.font.mono.startsWith('"Chivo Mono Variable", ')).toBe(true);
   expect(tokens.font.mono).toContain("ui-monospace");
 });
+
+test("spacing is comfortable: gutters, groups, rows and fields on the 4 px grid", () => {
+  const req = (v: number | undefined): number => {
+    if (v === undefined) throw new Error("missing token");
+    return v;
+  };
+  const space = {
+    gutter: req(tokens.space.gutter),
+    group: req(tokens.space.group),
+    field: req(tokens.space.field),
+    sheet: req(tokens.space.sheet),
+    sm: req(tokens.space.sm),
+    md: req(tokens.space.md),
+  };
+  const size = {
+    row: req(tokens.size.row),
+    rowCompact: req(tokens.size.rowCompact),
+    tapTarget: tokens.size.tapTarget,
+    control: req(tokens.size.control),
+    actionBar: req(tokens.size.actionBar),
+  };
+  for (const v of Object.values(tokens.space)) expect(v % 4).toBe(0);
+  expect(space.gutter).toBeGreaterThanOrEqual(20);
+  expect(space.gutter).toBeLessThanOrEqual(24);
+  expect(space.group).toBeGreaterThanOrEqual(24);
+  expect(space.group).toBeLessThanOrEqual(32);
+  expect(space.field).toBeGreaterThanOrEqual(20);
+  expect(space.field).toBeLessThanOrEqual(24);
+  expect(space.sheet).toBeGreaterThan(space.md);
+  expect(size.row).toBeGreaterThanOrEqual(52);
+  expect(size.row).toBeLessThanOrEqual(56);
+  expect(size.rowCompact).toBeGreaterThanOrEqual(46);
+  expect(size.rowCompact).toBeLessThanOrEqual(50);
+  expect(size.rowCompact).toBeGreaterThanOrEqual(size.tapTarget);
+  // The action bar draws a control plus sm on top and md below, and a hairline; it reserves more.
+  expect(size.actionBar).toBeGreaterThanOrEqual(size.control + space.sm + space.md + 1);
+});

@@ -112,7 +112,7 @@ select {
   gap: var(--space-xs);
   min-width: 0;
   margin: 0;
-  padding: var(--space-md) 0;
+  padding: var(--space-field) 0;
   border: 0;
   border-bottom: 1px solid var(--color-line);
 }
@@ -136,7 +136,7 @@ fieldset.field {
 }
 
 fieldset.field > legend.field__label {
-  padding: var(--space-md) 0 var(--space-xs);
+  padding: var(--space-field) 0 var(--space-xs);
 }
 
 .field__label > svg {
@@ -698,7 +698,7 @@ fieldset.field > legend.field__label {
   align-items: center;
   gap: var(--space-sm);
   min-height: var(--size-tapTarget);
-  margin: var(--space-sm) 0;
+  margin: var(--space-md) 0;
   padding: var(--space-xs) var(--space-xs) var(--space-xs) var(--space-sm);
   border-radius: var(--radius-m);
   background: var(--color-mist);
@@ -808,7 +808,7 @@ fieldset.field > legend.field__label {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  padding: var(--space-xxs) var(--space-xs) var(--space-xxs) var(--space-md);
+  padding: var(--space-xs) var(--space-sm) var(--space-xxs) var(--space-sheet);
 }
 
 .sheet__title {
@@ -822,7 +822,7 @@ fieldset.field > legend.field__label {
 .sheet__body {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-xs) var(--space-md) var(--space-md);
+  padding: var(--space-sm) var(--space-sheet) var(--space-sheet);
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -836,8 +836,8 @@ fieldset.field > legend.field__label {
   flex: none;
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
-  padding: var(--space-sm) var(--space-md) calc(var(--space-md) + env(safe-area-inset-bottom));
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-sheet) calc(var(--space-sheet) + env(safe-area-inset-bottom));
   border-top: 1px solid var(--color-line);
 }
 
@@ -1046,7 +1046,7 @@ body:has(.update) .toast-region {
 }
 
 .large-title {
-  padding: 2px 0 var(--space-xs);
+  padding: var(--space-xs) 0 var(--space-sm);
   font-size: var(--fontSize-large);
   line-height: var(--lineHeight-tight);
   overflow-wrap: anywhere;
@@ -1065,7 +1065,7 @@ body:has(.update) .toast-region {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: var(--space-lg) 0 6px;
+  margin: var(--space-group) 0 var(--space-heading);
   font-size: var(--fontSize-group);
   line-height: var(--lineHeight-snug);
 }
@@ -1174,7 +1174,7 @@ div.row {
 }
 
 .row--compact {
-  min-height: 46px;
+  min-height: var(--size-rowCompact);
 }
 
 .row:disabled {
@@ -1280,7 +1280,7 @@ div.row {
   position: fixed;
   inset: auto 0 0;
   z-index: 9;
-  padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
+  padding: var(--space-sm) var(--space-md) calc(var(--space-md) + env(safe-area-inset-bottom));
   background: var(--color-paper);
   border-top: 1px solid var(--color-line);
 }
@@ -1314,7 +1314,7 @@ div.row {
   }
 
   .actionbar__inner {
-    padding: 10px;
+    padding: var(--space-sm);
     border: 1px solid var(--color-line);
     border-radius: var(--radius-l);
     background: var(--color-paper);
@@ -1352,7 +1352,7 @@ div.row {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  margin-top: var(--space-xxs);
+  margin-top: var(--space-xs);
   padding: var(--space-md);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-l);
@@ -1400,7 +1400,7 @@ div.row {
   align-items: center;
   gap: var(--space-xs);
   height: var(--size-tapTarget);
-  margin-top: var(--space-sm);
+  margin-top: var(--space-md);
   padding: 0 var(--space-sm);
   border-radius: var(--radius-m);
   background: var(--color-mist);
@@ -1536,7 +1536,7 @@ div.row {
 }
 
 .editor-meta {
-  margin-bottom: var(--space-md);
+  margin-bottom: var(--space-lg);
 }
 
 .editor-meta .stepbar {
@@ -1544,11 +1544,16 @@ div.row {
 }
 
 .editor-meta .meta {
-  margin-top: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+
+/* Under the meta line on a spot screen, the step bar gets its own breath. */
+.column > .stepbar {
+  padding-top: var(--space-md);
 }
 
 .progress-line {
-  margin: var(--space-xs) 0 0;
+  margin: var(--space-sm) 0 0;
   color: var(--color-muted);
   font-size: var(--fontSize-label);
   font-variant-numeric: tabular-nums;

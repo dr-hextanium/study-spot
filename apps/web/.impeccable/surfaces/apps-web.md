@@ -23,7 +23,7 @@ OWN-WORLD: Four colors (paper, ink, Stony Brook red, mist) and oklab mixes of th
 
 STORY: The surveyor sees what is left (the step bar), what needs them (red), and what is done (the facts on the right). They trust their entries are kept because the sync status in the action bar or top bar says so. They act with one thumb on the action bar.
 
-FIRST VIEWPORT: Spot overview on a 390 by 844 phone. A 52 px top bar (back, sync), the spot name as a 34 px Newsreader title, a Draft pill with "Building · Floor N · Checked Oct 1", the step bar and "4 of 6 · Next: Seating". Below that, groups of 52 px rows: section icon, name, and on the right the fact or a red Missing pill. The action bar is pinned: Next: Seating (ink), Publish (red, aria-disabled with a reason while blocked), Actions.
+FIRST VIEWPORT: Spot overview on a 390 by 844 phone. A 52 px top bar (back, sync), the spot name as a 34 px Newsreader title, a Draft pill with "Building · Floor N · Checked Oct 1", the step bar and "4 of 6 · Next: Seating". Below that, groups of 56 px rows (48 px compact): section icon, name, and on the right the fact or a red Missing pill. The action bar is pinned: Next: Seating (ink), Publish (red, aria-disabled with a reason while blocked), Actions.
 
 FORM: Raycast list density with Notion page calm. Progress is a 4 px step bar, one segment per required section: done is ink, current is red, todo is mist.
 
