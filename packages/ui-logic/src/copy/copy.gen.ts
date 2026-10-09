@@ -344,6 +344,7 @@ export const COPY = {
   "sync.sheet.unreadable_help":
     "These came from a newer or damaged copy of the app. Discard them if they stay.",
   "sync.sheet.open_spot": "Open spot",
+  "sync.sheet.open_spot_named": "Open spot {name}",
   "home.unreadable_one": "1 change can't be read",
   "home.drafts.empty": "No drafts.",
   "home.offline_first":
@@ -796,6 +797,7 @@ export const COPY_MAX = {
   "sync.sheet.unreadable_item": 40,
   "sync.sheet.unreadable_help": 90,
   "sync.sheet.open_spot": 12,
+  "sync.sheet.open_spot_named": 60,
   "home.unreadable_one": 34,
   "home.drafts.empty": 14,
   "home.offline_first": 90,

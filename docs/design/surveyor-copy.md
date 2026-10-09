@@ -458,6 +458,7 @@ Strings the built screens needed beyond the sections above: short header forms f
 | sync.sheet.unreadable_item | A saved change this app can't read | 40 | one row per unreadable record |
 | sync.sheet.unreadable_help | These came from a newer or damaged copy of the app. Discard them if they stay. | 90 | |
 | sync.sheet.open_spot | Open spot | 12 | row action |
+| sync.sheet.open_spot_named | Open spot {name} | 60 | accessible name of the row action |
 | home.unreadable_one | 1 change can't be read | 34 | singular of home.unreadable |
 | home.drafts.empty | No drafts. | 14 | |
 | home.offline_first | The spot list loads once you're online. New spots still save on this phone. | 90 | first run offline, nothing cached |

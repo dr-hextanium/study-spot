@@ -1,6 +1,7 @@
-import { isLocalId, t, type WriteRecord } from "@study-spot/ui-logic";
+import { isLocalId, type SyncHeader, t, type WriteRecord } from "@study-spot/ui-logic";
 import { Link } from "@tanstack/react-router";
 import {
+  Check,
   CircleAlert,
   Clock,
   FileWarning,
@@ -24,6 +25,20 @@ const STATE_ICON = {
   failed: CircleAlert,
   conflict: TriangleAlert,
 } as const satisfies Record<WriteRecord["state"], LucideIcon>;
+
+function headerIcon(kind: SyncHeader["kind"]): LucideIcon {
+  switch (kind) {
+    case "all_synced":
+      return Check;
+    case "syncing":
+      return RefreshCw;
+    case "failed":
+    case "unreadable":
+      return CircleAlert;
+    default:
+      return Clock;
+  }
+}
 
 /** Everything waiting on this phone: the one place connectivity detail lives. */
 export function SyncSheet(props: { open: boolean; onClose: () => void }) {
@@ -60,16 +75,15 @@ export function SyncSheet(props: { open: boolean; onClose: () => void }) {
         onClose={props.onClose}
       >
         <p className="sync-status">
-          <Icon
-            icon={header.kind === "failed" || header.kind === "unreadable" ? CircleAlert : Clock}
-          />
+          <Icon icon={headerIcon(header.kind)} />
           <span>{headerLong(header)}</span>
         </p>
         {empty ? <p className="empty">{t("sync.sheet.empty")}</p> : null}
         {snapshot.records.length > 0 ? (
           <ul className="row-list">
             {snapshot.records.map((r) => {
-              const what = whatOf(r, names.get(r.spot_id) ?? "");
+              const spotName = names.get(r.spot_id) ?? "";
+              const what = whatOf(r, spotName);
               const text =
                 r.state === "failed"
                   ? t("sync.sheet.item_failed", { what })
@@ -93,6 +107,11 @@ export function SyncSheet(props: { open: boolean; onClose: () => void }) {
                     to="/survey/spots/$id"
                     params={{ id: r.spot_id }}
                     className="btn btn--quiet"
+                    aria-label={
+                      spotName === ""
+                        ? t("sync.sheet.open_spot")
+                        : t("sync.sheet.open_spot_named", { name: spotName })
+                    }
                     onClick={props.onClose}
                   >
                     <span className="btn__label">{t("sync.sheet.open_spot")}</span>
