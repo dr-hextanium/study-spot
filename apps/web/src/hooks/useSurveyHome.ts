@@ -24,7 +24,10 @@ export function useSurveyHome(): HomeState {
   useEffect(
     () =>
       qc.getQueryCache().subscribe((e) => {
-        if (e.type === "added" || e.type === "removed" || e.type === "updated")
+        // Only spot details matter here. A query built by another component's render
+        // (a cover thumbnail) notifies synchronously, and must not set state in Home.
+        const isSpotDetail = keys.spotPrefix.every((part, i) => e.query.queryKey[i] === part);
+        if (isSpotDetail && (e.type === "added" || e.type === "removed" || e.type === "updated"))
           setTick((n) => n + 1);
       }),
     [qc],

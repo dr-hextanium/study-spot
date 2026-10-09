@@ -347,6 +347,22 @@ test("a spot with an approved cover shows its thumbnail once loaded; without one
   }
 });
 
+test("a row's cover query starting does not update Home while a thumbnail renders", async () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.stubGlobal(
+    "fetch",
+    async () => new Response(new Uint8Array([0xff, 0xd8, 0xff]), { status: 200 }),
+  );
+  try {
+    renderRoute(testApp({ spots: [withCover({ approved: true })] }), "/survey");
+    await screen.findByText("Covered Lounge");
+    expect(errors.mock.calls.map((c) => String(c[0]))).toEqual([]);
+  } finally {
+    errors.mockRestore();
+    vi.unstubAllGlobals();
+  }
+});
+
 test("a cover that is not approved is never asked for", async () => {
   const fetchSpy = vi.fn(async () => new Response(null, { status: 404 }));
   vi.stubGlobal("fetch", fetchSpy);
