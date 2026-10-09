@@ -561,6 +561,7 @@ Strings the built screens needed beyond the sections above: short header forms f
 | spot.progress.complete | {done} of {total} done | 20 | |
 | spot.next | Next: {section} | 30 | action bar, ink |
 | spot.meta.floor | Floor {floor} | 16 | |
+| spot.meta.place | {building} · Floor {floor} | 40 | overview meta, when the spot has a floor |
 | spot.publish.blocked.reason | Can't publish yet: {count} missing | 36 | described-by of the disabled Publish |
 | spot.actions.next_missing | Open next missing: {section} | 44 | Actions sheet |
 | spot.actions.add_photo | Add a photo | 14 | Actions sheet |

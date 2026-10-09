@@ -25,10 +25,10 @@ export function useSurveyHome(): HomeState {
     () =>
       qc.getQueryCache().subscribe((e) => {
         // Only spot details matter here. A query built by another component's render
-        // (a cover thumbnail) notifies synchronously, and must not set state in Home.
+        // (a cover thumbnail) notifies "added" synchronously, and must not set state in Home.
+        // Data arrives as "updated", so "added" is not listened to.
         const isSpotDetail = keys.spotPrefix.every((part, i) => e.query.queryKey[i] === part);
-        if (isSpotDetail && (e.type === "added" || e.type === "removed" || e.type === "updated"))
-          setTick((n) => n + 1);
+        if (isSpotDetail && (e.type === "removed" || e.type === "updated")) setTick((n) => n + 1);
       }),
     [qc],
   );

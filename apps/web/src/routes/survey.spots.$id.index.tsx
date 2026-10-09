@@ -1,10 +1,11 @@
+import { ClientWriteId } from "@study-spot/core";
 import { SpotRef } from "@study-spot/ui-logic";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { z } from "zod";
 import { Overview } from "../screens/Overview.tsx";
 
 /** `?write=<client_write_id>` opens the conflict or failed view for that change. */
-const Search = z.object({ write: z.string().optional() });
+const Search = z.object({ write: ClientWriteId.optional() });
 
 export const Route = createFileRoute("/survey/spots/$id/")({
   params: {

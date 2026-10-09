@@ -17,6 +17,7 @@ const deck = parseCopyDeck(
  */
 const SAMPLE: Readonly<Record<string, string>> = {
   block: "Afternoon",
+  building: "Melville Library",
   bucket: "Nearly full",
   count: "12",
   date: "Oct 15",

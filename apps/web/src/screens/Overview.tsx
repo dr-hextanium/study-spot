@@ -67,9 +67,7 @@ function SpotMeta(props: { view: SpotView; tz: string }) {
   const building =
     campus.data?.buildings.find((b) => b.id === spot.building_id)?.name ?? spot.building_id;
   const place =
-    spot.floor === ""
-      ? building
-      : `${building} \u00b7 ${t("spot.meta.floor", { floor: spot.floor })}`;
+    spot.floor === "" ? building : t("spot.meta.place", { building, floor: spot.floor });
   const checked = oldestCheck(spot);
   return (
     <Meta>
