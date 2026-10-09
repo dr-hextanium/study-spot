@@ -175,7 +175,7 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | id | text | max chars | notes |
 |---|---|---|---|
 | editor.save | Save | 10 | primary, pinned bottom |
-| editor.verify | Nothing changed | 18 | secondary; stamps verification |
+| editor.verify | Nothing changed | 18 | secondary; records a check of this section without changes |
 | editor.save_next | Save and next | 16 | primary when a next section exists |
 | editor.progress.after | {done} of {total} · After this: {section} | 46 | under the step bar |
 | editor.progress | {done} of {total} | 10 | when nothing is left after this one |
@@ -446,12 +446,12 @@ Strings the built screens needed beyond the sections above: short header forms f
 | id | text | max chars | notes |
 |---|---|---|---|
 | sync.checking | Checking this phone | 24 | header long form and sheet, until the queue has been read; never shown as synced |
-| sync.short.checking | Checking | 10 | header postmark |
+| sync.short.checking | Checking | 10 | sync status in the header |
 | sync.short.pending | {count} waiting | 14 | header postmark; full form in the sync sheet |
 | sync.short.offline | Offline | 10 | header postmark; sync.offline in the sheet |
-| sync.short.failed | {count} not saved | 16 | header postmark |
-| sync.short.unreadable | {count} unreadable | 16 | header postmark |
-| sync.short.signed_out | Signed out | 12 | header postmark |
+| sync.short.failed | {count} not saved | 16 | sync status in the header |
+| sync.short.unreadable | {count} unreadable | 16 | sync status in the header |
+| sync.short.signed_out | Signed out | 12 | sync status in the header |
 | sync.unreadable_one | 1 change can't be read | 30 | singular of sync.unreadable |
 | auth.misconfigured | This build has no server address. Ask whoever sent you the link. | 70 | shown in place of the app when the deploy env is missing; the technical detail follows on its own line |
 | sync.leave_warning_one | 1 change hasn't synced yet. Leaving now keeps it on this phone. | 90 | singular of sync.leave_warning |

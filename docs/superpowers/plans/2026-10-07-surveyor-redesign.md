@@ -8,7 +8,7 @@
 
 **Tech Stack:** React 19, TanStack Router and Query, Vite 8 with vite-plugin-pwa, Zod 4, Lucide, `@fontsource-variable/newsreader` and `@fontsource-variable/instrument-sans` 5.3.0, Vitest (jsdom), Playwright, Bun test, Fastify and Drizzle on the server.
 
-**Spec:** `docs/superpowers/specs/2026-10-07-surveyor-redesign.md`. Visual reference: `.superpowers/sdd/2026-10-04-surveyor-2a-web-3-finish/mock-directions.html` (`DIRS.d` plus its CSS), `dir-d.png`, `d3.png`. The mock is the visual reference only. Its counts (7 steps), control sizes under 44 px, kbd hints and "Check every section" are wrong or out of scope. The spec wins.
+**Spec:** `docs/superpowers/specs/2026-10-07-surveyor-redesign.md`. Visual reference: `.superpowers/sdd/2026-10-04-surveyor-2a-web-3-finish/mock-directions.html` (`DIRS.d` plus its CSS), `dir-d.png`, `d3.png`. The mock is the visual reference only. Its counts (7 steps), control sizes under 44 px, kbd hints and "Check every section" are wrong or out of scope. The spec wins. (The owner later chose the guided walk for "Check every section": "Check each section" opens each required section in turn.)
 
 ## Global Constraints
 

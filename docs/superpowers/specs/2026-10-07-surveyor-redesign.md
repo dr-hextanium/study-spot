@@ -246,5 +246,5 @@ All the logic lives in `packages/ui-logic` (DOM free) and is tested there.
 
 ## 13. Open questions for the owner
 
-1. **Bulk check.** Should "Check every section" exist? If it should, as a guided walk: open each section in turn, where Nothing changed moves to the next one. It would never stamp sections unopened.
-2. **Decision 12.** Decision 12 (the postcard concept for student mode: postmark for last verified, stamp for noise policy, shareable postcards in v0) is a product decision, not only a look. Does the redesign retire it for students too, or only for the surveyor tool?
+1. **Bulk check. Answered: guided walk.** Should "Check every section" exist? If it should, as a guided walk: open each section in turn, where Nothing changed moves to the next one. It would never stamp sections unopened. The owner chose the guided walk: "Check each section" in the Actions sheet.
+2. **Decision 12. Answered: decision 12 stands.** Decision 12 (the postcard concept for student mode: postmark for last verified, stamp for noise policy, shareable postcards in v0) is a product decision, not only a look. Does the redesign retire it for students too, or only for the surveyor tool? The owner answered that it stands; only the surveyor look is retired.
