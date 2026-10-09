@@ -429,6 +429,21 @@ test("hours: next day sits under Closes, not Opens; the control switches the day
   expect(within(mon.closest(".day") as HTMLElement).getByLabelText(t("hours.closes"))).toBeTruthy();
 });
 
+test("hours: a day with an error is locked open and says so", async () => {
+  const spot = surveySpotFixture({
+    hours: [{ day_of_week: 1, opens: "09:00", closes: "09:00", last_entry: null, is_exam: false }],
+  });
+  renderRoute(testApp({ spots: [spot] }), `${at(spot)}/hours`);
+  const mon = await screen.findByRole("button", { name: /^Mon,/ });
+  expect(mon.getAttribute("aria-disabled")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: SAVE }));
+  expect(await screen.findByText(t("hours.invalid.same_time"))).toBeTruthy();
+  expect(mon.getAttribute("aria-expanded")).toBe("true");
+  expect(mon.getAttribute("aria-disabled")).toBe("true");
+  fireEvent.click(mon);
+  expect(mon.getAttribute("aria-expanded")).toBe("true");
+});
+
 test("hours: copy Monday fills the weekday rows", async () => {
   const spot = surveySpotFixture({
     hours: [{ day_of_week: 1, opens: "09:00", closes: "17:00", last_entry: null, is_exam: false }],

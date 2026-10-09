@@ -78,6 +78,13 @@
   min-width: 0;
 }
 
+.day__closes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+  min-width: 0;
+}
+
 .day__label {
   color: var(--color-muted);
   font-size: var(--fontSize-small);

@@ -76,8 +76,12 @@ function DayRow(props: {
         className="row day__head"
         aria-label={`${name}, ${summaryOf(hours)}`}
         aria-expanded={shown}
+        aria-disabled={problem === null ? undefined : true}
         aria-controls={panelId}
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => {
+          // Locked open while it has an error, so the message and fields stay in view.
+          if (problem === null) setExpanded(!expanded);
+        }}
       >
         <span className="row__title day__name">{name}</span>
         <span className="day__summary truncate">{summaryOf(hours)}</span>
@@ -114,7 +118,7 @@ function DayRow(props: {
                 onChange={(e) => props.onChange({ ...open, opens: e.currentTarget.value })}
               />
             </label>
-            <div className="day__time">
+            <div className="day__closes">
               <label className="day__time">
                 <span className="day__label">{t("hours.closes")}</span>
                 <input
