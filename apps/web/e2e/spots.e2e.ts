@@ -95,7 +95,7 @@ test("acceptance 1: a spot made offline with every required field and a photo sy
   const chooser = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "Got it" }).click();
   await (await chooser).setFiles({ name: "IMG_0001.jpg", mimeType: "image/jpeg", buffer: photo });
-  await expect(page.getByText("Not synced yet")).toBeVisible();
+  await expect(page.getByText("Not synced yet", { exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Back" }).click();
 
   await page.getByRole("button", { name: "Publish", exact: true }).click();
@@ -169,11 +169,17 @@ test("acceptance 4: a conflicting edit from two phones resolves both ways", asyn
   await phoneB.getByRole("button", { name: "Close" }).click();
   await other.setOffline(false);
   await expect(
-    phoneB.getByText("Someone else changed this spot. Pick which version to keep."),
+    phoneB.getByText("Someone else changed this spot. Pick which version to keep.", {
+      exact: true,
+    }),
   ).toBeVisible({ timeout: 60_000 });
   await phoneB.getByRole("button", { name: "Open the conflict", exact: true }).click();
-  await expect(phoneB.getByRole("region", { name: "Yours" }).getByText("11")).toBeVisible();
-  await expect(phoneB.getByRole("region", { name: "On the server" }).getByText("22")).toBeVisible();
+  await expect(
+    phoneB.getByRole("region", { name: "Yours" }).getByText("11", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    phoneB.getByRole("region", { name: "On the server" }).getByText("22", { exact: true }),
+  ).toBeVisible();
   await checkSheet(phoneB, "conflict");
   await phoneB.getByRole("button", { name: "Keep mine" }).click();
   await expect(phoneB.getByRole("button", { name: "All synced" })).toBeVisible({ timeout: 60_000 });
@@ -220,7 +226,7 @@ test("acceptance 3: a second surveyor can mark a spot reviewed; the one who edit
 
   await editor.page.goto(`/survey/spots/${spot.id}`);
   await expect(
-    editor.page.getByText("You edited this last, so someone else reviews it."),
+    editor.page.getByText("You edited this last, so someone else reviews it.", { exact: true }),
   ).toBeVisible();
   await expect(editor.page.getByRole("button", { name: "Looks right" })).toBeHidden();
 
@@ -291,5 +297,5 @@ test("the guided walk checks each section in turn and ends on the overview with 
   }
   await page.getByRole("button", { name: "Nothing changed" }).click();
   await expect(page).toHaveURL(new RegExp(`/survey/spots/${spot.id}$`));
-  await expect(page.getByText("Checked 6 sections")).toBeVisible();
+  await expect(page.getByText("Checked 6 sections", { exact: true })).toBeVisible();
 });

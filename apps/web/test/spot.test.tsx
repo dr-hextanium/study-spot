@@ -289,6 +289,8 @@ test("a conflict resolves both ways from the overview", async () => {
   expect(within(theirs).getByText(t("seating.seat_count.label"))).toBeTruthy();
   expect(within(theirs).getByText("99")).toBeTruthy();
   expect(within(yours).queryByText("99")).toBeNull();
+  // Yours shows the value queued on this phone.
+  expect(within(yours).getByText("40")).toBeTruthy();
   fireEvent.click(within(sheet).getByRole("button", { name: t("conflict.keep_mine") }));
   expect(await screen.findByText(t("conflict.resolved"))).toBeTruthy();
   await waitFor(() => expect(app.server.inner.spot(spot.id).version).toBe(5));
