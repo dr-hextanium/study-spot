@@ -1577,7 +1577,8 @@ div.row {
 }
 
 .actionbar .sync--bar {
-  flex: 1;
+  /* Its own width, not half the bar: at 360 px a half left "All synced" a pixel short. */
+  flex: 0 1 auto;
   min-width: 0;
   justify-content: flex-start;
 }

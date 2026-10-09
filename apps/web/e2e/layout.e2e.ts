@@ -1,7 +1,7 @@
 import type { Browser, Page } from "@playwright/test";
 import { completeSpot, draftSpot, surveyorInvite, tokenOf } from "./api.ts";
 import { expect, signIn, test } from "./fixtures.ts";
-import { expectRoutesClean } from "./layout.ts";
+import { expectRoutesClean, layoutProblems } from "./layout.ts";
 
 // One test per group of routes, each inside the default timeout: three widths, two themes, axe each.
 
@@ -91,6 +91,24 @@ test("admin: clean, and the admin badge keeps its whole text on one line", async
       .locator('section[aria-labelledby="admin-invite"] > .field')
       .evaluate((el) => getComputedStyle(el).borderBottomWidth);
     expect(rule, `role switch hairline @${width}`).toBe("0px");
+  }
+});
+
+test("the narrowest phone, 360 px: home, a long draft, an editor and admin keep every label whole", async ({
+  page,
+}) => {
+  await signIn(page);
+  const long = await longDraft(page);
+  await page.setViewportSize({ width: 360, height: 780 });
+  for (const route of [
+    "/survey",
+    `/survey/spots/${long.id}`,
+    `/survey/spots/${long.id}/power`,
+    "/survey/admin",
+  ]) {
+    await page.goto(route);
+    await page.waitForLoadState("networkidle");
+    expect(await layoutProblems(page), `${route} @360`).toEqual([]);
   }
 });
 
