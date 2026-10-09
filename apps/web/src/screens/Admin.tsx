@@ -1,6 +1,6 @@
 import type { SurveyorRole } from "@study-spot/core";
 import { plural, publishWarningText, t } from "@study-spot/ui-logic";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useIsFetching, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Ellipsis, Shield, TriangleAlert, UserCog } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
@@ -22,7 +22,7 @@ import { Row } from "../ui/Row.tsx";
 import { GroupHeading, Screen } from "../ui/Screen.tsx";
 import { Segmented } from "../ui/Segmented.tsx";
 import { ConfirmSheet, Sheet } from "../ui/Sheet.tsx";
-import { Loading, Skel, SkelRows } from "../ui/Skeleton.tsx";
+import { Loading, LoadingStatus, Skel, SkelRows } from "../ui/Skeleton.tsx";
 import { SyncStatus } from "./SyncStatus.tsx";
 
 function Section(props: { id: string; title: string; children: ReactNode }) {
@@ -161,7 +161,7 @@ function SurveyorsSection(props: { online: boolean }) {
   return (
     <Section id="admin-surveyors" title={t("admin.surveyors.title")}>
       {surveyors.isPending && surveyors.fetchStatus === "fetching" ? (
-        <Loading>
+        <Loading announce={false}>
           <SkelRows count={4} />
         </Loading>
       ) : null}
@@ -440,12 +440,18 @@ function PhotosSection(props: { online: boolean }) {
 /** Running the crew and the publish pipeline. Every action here needs the server. */
 export function Admin() {
   const online = useOnline();
+  // One "Loading" for the screen while any admin read with nothing to show yet is in flight.
+  const loading =
+    useIsFetching({
+      predicate: (q) => q.queryKey[0] === keys.surveyors[0] && q.state.data === undefined,
+    }) > 0;
   return (
     <Screen
       title={t("admin.title")}
       back={{ to: "/survey" }}
       trailing={<SyncStatus variant="icon" />}
     >
+      <LoadingStatus active={loading} />
       {online ? null : <Banner tone="note">{t("error.network_admin")}</Banner>}
       <InviteSection online={online} />
       <PublishSection online={online} />

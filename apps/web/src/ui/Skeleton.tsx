@@ -10,26 +10,36 @@ import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
  * `announce={false}` for a second skeleton on the same screen, so it is said once.
  */
 export function Loading(props: { children: ReactNode; className?: string; announce?: boolean }) {
-  const announce = props.announce ?? true;
-  const [said, setSaid] = useState(false);
-  useEffect(() => {
-    if (!announce) return;
-    const id = setTimeout(() => setSaid(true), 0);
-    return () => clearTimeout(id);
-  }, [announce]);
   return (
     <>
-      {announce ? (
-        <p role="status" className="visually-hidden">
-          {said ? t("common.loading") : ""}
-        </p>
-      ) : null}
+      {(props.announce ?? true) ? <LoadingStatus active /> : null}
       <div className={props.className} aria-busy="true">
         <div aria-hidden="true" className="skel-group">
           {props.children}
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * A polite "Loading" for a screen with several skeletons (admin): one status, said
+ * once while any of them is loading. It is mounted empty and gets its text after.
+ */
+export function LoadingStatus(props: { active: boolean }) {
+  const [said, setSaid] = useState(false);
+  useEffect(() => {
+    if (!props.active) {
+      setSaid(false);
+      return;
+    }
+    const id = setTimeout(() => setSaid(true), 0);
+    return () => clearTimeout(id);
+  }, [props.active]);
+  return (
+    <p role="status" className="visually-hidden">
+      {said ? t("common.loading") : ""}
+    </p>
   );
 }
 

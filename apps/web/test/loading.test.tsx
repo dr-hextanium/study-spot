@@ -100,3 +100,23 @@ test("focus on the screen stays put when the overview skeleton gives way to the 
   expect(document.querySelector("main")).toBe(main);
   expect(document.activeElement).toBe(main);
 });
+
+test("admin says Loading once, for the whole screen, while any section loads", async () => {
+  const app = testApp({ me: { ...ME, role: "admin" } });
+  const g = gate();
+  app.server.admin.surveyorsGate = g.promise;
+  renderRoute(app, "/survey/admin");
+  await waitFor(() => {
+    const said = screen
+      .getAllByRole("status")
+      .filter((el) => el.textContent === t("common.loading"));
+    expect(said).toHaveLength(1);
+    expect(said[0]?.closest("section")).toBeNull();
+  });
+  act(() => g.open());
+  await waitFor(() =>
+    expect(
+      screen.queryAllByRole("status").filter((el) => el.textContent === t("common.loading")),
+    ).toHaveLength(0),
+  );
+});
