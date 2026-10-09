@@ -22,9 +22,11 @@ export function Check({ label, checked, onChange, helper, variant = "row", icon 
           checked={checked}
           onChange={(e) => onChange(e.currentTarget.checked)}
         />
-        {checked ? (
-          <Icon icon={CheckIcon} size={16} />
-        ) : icon === undefined ? null : (
+        {icon === undefined ? (
+          checked ? (
+            <Icon icon={CheckIcon} size={16} />
+          ) : null
+        ) : (
           <Icon icon={icon} size={16} />
         )}
         <span>{label}</span>

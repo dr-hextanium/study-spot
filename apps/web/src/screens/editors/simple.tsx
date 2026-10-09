@@ -14,7 +14,6 @@ import {
   Armchair,
   ArrowUpDown,
   CalendarClock,
-  Coffee,
   Expand,
   KeyRound,
   Lamp,
@@ -49,6 +48,7 @@ import {
   TABLE_COPY,
   TEMPERATURE_OPTIONS,
 } from "../../lib/fields.ts";
+import { AMENITY_ICON, SEAT_TYPE_ICON, TABLE_ICON } from "../../lib/icons.ts";
 import { Check, TagGroup } from "../../ui/Check.tsx";
 import { OptionalChoice, TriState, YesNo } from "../../ui/Choices.tsx";
 import { TextField } from "../../ui/Field.tsx";
@@ -166,6 +166,7 @@ export function SeatingEditor({ view }: EditorProps) {
                   key={type}
                   variant="tag"
                   label={t(SEAT_TYPE_COPY[type])}
+                  icon={SEAT_TYPE_ICON[type]}
                   checked={types.some((s) => s.type === type)}
                   onChange={(on) =>
                     set(
@@ -184,6 +185,7 @@ export function SeatingEditor({ view }: EditorProps) {
                   key={c}
                   variant="tag"
                   label={t(TABLE_COPY[c])}
+                  icon={TABLE_ICON[c]}
                   checked={tables.includes(c)}
                   onChange={(on) => set("table_configs", toggle(tables, c, on))}
                 />
@@ -376,7 +378,7 @@ export function AmenitiesEditor({ view }: EditorProps) {
               <Stepper
                 key={a}
                 label={t(AMENITY_COPY[a])}
-                icon={Coffee}
+                icon={AMENITY_ICON[a]}
                 value={minutes(a)}
                 min={0}
                 max={60}

@@ -377,6 +377,26 @@ test("hours: each day is its own group with a closed switch and the copy button"
   expect(screen.getByRole("button", { name: t("hours.copy_weekdays") })).toBeTruthy();
 });
 
+test("seating and amenity options each carry a 16 px icon at stroke 1.75, checked or not", async () => {
+  const spot = surveySpotFixture({
+    status: "draft",
+    seat_types: [{ type: "carrel", count: 0 }],
+  });
+  renderRoute(testApp({ spots: [spot] }), `${at(spot)}/seating`);
+  const carrel = (await screen.findByRole("checkbox", { name: t("seating.type.carrel") })).closest(
+    "label",
+  );
+  const soft = screen.getByRole("checkbox", { name: t("seating.type.soft") }).closest("label");
+  for (const tag of [carrel, soft]) {
+    const svg = tag?.querySelector("svg");
+    expect(svg?.getAttribute("width")).toBe("16");
+    expect(svg?.getAttribute("stroke-width")).toBe("1.75");
+  }
+  expect(document.querySelectorAll(".tags .tag svg")).toHaveLength(
+    document.querySelectorAll(".tags .tag").length,
+  );
+});
+
 test("busyness: time blocks are rows and days are columns, with no live wording", async () => {
   const empty = surveySpotFixture({ estimates: [] });
   renderRoute(testApp({ spots: [empty] }), `${at(empty)}/estimates`);
