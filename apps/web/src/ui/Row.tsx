@@ -10,6 +10,8 @@ export function Row(props: {
   link?: LinkProps;
   onClick?: () => void;
   compact?: boolean;
+  /** A choice in a list: exposes the selected state to assistive tech. */
+  pressed?: boolean;
 }) {
   const className = `row${props.compact === true ? " row--compact" : ""}`;
   const body = (
@@ -29,7 +31,12 @@ export function Row(props: {
           {body}
         </Link>
       ) : props.onClick !== undefined ? (
-        <button type="button" className={className} onClick={props.onClick}>
+        <button
+          type="button"
+          className={className}
+          onClick={props.onClick}
+          {...(props.pressed === undefined ? {} : { "aria-pressed": props.pressed })}
+        >
           {body}
         </button>
       ) : (

@@ -35,7 +35,7 @@ test("a new surveyor adds a name, joins, and lands on the spot list", async () =
 
 test("moving to a new screen focuses its main area, but the first load does not", async () => {
   const view = renderRoute(testApp({ me: null }), "/survey");
-  await screen.findByText(t("auth.expired.title"));
+  await screen.findByRole("heading", { name: t("auth.expired.title") });
   expect(document.activeElement).toBe(document.body);
   await act(async () => {
     await view.router.navigate({ to: "/invite/$token", params: { token: "b".repeat(43) } });

@@ -103,7 +103,7 @@ test("a 401 on the list shows Sign in again and keeps queued changes", async () 
   app.server.unauthorized = true;
   app.network.set(true);
   renderRoute(app, "/survey");
-  expect(await screen.findByText(t("auth.expired.title"))).toBeTruthy();
+  expect(await screen.findByRole("heading", { name: t("auth.expired.title") })).toBeTruthy();
   expect(app.deps.outbox.getSnapshot().records).toHaveLength(1);
 });
 

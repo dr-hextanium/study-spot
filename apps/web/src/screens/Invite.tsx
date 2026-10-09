@@ -1,6 +1,7 @@
 import { type AcceptInviteResponse, OpaqueToken } from "@study-spot/core";
 import { t } from "@study-spot/ui-logic";
 import { useNavigate } from "@tanstack/react-router";
+import { Smartphone, User } from "lucide-react";
 import { useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { OWNER_KEY, QueueOwner } from "../app/deps.ts";
@@ -10,8 +11,8 @@ import { isIos, isStandalone } from "../lib/platform.ts";
 import { Banner } from "../ui/Banner.tsx";
 import { Button } from "../ui/Button.tsx";
 import { TextField } from "../ui/Field.tsx";
-import { HeaderBand } from "../ui/HeaderBand.tsx";
-import { LegacyScreen } from "../ui/Screen.tsx";
+import { Icon } from "../ui/Icon.tsx";
+import { Screen } from "../ui/Screen.tsx";
 import { ConfirmSheet } from "../ui/Sheet.tsx";
 
 type Problem = "invalid" | "expired" | "used" | "name" | "storage" | "generic" | null;
@@ -142,8 +143,8 @@ export function Invite(props: { token: string; relogin: boolean }) {
   const blocked = !tokenOk || problem === "expired" || problem === "used" || problem === "invalid";
   return (
     <>
-      <HeaderBand title={t("app.name")} />
-      <LegacyScreen
+      <Screen
+        title={relogin ? t("invite.relogin.title") : t("invite.title")}
         action={
           blocked ? undefined : (
             <Button variant="primary" wide disabled={busy || !online} onClick={() => void accept()}>
@@ -152,13 +153,13 @@ export function Invite(props: { token: string; relogin: boolean }) {
           )
         }
       >
-        <h2 className="title">{relogin ? t("invite.relogin.title") : t("invite.title")}</h2>
         <p>{relogin ? t("invite.relogin.body") : t("invite.body")}</p>
         {ios ? (
-          <section className="note" aria-labelledby="ios-note">
-            <h3 className="label" id="ios-note">
+          <section className="note-card" aria-labelledby="ios-note">
+            <h2 className="note-card__title" id="ios-note">
+              <Icon icon={Smartphone} />
               {t("invite.ios.title")}
-            </h3>
+            </h2>
             <p>{t("invite.ios.body")}</p>
           </section>
         ) : null}
@@ -167,6 +168,7 @@ export function Invite(props: { token: string; relogin: boolean }) {
             label={t("invite.name.label")}
             helper={t("invite.name.helper")}
             error={problem === "name" ? PROBLEM_TEXT.name() : undefined}
+            icon={User}
             value={name}
             onChange={setName}
             autoComplete="name"
@@ -175,7 +177,7 @@ export function Invite(props: { token: string; relogin: boolean }) {
         ) : null}
         {problem !== null && problem !== "name" ? <Banner>{PROBLEM_TEXT[problem]()}</Banner> : null}
         {!online && !blocked ? <Banner tone="note">{t("invite.offline")}</Banner> : null}
-      </LegacyScreen>
+      </Screen>
       <ConfirmSheet
         open={held !== null}
         title={t("invite.switch.title", { name: held?.owner ?? "" })}

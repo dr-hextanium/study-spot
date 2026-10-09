@@ -1066,3 +1066,18 @@ test("a walk starts over when the spot changes", async () => {
   // Access was checked in the other spot's walk; here it is still to do.
   await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(other)}/access`));
 });
+
+test("the chosen building is marked in the list with a check", async () => {
+  renderRoute(testApp(), "/survey/spots/new");
+  fireEvent.change(await screen.findByRole("searchbox", { name: t("new.building.label") }), {
+    target: { value: "melv" },
+  });
+  const option = await screen.findByRole("button", { name: "Melville Library" });
+  fireEvent.click(option);
+  fireEvent.change(screen.getByRole("searchbox", { name: t("new.building.label") }), {
+    target: { value: "melv" },
+  });
+  const chosen = await screen.findByRole("button", { name: "Melville Library" });
+  expect(chosen.getAttribute("aria-pressed")).toBe("true");
+  expect(chosen.querySelector("svg.picker__check")).not.toBeNull();
+});

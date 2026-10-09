@@ -1,5 +1,6 @@
 import { createRootRoute, Outlet, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { NotFound } from "../screens/NotFound.tsx";
 import { UpdatePrompt } from "../screens/UpdatePrompt.tsx";
 
 /**
@@ -28,4 +29,4 @@ function Root() {
   );
 }
 
-export const Route = createRootRoute({ component: Root });
+export const Route = createRootRoute({ component: Root, notFoundComponent: () => <NotFound /> });

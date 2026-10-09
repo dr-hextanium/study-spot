@@ -41,6 +41,7 @@ import { Row } from "../ui/Row.tsx";
 import { GroupHeading, Meta, Screen } from "../ui/Screen.tsx";
 import { ConfirmSheet, Sheet } from "../ui/Sheet.tsx";
 import { StepBar } from "../ui/StepBar.tsx";
+import { NotFound } from "./NotFound.tsx";
 import { SyncStatus } from "./SyncStatus.tsx";
 import { ConflictSheet, FailedSheet } from "./WriteSheets.tsx";
 
@@ -109,12 +110,10 @@ export function Overview(props: { id: string; write: string | undefined }) {
     }
   }, [state, navigate]);
   if (state.kind !== "ready") {
-    return (
-      <Screen title={t("app.name")} back={{ to: "/survey" }}>
-        <p className="lede">
-          {state.kind === "missing" ? t("spot.not_found") : t("common.loading")}
-        </p>
-      </Screen>
+    return state.kind === "missing" ? (
+      <NotFound message={t("spot.not_found")} sync />
+    ) : (
+      <NotFound loading sync />
     );
   }
   return <Ready id={props.id} write={props.write} state={state} />;

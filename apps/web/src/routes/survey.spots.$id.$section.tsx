@@ -7,8 +7,7 @@ import { useOutboxSnapshot } from "../hooks/useOutbox.ts";
 import { type SpotViewState, useSpotView } from "../hooks/useSpotView.ts";
 import { EDITORS } from "../screens/editors/index.tsx";
 import { WalkContext } from "../screens/editors/walk.ts";
-import { SurveyHeader } from "../screens/SurveyHeader.tsx";
-import { LegacyScreen } from "../ui/Screen.tsx";
+import { NotFound } from "../screens/NotFound.tsx";
 
 type Ready = Extract<SpotViewState, { kind: "ready" }>;
 
@@ -95,15 +94,10 @@ function SectionRoute() {
     }
   }, [state, section, navigate]);
   if (shown === null) {
-    return (
-      <>
-        <SurveyHeader title={t("app.name")} back={{ to: "/survey" }} />
-        <LegacyScreen>
-          <p className="lede">
-            {state.kind === "missing" ? t("spot.not_found") : t("common.loading")}
-          </p>
-        </LegacyScreen>
-      </>
+    return state.kind === "missing" ? (
+      <NotFound message={t("spot.not_found")} sync />
+    ) : (
+      <NotFound loading sync />
     );
   }
   const Editor = EDITORS[section];

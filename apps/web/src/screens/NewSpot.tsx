@@ -1,6 +1,7 @@
 import type { IdentitySection } from "@study-spot/core";
 import { localIdFor, t } from "@study-spot/ui-logic";
 import { useNavigate } from "@tanstack/react-router";
+import { Layers, Signpost, Tag, Type } from "lucide-react";
 import { useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { useCampus } from "../hooks/useQueries.ts";
@@ -8,10 +9,10 @@ import { type LocationState, spotPoint } from "../lib/location.ts";
 import { spotSlug } from "../lib/slug.ts";
 import { Button } from "../ui/Button.tsx";
 import { TextField } from "../ui/Field.tsx";
-import { LegacyScreen } from "../ui/Screen.tsx";
+import { Screen } from "../ui/Screen.tsx";
 import { BuildingPicker, LAST_BUILDING_KEY } from "./BuildingPicker.tsx";
 import { LocationButton } from "./LocationButton.tsx";
-import { SurveyHeader } from "./SurveyHeader.tsx";
+import { SyncStatus } from "./SyncStatus.tsx";
 
 function lastBuilding(): string | null {
   try {
@@ -87,16 +88,19 @@ export function NewSpot() {
 
   return (
     <>
-      <SurveyHeader title={t("new.title")} back={{ to: "/survey" }} />
-      <LegacyScreen
+      <Screen
+        title={t("new.title")}
+        back={{ to: "/survey" }}
+        trailing={<SyncStatus variant="icon" />}
+        stacked
         action={
           <>
             {saveFailed ? (
-              <p className="pinned__note" role="alert">
+              <p className="actionbar__note" role="alert">
                 {t("common.save_failed")}
               </p>
             ) : null}
-            {ready ? null : <p className="pinned__note">{t("new.blocked")}</p>}
+            {ready ? null : <p className="actionbar__note">{t("new.blocked")}</p>}
             <Button
               variant="primary"
               wide
@@ -116,6 +120,7 @@ export function NewSpot() {
         <TextField
           label={t("new.floor.label")}
           helper={t("new.floor.helper")}
+          icon={Layers}
           value={floor}
           onChange={setFloor}
           maxLength={20}
@@ -123,6 +128,7 @@ export function NewSpot() {
         <TextField
           label={t("new.official_name.label")}
           helper={t("new.official_name.helper")}
+          icon={Type}
           value={name}
           onChange={setName}
           maxLength={200}
@@ -130,6 +136,7 @@ export function NewSpot() {
         <TextField
           label={t("new.common_name.label")}
           optional={t("common.optional")}
+          icon={Tag}
           value={commonName}
           onChange={setCommonName}
           maxLength={200}
@@ -139,12 +146,13 @@ export function NewSpot() {
           label={t("new.directions.label")}
           helper={t("new.directions.helper")}
           placeholder={t("new.directions.placeholder")}
+          icon={Signpost}
           value={directions}
           onChange={setDirections}
           multiline
           maxLength={2000}
         />
-      </LegacyScreen>
+      </Screen>
     </>
   );
 }

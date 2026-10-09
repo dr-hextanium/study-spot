@@ -59,6 +59,8 @@ export const COPY = {
   "auth.expired.title": "Sign in again",
   "auth.expired.body":
     "Your sign-in on this phone ended. Ask an admin for a new link. Your unsynced changes are kept.",
+  "nav.back_to_spots": "Back to spots",
+  "nav.not_found.body": "Page not found.",
   "auth.revoked.body": "An admin removed this phone's access. Unsynced changes stay on this phone.",
   "home.title": "Spots",
   "home.new_spot": "New spot",
@@ -548,6 +550,8 @@ export const COPY_MAX = {
   "invite.name.required": 60,
   "auth.expired.title": 20,
   "auth.expired.body": 110,
+  "nav.back_to_spots": 20,
+  "nav.not_found.body": 40,
   "auth.revoked.body": 90,
   "home.title": 12,
   "home.new_spot": 14,

@@ -87,6 +87,8 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 |---|---|---|---|
 | auth.expired.title | Sign in again | 20 | |
 | auth.expired.body | Your sign-in on this phone ended. Ask an admin for a new link. Your unsynced changes are kept. | 110 | |
+| nav.back_to_spots | Back to spots | 20 | not-found and missing-spot screens |
+| nav.not_found.body | Page not found. | 40 | unknown address |
 | auth.revoked.body | An admin removed this phone's access. Unsynced changes stay on this phone. | 90 | |
 
 ## Home (`/survey`)
