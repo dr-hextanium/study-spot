@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
+import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { API_ORIGIN } from "../playwright.config.ts";
 import { call, completeSpot, draftSpot, getSpot, surveyorInvite, tokenOf } from "./api.ts";
 import { expect, pinClock, signIn, test } from "./fixtures.ts";
+import { layoutProblems } from "./layout.ts";
 import { bigJpeg, GPS_MARK, jpegMarkers, withExif } from "./photo.ts";
 
 async function saveSection(page: Page): Promise<void> {
@@ -14,6 +16,28 @@ async function saveSection(page: Page): Promise<void> {
     await page.getByRole("link", { name: "Back" }).click();
   }
   await expect(page).toHaveURL(/\/survey\/spots\/[^/]+$/);
+}
+
+/**
+ * An open sheet at phone, tablet and laptop widths: no layout problems, axe clean.
+ * Set SHEET_SHOTS to a folder to keep a screenshot of each (animations off).
+ */
+async function checkSheet(page: Page, label: string): Promise<void> {
+  const shots = process.env.SHEET_SHOTS;
+  const back = page.viewportSize();
+  for (const width of [375, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.locator(".sheet[open]").waitFor();
+    expect(await layoutProblems(page), `${label} @${width}`).toEqual([]);
+    const axe = await new AxeBuilder({ page }).analyze();
+    expect(
+      axe.violations.map((v) => v.id),
+      `${label} @${width}`,
+    ).toEqual([]);
+    if (shots !== undefined)
+      await page.screenshot({ path: `${shots}/${label}-${width}.png`, animations: "disabled" });
+  }
+  if (back !== null) await page.setViewportSize(back);
 }
 
 async function openSection(page: Page, name: string): Promise<void> {
@@ -138,13 +162,19 @@ test("acceptance 4: a conflicting edit from two phones resolves both ways", asyn
   await edit(phoneB, "11");
   await edit(page, "22");
   await expect(page.getByRole("button", { name: "All synced" })).toBeVisible();
+  // The sync sheet lists the waiting edit while phone B is offline.
+  await phoneB.getByRole("button", { name: /Offline|waiting/ }).click();
+  await expect(phoneB.getByRole("dialog", { name: "Changes on this phone" })).toBeVisible();
+  await checkSheet(phoneB, "sync");
+  await phoneB.getByRole("button", { name: "Close" }).click();
   await other.setOffline(false);
   await expect(
     phoneB.getByText("Someone else changed this spot. Pick which version to keep."),
   ).toBeVisible({ timeout: 60_000 });
   await phoneB.getByRole("button", { name: "Open the conflict", exact: true }).click();
-  await expect(phoneB.getByRole("cell", { name: "11" })).toBeVisible();
-  await expect(phoneB.getByRole("cell", { name: "22" })).toBeVisible();
+  await expect(phoneB.getByRole("region", { name: "Yours" }).getByText("11")).toBeVisible();
+  await expect(phoneB.getByRole("region", { name: "On the server" }).getByText("22")).toBeVisible();
+  await checkSheet(phoneB, "conflict");
   await phoneB.getByRole("button", { name: "Keep mine" }).click();
   await expect(phoneB.getByRole("button", { name: "All synced" })).toBeVisible({ timeout: 60_000 });
   await expect.poll(async () => (await getSpot(await tokenOf(page), spot.id)).seat_count).toBe(11);
