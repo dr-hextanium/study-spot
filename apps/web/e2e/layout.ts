@@ -45,6 +45,8 @@ export async function layoutProblems(page: Page): Promise<string[]> {
       if (s.overflowX === "visible" || s.overflowX === "auto" || s.overflowX === "scroll") continue;
       if (el.scrollWidth <= el.clientWidth + 1) continue;
       if (el.classList.contains("truncate") && el.clientWidth >= 64) continue;
+      // A text input holding a long value scrolls it by design; that is not clipped copy.
+      if (el instanceof HTMLInputElement) continue;
       out.push(`clipped ${describe(el)}`);
     }
     return out;

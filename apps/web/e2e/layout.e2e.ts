@@ -24,8 +24,7 @@ test("converted screens, light and dark: no overflow, no clipped text, 44 px hit
     `/survey/spots/${long.id}`,
     `/survey/spots/${published.id}`,
     `/survey/spots/${long.id}/seating`,
-    // A short name here: a text input holding a long value scrolls by design, which is not clipping.
-    `/survey/spots/${published.id}/identity`,
+    `/survey/spots/${long.id}/identity`,
     `/survey/spots/${published.id}/access`,
     `/survey/spots/${published.id}/late_night`,
     `/survey/spots/${published.id}/hours`,
