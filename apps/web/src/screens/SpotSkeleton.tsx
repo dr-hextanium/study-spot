@@ -60,6 +60,7 @@ export function EditorSkeleton(props: { id: string; section: OverviewSection }) 
       back={{ to: "/survey/spots/$id", params: { id: props.id } }}
       trailing={<SyncStatus variant="icon" />}
       stacked
+      busy
       action={<SkelBar stacked />}
     >
       <Loading className="skel-screen">

@@ -120,3 +120,17 @@ test("admin says Loading once, for the whole screen, while any section loads", a
     ).toHaveLength(0),
   );
 });
+
+test("focus on the screen stays on main when the editor skeleton gives way to the editor", async () => {
+  const spot = surveySpotFixture();
+  const app = testApp({ spots: [spot] });
+  const g = gate();
+  app.server.admin.spotGate = g.promise;
+  renderRoute(app, `/survey/spots/${spot.id}/seating`);
+  await waitFor(() => expectSkeleton());
+  act(() => document.querySelector("main")?.focus());
+  expect(document.activeElement?.tagName).toBe("MAIN");
+  act(() => g.open());
+  await waitFor(() => expect(document.querySelector('[aria-busy="true"]')).toBeNull());
+  expect(document.activeElement).toBe(document.querySelector("main"));
+});
