@@ -12,4 +12,4 @@ Run the Visual Verification loop from CLAUDE.md, in order, for these routes: $AR
 5. Only if the user asked for performance, or this is a release check, run Lighthouse on a production build in its own dir on port 4299.
 6. Stop the servers you started by PID. Confirm nothing is listening on 5299, 8890, or 4299.
 
-Reply with: the check table (console, overflow, axe per route and width), the reviewer's verdict, and the list of deviations from the tokens or contract. Then empty `.claude/tmp/screenshots/`.
+Reply with: the check table (console, overflow, axe per route and width), the reviewer's verdict, and the list of deviations from the tokens or contract. Do not delete the screenshots; the next run clears them. Never run `rm`.

@@ -64,7 +64,7 @@ Run after a batch of UI changes, not after every edit. `/verify-ui` runs the loo
 
 **Done for a UI task:** console clean, axe zero violations, no horizontal overflow at any width, screenshots reviewed at all three widths, deviations from tokens or the contract listed.
 
-**Cleanup:** empty `.claude/tmp/screenshots/` when the task is done.
+**Cleanup:** never run `rm` or any shell delete (each one blocks on a permission prompt). `verify-ui.ts` empties `.claude/tmp/screenshots/` at the start of each run; throwaway scripts go in `$CLAUDE_JOB_DIR/tmp` and stay there.
 
 ## Writing conventions
 
