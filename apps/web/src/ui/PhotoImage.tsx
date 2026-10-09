@@ -1,4 +1,6 @@
 import { t } from "@study-spot/ui-logic";
+import { ImageOff } from "lucide-react";
+import { Icon } from "./Icon.tsx";
 
 /**
  * A photo at its fixed 4:3 frame. While the bytes load the frame is blank; if
@@ -12,7 +14,12 @@ export function PhotoImage(props: {
   if (url !== null) return <img className="photo__img" src={url} alt={props.alt} />;
   return (
     <div className="photo__img photo__img--empty">
-      {missing ? <p className="photo__missing">{t("photos.unavailable")}</p> : null}
+      {missing ? (
+        <>
+          <Icon icon={ImageOff} size={22} />
+          <p className="photo__missing">{t("photos.unavailable")}</p>
+        </>
+      ) : null}
     </div>
   );
 }

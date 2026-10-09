@@ -598,6 +598,26 @@ test("a picked photo is queued; an oversize or unreadable one shows its error", 
   expect(screen.queryByText(t("photos.too_big"))).toBeNull();
 });
 
+test("photos: the cover carries a pill and the others offer Use as cover", async () => {
+  const other = { ...PHOTO, id: "00000000-0000-4000-8000-0000000000b2", is_cover: false };
+  const spot = surveySpotFixture({
+    photos: [
+      { ...PHOTO, spot_id: DRAFT.id, is_cover: true },
+      { ...other, spot_id: DRAFT.id },
+    ],
+  });
+  renderRoute(testApp({ spots: [spot] }), `${at(spot)}/photos`);
+  const pill = await screen.findByText(t("photos.is_cover"), { exact: true });
+  expect(pill.closest(".pill")).not.toBeNull();
+  expect(screen.getAllByRole("button", { name: t("photos.cover") })).toHaveLength(1);
+});
+
+test("a photo with no bytes says Image unavailable", async () => {
+  const spot = surveySpotFixture({ photos: [{ ...PHOTO, spot_id: DRAFT.id }] });
+  renderRoute(testApp({ spots: [spot] }), `${at(spot)}/photos`);
+  expect(await screen.findByText(t("photos.unavailable"))).toBeTruthy();
+});
+
 test("a synced photo is set as the cover", async () => {
   const spot = surveySpotFixture({ photos: [{ ...PHOTO, spot_id: DRAFT.id }] });
   const app = testApp({ spots: [spot] });
