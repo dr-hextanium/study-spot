@@ -334,6 +334,12 @@ test("a spot with an approved cover shows its thumbnail once loaded; without one
     expect(rowOf("SAC Lounge").querySelector("img")).toBeNull();
     expect(requested).toHaveLength(1);
     expect(requested[0]).toContain(`/survey/photos/${COVER_ID}/image`);
+    // A filter change unmounts and remounts the row: the bytes come from the cache.
+    fireEvent.click(screen.getByRole("button", { name: /^Drafts \d/ }));
+    await waitFor(() => expect(screen.queryByText("Covered Lounge")).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: /^All \d/ }));
+    await waitFor(() => expect(rowOf("Covered Lounge").querySelector("img.thumb")).not.toBeNull());
+    expect(requested).toHaveLength(1);
   } finally {
     if (!had.create) Reflect.deleteProperty(URL, "createObjectURL");
     if (!had.revoke) Reflect.deleteProperty(URL, "revokeObjectURL");
