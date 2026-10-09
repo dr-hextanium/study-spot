@@ -87,72 +87,65 @@ export function NewSpot() {
   }
 
   return (
-    <>
-      <Screen
-        title={t("new.title")}
-        back={{ to: "/survey" }}
-        trailing={<SyncStatus variant="icon" />}
-        stacked
-        action={
-          <>
-            {saveFailed ? (
-              <p className="actionbar__note" role="alert">
-                {t("common.save_failed")}
-              </p>
-            ) : null}
-            {ready ? null : <p className="actionbar__note">{t("new.blocked")}</p>}
-            <Button
-              variant="primary"
-              wide
-              disabled={!ready || saving}
-              onClick={() => void create()}
-            >
-              {t("new.save")}
-            </Button>
-          </>
-        }
-      >
-        <BuildingPicker
-          buildings={buildings}
-          value={buildingId}
-          onChange={(b) => setBuildingId(b.id)}
-        />
-        <TextField
-          label={t("new.floor.label")}
-          helper={t("new.floor.helper")}
-          icon={Layers}
-          value={floor}
-          onChange={setFloor}
-          maxLength={20}
-        />
-        <TextField
-          label={t("new.official_name.label")}
-          helper={t("new.official_name.helper")}
-          icon={Type}
-          value={name}
-          onChange={setName}
-          maxLength={200}
-        />
-        <TextField
-          label={t("new.common_name.label")}
-          optional={t("common.optional")}
-          icon={Tag}
-          value={commonName}
-          onChange={setCommonName}
-          maxLength={200}
-        />
-        <LocationButton state={location} onChange={setLocation} />
-        <TextField
-          label={t("new.directions.label")}
-          helper={t("new.directions.helper")}
-          placeholder={t("new.directions.placeholder")}
-          icon={Signpost}
-          value={directions}
-          onChange={setDirections}
-          multiline
-          maxLength={2000}
-        />
-      </Screen>
-    </>
+    <Screen
+      title={t("new.title")}
+      back={{ to: "/survey" }}
+      trailing={<SyncStatus variant="icon" />}
+      stacked
+      action={
+        <>
+          {saveFailed ? (
+            <p className="actionbar__note" role="alert">
+              {t("common.save_failed")}
+            </p>
+          ) : null}
+          {ready ? null : <p className="actionbar__note">{t("new.blocked")}</p>}
+          <Button variant="primary" wide disabled={!ready || saving} onClick={() => void create()}>
+            {t("new.save")}
+          </Button>
+        </>
+      }
+    >
+      <BuildingPicker
+        buildings={buildings}
+        value={buildingId}
+        onChange={(b) => setBuildingId(b.id)}
+      />
+      <TextField
+        label={t("new.floor.label")}
+        helper={t("new.floor.helper")}
+        icon={Layers}
+        value={floor}
+        onChange={setFloor}
+        maxLength={20}
+      />
+      <TextField
+        label={t("new.official_name.label")}
+        helper={t("new.official_name.helper")}
+        icon={Type}
+        value={name}
+        onChange={setName}
+        maxLength={200}
+      />
+      <TextField
+        label={t("new.common_name.label")}
+        optional={t("common.optional")}
+        icon={Tag}
+        value={commonName}
+        onChange={setCommonName}
+        maxLength={200}
+      />
+      <LocationButton state={location} onChange={setLocation} />
+      <TextField
+        label={t("new.directions.label")}
+        helper={t("new.directions.helper")}
+        placeholder={t("new.directions.placeholder")}
+        icon={Signpost}
+        value={directions}
+        onChange={setDirections}
+        multiline
+        maxLength={2000}
+      />
+    </Screen>
   );
 }
