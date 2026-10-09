@@ -234,14 +234,20 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | hours.day.sun | Sun | 4 | |
 | hours.opens | Opens | 8 | |
 | hours.closes | Closes | 8 | |
-| hours.closed | Closed | 8 | per-day toggle |
+| hours.closed | Closed | 8 | day summary when closed |
 | hours.next_day | next day | 10 | suffix when closes before opens, e.g. "2:00 next day" |
 | hours.copy_weekdays | Copy Monday to weekdays | 26 | |
 | hours.exam.toggle | Different hours during finals | 30 | |
 | hours.exam.title | Finals hours | 14 | |
 | hours.helper | Use the posted hours. If none are posted, check the building's website. | 80 | |
 | hours.invalid.same_time | Opens and closes can't be the same time. Mark the day closed or 24 hours. | 80 | |
-| hours.all_day | Open 24 hours | 16 | per-day toggle |
+| hours.all_day | Open 24 hours | 16 | day summary when open all day |
+| hours.mode.hours | Hours | 8 | per-day segmented option |
+| hours.mode.closed | Closed | 8 | per-day segmented option |
+| hours.mode.all_day | 24 hours | 10 | per-day segmented option |
+| hours.summary | {opens} to {closes} | 24 | day summary, e.g. "8:00 AM to 10:00 PM" |
+| hours.summary_next | {opens} to {closes} next day | 34 | day summary when closing after midnight |
+| hours.summary_unset | Set the times | 16 | day summary with a missing time |
 
 ## Seating
 

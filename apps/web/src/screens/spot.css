@@ -16,10 +16,58 @@
   font-weight: 600;
 }
 
+/* One 52 px row per day that opens to its editor; a hairline closes each day. */
+.day {
+  border-bottom: 1px solid var(--color-line);
+}
+
+.day__head {
+  gap: var(--space-xs);
+}
+
+.day__name {
+  flex: none;
+  min-width: 3ch;
+}
+
+.day__summary {
+  flex: 1;
+  color: var(--color-muted);
+  font-size: var(--fontSize-small);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.day__chev {
+  flex: none;
+  color: var(--color-muted);
+  transition: transform var(--duration-fast) var(--easing-standard);
+}
+
+.day__chev--open {
+  transform: rotate(180deg);
+}
+
+.day__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-xxs) 0 var(--space-md);
+}
+
+.day__panel[hidden] {
+  display: none;
+}
+
+.day__panel > .segmented {
+  padding: 0;
+  border-bottom: 0;
+}
+
 .day__times {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  align-items: end;
+  align-items: start;
   gap: var(--space-sm);
 }
 
@@ -36,19 +84,9 @@
 }
 
 .day__next {
-  grid-column: 1 / -1;
   color: var(--color-muted);
   font-size: var(--fontSize-small);
   font-weight: 600;
-}
-
-.day__toggles {
-  display: flex;
-  flex-direction: column;
-}
-
-.day__toggles .check {
-  border-bottom: 0;
 }
 
 /* Busyness grid: time blocks down, weekdays and weekends across. A fill rises with the guess. */

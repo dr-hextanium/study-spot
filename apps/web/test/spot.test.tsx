@@ -370,11 +370,74 @@ test("estimates cycle on tap and save only the cells set", async () => {
   });
 });
 
-test("hours: each day is its own group with a closed switch and the copy button", async () => {
+test("hours: each day is one row with a three-way control behind it, and a copy button", async () => {
   renderRoute(testApp({ spots: [FULL] }), `${at(FULL)}/hours`);
-  const mon = await screen.findByRole("group", { name: t("hours.day.mon") });
-  expect(within(mon).getByRole("checkbox", { name: t("hours.closed") })).toBeTruthy();
+  fireEvent.click(await screen.findByRole("button", { name: /^Mon,/ }));
+  const mon = screen.getByRole("group", { name: t("hours.day.mon") });
+  expect(within(mon).getByRole("radio", { name: t("hours.mode.hours") })).toBeTruthy();
+  expect(within(mon).getByRole("radio", { name: t("hours.mode.closed") })).toBeTruthy();
+  expect(within(mon).getByRole("radio", { name: t("hours.mode.all_day") })).toBeTruthy();
+  expect(screen.queryByRole("checkbox", { name: t("hours.closed") })).toBeNull();
   expect(screen.getByRole("button", { name: t("hours.copy_weekdays") })).toBeTruthy();
+});
+
+test("hours: a collapsed day says its hours, Closed, or Open 24 hours, and a tap opens it", async () => {
+  const spot = surveySpotFixture({
+    hours: [
+      { day_of_week: 1, opens: "08:00", closes: "02:00", last_entry: null, is_exam: false },
+      { day_of_week: 2, opens: "09:00", closes: "17:30", last_entry: null, is_exam: false },
+      { day_of_week: 0, opens: "00:00", closes: "24:00", last_entry: null, is_exam: false },
+    ],
+  });
+  renderRoute(testApp({ spots: [spot] }), `${at(spot)}/hours`);
+  const head = async (day: string) => {
+    const buttons = await screen.findAllByRole("button", { name: new RegExp(`^${day},`) });
+    return buttons[0] as HTMLElement;
+  };
+  const mon = await head("Mon");
+  expect(mon.textContent).toContain("8:00 AM to 2:00 AM next day");
+  expect((await head("Tue")).textContent).toContain("9:00 AM to 5:30 PM");
+  expect((await head("Wed")).textContent).toContain(t("hours.closed"));
+  expect((await head("Sun")).textContent).toContain(t("hours.all_day"));
+  expect(mon.getAttribute("aria-expanded")).toBe("false");
+  const panel = document.getElementById(mon.getAttribute("aria-controls") ?? "");
+  expect(panel?.hasAttribute("hidden")).toBe(true);
+  fireEvent.click(mon);
+  expect(mon.getAttribute("aria-expanded")).toBe("true");
+  expect(panel?.hasAttribute("hidden")).toBe(false);
+});
+
+test("hours: next day sits under Closes, not Opens; the control switches the day's mode", async () => {
+  const spot = surveySpotFixture({
+    hours: [{ day_of_week: 1, opens: "08:00", closes: "02:00", last_entry: null, is_exam: false }],
+  });
+  renderRoute(testApp({ spots: [spot] }), `${at(spot)}/hours`);
+  fireEvent.click(await screen.findByRole("button", { name: /^Mon,/ }));
+  const mon = screen.getByRole("group", { name: t("hours.day.mon") });
+  const next = within(mon.closest(".day") as HTMLElement).getByText(t("hours.next_day"));
+  expect(
+    within(next.parentElement as HTMLElement).queryByLabelText(t("hours.closes")),
+  ).not.toBeNull();
+  expect(within(next.parentElement as HTMLElement).queryByLabelText(t("hours.opens"))).toBeNull();
+  fireEvent.click(within(mon).getByRole("radio", { name: t("hours.mode.closed") }));
+  expect(within(mon.closest(".day") as HTMLElement).queryByLabelText(t("hours.closes"))).toBeNull();
+  const head = mon.closest(".day")?.querySelector(".day__head");
+  expect(head?.textContent).toContain(t("hours.closed"));
+  fireEvent.click(within(mon).getByRole("radio", { name: t("hours.mode.all_day") }));
+  expect(head?.textContent).toContain(t("hours.all_day"));
+  fireEvent.click(within(mon).getByRole("radio", { name: t("hours.mode.hours") }));
+  expect(within(mon.closest(".day") as HTMLElement).getByLabelText(t("hours.closes"))).toBeTruthy();
+});
+
+test("hours: copy Monday fills the weekday rows", async () => {
+  const spot = surveySpotFixture({
+    hours: [{ day_of_week: 1, opens: "09:00", closes: "17:00", last_entry: null, is_exam: false }],
+  });
+  renderRoute(testApp({ spots: [spot] }), `${at(spot)}/hours`);
+  fireEvent.click(await screen.findByRole("button", { name: t("hours.copy_weekdays") }));
+  const fri = screen.getByRole("button", { name: /^Fri,/ });
+  expect(fri.textContent).toContain("9:00 AM to 5:00 PM");
+  expect(screen.getByRole("button", { name: /^Sat,/ }).textContent).toContain(t("hours.closed"));
 });
 
 test("seating and amenity options each carry a 16 px icon at stroke 1.75, checked or not", async () => {

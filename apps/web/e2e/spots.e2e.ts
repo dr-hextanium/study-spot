@@ -81,10 +81,11 @@ test("acceptance 1: a spot made offline with every required field and a photo sy
   await page.getByRole("group", { name: "Group work" }).getByRole("radio", { name: "No" }).check();
   await saveSection(page);
   await openSection(page, "Hours");
+  await page.getByRole("button", { name: /^Mon,/ }).click();
   await page
     .getByRole("group", { name: "Mon" })
-    .getByRole("checkbox", { name: "Closed" })
-    .uncheck();
+    .getByRole("radio", { name: "Hours", exact: true })
+    .check();
   await page.getByRole("button", { name: "Copy Monday to weekdays" }).click();
   await saveSection(page);
 
