@@ -9,7 +9,7 @@ import {
   type SpotView,
   t,
 } from "@study-spot/ui-logic";
-import { CircleAlert, TriangleAlert } from "lucide-react";
+import { CircleAlert, Eye, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { Pill } from "../ui/Pill.tsx";
 import { ELIGIBILITY_COPY, FOOD_COPY, NOISE_COPY } from "./fields.ts";
@@ -34,7 +34,15 @@ export function homeFactEnd(fact: HomeFact, tz: string): ReactNode {
         </Pill>
       );
     case "unreviewed":
-      return <span className="fact">{t("home.fact.unreviewed", { name: fact.editor })}</span>;
+      return (
+        <Pill icon={Eye}>
+          {t("home.fact.unreviewed")}
+          <span className="visually-hidden">
+            {", "}
+            {t("home.fact.unreviewed_by", { name: fact.editor })}
+          </span>
+        </Pill>
+      );
     case "hours_unconfirmed":
       return <span className="fact">{t("home.fact.hours", { term: fact.term })}</span>;
     case "progress":

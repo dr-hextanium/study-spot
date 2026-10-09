@@ -565,7 +565,8 @@ Strings the built screens needed beyond the sections above: short header forms f
 | home.keep_going.ready | Keep going · Ready to publish | 36 | card status line |
 | home.fact.conflict | Conflict | 10 | red pill |
 | home.fact.failed | Didn't save | 12 | red pill |
-| home.fact.unreviewed | Edited by {name} | 30 | |
+| home.fact.unreviewed | Unreviewed | 12 | mist pill with an Eye icon |
+| home.fact.unreviewed_by | Edited by {name} | 30 | read by screen readers after the pill; not drawn |
 | home.fact.hours | No {term} hours | 24 | |
 | home.fact.progress | {done}/{total} | 6 | |
 | home.checked | Checked {date} | 20 | row subtitle under an attention fact |

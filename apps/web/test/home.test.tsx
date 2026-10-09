@@ -41,7 +41,15 @@ test("a teammate's unreviewed spot needs attention and lists by oldest check", a
   renderRoute(testApp({ spots: [PUBLISHED, STALE] }), "/survey");
   fireEvent.click(await screen.findByRole("button", { name: /^Needs you/ }));
   const attention = screen.getByRole("region", { name: t("home.group.attention") });
-  expect(within(attention).getByText(t("home.fact.unreviewed", { name: "Jordan" }))).toBeTruthy();
+  const pill = within(attention).getByText(t("home.fact.unreviewed"));
+  expect(pill.closest(".pill")?.className).toContain("pill--mist");
+  expect(pill.closest(".pill")?.querySelector("svg")).not.toBeNull();
+  // The editor is not drawn on the row but stays in its accessible name.
+  expect(
+    within(attention).getByRole("link", {
+      name: new RegExp(`SAC Lounge.*${t("home.fact.unreviewed_by", { name: "Jordan" })}`),
+    }),
+  ).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: /^All \d/ }));
   const all = screen.getByRole("region", { name: t("home.group.all") });
   expect(within(all).getByText("Jan 2")).toBeTruthy();
