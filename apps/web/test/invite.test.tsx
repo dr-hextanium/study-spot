@@ -166,6 +166,28 @@ test("Discard clears the changes and the new session works", async () => {
   expect(auth.at(-1)).toBe(`Bearer ${NEW_TOKEN}`);
 });
 
+test("Discard then a session the phone will not save: sending starts again", async () => {
+  const { app } = await switchSetup(OTHER);
+  const dialog = await screen.findByRole("dialog", {
+    name: t("invite.switch.title", { name: "Ana" }),
+  });
+  app.storage.setItem = () => {
+    throw new Error("storage full");
+  };
+  fireEvent.click(within(dialog).getByRole("button", { name: t("invite.switch.discard") }));
+  await waitFor(() => expect(app.deps.outbox.getSnapshot().records).toEqual([]));
+  const spot = [...app.server.inner.spots.values()][0];
+  if (spot === undefined) throw new Error("no spot");
+  await waitFor(() => expect(app.deps.session.token()).toBe(TOKEN));
+  await act(async () => {
+    await app.deps.outbox.enqueue({ kind: "spot.section", spot_id: spot.id, payload: SEATING }, 3);
+    await app.deps.outbox.idle();
+  });
+  await waitFor(() =>
+    expect(app.server.inner.requests.some((r) => r.path.endsWith("/seating"))).toBe(true),
+  );
+});
+
 test("the same surveyor signing in again is not asked", async () => {
   const { app, view } = await switchSetup(ME);
   await waitFor(() => expect(view.router.state.location.pathname).toBe("/survey"));

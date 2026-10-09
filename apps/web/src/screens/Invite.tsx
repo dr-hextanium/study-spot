@@ -115,11 +115,16 @@ export function Invite(props: { token: string; relogin: boolean }) {
     return outbox.getSnapshot().records.length > 0 ? owner.name : null;
   }
 
-  async function finish(accepted: AcceptInviteResponse) {
-    if (!join(accepted)) return setProblem("storage");
+  /** False when the phone would not save the session. */
+  async function finish(accepted: AcceptInviteResponse): Promise<boolean> {
+    if (!join(accepted)) {
+      setProblem("storage");
+      return false;
+    }
     // The session is the owner again; the note from a sign-out is spent.
     await cache.delete(OWNER_KEY).catch(() => undefined);
     await navigate({ to: "/survey", replace: true });
+    return true;
   }
 
   async function discardAndJoin(accepted: AcceptInviteResponse) {
@@ -136,7 +141,8 @@ export function Invite(props: { token: string; relogin: boolean }) {
     }
     setBusy(false);
     setHeld(null);
-    await finish(accepted);
+    // The queue is empty and no session came: sending must not stay stopped until a reload.
+    if (!(await finish(accepted))) outbox.resume();
   }
 
   const relogin = !askName;
