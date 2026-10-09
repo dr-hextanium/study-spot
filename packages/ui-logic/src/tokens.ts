@@ -35,9 +35,8 @@ export const Tokens = z.strictObject({
 export type Tokens = z.infer<typeof Tokens>;
 
 /**
- * Seawolf (decision 20): four colors and oklab mixes of them. Source of truth
- * until DESIGN.md is written from the built screens; change both together after
- * that. Status is icon plus red, never another hue. Scrims and shadows are
+ * Seawolf (decision 20): four colors and oklab mixes of them. DESIGN.md records
+ * these values as built; change both together. Status is icon plus red, never another hue. Scrims and shadows are
  * written in CSS as ink mixed into transparent, so they are not tokens.
  */
 export const tokens: Tokens = {

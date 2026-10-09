@@ -15,7 +15,7 @@ type Props = {
 /**
  * A bottom sheet on the native modal <dialog>: focus moves in and is trapped,
  * Escape and the close button dismiss, and the page behind is inert. Slides up
- * on phones, a centered dialog from 768 px. The only element that casts a shadow.
+ * on phones, a centered dialog from 768 px. Floating things (sheets, toasts) are the only elements that cast a shadow.
  */
 export function Sheet({ open, title, onClose, children, actions }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
