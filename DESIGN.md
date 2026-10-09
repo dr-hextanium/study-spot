@@ -442,7 +442,7 @@ Strokes are 1 px: `line` for structure, `edge` for things you can type into or t
 ## Components
 
 ### Buttons
-Plain, firm, 46 px tall, 12 px corners, Instrument Sans 600 at 15 px, an optional 20 px leading icon.
+Plain, firm, 46 px tall, 12 px corners, Instrument Sans 600 at 15 px on the snug 1.25 line height (the height comes from min-height, so descenders are never clipped), an optional 20 px leading icon. Every one-line control (buttons, chips, tags, pills, segmented options) uses the snug line height, and a truncating label keeps 2 px of room for descenders inside its clip.
 - **Primary (red):** the one action the screen exists for. One per screen, in the action bar or a sheet's actions. Hover mixes toward ink; press darker still.
 - **Ink:** the strong secondary ("Next: Seating", "Keep theirs").
 - **Quiet (mist):** ordinary secondary actions ("Looks right", Cancel).

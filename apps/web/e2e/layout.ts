@@ -50,6 +50,31 @@ export async function layoutProblems(page: Page): Promise<string[]> {
       if (el instanceof HTMLInputElement) continue;
       out.push(`clipped ${describe(el)}`);
     }
+    // Descenders cut off: a box that clips (overflow hidden or clip) and is shorter than the
+    // glyphs of its own text. That is ink overflow, so scrollHeight cannot see it; the text
+    // range's box (the font's ascent plus descent) is compared with the padding box instead.
+    for (const el of document.querySelectorAll<HTMLElement>("body *")) {
+      if (!shown(el) || skip(el)) continue;
+      const s = getComputedStyle(el);
+      if (s.overflowY !== "hidden" && s.overflowY !== "clip") continue;
+      if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) continue;
+      const box = el.getBoundingClientRect();
+      const top = box.top + el.clientTop;
+      const bottom = top + el.clientHeight;
+      for (const node of el.childNodes) {
+        if (node.nodeType !== Node.TEXT_NODE || (node.textContent ?? "").trim() === "") continue;
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        for (const r of range.getClientRects()) {
+          if (r.top < top - 0.5 || r.bottom > bottom + 0.5) {
+            out.push(
+              `descenders ${describe(el)} text ${Math.round(r.height * 10) / 10}px in ${el.clientHeight}px`,
+            );
+            break;
+          }
+        }
+      }
+    }
     return out;
   });
 }
