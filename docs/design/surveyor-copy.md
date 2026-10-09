@@ -444,6 +444,7 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | admin.surveyors.title | Surveyors | 12 | |
 | admin.surveyors.empty | Just you so far. | 20 | |
 | admin.surveyors.admin_badge | Admin | 8 | |
+| admin.surveyor.actions | Actions for {name} | 34 | icon button on a surveyor row |
 | admin.revoke | Remove access | 16 | |
 | admin.revoke.confirm.title | Remove {name}? | 30 | |
 | admin.revoke.confirm.body | They're signed out on every phone. Their published edits stay. | 70 | |
