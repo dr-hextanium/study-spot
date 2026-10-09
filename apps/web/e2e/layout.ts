@@ -1,4 +1,5 @@
-import type { Page } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { expect, type Page } from "@playwright/test";
 
 /**
  * Layout problems on the current page: sideways overflow, hit areas under
@@ -54,3 +55,27 @@ export async function layoutProblems(page: Page): Promise<string[]> {
 }
 
 export const WIDTHS = [375, 768, 1440] as const;
+
+/** Loads each route at three widths in both themes; asserts no layout problems and no axe violations. */
+export async function expectRoutesClean(page: Page, routes: readonly string[]): Promise<void> {
+  for (const theme of ["light", "dark"] as const) {
+    // The boot script reads this on every load, so each goto below paints in this theme.
+    await page.evaluate((t) => localStorage.setItem("perch.theme", t), theme);
+    for (const route of routes) {
+      for (const width of WIDTHS) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(route);
+        await page.waitForLoadState("networkidle");
+        const where = `${route} @${width} ${theme}`;
+        expect(await layoutProblems(page), where).toEqual([]);
+        const axe = await new AxeBuilder({ page }).analyze();
+        expect(
+          axe.violations.map(
+            (v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join("; ")}`,
+          ),
+          where,
+        ).toEqual([]);
+      }
+    }
+  }
+}
