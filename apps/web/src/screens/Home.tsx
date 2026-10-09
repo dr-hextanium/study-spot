@@ -178,7 +178,7 @@ export function Home(props: { spotLink?: SpotLinkFor; isAdmin: boolean }) {
           {plural(data.unreadable, "home.unreadable_one", "home.unreadable")}
         </Banner>
       ) : null}
-      <section aria-labelledby={listHeadingId}>
+      <section {...(firstRun ? {} : { "aria-labelledby": listHeadingId })}>
         {firstRun ? null : (
           <GroupHeading id={listHeadingId}>{t(`home.group.${state.filter}`)}</GroupHeading>
         )}
