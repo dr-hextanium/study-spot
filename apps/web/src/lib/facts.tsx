@@ -128,7 +128,15 @@ export function sectionEnd(status: SectionStatus, fact: string | null): ReactNod
     case "synced":
       break;
   }
-  if (status.fill === "missing") return <Pill tone="red">{t("spot.section.missing")}</Pill>;
+  if (status.fill === "missing") {
+    // Only the required sections block publishing, so only they ask for attention.
+    if (status.group === "required") return <Pill tone="red">{t("spot.section.missing")}</Pill>;
+    return (
+      <span className="fact">
+        {t(status.section === "estimates" ? "spot.section.not_set" : "spot.section.none")}
+      </span>
+    );
+  }
   if (status.fill === "partial") return <span className="fact">{t("spot.section.partial")}</span>;
   return <span className="fact truncate">{fact ?? t("spot.section.done")}</span>;
 }

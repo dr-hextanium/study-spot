@@ -1501,6 +1501,11 @@ div.row {
   color: var(--color-muted);
 }
 
+.icon--ink {
+  flex: none;
+  color: var(--color-ink);
+}
+
 .meta__item {
   display: inline-flex;
   align-items: center;

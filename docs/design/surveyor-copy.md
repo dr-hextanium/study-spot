@@ -135,6 +135,8 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | spot.section.missing | Missing | 10 | section state |
 | spot.section.partial | Partly done | 12 | |
 | spot.section.done | Done | 8 | |
+| spot.section.none | None yet | 10 | empty extras or optional section, muted |
+| spot.section.not_set | Not set | 10 | empty busyness section, muted |
 | spot.section.verified | Checked {date} | 16 | |
 | spot.section.verified_today | Checked today | 16 | |
 | spot.publish | Publish | 12 | primary for drafts |

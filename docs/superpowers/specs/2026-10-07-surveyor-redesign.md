@@ -143,7 +143,7 @@ All screens: TopBar, LargeTitle, content, ActionBar where there are actions. 20 
 3. Meta line: a status pill (Draft or Published), then the queued and review pills (Publish queued, Review queued, Reviewed by X, Unreviewed), then "Building · Floor N" and "Checked Oct 1", or "Never checked" (the oldest verification). Every spot shows a last-verified date.
 4. StepBar, 12 px above. Then "4 of 6 · Next: Seating", or "6 of 6 done".
 5. Banners for a conflict or failed changes, as today: an icon, text and Open.
-6. Groups "Needed to publish", "Extras" and "Optional now" (group headers in Newsreader 20). The mock showed two groups; the third stays because those sections exist. Rows: section icon (red when the section is missing), name, and on the right the fact (8.4).
+6. Groups "Needed to publish", "Extras" and "Optional now" (group headers in Newsreader 20). The mock showed two groups; the third stays because those sections exist. Rows: section icon (red only when a required section is missing; an empty Extras or Optional section keeps an ink icon, a muted fact "None yet" or "Not set" for Busyness, and no pill), name, and on the right the fact (8.4).
 7. ActionBar, by state:
    - draft with something missing: `Next: Seating` with an arrow icon (ink, fills the width), `Publish` (primary, `aria-disabled`, opens the "Can't publish yet" sheet that lists every blocker, including "a checked section" when only the verification is missing), and Actions;
    - draft, ready: `Looks right` (quiet, when the review action applies), `Publish` (primary, fills the width), Actions;

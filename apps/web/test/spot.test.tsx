@@ -138,6 +138,28 @@ test("rows show the fact, or a red Missing, and the step line says what is next"
   expect(screen.getByRole("region", { name: t("spot.group.extras") })).toBeTruthy();
 });
 
+test("only required sections go red: an empty extras or optional row is ink with a muted fact", async () => {
+  const bare = surveySpotFixture({
+    status: "draft",
+    seat_count: null,
+    estimates: [],
+    photos: [],
+    hours: [],
+  });
+  renderRoute(testApp({ spots: [bare] }), at(bare));
+  const busyness = await screen.findByRole("link", { name: /Busyness/ });
+  expect(within(busyness).getByText(t("spot.section.not_set"))).toBeTruthy();
+  expect(busyness.querySelector(".pill")).toBeNull();
+  expect(busyness.querySelector(".icon--red")).toBeNull();
+  const photos = screen.getByRole("link", { name: /Photos/ });
+  expect(within(photos).getByText(t("spot.section.none"))).toBeTruthy();
+  expect(photos.querySelector(".pill")).toBeNull();
+  expect(photos.querySelector(".icon--ink")).not.toBeNull();
+  const required = screen.getByRole("region", { name: t("spot.group.required") });
+  const seating = within(required).getByRole("link", { name: /Seating/ });
+  expect(seating.querySelector(".icon--red")).not.toBeNull();
+});
+
 test("a filled-in row shows its fact on the right", async () => {
   const full = surveySpotFixture({ status: "draft", seat_count: 64, floor: "3" });
   renderRoute(testApp({ spots: [full] }), at(full));

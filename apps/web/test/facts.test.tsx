@@ -85,3 +85,19 @@ test("the row end: sync trouble beats missing, missing beats the fact", () => {
     unmount();
   }
 });
+
+test("an empty extras or optional section is a muted fact with no pill", () => {
+  const cases: [OverviewSection, string][] = [
+    ["hours", t("spot.section.none")],
+    ["estimates", t("spot.section.not_set")],
+  ];
+  for (const [section, text] of cases) {
+    const group = section === "estimates" ? "extras" : "optional";
+    const { container, unmount } = render(
+      sectionEnd(status({ section, group, fill: "missing" }), null),
+    );
+    expect(screen.getByText(text).className).toContain("fact");
+    expect(container.querySelector(".pill")).toBeNull();
+    unmount();
+  }
+});

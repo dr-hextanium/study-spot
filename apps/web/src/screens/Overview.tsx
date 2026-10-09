@@ -309,7 +309,9 @@ function Ready(props: {
                   lead={
                     <Icon
                       icon={SECTION_ICON[s.section]}
-                      className={s.fill === "missing" ? "icon--red" : "icon--muted"}
+                      className={
+                        s.group === "required" && s.fill === "missing" ? "icon--red" : "icon--ink"
+                      }
                     />
                   }
                   end={sectionEnd(s, sectionFact(view, s.section, spot.term))}
