@@ -1370,12 +1370,6 @@ div.row {
   display: grid;
 }
 
-.keep__caption {
-  color: var(--color-muted);
-  font-size: var(--fontSize-caption);
-  font-weight: 600;
-}
-
 .keep__name {
   font-family: var(--font-display);
   /* 21 px: the spec's Newsreader 21 for the pick's name, between group (20) and figure (22). */

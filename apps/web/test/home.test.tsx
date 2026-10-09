@@ -281,8 +281,12 @@ test("keep going names the draft and what is next", async () => {
   await act(async () => {
     app.deps.queryClient.setQueryData(keys.spot(LOBBY_DRAFT.id), LOBBY_DRAFT);
   });
-  expect(await screen.findByRole("link", { name: /Keep going.*Union Lobby Tables/ })).toBeTruthy();
-  expect(screen.getByText("Next: Seating · 1 left")).toBeTruthy();
+  const card = await screen.findByRole("link", {
+    name: /Keep going.*Union Lobby Tables|Union Lobby Tables.*Keep going/,
+  });
+  // One status line carries the words; there is no separate caption.
+  expect(within(card).getByText("Keep going · Next: Seating · 1 left")).toBeTruthy();
+  expect(card.querySelector(".keep__caption")).toBeNull();
 });
 
 test("home state reads only a known filter and a short query", () => {

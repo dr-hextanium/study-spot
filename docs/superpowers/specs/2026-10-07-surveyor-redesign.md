@@ -129,7 +129,7 @@ All screens: TopBar, LargeTitle, content, ActionBar where there are actions. 20 
 
 1. TopBar: no back. Trailing: an Admin shield icon button for admins.
 2. Title "Spots".
-3. Keep going card, shown when a pick exists (rule in 8.3). Border hairline, radius 20, 16 px padding, hover fill, press 0.99. Contents: the caption "Keep going" (12 px 600 muted), the spot name (Newsreader 21, one line with an ellipsis), the StepBar, then "Next: Seating · 2 left" (13 muted), and an arrow icon on the right. The cover thumbnail (56 px) sits on the left when the spot has an approved cover. There is no icon otherwise. When the draft's details are not on the phone, the bar and the next line are left out.
+3. Keep going card, shown when a pick exists (rule in 8.3). Border hairline, radius 20, 16 px padding, hover fill, press 0.99. Contents: the spot name (Newsreader 21, one line with an ellipsis), the StepBar, then the status line "Keep going · Next: Seating · 2 left" (13 muted; "Keep going · Ready to publish" when nothing is left), and an arrow icon on the right. There is no separate caption. The cover thumbnail (56 px) sits on the left when the spot has an approved cover. There is no icon otherwise. When the draft's details are not on the phone, the bar is left out and the status line is just "Keep going".
 4. A Search field.
 5. FilterChips: All, Needs you, Drafts, Due, each with a count of distinct spots matching the current search.
 6. A list section labelled by the active filter. Rows: thumbnail (only with a cover), name, and on the right one fact (8.2). A banner above the list for unreadable stored changes and for writes still waiting from the last visit (as today).

@@ -138,27 +138,26 @@ export function Home(props: { spotLink?: SpotLinkFor; isAdmin: boolean }) {
             <CoverThumb photoId={keep.coverPhotoId} size="card" />
           )}
           <span className="keep__text">
-            <span className="keep__caption">{t("home.keep_going")}</span>
             <span className="keep__name truncate">{keep.name}</span>
             {keepProgress === null ? null : (
-              <>
-                <StepBar
-                  steps={keepProgress.steps}
-                  label={t("progress.label", {
-                    done: keepProgress.done,
-                    total: keepProgress.total,
-                  })}
-                />
-                <span className="keep__next">
-                  {keepProgress.next === null
-                    ? t("home.keep_going.ready")
-                    : t("home.keep_going.next", {
-                        section: sectionName(keepProgress.next),
-                        count: keepProgress.total - keepProgress.done,
-                      })}
-                </span>
-              </>
+              <StepBar
+                steps={keepProgress.steps}
+                label={t("progress.label", {
+                  done: keepProgress.done,
+                  total: keepProgress.total,
+                })}
+              />
             )}
+            <span className="keep__next">
+              {keepProgress === null
+                ? t("home.keep_going")
+                : keepProgress.next === null
+                  ? t("home.keep_going.ready")
+                  : t("home.keep_going.next", {
+                      section: sectionName(keepProgress.next),
+                      count: keepProgress.total - keepProgress.done,
+                    })}
+            </span>
           </span>
           <Icon icon={ArrowRight} />
         </Link>

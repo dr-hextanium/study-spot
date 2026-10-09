@@ -552,9 +552,9 @@ Strings the built screens needed beyond the sections above: short header forms f
 | home.empty.attention | Nothing needs you. | 24 | |
 | home.empty.due | Nothing is due. | 20 | |
 | home.empty.search | No spots match. | 20 | |
-| home.keep_going | Keep going | 14 | card caption |
-| home.keep_going.next | Next: {section} · {count} left | 40 | |
-| home.keep_going.ready | Ready to publish | 20 | |
+| home.keep_going | Keep going | 14 | card status line when the draft's details are not on the phone |
+| home.keep_going.next | Keep going · Next: {section} · {count} left | 56 | card status line |
+| home.keep_going.ready | Keep going · Ready to publish | 36 | card status line |
 | home.fact.conflict | Conflict | 10 | red pill |
 | home.fact.failed | Didn't save | 12 | red pill |
 | home.fact.unreviewed | Edited by {name} | 30 | |
