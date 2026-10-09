@@ -6,19 +6,6 @@ import {
   t,
   type WriteRecord,
 } from "@study-spot/ui-logic";
-import type { PostmarkState } from "../ui/Postmark.tsx";
-
-/** A check older than this reads as stale (dashed ring): about one term. */
-export const STALE_AFTER_DAYS = 90;
-const DAY_MS = 86_400_000;
-
-export function postmarkState(verifiedAt: string | null, now: Date): PostmarkState {
-  if (verifiedAt === null) return "never";
-  const at = Date.parse(verifiedAt);
-  // An unreadable date is no evidence of a check.
-  if (Number.isNaN(at)) return "never";
-  return now.getTime() - at > STALE_AFTER_DAYS * DAY_MS ? "stale" : "fresh";
-}
 
 /** "Oct 5", in the campus time zone. */
 export function shortDate(iso: string, tz: string): string {
@@ -61,7 +48,7 @@ export function sectionName(section: OverviewSection): string {
   return t(SECTION_NAME[section]);
 }
 
-/** The header postmark's short text; the sync sheet carries the long forms. */
+/** The sync status's short text; the sync sheet carries the long forms. */
 export function headerText(h: SyncHeader): string {
   switch (h.kind) {
     case "signed_out":

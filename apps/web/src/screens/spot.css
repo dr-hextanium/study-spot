@@ -3,44 +3,9 @@
  * conflict view, hours, the busyness grid, and photos. Tokens only.
  */
 
-/* An entered value printed on the line, in ballpoint blue */
-.entered {
-  color: var(--color-accent);
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.picker__option {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-height: var(--size-line);
-  padding: var(--space-xs) 0;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-}
-
-.picker__option[aria-pressed="true"] {
-  color: var(--color-accent);
-  font-weight: 600;
-}
-
-.pinned__note {
-  color: var(--color-textMuted);
-  font-size: var(--fontSize-small);
-}
-
 /* The "Can't publish yet" sheet: one 48 px row per blocker, links where a section can fix it. */
 .blockers {
   margin-bottom: var(--space-xs);
-}
-
-.spot-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* Hours: one row per day, times side by side, hairlines between days */
@@ -83,10 +48,6 @@
 }
 
 .day__toggles .check {
-  border-bottom: 0;
-}
-
-.checks .check:last-child {
   border-bottom: 0;
 }
 

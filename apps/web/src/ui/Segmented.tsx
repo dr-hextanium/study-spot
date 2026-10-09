@@ -11,7 +11,7 @@ type Props<V extends string> = {
   onChange: (value: V) => void;
   helper?: string | undefined;
   error?: string | undefined;
-  /** "row" for up to 4 short options; "list" stacks long options on ruled lines. */
+  /** "row" for up to 4 short options; "list" stacks long options as rows. */
   layout?: "row" | "list";
   /** Keeps the label for screen readers when a heading above already says it. */
   hideLabel?: boolean;

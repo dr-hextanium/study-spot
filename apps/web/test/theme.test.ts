@@ -30,6 +30,26 @@ function cssFiles(dir: string): string[] {
   );
 }
 
+function sourceFiles(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory()
+      ? sourceFiles(join(dir, e.name))
+      : /\.tsx?$/.test(e.name) && e.name !== "routeTree.gen.ts"
+        ? [join(dir, e.name)]
+        : [],
+  );
+}
+
+test("no postcard artifacts remain in the web source", () => {
+  const files = [...cssFiles(SRC), ...sourceFiles(SRC)];
+  const hits = files.filter((f) =>
+    /postmark|\bstamp|ruled|airmail|band__|legacy\.css|--color-(shell|accent|surface|background|text\b|textMuted|border\b|borderStrong|success|warning|danger)/i.test(
+      readFileSync(f, "utf8"),
+    ),
+  );
+  expect(hits).toEqual([]);
+});
+
 test("every var() without a fallback is defined in some stylesheet", () => {
   const files = cssFiles(SRC);
   const all = files.map((f) => readFileSync(f, "utf8")).join("\n");

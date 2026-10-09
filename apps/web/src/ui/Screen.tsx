@@ -53,24 +53,6 @@ export function Meta(props: { children: ReactNode }) {
   return <p className="meta">{props.children}</p>;
 }
 
-/**
- * The old sheet of card stock under the header band. Screens move to `Screen`
- * one task at a time; Task 12 deletes this.
- */
-export function LegacyScreen(props: { children: ReactNode; action?: ReactNode }) {
-  return (
-    <>
-      <main
-        tabIndex={-1}
-        className={`screen${props.action === undefined ? "" : " screen--with-action"}`}
-      >
-        {props.children}
-      </main>
-      {props.action === undefined ? null : <footer className="pinned">{props.action}</footer>}
-    </>
-  );
-}
-
 /** A Newsreader group heading over a list, with an optional count. */
 export function GroupHeading(props: { children: ReactNode; id?: string; count?: number }) {
   return (

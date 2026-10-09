@@ -39,7 +39,7 @@ export type SectionFormApi<S extends SurveySection> = {
   form: SectionForm<S>;
   set<K extends keyof SectionDraft<S>>(field: K, value: SectionDraft<S>[K]): void;
   save(opts?: { force: boolean }): Promise<SaveOutcome>;
-  /** Stamps the section as checked without changing it. Null for estimates (no stamp). */
+  /** Marks the section as checked without changing it. Null for estimates (no check date). */
   verify: (() => Promise<string>) | null;
 };
 

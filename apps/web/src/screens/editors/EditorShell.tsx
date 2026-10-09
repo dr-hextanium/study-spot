@@ -51,7 +51,7 @@ export function errorFor(
   return specific ?? t("common.required");
 }
 
-/** When this section was last checked, as the line under the step bar; null for sections with no stamp. */
+/** When this section was last checked, as the line under the step bar; null for sections with no check date. */
 function verifiedLine(
   view: SpotView,
   section: SurveySection,

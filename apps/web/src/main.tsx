@@ -1,5 +1,4 @@
 import "./ui/tokens.css";
-import "./ui/legacy.css";
 import "./ui/fonts.css";
 import "./ui/styles.css";
 import "./screens/spot.css";

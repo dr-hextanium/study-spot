@@ -1,20 +1,15 @@
 import { t } from "@study-spot/ui-logic";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { expect, test, vi } from "vitest";
-import { dateTime, headerText, postmarkState, shortDate } from "../src/lib/format.ts";
+import { dateTime, shortDate } from "../src/lib/format.ts";
 import { Banner } from "../src/ui/Banner.tsx";
 import { Button } from "../src/ui/Button.tsx";
 import { Check } from "../src/ui/Check.tsx";
 import { TextField } from "../src/ui/Field.tsx";
-import { Postmark } from "../src/ui/Postmark.tsx";
-import { LegacyScreen } from "../src/ui/Screen.tsx";
 import { Segmented } from "../src/ui/Segmented.tsx";
 import { ConfirmSheet } from "../src/ui/Sheet.tsx";
-import { StampChip } from "../src/ui/StampChip.tsx";
 import { Stepper } from "../src/ui/Stepper.tsx";
-import { SyncPostmark } from "../src/ui/SyncPostmark.tsx";
-import css from "../src/ui/styles.css?raw";
 
 test("buttons default to type=button and carry their variant", () => {
   render(<Button variant="primary">Publish</Button>);
@@ -72,33 +67,6 @@ test("the stepper takes typed numbers and steps within its bounds", () => {
   expect((input as HTMLInputElement).value).toBe("12");
 });
 
-test("postmarks say their state and stamp when the date changes", () => {
-  vi.useFakeTimers();
-  const { rerender, container } = render(<Postmark state="never" date="" label="Never checked" />);
-  expect(screen.getByRole("img", { name: "Never checked" })).toBeTruthy();
-  expect(container.querySelector(".postmark__strike")).not.toBeNull();
-  rerender(<Postmark state="fresh" date="OCT 5" label="Checked today" />);
-  expect(container.querySelector(".postmark--stamping")).not.toBeNull();
-  act(() => vi.advanceTimersByTime(250));
-  expect(container.querySelector(".postmark--stamping")).toBeNull();
-  vi.useRealTimers();
-});
-
-test("stamp chips are text, so their status reads without color", () => {
-  render(<StampChip tone="red">Draft</StampChip>);
-  expect(screen.getByText("Draft").className).toContain("stamp--red");
-});
-
-test("a filled amber stamp takes the onWarning text color", () => {
-  render(
-    <StampChip tone="amber" filled>
-      Hours
-    </StampChip>,
-  );
-  expect(screen.getByText("Hours").className).toContain("stamp--filled");
-  expect(screen.getByText("Hours").className).toContain("stamp--amber");
-});
-
 test("a refusal banner is an alert and a note is a status", () => {
   render(
     <>
@@ -113,12 +81,7 @@ test("a refusal banner is an alert and a note is a status", () => {
   expect(screen.getByRole("status").querySelector("svg")).toBeNull();
 });
 
-test("the header postmark uses the short forms that fit a 360 px phone", () => {
-  const onOpen = vi.fn();
-  render(<SyncPostmark header={{ kind: "offline" }} onOpen={onOpen} />);
-  const button = screen.getByRole("button", { name: t("sync.short.offline") });
-  fireEvent.click(button);
-  expect(onOpen).toHaveBeenCalled();
+test("the sync status bar uses the short forms that fit a 360 px phone", () => {
   for (const text of [
     t("sync.short.pending", { count: 12 }),
     t("sync.short.failed", { count: 12 }),
@@ -180,45 +143,9 @@ test("an out-of-range entry is clamped on blur and the box shows the stored valu
   expect(input.value).toBe("499");
 });
 
-test("the header postmark is not capped narrower than its longest short text", () => {
-  const rule = /\.syncmark\s*\{[^}]*\}/.exec(css)?.[0] ?? "";
-  expect(rule).not.toBe("");
-  expect(rule).not.toMatch(/max-width/);
-  for (const header of [
-    { kind: "failed", count: 100 },
-    { kind: "unreadable", count: 100 },
-    { kind: "pending", count: 100 },
-    { kind: "syncing", count: 100 },
-  ] as const) {
-    expect(headerText(header).length).toBeLessThanOrEqual(16);
-  }
-});
-
-test("bad dates never read as fresh and never throw", () => {
-  const now = new Date("2026-10-05T12:00:00Z");
-  expect(postmarkState("not a date", now)).toBe("never");
-  expect(postmarkState(null, now)).toBe("never");
-  expect(postmarkState("2026-10-01T00:00:00Z", now)).toBe("fresh");
+test("bad dates never throw", () => {
   expect(() => shortDate("garbage", "America/New_York")).not.toThrow();
   expect(() => dateTime("garbage", "America/New_York")).not.toThrow();
-});
-
-test("every filled stamp tone has a readable text color rule", () => {
-  for (const tone of ["ink", "red", "green", "blue"]) {
-    expect(css).toContain(`.stamp--filled.stamp--${tone}`);
-  }
-  expect(css).toMatch(/\.stamp--filled\.stamp--blue\s*\{[^}]*--color-onAccent/);
-});
-
-test("the pinned action sits inside a landmark, so no content is left outside one", () => {
-  render(
-    <LegacyScreen action={<Button variant="primary">New spot</Button>}>
-      <p>Body</p>
-    </LegacyScreen>,
-  );
-  const landmark = screen.getByRole("contentinfo");
-  expect(landmark.className).toContain("pinned");
-  expect(landmark.querySelector("button")?.textContent).toBe("New spot");
 });
 
 function Harness(props: { initial: "a" | "b" | null; onCommit: (v: "a" | "b") => void }) {

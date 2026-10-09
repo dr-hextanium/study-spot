@@ -3,8 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { Icon } from "./Icon.tsx";
 
-/** "secondary" is the old name of "ink"; it goes when the last legacy screen moves (Task 12). */
-export type ButtonVariant = "primary" | "ink" | "quiet" | "ghost" | "danger" | "secondary";
+export type ButtonVariant = "primary" | "ink" | "quiet" | "ghost" | "danger";
 
 type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className"> & {
   variant?: ButtonVariant;
@@ -27,8 +26,7 @@ export function Button({
   children,
   ...rest
 }: Props) {
-  const name = variant === "secondary" ? "ink" : variant;
-  const cls = ["btn", `btn--${name}`, wide ? "btn--wide" : "", grow ? "actionbar__main" : ""]
+  const cls = ["btn", `btn--${variant}`, wide ? "btn--wide" : "", grow ? "actionbar__main" : ""]
     .filter(Boolean)
     .join(" ");
   return (
