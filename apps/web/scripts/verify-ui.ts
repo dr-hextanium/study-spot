@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { chromium, type Page } from "@playwright/test";
@@ -24,6 +24,8 @@ const used = Number(process.env.VERIFY_INVITE ?? "1");
 const invite = invites[used];
 if (invite === undefined) throw new Error(`no invite at index ${used}`);
 
+// Start each run with an empty folder, so no shell delete is ever needed.
+rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch();
 const context = await browser.newContext({ baseURL: WEB });
