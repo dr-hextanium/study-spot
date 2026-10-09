@@ -106,6 +106,10 @@ export class TestServer implements Http {
     photos: PendingPhoto[];
     publishFails: boolean;
     inviteGate: Promise<void> | null;
+    /** Holds approve and reject answers until it settles. */
+    reviewGate: Promise<void> | null;
+    /** Approve and reject requests received. */
+    reviews: number;
   } = {
     surveyors: [],
     invites: [],
@@ -114,6 +118,8 @@ export class TestServer implements Http {
     photos: [],
     publishFails: false,
     inviteGate: null,
+    reviewGate: null,
+    reviews: 0,
   };
   constructor(spots: SurveySpot[]) {
     this.inner = new FakeSurveyServer(spots);
@@ -136,6 +142,10 @@ export class TestServer implements Http {
       return { status: 200, text: JSON.stringify(CAMPUS) };
     }
     if (path === "/admin/invites" && this.admin.inviteGate !== null) await this.admin.inviteGate;
+    if (req.method === "POST" && /^\/survey\/photos\/[^/]+\/(approve|reject)$/.test(path)) {
+      this.admin.reviews += 1;
+      if (this.admin.reviewGate !== null) await this.admin.reviewGate;
+    }
     const admin = this.adminRoute(
       req.method,
       path,

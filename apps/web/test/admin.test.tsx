@@ -135,6 +135,35 @@ test("approving or rejecting a photo adopts the spot, so a queued write is not a
   expect(app.server.inner.spot(spot.id).version).toBe(6);
 });
 
+test("a double tap on Approve approves the photo once", async () => {
+  const spot = surveySpotFixture({ status: "published", version: 3 });
+  const app = testApp({ me: ADMIN, spots: [spot] });
+  app.server.admin.photos.push({
+    id: "8c1f0a52-7a0e-4f55-9b8e-2f1d3c4b5a69",
+    spot_id: spot.id,
+    url: null,
+    taken_at: "2026-10-12T18:00:00.000Z",
+    is_cover: false,
+    uploaded_by: null,
+    approved: false,
+    approved_at: null,
+    spot_name: spot.official_name,
+    uploaded_by_name: "Riley",
+  });
+  let open: () => void = () => undefined;
+  app.server.admin.reviewGate = new Promise<void>((r) => {
+    open = r;
+  });
+  renderRoute(app, "/survey/admin");
+  const approve = await screen.findByRole("button", { name: t("admin.photos.approve") });
+  fireEvent.click(approve);
+  fireEvent.click(approve);
+  open();
+  expect(await screen.findByText(t("photos.approve.done"))).toBeTruthy();
+  expect(app.server.admin.reviews).toBe(1);
+  expect(screen.queryByText(t("error.generic"))).toBeNull();
+});
+
 function withShare(app: ReturnType<typeof testApp>, result: "copied" | "shared" | "failed") {
   Object.assign(app.deps, { share: { share: async () => result } });
 }

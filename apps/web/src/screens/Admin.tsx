@@ -299,6 +299,7 @@ function PublishSection(props: { online: boolean }) {
 function PendingPhoto(props: {
   photo: { id: string; spot_id: string; spot_name: string; uploaded_by_name: string | null };
   online: boolean;
+  busy: boolean;
   onReject: (id: string) => void;
   onApprove: (id: string) => void;
 }) {
@@ -315,13 +316,17 @@ function PendingPhoto(props: {
         })}
       </p>
       <div className="photo__actions admin-photo__actions">
-        <Button wide disabled={!props.online} onClick={() => props.onApprove(props.photo.id)}>
+        <Button
+          wide
+          disabled={!props.online || props.busy}
+          onClick={() => props.onApprove(props.photo.id)}
+        >
           {t("admin.photos.approve")}
         </Button>
         <Button
           wide
           variant="danger"
-          disabled={!props.online}
+          disabled={!props.online || props.busy}
           onClick={() => props.onReject(props.photo.id)}
         >
           {t("admin.photos.reject")}
@@ -337,12 +342,26 @@ function PhotosSection(props: { online: boolean }) {
   const qc = useQueryClient();
   const toasts = useToasts();
   const [rejecting, setRejecting] = useState<string | null>(null);
+  // Photos with a review in flight: a second tap on the same one sends nothing.
+  const [reviewing, setReviewing] = useState<ReadonlySet<string>>(new Set());
+  const inFlight = useRef<Set<string>>(new Set());
   const pending = useQuery({
     queryKey: keys.pendingPhotos,
     queryFn: async () => unwrap(await api.pendingPhotos(), qd.onUnauthorized),
     enabled: props.online,
   });
   async function act(id: string, approve: boolean) {
+    if (inFlight.current.has(id)) return;
+    inFlight.current.add(id);
+    setReviewing(new Set(inFlight.current));
+    try {
+      await actOnce(id, approve);
+    } finally {
+      inFlight.current.delete(id);
+      setReviewing(new Set(inFlight.current));
+    }
+  }
+  async function actOnce(id: string, approve: boolean) {
     const res = approve
       ? await api.approvePhoto(id, { client_write_id: crypto.randomUUID() })
       : await api.rejectPhoto(id, { client_write_id: crypto.randomUUID() });
@@ -363,6 +382,7 @@ function PhotosSection(props: { online: boolean }) {
             key={p.id}
             photo={p}
             online={props.online}
+            busy={reviewing.has(p.id)}
             onApprove={(id) => void act(id, true)}
             onReject={setRejecting}
           />
