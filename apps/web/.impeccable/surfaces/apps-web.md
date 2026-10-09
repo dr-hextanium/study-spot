@@ -19,7 +19,7 @@ Physical scene: a phone held at arm's length in direct afternoon sun, then in a 
 
 THESIS: Seawolf. A quiet tool that says more with less: a big serif title, compact rows with the fact on the right, one red thing that needs you. It refuses decoration: no stamps, no postmarks, no ruled lines, no ink band, no colored status chips.
 
-OWN-WORLD: Four colors (paper, ink, Stony Brook red, mist) and oklab mixes of them. Newsreader for large titles, group headers, bar titles and figures; Instrument Sans for everything else. Lucide icons at 1.75 stroke. Radius 8 (--radius-s) on small tags and chips, 12 on controls and rows, 20 on cards, 22 on sheets. Hairlines at ink 10 percent. Check dates: Home shows them for published spots (attention rows); the spot overview shows them for every spot, including "Never checked". Shadows only on sheets, the floating action bar and the segmented thumb.
+OWN-WORLD: Four colors (paper, ink, Stony Brook red, mist) and oklab mixes of them. Newsreader for large titles, group headers, bar titles and figures; Chivo Mono for the stepper value and invite links; Instrument Sans for everything else. Lucide icons at 1.75 stroke. Radius 8 (--radius-s) on small tags and chips, 12 on controls and rows, 20 on cards, 22 on sheets. Hairlines at ink 10 percent. Check dates: Home shows them for published spots (attention rows); the spot overview shows them for every spot, including "Never checked". Shadows only on sheets, the floating action bar and the segmented thumb.
 
 STORY: The surveyor sees what is left (the step bar), what needs them (red), and what is done (the facts on the right). They trust their entries are kept because the sync status in the action bar or top bar says so. They act with one thumb on the action bar.
 

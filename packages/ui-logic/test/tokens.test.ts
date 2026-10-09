@@ -121,3 +121,8 @@ test("the update prompt and the failed reason box are readable in both schemes",
     expect(contrastRatio(p.ink, mix(p, "redTint"))).toBeGreaterThanOrEqual(4.5);
   }
 });
+
+test("the mono face is self-hosted Chivo Mono, falling back to the system mono stack", () => {
+  expect(tokens.font.mono.startsWith('"Chivo Mono Variable", ')).toBe(true);
+  expect(tokens.font.mono).toContain("ui-monospace");
+});

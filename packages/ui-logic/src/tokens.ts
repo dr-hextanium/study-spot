@@ -58,7 +58,7 @@ export const tokens: Tokens = {
   font: {
     display: '"Newsreader Variable", ui-serif, Georgia, serif',
     body: '"Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif',
-    mono: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace',
+    mono: '"Chivo Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace',
   },
   fontSize: {
     caption: 12,

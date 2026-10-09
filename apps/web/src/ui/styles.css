@@ -406,8 +406,10 @@ fieldset.field > legend.field__label {
   border-color: transparent;
   background: transparent;
   text-align: center;
-  font-family: var(--font-display);
+  /* The value is data being entered, so it is set in the mono face, not the serif. */
+  font-family: var(--font-mono);
   font-size: var(--fontSize-figure);
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 

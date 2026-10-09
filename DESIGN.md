@@ -80,8 +80,13 @@ typography:
     fontFamily: '"Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif'
     fontSize: "12px"
     fontWeight: 600
+  value:
+    fontFamily: '"Chivo Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace'
+    fontSize: "22px"
+    fontWeight: 500
+    fontFeature: '"tnum"'
   mono:
-    fontFamily: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace'
+    fontFamily: '"Chivo Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace'
     fontSize: "13px"
     fontWeight: 500
 rounded:
@@ -196,7 +201,7 @@ components:
     size: "40px"
   stepper-value:
     textColor: "{colors.ink}"
-    typography: "{typography.figure}"
+    typography: "{typography.value}"
     width: "64px"
     height: "44px"
   tag:
@@ -357,7 +362,7 @@ The app icon is a red Newsreader P on paper (`apps/web/public/icons/icon.svg`, p
 
 **Key Characteristics:**
 - Four colors plus oklab mixes; red is the only accent and it always means something.
-- Newsreader for large titles, group headings, bar titles and figures; Instrument Sans for everything else.
+- Newsreader for large titles, group headings, bar titles and figures; Chivo Mono for the stepper value and invite links; Instrument Sans for everything else.
 - Lists of 52 px rows: lead icon or thumbnail, name, and the fact or a pill on the right.
 - One centered 680 px column on every width; phone first, no second pane.
 - Lucide icons at a 1.75 stroke, 20 px by default, 16 px beside labels.
@@ -397,13 +402,14 @@ Each light token has a `-dark` twin. The dark set is the same recipe on the dark
 
 **Display Font:** Newsreader Variable (with ui-serif, Georgia, serif), self-hosted
 **Body Font:** Instrument Sans Variable (with ui-sans-serif, system-ui, sans-serif), self-hosted
-**Mono Font:** the system mono stack, only for one-time invite links
+**Mono Font:** Chivo Mono Variable (with the system mono stack), self-hosted in latin and latin-ext and precached for offline use, as `--font-mono`: the stepper value and one-time invite links
 
 **Character:** a bookish, slightly condensed serif for names and numbers set against a neutral, sturdy grotesque for every control. The serif makes a spot feel like a place; the sans keeps the tool plain.
 
 ### Hierarchy
 - **Large** (Newsreader 500, 34 px, 1.08, tracking -0.015em): the large title, the one h1 per screen (the spot name, "Spots", the section name). Balanced wrapping; long names wrap anywhere rather than overflow.
-- **Figure** (Newsreader 400, 22 px): numbers that are the answer: the stepper value, admin counts. Tabular figures.
+- **Figure** (Newsreader 400, 22 px): numbers that are the answer: admin counts. Tabular figures.
+- **Value** (Chivo Mono 500, 22 px, tabular figures): a number being entered, the stepper value between minus and plus. A smooth mono so the digits read as data and do not jump as they change; headline counts stay in Newsreader.
 - **Group** (Newsreader 500, 20 px, 1.25): group headings over lists ("Needed to publish", "Extras", "Needs you"), sheet titles, the hours term heading (set at 600 there).
 - **Bar title** (Newsreader 500, 18 px): the small bar title that fades in when the large title scrolls away.
 - **Input** (Instrument Sans 400, 16 px): text inside inputs and search, at 16 so phones do not zoom.
@@ -414,7 +420,7 @@ Each light token has a `-dark` twin. The dark set is the same recipe on the dark
 
 ### Named Rules
 
-**The Serif Is For Names And Numbers Rule.** Newsreader sets titles, group headings, bar titles and figures. It never sets a control, a label, a helper or a button.
+**The Serif Is For Names And Numbers Rule.** Newsreader sets titles, group headings, bar titles and figures. A number being typed or stepped is not a figure: the stepper value is Chivo Mono. It never sets a control, a label, a helper or a button.
 
 **The No Small Caps Rule.** Labels are sentence case at normal tracking. No uppercase labels, no tracked-out small text, and no label lines set above a heading to introduce it.
 
@@ -468,7 +474,7 @@ A label line in Instrument Sans 600 with an optional 16 px muted icon before it 
 A mist track (4 px inset, 12 px corners) with a paper thumb (8 px corners, the thumb shadow) under the chosen option; labels are muted 14 px 600, the chosen one ink. **Instant:** the new choice shows on pointerdown and the thumb glides there (transform, 180 ms, standard easing); the value commits on release over the same option, and a scroll or a release elsewhere drops it. Native radios sit underneath, so arrows and screen readers work. Unpressed options scale to 0.97 while held. With no value the thumb is hidden. Long options switch to the **list** layout: stacked 48 px radio rows with hairlines between, a 20 px ring on the left, no thumb. Yes/No, Yes/No/Not sure and optional choices are all this control.
 
 ### Stepper
-A mist tray holding a 40 px paper minus button, the number in Newsreader 22 px (a transparent 64 px keypad field that takes paper and a red stroke on focus), an optional muted unit, and a 40 px paper plus button. Buttons scale to 0.97 and darken to mistHover on press; at a limit they go muted at reduced opacity.
+A mist tray holding a 40 px paper minus button, the number in Chivo Mono 500 at 22 px with tabular figures (a transparent 64 px keypad field that takes paper and a red stroke on focus), an optional muted unit, and a 40 px paper plus button. Buttons scale to 0.97 and darken to mistHover on press; at a limit they go muted at reduced opacity.
 
 ### Tag toggle with icon
 A 36 px pill in a wrapping group under one field label: paper with an edge stroke, ink 14 px 600 text, and a 16 px icon before the text. Selected fills ink with paper text. A tag without its own icon shows a check only when selected. Press scales to 0.97.

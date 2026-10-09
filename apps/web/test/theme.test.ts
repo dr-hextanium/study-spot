@@ -59,3 +59,18 @@ test("every var() without a fallback is defined in some stylesheet", () => {
   const missing = [...used].filter((v) => v !== undefined && !defined.has(v));
   expect(missing).toEqual([]);
 });
+
+test("Chivo Mono is self-hosted in latin and latin-ext only, and sets the stepper value", () => {
+  const fonts = readFileSync(join(UI, "fonts.css"), "utf8");
+  const chivo = [...fonts.matchAll(/url\("(@fontsource-variable\/chivo-mono\/[^"]+)"\)/g)].map(
+    (m) => m[1],
+  );
+  expect(chivo.sort()).toEqual([
+    "@fontsource-variable/chivo-mono/files/chivo-mono-latin-ext-wght-normal.woff2",
+    "@fontsource-variable/chivo-mono/files/chivo-mono-latin-wght-normal.woff2",
+  ]);
+  const styles = readFileSync(join(UI, "styles.css"), "utf8");
+  const stepper = /\.stepper__input\.input \{([^}]*)\}/.exec(styles)?.[1] ?? "";
+  expect(stepper).toContain("font-family: var(--font-mono);");
+  expect(stepper).toContain("font-variant-numeric: tabular-nums;");
+});

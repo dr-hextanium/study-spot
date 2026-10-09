@@ -12,7 +12,7 @@
   --color-mistHover: color-mix(in oklab, var(--color-mist) 82%, var(--color-ink));
   --font-display: "Newsreader Variable", ui-serif, Georgia, serif;
   --font-body: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-mono: "Chivo Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --fontSize-caption: 12px;
   --fontSize-small: 13px;
   --fontSize-label: 14px;
