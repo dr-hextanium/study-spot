@@ -150,9 +150,9 @@ test("an admin invites a surveyor, issues a sign-in link that skips the name, an
       .click();
     await expect(page.getByText("Jordan Rivera removed")).toBeVisible();
     await newbie.reload();
-    await expect(newbie.getByText("Sign in again")).toBeVisible();
+    await expect(newbie.getByRole("heading", { name: "Sign in again" })).toBeVisible();
     await lostPhone.reload();
-    await expect(lostPhone.getByText("Sign in again")).toBeVisible();
+    await expect(lostPhone.getByRole("heading", { name: "Sign in again" })).toBeVisible();
   } finally {
     await phone.close();
     await second.close();
