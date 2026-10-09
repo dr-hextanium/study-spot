@@ -379,3 +379,16 @@ test("while a cover loads, offline, or missing, the row is text only with no err
     }
   }
 });
+
+test("the sync sheet lists each waiting change as a row with its spot link", async () => {
+  const app = testApp();
+  app.network.set(false);
+  await app.deps.started;
+  await app.deps.outbox.createSpot(identity());
+  renderRoute(app, "/survey");
+  fireEvent.click(await screen.findByRole("button", { name: t("sync.short.offline") }));
+  const sheet = await screen.findByRole("dialog", { name: t("sync.sheet.title") });
+  const rows = within(sheet).getAllByRole("listitem");
+  expect(rows).toHaveLength(1);
+  expect(within(rows[0] as HTMLElement).getByRole("link", { name: /Open spot/ })).toBeTruthy();
+});

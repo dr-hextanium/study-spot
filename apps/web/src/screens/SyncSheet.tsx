@@ -1,4 +1,13 @@
-import { isLocalId, t } from "@study-spot/ui-logic";
+import { isLocalId, t, type WriteRecord } from "@study-spot/ui-logic";
+import { Link } from "@tanstack/react-router";
+import {
+  CircleAlert,
+  Clock,
+  FileWarning,
+  type LucideIcon,
+  RefreshCw,
+  TriangleAlert,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { useOutboxSnapshot, useSyncHeader } from "../hooks/useOutbox.ts";
@@ -6,7 +15,15 @@ import { useSpotList } from "../hooks/useQueries.ts";
 import { headerLong, whatOf } from "../lib/format.ts";
 import { spotNames } from "../lib/names.ts";
 import { Button } from "../ui/Button.tsx";
+import { Icon } from "../ui/Icon.tsx";
 import { ConfirmSheet, Sheet } from "../ui/Sheet.tsx";
+
+const STATE_ICON = {
+  pending: Clock,
+  syncing: RefreshCw,
+  failed: CircleAlert,
+  conflict: TriangleAlert,
+} as const satisfies Record<WriteRecord["state"], LucideIcon>;
 
 /** Everything waiting on this phone: the one place connectivity detail lives. */
 export function SyncSheet(props: { open: boolean; onClose: () => void }) {
@@ -42,10 +59,15 @@ export function SyncSheet(props: { open: boolean; onClose: () => void }) {
         title={t("sync.sheet.title")}
         onClose={props.onClose}
       >
-        <p className="title">{headerLong(header)}</p>
+        <p className="sync-status">
+          <Icon
+            icon={header.kind === "failed" || header.kind === "unreadable" ? CircleAlert : Clock}
+          />
+          <span>{headerLong(header)}</span>
+        </p>
         {empty ? <p className="empty">{t("sync.sheet.empty")}</p> : null}
         {snapshot.records.length > 0 ? (
-          <ul className="ruled-list">
+          <ul className="row-list">
             {snapshot.records.map((r) => {
               const what = whatOf(r, names.get(r.spot_id) ?? "");
               const text =
@@ -54,14 +76,27 @@ export function SyncSheet(props: { open: boolean; onClose: () => void }) {
                   : r.state === "conflict"
                     ? t("sync.sheet.item_conflict", { what })
                     : t("sync.sheet.item_pending", { what });
+              const bad = r.state === "failed" || r.state === "conflict";
               return (
-                <li key={r.client_write_id} className="entry">
-                  <span className="entry__text">
+                <li key={r.client_write_id} className="sync-row">
+                  <Icon
+                    icon={STATE_ICON[r.state]}
+                    className={bad ? "sync-row__icon--bad" : "sync-row__icon"}
+                  />
+                  <span className="sync-row__text">
                     {text}
                     {r.kind === "spot.create" && isLocalId(r.spot_id) ? (
-                      <span className="entry__note">{t("sync.sheet.local_only")}</span>
+                      <span className="sync-row__note">{t("sync.sheet.local_only")}</span>
                     ) : null}
                   </span>
+                  <Link
+                    to="/survey/spots/$id"
+                    params={{ id: r.spot_id }}
+                    className="btn btn--quiet"
+                    onClick={props.onClose}
+                  >
+                    <span className="btn__label">{t("sync.sheet.open_spot")}</span>
+                  </Link>
                 </li>
               );
             })}
@@ -69,12 +104,13 @@ export function SyncSheet(props: { open: boolean; onClose: () => void }) {
         ) : null}
         {unreadable.length > 0 ? (
           <>
-            <p className="lede">{t("sync.sheet.unreadable_help")}</p>
-            <ul className="ruled-list">
+            <p className="sync-note">{t("sync.sheet.unreadable_help")}</p>
+            <ul className="row-list">
               {unreadable.map((key) => (
-                <li key={key} className="entry">
-                  <span className="entry__text">{t("sync.sheet.unreadable_item")}</span>
-                  <Button variant="quiet" onClick={() => setDiscarding(key)}>
+                <li key={key} className="sync-row">
+                  <Icon icon={FileWarning} className="sync-row__icon--bad" />
+                  <span className="sync-row__text">{t("sync.sheet.unreadable_item")}</span>
+                  <Button variant="danger" onClick={() => setDiscarding(key)}>
                     {t("common.discard")}
                   </Button>
                 </li>
@@ -82,7 +118,7 @@ export function SyncSheet(props: { open: boolean; onClose: () => void }) {
             </ul>
           </>
         ) : null}
-        <p className="lede">{t("sync.sheet.other_phone_warning")}</p>
+        <p className="sync-note">{t("sync.sheet.other_phone_warning")}</p>
       </Sheet>
       <ConfirmSheet
         open={discarding !== null}

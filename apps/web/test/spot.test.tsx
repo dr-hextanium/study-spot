@@ -283,9 +283,12 @@ test("a conflict resolves both ways from the overview", async () => {
     name: t("conflict.title", { section: t("section.seating.name") }),
   });
   expect(within(sheet).getByText(t("conflict.body", { name: "Jordan" }))).toBeTruthy();
-  expect(
-    within(sheet).getByRole("rowheader", { name: t("seating.seat_count.label") }),
-  ).toBeTruthy();
+  const yours = within(sheet).getByRole("region", { name: t("conflict.yours") });
+  const theirs = within(sheet).getByRole("region", { name: t("conflict.theirs") });
+  expect(within(yours).getByText(t("seating.seat_count.label"))).toBeTruthy();
+  expect(within(theirs).getByText(t("seating.seat_count.label"))).toBeTruthy();
+  expect(within(theirs).getByText("99")).toBeTruthy();
+  expect(within(yours).queryByText("99")).toBeNull();
   fireEvent.click(within(sheet).getByRole("button", { name: t("conflict.keep_mine") }));
   expect(await screen.findByText(t("conflict.resolved"))).toBeTruthy();
   await waitFor(() => expect(app.server.inner.spot(spot.id).version).toBe(5));

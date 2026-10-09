@@ -111,3 +111,13 @@ test("mixes are emitted as color-mix of palette variables", () => {
   expect(vars["--press-row"]).toBe("0.985");
   expect(vars["--fontSize-large"]).toBe("34px");
 });
+
+test("the update prompt and the failed reason box are readable in both schemes", () => {
+  for (const { p } of schemes) {
+    // Update card: paper text on ink, and the Reload button (paper 14% over ink).
+    expect(contrastRatio(p.paper, p.ink)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(p.paper, mixOklab(p.paper, p.ink, 14))).toBeGreaterThanOrEqual(4.5);
+    // Failed sheet reason: ink text on the red tint.
+    expect(contrastRatio(p.ink, mix(p, "redTint"))).toBeGreaterThanOrEqual(4.5);
+  }
+});

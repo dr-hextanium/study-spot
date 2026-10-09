@@ -1,7 +1,7 @@
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { t } from "@study-spot/ui-logic";
-import { Banner } from "../ui/Banner.tsx";
-import { Button } from "../ui/Button.tsx";
+import { RefreshCw } from "lucide-react";
+import { Icon } from "../ui/Icon.tsx";
 
 /** A new build is waiting: the surveyor chooses when to reload, so no edit is cut off. */
 export function UpdatePrompt() {
@@ -11,17 +11,12 @@ export function UpdatePrompt() {
   } = useRegisterSW();
   if (!needRefresh) return null;
   return (
-    <div className="update">
-      <Banner
-        tone="note"
-        action={
-          <Button variant="primary" onClick={() => void updateServiceWorker(true)}>
-            {t("update.reload")}
-          </Button>
-        }
-      >
-        {t("update.ready")}
-      </Banner>
+    <div className="update" role="status">
+      <Icon icon={RefreshCw} />
+      <p className="update__text">{t("update.ready")}</p>
+      <button type="button" className="update__btn" onClick={() => void updateServiceWorker(true)}>
+        {t("update.reload")}
+      </button>
     </div>
   );
 }

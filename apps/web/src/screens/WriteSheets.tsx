@@ -1,11 +1,13 @@
 import { conflictDiff, failureView, t, type WriteRecord } from "@study-spot/ui-logic";
 import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { CircleAlert } from "lucide-react";
+import { useId, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { useToasts } from "../hooks/useToasts.tsx";
 import { fieldName, fieldValueText } from "../lib/fields.ts";
 import { sectionName, whatOf } from "../lib/format.ts";
 import { Button } from "../ui/Button.tsx";
+import { Icon } from "../ui/Icon.tsx";
 import { ConfirmSheet, Sheet } from "../ui/Sheet.tsx";
 
 function subject(record: WriteRecord, spotName: string): string {
@@ -14,6 +16,34 @@ function subject(record: WriteRecord, spotName: string): string {
     return sectionName(record.payload.groups[0]);
   }
   return spotName;
+}
+
+type DiffRow = ReturnType<typeof conflictDiff>[number];
+
+/** One side of a conflict: the same fields in the same order on both sides, so they read across. */
+function DiffBlock(props: {
+  id: string;
+  heading: string;
+  rows: { field: DiffRow["field"]; value: DiffRow["yours"] }[];
+  mine?: boolean;
+}) {
+  return (
+    <section className="diff-block" aria-labelledby={props.id}>
+      <h3 className="diff-block__heading" id={props.id}>
+        {props.heading}
+      </h3>
+      <dl className="diff-block__list">
+        {props.rows.map((row) => (
+          <div key={row.field} className="diff-block__row">
+            <dt>{fieldName(row.field)}</dt>
+            <dd className={props.mine === true ? "diff-block__mine" : undefined}>
+              {fieldValueText(row.field, row.value)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
 }
 
 /**
@@ -30,6 +60,7 @@ export function ConflictSheet(props: {
   const toasts = useToasts();
   const { record } = props;
   const rows = conflictDiff(record);
+  const blockId = useId();
   const editor = record.current?.last_edited_by_name ?? null;
   async function choose(choice: "mine" | "theirs") {
     await outbox.resolveConflict(record.client_write_id, choice);
@@ -46,7 +77,7 @@ export function ConflictSheet(props: {
           <Button variant="primary" wide onClick={() => void choose("mine")}>
             {t("conflict.keep_mine")}
           </Button>
-          <Button wide onClick={() => void choose("theirs")}>
+          <Button variant="ink" wide onClick={() => void choose("theirs")}>
             {t("conflict.keep_theirs")}
           </Button>
         </>
@@ -54,28 +85,19 @@ export function ConflictSheet(props: {
     >
       <p>{editor === null ? t("conflict.body_unknown") : t("conflict.body", { name: editor })}</p>
       {rows.length === 0 ? null : (
-        <table className="diff">
-          <thead>
-            <tr>
-              <td />
-              <th scope="col" className="label">
-                {t("conflict.yours")}
-              </th>
-              <th scope="col" className="label">
-                {t("conflict.theirs")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.field}>
-                <th scope="row">{fieldName(row.field)}</th>
-                <td className="diff__mine">{fieldValueText(row.field, row.yours)}</td>
-                <td>{fieldValueText(row.field, row.theirs)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <DiffBlock
+            id={`${blockId}-mine`}
+            heading={t("conflict.yours")}
+            rows={rows.map((row) => ({ field: row.field, value: row.yours }))}
+            mine
+          />
+          <DiffBlock
+            id={`${blockId}-theirs`}
+            heading={t("conflict.theirs")}
+            rows={rows.map((row) => ({ field: row.field, value: row.theirs }))}
+          />
+        </>
       )}
     </Sheet>
   );
@@ -114,18 +136,17 @@ export function FailedSheet(props: { record: WriteRecord; spotName: string; onCl
                 {t("failed.retry")}
               </Button>
             ) : null}
-            <Button
-              variant={view.canRetry ? "secondary" : "danger"}
-              wide
-              onClick={() => setConfirming(true)}
-            >
+            <Button variant="danger" wide onClick={() => setConfirming(true)}>
               {t("failed.discard")}
             </Button>
           </>
         }
       >
-        <p className="label">{whatOf(record, props.spotName)}</p>
-        <p>{view.message}</p>
+        <p className="sheet__sub">{whatOf(record, props.spotName)}</p>
+        <div className="reason" role="note">
+          <Icon icon={CircleAlert} className="reason__icon" />
+          <p>{view.message}</p>
+        </div>
       </Sheet>
       <ConfirmSheet
         open={confirming}
