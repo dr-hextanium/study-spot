@@ -315,4 +315,8 @@ thead .grid__head {
   .cell {
     transition: none;
   }
+
+  .cell:active {
+    transform: none;
+  }
 }

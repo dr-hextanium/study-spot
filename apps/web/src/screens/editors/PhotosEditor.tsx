@@ -53,7 +53,7 @@ function ServerPhoto(props: { photo: SurveyPhoto; view: SpotView }) {
   const online = useOnline();
   const toasts = useToasts();
   const source = usePhotoUrl({ photoId: photo.id });
-  const own = me !== null && me.role !== "admin" && photo.uploaded_by === me.id;
+  const admin = me !== null && me.role === "admin";
   const [approving, setApproving] = useState(false);
   async function approve() {
     if (approving) return;
@@ -101,9 +101,7 @@ function ServerPhoto(props: { photo: SurveyPhoto; view: SpotView }) {
             {t("photos.cover")}
           </Button>
         )}
-        {photo.approved ? null : own ? (
-          <p className="field__helper">{t("photos.approve.own")}</p>
-        ) : (
+        {photo.approved || !admin ? null : (
           <Button variant="quiet" disabled={!online || approving} onClick={() => void approve()}>
             {t("photos.approve")}
           </Button>

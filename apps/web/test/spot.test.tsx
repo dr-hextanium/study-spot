@@ -612,6 +612,72 @@ test("photos: the cover carries a pill and the others offer Use as cover", async
   expect(screen.getAllByRole("button", { name: t("photos.cover") })).toHaveLength(1);
 });
 
+test("photos: only an admin sees Approve on a photo awaiting approval", async () => {
+  const waiting = surveySpotFixture({
+    photos: [{ ...PHOTO, spot_id: DRAFT.id, approved: false, approved_at: null }],
+  });
+  renderRoute(testApp({ spots: [waiting] }), `${at(waiting)}/photos`);
+  await screen.findByText(t("photos.awaiting"));
+  expect(screen.queryByRole("button", { name: t("photos.approve") })).toBeNull();
+});
+
+test("photos: an admin sees Approve, disabled offline", async () => {
+  const waiting = surveySpotFixture({
+    photos: [{ ...PHOTO, spot_id: DRAFT.id, approved: false, approved_at: null }],
+  });
+  const app = testApp({ spots: [waiting], me: { ...ME, role: "admin" } });
+  renderRoute(app, `${at(waiting)}/photos`);
+  const button = await screen.findByRole("button", { name: t("photos.approve") });
+  expect(button).toHaveProperty("disabled", false);
+  act(() => app.network.set(false));
+  await waitFor(() => expect(button).toHaveProperty("disabled", true));
+});
+
+test("busyness: a tap announces the cell's new level", async () => {
+  const empty = surveySpotFixture({ estimates: [] });
+  renderRoute(testApp({ spots: [empty] }), `${at(empty)}/estimates`);
+  const live = await screen.findByTestId("busyness-live");
+  expect(live.getAttribute("aria-live")).toBe("polite");
+  fireEvent.click(
+    screen.getAllByRole("button", {
+      name: new RegExp(t("estimates.bucket.unset")),
+    })[0] as HTMLElement,
+  );
+  expect(live.textContent).toContain(t("estimates.bucket.empty"));
+});
+
+test("a failed pending photo offers Retry only when retrying can work", async () => {
+  const app = testApp({ spots: [DRAFT] });
+  await app.deps.started;
+  app.server.inner.failWith.push(422);
+  await app.deps.outbox.addPhoto(DRAFT.id, DRAFT.version, new Uint8Array([1, 2, 3]), new Date());
+  await app.deps.outbox.idle();
+  renderRoute(app, `${at(DRAFT)}/photos`);
+  await screen.findByText(t("spot.section.failed"));
+  expect(screen.getByRole("button", { name: t("common.retry") })).toBeTruthy();
+});
+
+test("a failed pending photo that cannot be retried has no Retry", async () => {
+  const app = testApp({ spots: [DRAFT] });
+  await app.deps.started;
+  app.server.inner.failWith.push(413);
+  await app.deps.outbox.addPhoto(DRAFT.id, DRAFT.version, new Uint8Array([1, 2, 3]), new Date());
+  await app.deps.outbox.idle();
+  renderRoute(app, `${at(DRAFT)}/photos`);
+  await screen.findByText(t("spot.section.failed"));
+  expect(screen.queryByRole("button", { name: t("common.retry") })).toBeNull();
+});
+
+test("a photo still on the phone shows Not synced yet and no Retry", async () => {
+  const app = testApp({ spots: [DRAFT] });
+  await app.deps.started;
+  app.network.set(false);
+  await app.deps.outbox.addPhoto(DRAFT.id, DRAFT.version, new Uint8Array([1, 2, 3]), new Date());
+  renderRoute(app, `${at(DRAFT)}/photos`);
+  expect(await screen.findByText(t("photos.not_synced"))).toBeTruthy();
+  expect(screen.queryByRole("button", { name: t("common.retry") })).toBeNull();
+});
+
 test("a photo with no bytes says Image unavailable", async () => {
   const spot = surveySpotFixture({ photos: [{ ...PHOTO, spot_id: DRAFT.id }] });
   renderRoute(testApp({ spots: [spot] }), `${at(spot)}/photos`);

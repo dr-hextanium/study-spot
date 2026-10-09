@@ -26,6 +26,8 @@ const BLOCK_ICON = { morning: Sunrise, afternoon: Sun, evening: Sunset, night: M
  */
 export function EstimatesEditor({ view }: { view: SpotView }) {
   const [grid, setGrid] = useState<Grid>(() => toGrid(view.spot.estimates));
+  // What the last tap set, said once for screen readers (the cell's own name changes silently).
+  const [said, setSaid] = useState("");
   const untouched = view.spot.estimates.length === 0;
   return (
     <EditorShell section="estimates" view={view}>
@@ -67,7 +69,18 @@ export function EstimatesEditor({ view }: { view: SpotView }) {
                             bucket: label,
                           })}
                           onClick={() => {
-                            const next = { ...grid, [cellKey(day, block)]: nextBucket(bucket) };
+                            const changed = nextBucket(bucket);
+                            const next = { ...grid, [cellKey(day, block)]: changed };
+                            setSaid(
+                              t("estimates.cell", {
+                                day: t(DAY_COPY[day]),
+                                block: t(BLOCK_COPY[block]),
+                                bucket:
+                                  changed === null
+                                    ? t("estimates.bucket.unset")
+                                    : t(BUCKET_COPY[changed]),
+                              }),
+                            );
                             setGrid(next);
                             set("cells", cellsOf(next));
                           }}
@@ -81,6 +94,9 @@ export function EstimatesEditor({ view }: { view: SpotView }) {
               ))}
             </tbody>
           </table>
+          <p className="visually-hidden" aria-live="polite" data-testid="busyness-live">
+            {said}
+          </p>
         </>
       )}
     </EditorShell>
