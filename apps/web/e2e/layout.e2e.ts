@@ -37,6 +37,32 @@ test("home, light and dark: clean with a long-named spot", async ({ page }) => {
   await longDraft(page);
   await publishedSpot(page);
   await expectRoutesClean(page, ["/survey"]);
+  // Each chip's count sits concentric with the chip's right end cap: the same center, inset 4 px.
+  for (const width of [375, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/survey");
+    const chips = page.locator(".chip");
+    await expect(chips.first()).toBeVisible();
+    for (const chip of await chips.all()) {
+      const g = await chip.evaluate((el) => {
+        const c = el.getBoundingClientRect();
+        const n = el.querySelector(".count")?.getBoundingClientRect();
+        if (n === undefined) return null;
+        return {
+          capX: c.right - c.height / 2,
+          capY: c.top + c.height / 2,
+          countX: n.right - n.height / 2,
+          countY: n.top + n.height / 2,
+          inset: (c.height - n.height) / 2,
+        };
+      });
+      expect(g, `chip count @${width}`).not.toBeNull();
+      if (g === null) continue;
+      expect(Math.abs(g.capX - g.countX), `cap x @${width}`).toBeLessThanOrEqual(0.5);
+      expect(Math.abs(g.capY - g.countY), `cap y @${width}`).toBeLessThanOrEqual(0.5);
+      expect(g.inset, `inset @${width}`).toBeCloseTo(4, 0);
+    }
+  }
 });
 
 test("admin: clean, and the admin badge keeps its whole text on one line", async ({

@@ -277,6 +277,10 @@ components:
   filter-chip-selected:
     backgroundColor: "{colors.ink}"
     textColor: "{colors.paper}"
+  filter-chip-count:
+    typography: "{typography.caption}"
+    rounded: "{rounded.pill}"
+    height: "24px"
   keep-going:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
@@ -484,7 +488,7 @@ A sticky 52 px bar (plus safe area) of translucent blurred paper: back icon butt
 Pinned to the bottom, at most one red button, everything within thumb reach. On phones: full-width paper with a top hairline, 10 px by 12 px padding plus safe area, buttons in a row with the main one growing. From 768 px: a floating 20 px-corner tray with a hairline and the floating tray shadow, 16 px above the bottom. **Stacked** variant puts a wide primary over a quiet one. Spot overview: "Next: Seating" (ink), Publish (red), Actions. Home: sync status, New spot (red), more.
 
 ### Filter chips
-A horizontally scrolling row of 32 px pills (44 px hit area) with a line stroke, a label and a count. One is pressed: ink fill, paper text, the count tinted from the text color. Home filters: All, Needs you, Drafts, Due. A Newsreader group heading below the chips names the current filter.
+A horizontally scrolling row of 32 px pills (44 px hit area) with a line stroke, a label and a count. The count is a 24 px circle concentric with the chip's right end cap: it is inset 4 px from the top, bottom and right edge (the chip's right padding is 3 px plus its 1 px stroke), so the circle's center is the end cap's center; a two-digit count stretches it into a pill with the same caps. One is pressed: ink fill, paper text, the count tinted from the text color. Home filters: All, Needs you, Drafts, Due. A Newsreader group heading below the chips names the current filter.
 
 ### Keep going card
 The top of Home when a draft is in progress: a 20 px-corner card outlined with a hairline, holding an optional 56 px cover, the spot name in Newsreader, the draft's step bar, and one status line that folds the caption in ("Keep going · Next: Seating · 2 left", or "Keep going · Ready to publish"). Hover darkens the outline; press washes `hover` and scales to 0.99.

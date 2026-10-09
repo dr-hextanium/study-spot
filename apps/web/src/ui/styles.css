@@ -1423,6 +1423,8 @@ div.row {
 .chips {
   /* Drawn 32 px; the ::before below makes the hit area 44 px. */
   --chip-h: 32px;
+  /* The count circle's inset from the chip's edge, the same on top, bottom and right. */
+  --chip-inset: var(--space-xxs);
   display: flex;
   min-width: auto;
   margin-block: 0;
@@ -1444,7 +1446,7 @@ div.row {
   flex: none;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-xxs);
+  gap: 6px;
   height: var(--chip-h);
   padding: 0 var(--space-sm);
   border: 1px solid var(--color-line);
@@ -1481,7 +1483,15 @@ div.row {
   color: var(--color-paper);
 }
 
+/* A chip with a count ends in it: the circle is concentric with the chip's right end cap. */
+.chip:has(.count) {
+  /* The border is inside the chip's box, so the inset is measured from its outer edge. */
+  padding-right: calc(var(--chip-inset) - 1px);
+}
+
 .chip .count {
+  min-width: calc(var(--chip-h) - 2 * var(--chip-inset));
+  height: calc(var(--chip-h) - 2 * var(--chip-inset));
   background: color-mix(in oklab, currentColor 14%, transparent);
   color: inherit;
 }
