@@ -10,11 +10,13 @@
       "!**/dist-test",
       "!**/drizzle/meta",
       "!apps/web/src/routeTree.gen.ts",
+      "!apps/web/src/ui/tokens.css",
       "!apps/web/dist-types",
       "!apps/web/dev-dist",
       "!apps/web/test-results",
       "!apps/web/playwright-report",
-      "!apps/web/e2e/.state"
+      "!apps/web/e2e/.state",
+      "!.superpowers"
     ]
   },
   "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },

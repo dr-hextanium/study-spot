@@ -207,9 +207,14 @@ export type SectionStatus = {
   sync: SectionSync;
 };
 
-const REQUIRED_SECTIONS: readonly SurveySection[] = SURVEY_SECTION.filter((s) =>
+/** Sections that fill a field needed to publish, in overview order. Hours are not among them (decision 15). */
+export const REQUIRED_SECTIONS: readonly SurveySection[] = SURVEY_SECTION.filter((s) =>
   REQUIRED_PARTS.some((f) => V0_FIELD_SECTION[f] === s),
 );
+
+export function isRequiredSection(s: OverviewSection): s is SurveySection {
+  return (REQUIRED_SECTIONS as readonly string[]).includes(s);
+}
 
 /** Overview order: needed to publish, then photos and busyness, then optional (hours first). */
 export const OVERVIEW_ORDER: readonly OverviewSection[] = [
@@ -289,6 +294,52 @@ function fillOf(view: SpotView, section: OverviewSection): SectionFill {
   }
 }
 
+export type StepState = "done" | "current" | "todo";
+export type StepProgress = {
+  steps: StepState[];
+  done: number;
+  total: number;
+  /** The first required section that is not done; null when all are. */
+  next: SurveySection | null;
+};
+
+/** The step bar: one step per required section. `current` is red when it is required, else the next one is. */
+export function stepProgress(view: SpotView, current: OverviewSection | null = null): StepProgress {
+  const fills = REQUIRED_SECTIONS.map((section) => ({
+    section,
+    done: fillOf(view, section) === "done",
+  }));
+  const next = fills.find((f) => !f.done)?.section ?? null;
+  const here = current !== null && isRequiredSection(current) ? current : next;
+  return {
+    steps: fills.map((f) => (f.section === here ? "current" : f.done ? "done" : "todo")),
+    done: fills.filter((f) => f.done).length,
+    total: fills.length,
+    next,
+  };
+}
+
+/** Where Save and next goes: the next required section after `current` that is not done, wrapping. */
+export function nextAfter(view: SpotView, current: OverviewSection): SurveySection | null {
+  if (!isRequiredSection(current)) return null;
+  const i = REQUIRED_SECTIONS.indexOf(current);
+  const order = [...REQUIRED_SECTIONS.slice(i + 1), ...REQUIRED_SECTIONS.slice(0, i)];
+  return order.find((x) => fillOf(view, x) !== "done") ?? null;
+}
+
+/**
+ * Where a guided walk goes next: the first required section after `current`, wrapping, that has
+ * not been checked in this walk. Null when every required section has been.
+ */
+export function walkNext(
+  checked: readonly SurveySection[],
+  current: OverviewSection,
+): SurveySection | null {
+  const i = isRequiredSection(current) ? REQUIRED_SECTIONS.indexOf(current) : -1;
+  const order = [...REQUIRED_SECTIONS.slice(i + 1), ...REQUIRED_SECTIONS.slice(0, i + 1)];
+  return order.find((x) => x !== current && !checked.includes(x)) ?? null;
+}
+
 /** Every overview row, in display order, with fill, check date, and sync state. */
 export function sectionStatuses(view: SpotView, opts: { now: Date; tz: string }): SectionStatus[] {
   const today = campusDate(opts.now, opts.tz);
@@ -354,7 +405,8 @@ export function syncHeader(s: OutboxSnapshot): SyncHeader {
   return s.syncing ? { kind: "syncing", count: waiting } : { kind: "pending", count: waiting };
 }
 
-type Row = { spotId: string; name: string };
+/** `coverPhotoId` is the spot's approved cover, for the thumbnail; null when none or only on this phone. */
+type Row = { spotId: string; name: string; coverPhotoId: string | null };
 export type AttentionRow = Row &
   (
     | { reason: "conflict" }
@@ -363,7 +415,15 @@ export type AttentionRow = Row &
     | { reason: "hours_unconfirmed"; term: string }
   );
 export type StaleRow = Row & { oldestVerifiedAt: string | null };
-export type DraftRow = Row & { localOnly: boolean; requiredDone: number | null };
+export type DraftRow = Row & {
+  localOnly: boolean;
+  /** Null when this phone has never loaded the draft's details. */
+  progress: StepProgress | null;
+  updatedAt: string | null;
+  editedByMe: boolean;
+  /** Highest outbox seq for the spot on this phone; null when nothing is queued. */
+  lastSeq: number | null;
+};
 export type SurveyHome = {
   attention: AttentionRow[];
   stale: StaleRow[];
@@ -402,54 +462,78 @@ export function surveyHome(
   const attention: AttentionRow[] = [];
   const stale: StaleRow[] = [];
   const drafts: DraftRow[] = [];
-  const requiredDone = (view: SpotView | null) =>
-    view === null ? null : REQUIRED_PARTS.filter((f) => !view.spot.missing.includes(f)).length;
-  const flag = (spotId: string, name: string): boolean => {
+  const progressOf = (v: SpotView | null) => (v === null ? null : stepProgress(v));
+  const lastSeq = (spotId: string): number | null => {
+    const seqs = records.filter((r) => r.spot_id === spotId).map((r) => r.seq);
+    return seqs.length === 0 ? null : Math.max(...seqs);
+  };
+  const flag = (spotId: string, name: string, coverPhotoId: string | null): boolean => {
     const mine = records.filter((r) => r.spot_id === spotId);
     if (mine.some((r) => r.state === "conflict")) {
-      attention.push({ spotId, name, reason: "conflict" });
+      attention.push({ spotId, name, coverPhotoId, reason: "conflict" });
       return true;
     }
     const failed = mine.filter((r) => r.state === "failed").length;
-    if (failed > 0) attention.push({ spotId, name, reason: "failed", count: failed });
+    if (failed > 0) attention.push({ spotId, name, coverPhotoId, reason: "failed", count: failed });
     return failed > 0;
   };
 
   for (const s of list?.spots ?? []) {
     const name = nameOf(s.id, s.official_name);
-    if (!flag(s.id, name)) {
+    const coverPhotoId = s.cover_photo_id;
+    if (!flag(s.id, name, coverPhotoId)) {
       if (
         s.review_state === "unreviewed" &&
         s.last_edited_by !== null &&
         s.last_edited_by !== me.id &&
         s.last_edited_by_name !== null
       ) {
-        attention.push({ spotId: s.id, name, reason: "unreviewed", editor: s.last_edited_by_name });
+        attention.push({
+          spotId: s.id,
+          name,
+          coverPhotoId,
+          reason: "unreviewed",
+          editor: s.last_edited_by_name,
+        });
       } else if (s.status === "published" && !s.hours_confirmed && term !== null) {
-        attention.push({ spotId: s.id, name, reason: "hours_unconfirmed", term: term.name });
+        attention.push({
+          spotId: s.id,
+          name,
+          coverPhotoId,
+          reason: "hours_unconfirmed",
+          term: term.name,
+        });
       }
     }
     if (s.status === "published") {
-      stale.push({ spotId: s.id, name, oldestVerifiedAt: s.oldest_verified_at });
+      stale.push({ spotId: s.id, name, coverPhotoId, oldestVerifiedAt: s.oldest_verified_at });
     } else {
       const detail = details.get(s.id) ?? null;
       drafts.push({
         spotId: s.id,
         name,
+        coverPhotoId,
         localOnly: false,
-        requiredDone: requiredDone(buildSpotView(detail, records, s.id, term)),
+        progress: progressOf(buildSpotView(detail, records, s.id, term)),
+        updatedAt: s.updated_at,
+        editedByMe: s.last_edited_by === me.id,
+        lastSeq: lastSeq(s.id),
       });
     }
   }
   for (const r of records) {
     if (r.kind !== "spot.create" || !isLocalId(r.spot_id)) continue;
     const name = nameOf(r.spot_id, r.payload.identity.official_name);
-    flag(r.spot_id, name);
+    flag(r.spot_id, name, null);
     drafts.push({
       spotId: r.spot_id,
       name,
+      coverPhotoId: null,
       localOnly: true,
-      requiredDone: requiredDone(buildSpotView(null, records, r.spot_id, term)),
+      progress: progressOf(buildSpotView(null, records, r.spot_id, term)),
+      updatedAt: null,
+      editedByMe: true,
+      lastSeq: lastSeq(r.spot_id),
     });
   }
 

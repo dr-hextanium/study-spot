@@ -20,13 +20,11 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | id | text | max chars | notes |
 |---|---|---|---|
 | app.name | Perch | 10 | working name |
-| app.mode.survey | Survey | 12 | label for surveyor mode |
 | common.save | Save | 12 | |
 | common.cancel | Cancel | 12 | |
 | common.back | Back | 12 | |
 | common.retry | Retry | 12 | |
 | common.discard | Discard | 12 | |
-| common.done | Done | 12 | |
 | common.optional | Optional | 12 | field suffix |
 | common.required | Required | 12 | field suffix, only where screen mixes both |
 | common.unknown | Not sure | 16 | explicit "don't know" option for optional enums |
@@ -59,8 +57,6 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | sync.what.photo | Photo for {name} | 50 | |
 | sync.what.review | Review {name} | 50 | |
 | sync.what.cover | Cover photo for {name} | 50 | |
-| sync.saved_on_phone | Saved on this phone | 24 | section status |
-| sync.synced | Synced | 12 | section status |
 | sync.leave_warning | {count} changes haven't synced yet. Leaving now keeps them on this phone. | 90 | shown on next open if still pending |
 
 ## Invite (`/invite/$token`)
@@ -87,7 +83,8 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 |---|---|---|---|
 | auth.expired.title | Sign in again | 20 | |
 | auth.expired.body | Your sign-in on this phone ended. Ask an admin for a new link. Your unsynced changes are kept. | 110 | |
-| auth.revoked.body | An admin removed this phone's access. Unsynced changes stay on this phone. | 90 | |
+| nav.back_to_spots | Back to spots | 20 | not-found and missing-spot screens |
+| nav.not_found.body | Page not found. | 40 | unknown address |
 
 ## Home (`/survey`)
 
@@ -96,20 +93,10 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | home.title | Spots | 12 | |
 | home.new_spot | New spot | 14 | primary |
 | home.admin | Admin | 10 | admins only |
-| home.attention.title | Needs attention | 20 | |
-| home.attention.failed | {count} changes didn't save | 34 | |
 | home.unreadable | {count} changes can't be read | 34 | attention row; stored writes that no longer parse |
-| home.attention.conflict | Changed by someone else | 30 | row subtitle |
-| home.attention.unreviewed | Unreviewed, edited by {name} | 40 | row subtitle |
-| home.attention.hours_unconfirmed | Hours not confirmed for {term} | 40 | row subtitle |
-| home.stale.title | Oldest checks | 20 | stale list |
-| home.stale.row | Last checked {date} | 30 | row subtitle; date like "Oct 5" |
 | home.stale.never | Never checked | 20 | |
-| home.drafts.title | Drafts | 12 | |
-| home.drafts.row | {count} of 7 required parts done | 36 | row subtitle; 7 = required groups |
 | home.empty.title | No spots yet | 20 | first run |
 | home.empty.body | A spot is one place you'd tell a friend to study, like a reading room or a lounge. Start with the one you're standing in. | 140 | |
-| home.attention.empty | Nothing needs attention. | 30 | |
 
 ## New spot (`/survey/spots/new`)
 
@@ -143,11 +130,13 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | spot.status.unreviewed | Unreviewed | 12 | chip |
 | spot.status.reviewed | Reviewed by {name} | 30 | chip |
 | spot.group.required | Needed to publish | 20 | section group heading |
-| spot.group.extras | Photos and busyness | 22 | |
+| spot.group.extras | Extras | 10 | |
 | spot.group.optional | Optional now | 16 | |
 | spot.section.missing | Missing | 10 | section state |
 | spot.section.partial | Partly done | 12 | |
 | spot.section.done | Done | 8 | |
+| spot.section.none | None yet | 10 | empty extras or optional section, muted |
+| spot.section.not_set | Not set | 10 | empty busyness section, muted |
 | spot.section.verified | Checked {date} | 16 | |
 | spot.section.verified_today | Checked today | 16 | |
 | spot.publish | Publish | 12 | primary for drafts |
@@ -171,36 +160,31 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | id | text | max chars | notes |
 |---|---|---|---|
 | section.identity.name | Basics | 12 | API section: identity |
-| section.identity.desc | Name, building, floor, how to get there | 44 | |
 | section.access.name | Access | 12 | |
-| section.access.desc | Who can get in and how | 30 | |
 | section.hours.name | Hours | 12 | |
-| section.hours.desc | When it's open this term | 30 | |
 | section.seating.name | Seating | 12 | |
-| section.seating.desc | Seats, tables, biggest group | 30 | |
 | section.power.name | Power and signal | 18 | |
-| section.power.desc | Outlets, wifi, cell signal | 30 | |
 | section.environment.name | Noise and feel | 16 | API section: environment |
-| section.environment.desc | Noise rules, light, temperature | 34 | |
 | section.use_fit.name | House rules | 14 | API section: use_fit |
-| section.use_fit.desc | Food, group work, calls | 30 | |
 | section.amenities.name | Nearby | 12 | API section: amenities |
-| section.amenities.desc | Bathrooms, water, coffee, printers | 36 | |
 | section.accessibility.name | Accessibility | 14 | |
-| section.accessibility.desc | Step-free route, elevator, seating | 36 | |
 | section.late_night.name | Late night | 12 | |
-| section.late_night.desc | Past midnight, staffed, lit walk home | 40 | |
 | section.estimates.name | Busyness | 12 | API section: estimates |
-| section.estimates.desc | Your best guess, until we count | 34 | |
 | section.photos.name | Photos | 12 | not an API section; photos endpoint |
-| section.photos.desc | One good cover shot | 24 | |
 
 ## Section editor (shared)
 
 | id | text | max chars | notes |
 |---|---|---|---|
 | editor.save | Save | 10 | primary, pinned bottom |
-| editor.verify | Checked, nothing changed | 26 | secondary; stamps verification |
+| editor.verify | Nothing changed | 18 | secondary; records a check of this section without changes |
+| editor.save_next | Save and next | 16 | primary when a next section exists |
+| editor.progress.after | {done} of {total} · After this: {section} | 46 | under the step bar |
+| editor.progress | {done} of {total} | 10 | when nothing is left after this one |
+| editor.walk.done | Checked 1 section | 20 | toast at the end of a guided walk, once the server has it; count variant: editor.walk.done_many |
+| editor.walk.done_many | Checked {count} sections | 26 | |
+| editor.walk.queued | Checked 1 section, saved on this phone | 42 | walk toast while the last write is still queued; count variant: editor.walk.queued_many |
+| editor.walk.queued_many | Checked {count} sections, saved on this phone | 48 | |
 | editor.verify.done | Marked as checked | 20 | toast |
 | editor.verify.hours_missing | Add hours for {term} before marking this checked. | 60 | server 422: spot has hours but none for the current term |
 | editor.saved | Saved | 10 | toast when online |
@@ -250,16 +234,20 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | hours.day.sun | Sun | 4 | |
 | hours.opens | Opens | 8 | |
 | hours.closes | Closes | 8 | |
-| hours.closed | Closed | 8 | per-day toggle |
-| hours.last_entry | Last entry | 12 | optional |
+| hours.closed | Closed | 8 | day summary when closed |
 | hours.next_day | next day | 10 | suffix when closes before opens, e.g. "2:00 next day" |
 | hours.copy_weekdays | Copy Monday to weekdays | 26 | |
 | hours.exam.toggle | Different hours during finals | 30 | |
 | hours.exam.title | Finals hours | 14 | |
 | hours.helper | Use the posted hours. If none are posted, check the building's website. | 80 | |
-| hours.invalid.opens_midnight | Opening at midnight is 0:00, not 24:00. | 44 | |
 | hours.invalid.same_time | Opens and closes can't be the same time. Mark the day closed or 24 hours. | 80 | |
-| hours.all_day | Open 24 hours | 16 | per-day toggle |
+| hours.all_day | Open 24 hours | 16 | day summary when open all day |
+| hours.mode.hours | Hours | 8 | per-day segmented option |
+| hours.mode.closed | Closed | 8 | per-day segmented option |
+| hours.mode.all_day | 24 hours | 10 | per-day segmented option |
+| hours.summary | {opens} to {closes} | 24 | day summary, e.g. "8:00 AM to 10:00 PM" |
+| hours.summary_next | {opens} to {closes} next day | 34 | day summary when closing after midnight |
+| hours.summary_unset | Set the times | 16 | day summary with a missing time |
 
 ## Seating
 
@@ -393,6 +381,7 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | photos.too_big | That photo is still too large after shrinking. Try another shot. | 70 | |
 | photos.unreadable | Couldn't read that image. Try taking it again. | 50 | |
 | photos.empty | No photos yet. Students see the cover first. | 50 | |
+| photos.unavailable | Image unavailable | 20 | in place of a photo whose bytes did not load |
 
 ## Conflict view
 
@@ -413,7 +402,6 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | id | text | max chars | notes |
 |---|---|---|---|
 | failed.title | This change didn't save | 26 | |
-| failed.body.validation | The server didn't accept it: {reason} | 70 | reason from server, already user-readable |
 | failed.body.publish | Still missing: {fields} | 60 | |
 | failed.retry | Try again | 12 | |
 | failed.discard | Discard change | 16 | |
@@ -431,10 +419,12 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | admin.invite.created | Link works once and expires in 48 hours. | 50 | |
 | admin.invite.copy | Copy link | 12 | |
 | admin.invite.copied | Link copied | 14 | toast |
+| admin.invite.copy_failed | Couldn't copy. Select the link and copy it by hand. | 60 | toast |
 | admin.invite.relogin | New sign-in link | 18 | per surveyor; for lost phones |
 | admin.surveyors.title | Surveyors | 12 | |
 | admin.surveyors.empty | Just you so far. | 20 | |
 | admin.surveyors.admin_badge | Admin | 8 | |
+| admin.surveyor.actions | Actions for {name} | 34 | icon button on a surveyor row |
 | admin.revoke | Remove access | 16 | |
 | admin.revoke.confirm.title | Remove {name}? | 30 | |
 | admin.revoke.confirm.body | They're signed out on every phone. Their published edits stay. | 70 | |
@@ -444,7 +434,9 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | admin.publish.last | Last published {time} | 30 | |
 | admin.publish.never | Not published yet | 20 | |
 | admin.publish.dirty | Changes waiting to publish | 28 | |
-| admin.publish.clean | Up to date | 12 | |
+| admin.publish.clean | Up to date | 12 | only after a publish has run |
+| admin.publish.first | 1 spot waiting for the first publish | 40 | never published, nothing dirty; count variant: admin.publish.first_many |
+| admin.publish.first_many | {count} spots waiting for the first publish | 44 | |
 | admin.publish.now | Publish now | 14 | |
 | admin.publish.running | Publishing | 12 | |
 | admin.publish.error | Last publish failed: {reason} | 70 | |
@@ -464,21 +456,20 @@ Strings the built screens needed beyond the sections above: short header forms f
 | id | text | max chars | notes |
 |---|---|---|---|
 | sync.checking | Checking this phone | 24 | header long form and sheet, until the queue has been read; never shown as synced |
-| sync.short.checking | Checking | 10 | header postmark |
+| sync.short.checking | Checking | 10 | sync status in the header |
 | sync.short.pending | {count} waiting | 14 | header postmark; full form in the sync sheet |
 | sync.short.offline | Offline | 10 | header postmark; sync.offline in the sheet |
-| sync.short.failed | {count} not saved | 16 | header postmark |
-| sync.short.unreadable | {count} unreadable | 16 | header postmark |
-| sync.short.signed_out | Signed out | 12 | header postmark |
+| sync.short.failed | {count} not saved | 16 | sync status in the header |
+| sync.short.unreadable | {count} unreadable | 16 | sync status in the header |
+| sync.short.signed_out | Signed out | 12 | sync status in the header |
 | sync.unreadable_one | 1 change can't be read | 30 | singular of sync.unreadable |
 | auth.misconfigured | This build has no server address. Ask whoever sent you the link. | 70 | shown in place of the app when the deploy env is missing; the technical detail follows on its own line |
 | sync.leave_warning_one | 1 change hasn't synced yet. Leaving now keeps it on this phone. | 90 | singular of sync.leave_warning |
 | sync.sheet.unreadable_item | A saved change this app can't read | 40 | one row per unreadable record |
 | sync.sheet.unreadable_help | These came from a newer or damaged copy of the app. Discard them if they stay. | 90 | |
 | sync.sheet.open_spot | Open spot | 12 | row action |
-| home.attention.failed_one | 1 change didn't save | 34 | singular of home.attention.failed |
+| sync.sheet.open_spot_named | Open spot {name} | 60 | accessible name of the row action |
 | home.unreadable_one | 1 change can't be read | 34 | singular of home.unreadable |
-| home.stale.empty | No published spots yet. | 30 | |
 | home.drafts.empty | No drafts. | 14 | |
 | home.offline_first | The spot list loads once you're online. New spots still save on this phone. | 90 | first run offline, nothing cached |
 | spot.section.on_phone | On this phone | 14 | section row sync state |
@@ -517,8 +508,10 @@ Strings the built screens needed beyond the sections above: short header forms f
 | invite.relogin.title | Sign in on this phone | 24 | link for an existing surveyor; no name asked |
 | invite.relogin.body | This link signs you back in. Your name and role stay the same. | 70 | |
 | invite.relogin.action | Sign in | 10 | primary |
+| invite.switch.title | Unsynced changes from {name} | 40 | confirm when a different surveyor joins a phone with a non-empty queue |
+| invite.switch.body | This phone holds changes {name} has not synced. Cancel keeps them, but this link is used up, so you will need a new one to join as {new}. | 150 | the server already accepted the link, so Cancel cannot reuse it |
+| invite.switch.discard | Discard their changes and join | 34 | destructive confirm action |
 | photos.approve | Approve | 10 | any surveyor but the uploader |
-| photos.approve.own | You took this, so someone else approves it. | 50 | |
 | photos.approve.done | Photo approved | 16 | toast |
 | photos.online_only | Approving needs a connection. | 32 | |
 | photos.not_synced | Not synced yet | 16 | badge on a photo still on the phone |
@@ -544,6 +537,57 @@ Strings the built screens needed beyond the sections above: short header forms f
 | spot.failed.open | Open the unsaved changes | 26 | accessible name of the failed banner's Open button |
 | photos.alt | Photo of this spot | 20 | alt text of a spot photo |
 | new.building.offline | The building list loads once you're online. | 50 | first run offline |
+
+## Redesign (2026-10-07)
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| theme.label | Theme | 8 | Actions sheet |
+| theme.light | Light | 8 | |
+| theme.dark | Dark | 8 | |
+| theme.system | System | 8 | follows the phone |
+| common.actions | Actions | 10 | opens the Actions sheet |
+| home.filter.label | Show | 8 | accessible name of the filter chips |
+| home.filter.all | All | 6 | |
+| home.filter.attention | Needs you | 12 | |
+| home.filter.drafts | Drafts | 8 | |
+| home.filter.due | Due | 6 | never checked or over 90 days |
+| home.search.label | Search spots | 16 | |
+| home.group.all | All spots | 14 | list heading, Newsreader 20 |
+| home.group.attention | Needs you | 12 | list heading |
+| home.group.drafts | Drafts | 8 | list heading |
+| home.group.due | Due | 6 | list heading |
+| home.empty.attention | Nothing needs you. | 24 | |
+| home.empty.due | Nothing is due. | 20 | |
+| home.empty.search | No spots match. | 20 | |
+| home.keep_going | Keep going | 14 | card status line when the draft's details are not on the phone |
+| home.keep_going.next | Keep going · Next: {section} · {count} left | 56 | card status line |
+| home.keep_going.ready | Keep going · Ready to publish | 36 | card status line |
+| home.fact.conflict | Conflict | 10 | red pill |
+| home.fact.failed | Didn't save | 12 | red pill |
+| home.fact.unreviewed | Unreviewed | 12 | mist pill with an Eye icon |
+| home.fact.unreviewed_by | Edited by {name} | 30 | read by screen readers after the pill; not drawn |
+| home.fact.hours | No {term} hours | 24 | |
+| home.fact.progress | {done}/{total} | 6 | |
+| home.checked | Checked {date} | 20 | row subtitle under an attention fact |
+| home.fact.draft | Draft | 8 | progress unknown |
+| progress.label | {done} of {total} done | 20 | step bar accessible name |
+| spot.progress.next | {done} of {total} · Next: {section} | 40 | under the step bar |
+| spot.progress.complete | {done} of {total} done | 20 | |
+| spot.next | Next: {section} | 30 | action bar, ink |
+| spot.meta.floor | Floor {floor} | 16 | |
+| spot.meta.place | {building} · Floor {floor} | 40 | overview meta, when the spot has a floor |
+| spot.publish.blocked.reason | Can't publish yet: {count} missing | 36 | described-by of the disabled Publish |
+| spot.actions.next_missing | Open next missing: {section} | 44 | Actions sheet |
+| spot.actions.add_photo | Add a photo | 14 | Actions sheet |
+| spot.actions.walk | Check each section | 20 | Actions sheet; opens each needed section in turn |
+| spot.actions.walk.hint | Open every needed section, one after another | 44 | under Check each section |
+| spot.fact.seats | {count} seats | 12 | |
+| spot.fact.outlets | {percent}% near outlets | 22 | |
+| spot.fact.hours | {term} hours | 22 | |
+| spot.fact.blocks | {count} of {total} blocks | 20 | busyness |
+| spot.fact.photos_one | 1 photo | 10 | |
+| spot.fact.photos | {count} photos | 12 | |
 
 ## Pending questions
 

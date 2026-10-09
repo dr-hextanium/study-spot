@@ -1041,3 +1041,116 @@ test("a second publish enqueue returns the id of the one already queued", async 
   const review = await box.enqueue({ kind: "spot.review", spot_id: SPOT_A, payload: {} }, 3);
   expect(await box.enqueue({ kind: "spot.review", spot_id: SPOT_A, payload: {} }, 3)).toBe(review);
 });
+
+test("stop() during a send: no further write is picked afterwards", async () => {
+  const t = setup([
+    surveySpotFixture({ id: SPOT_A, version: 3 }),
+    surveySpotFixture({ id: SPOT_B, version: 3 }),
+  ]);
+  const box = t.make();
+  await box.start();
+  t.network.set(false);
+  await box.enqueue(power(SPOT_A), 3);
+  await box.enqueue(power(SPOT_B), 3);
+  const held = t.server.holdNext();
+  t.network.set(true);
+  await held.arrived;
+  box.stop();
+  held.release();
+  await box.idle();
+  expect(t.sent()).toEqual([`PUT /survey/spots/${SPOT_A}/power`]);
+});
+
+test("noteServerVersion: a queued write rebases onto the surveyor's own admin bump, and never lowers", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  await box.enqueue(power(SPOT_A), 3);
+  // The surveyor's own unpublish bumped the spot to 4 outside the outbox.
+  t.server.bump(SPOT_A, { status: "draft" });
+  await box.noteServerVersion(SPOT_A, 4);
+  await box.noteServerVersion(SPOT_A, 2);
+  t.network.set(true);
+  await box.idle();
+  await box.syncNow();
+  expect(t.bases()).toEqual([4]);
+  expect(box.getSnapshot().records).toEqual([]);
+  const store = createOutboxStore({ cache: t.cache, blobs: t.blobs, clock: t.clock });
+  expect(await store.version(SPOT_A)).toBe(5);
+});
+
+test("discardAll drops every queued write and photo, and sends nothing", async () => {
+  const t = setup([]);
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const local = await box.createSpot(identity());
+  await box.addPhoto(local, null, JPEG, new Date("2026-10-05T15:59:00Z"));
+  await box.enqueue(power(local), null);
+  await box.discardAll();
+  expect(box.getSnapshot().records).toEqual([]);
+  t.network.set(true);
+  await box.idle();
+  expect(t.sent()).toEqual([]);
+});
+
+test("noteServerVersion: another surveyor's edit between is still a conflict (3, 4 theirs, 5 mine)", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  await box.enqueue(power(SPOT_A), 3);
+  t.server.bump(SPOT_A, { seat_count: 99 });
+  t.server.bump(SPOT_A, { status: "draft" });
+  await box.noteServerVersion(SPOT_A, 5);
+  t.network.set(true);
+  await box.idle();
+  await box.syncNow();
+  expect(t.bases()).toEqual([3]);
+  expect(box.getSnapshot().records.map((r) => r.state)).toEqual(["conflict"]);
+});
+
+test("discardAll also removes unreadable records", async () => {
+  const t = setup();
+  const garbage = "outbox:w:00000000-0000-4000-9999-000000000002";
+  await t.cache.set(garbage, "{not json");
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  await box.enqueue(power(SPOT_A), 3);
+  await box.discardAll();
+  expect(await box.unreadableKeys()).toEqual([]);
+  expect(box.getSnapshot().unreadable).toBe(0);
+  expect(box.getSnapshot().records).toEqual([]);
+});
+
+test("one spot's writes stay in order: a failed write holds the later ones until it is sent", async () => {
+  const t = setup();
+  t.network.set(false);
+  const box = t.make();
+  await box.start();
+  const first = await box.enqueue(power(SPOT_A), 3);
+  const second = await box.enqueue(seating(SPOT_A), 3);
+  const third = await box.enqueue(
+    { kind: "spot.verify", spot_id: SPOT_A, payload: { groups: ["power"] } },
+    3,
+  );
+  // The first write is refused with a 5xx and then a 4xx; nothing queued behind it may land.
+  t.server.failWith.push(500);
+  t.network.set(true);
+  await box.idle();
+  expect(t.server.executed).toEqual([]);
+  t.server.failWith.push(422);
+  await box.syncNow();
+  expect(t.server.executed).toEqual([]);
+  expect(box.getSnapshot().records.map((r) => [r.client_write_id, r.state])).toEqual([
+    [first, "failed"],
+    [second, "pending"],
+    [third, "pending"],
+  ]);
+  await box.retry(first);
+  await box.idle();
+  expect(t.server.executed).toEqual([first, second, third]);
+  expect(box.getSnapshot().records).toEqual([]);
+});

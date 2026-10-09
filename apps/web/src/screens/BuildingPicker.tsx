@@ -1,6 +1,10 @@
 import type { CampusInfo } from "@study-spot/core";
 import { t } from "@study-spot/ui-logic";
+import { Building2, Check } from "lucide-react";
 import { useId, useState } from "react";
+import { Icon } from "../ui/Icon.tsx";
+import { Row } from "../ui/Row.tsx";
+import { Search } from "../ui/Search.tsx";
 
 type Building = CampusInfo["buildings"][number];
 
@@ -21,11 +25,10 @@ type Props = {
 };
 
 /**
- * Search, then tap one of the first six matches. The chosen building reads in
- * ballpoint blue on the line; the last one used is preselected by the caller.
+ * Search, then tap one of the first six matches. The chosen building reads on its own
+ * line and carries an ink check in the list; the last one used is preselected by the caller.
  */
 export function BuildingPicker({ buildings, value, onChange, error }: Props) {
-  const inputId = useId();
   const helpId = useId();
   const chosenId = useId();
   const [query, setQuery] = useState("");
@@ -35,14 +38,18 @@ export function BuildingPicker({ buildings, value, onChange, error }: Props) {
     <div className={`field${error === undefined ? "" : " field--error"}`}>
       {/* Offline there is no input, so the label must not point at one. */}
       {buildings === undefined ? (
-        <p className="label field__label">{t("new.building.label")}</p>
-      ) : (
-        <label className="label field__label" htmlFor={inputId}>
+        <p className="field__label">
+          <Icon icon={Building2} size={16} />
           {t("new.building.label")}
-        </label>
+        </p>
+      ) : (
+        <p className="field__label" aria-hidden="true">
+          <Icon icon={Building2} size={16} />
+          {t("new.building.label")}
+        </p>
       )}
       {chosen === undefined ? null : (
-        <p className="entered" id={chosenId}>
+        <p className="picked" id={chosenId}>
           {chosen.name}
         </p>
       )}
@@ -50,38 +57,34 @@ export function BuildingPicker({ buildings, value, onChange, error }: Props) {
         <p className="field__helper">{t("new.building.offline")}</p>
       ) : (
         <>
-          <input
-            id={inputId}
-            className="input"
-            type="search"
-            value={query}
+          <Search
+            label={t("new.building.label")}
             placeholder={t("new.building.placeholder")}
-            autoComplete="off"
-            aria-describedby={
+            value={query}
+            onChange={setQuery}
+            describedBy={
               [chosen === undefined ? null : chosenId, error === undefined ? null : helpId]
                 .filter((x) => x !== null)
                 .join(" ") || undefined
             }
-            onChange={(e) => setQuery(e.currentTarget.value)}
           />
           {query.trim() === "" ? null : matches.length === 0 ? (
             <p className="field__helper">{t("new.building.none")}</p>
           ) : (
-            <ul className="ruled-list picker">
+            <ul className="row-list picker">
               {matches.map((b) => (
-                <li key={b.id} className="ruled">
-                  <button
-                    type="button"
-                    className="picker__option"
-                    aria-pressed={b.id === value}
-                    onClick={() => {
-                      onChange(b);
-                      setQuery("");
-                    }}
-                  >
-                    {b.name}
-                  </button>
-                </li>
+                <Row
+                  key={b.id}
+                  compact
+                  title={b.name}
+                  pressed={b.id === value}
+                  lead={<Icon icon={Building2} />}
+                  end={b.id === value ? <Icon icon={Check} className="picker__check" /> : undefined}
+                  onClick={() => {
+                    onChange(b);
+                    setQuery("");
+                  }}
+                />
               ))}
             </ul>
           )}

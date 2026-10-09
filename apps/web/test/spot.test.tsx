@@ -1,6 +1,6 @@
-import type { SurveySpot } from "@study-spot/core";
+import type { SurveySection, SurveySpot } from "@study-spot/core";
 import { t } from "@study-spot/ui-logic";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";
 import { identity, SEATING } from "../../../packages/ui-logic/test/builders.ts";
@@ -15,6 +15,19 @@ const DRAFT = surveySpotFixture({
   seat_count: null,
   missing: ["directions", "seat_count"],
 });
+const TWO_GAPS = surveySpotFixture({
+  status: "draft",
+  seat_count: null,
+  noise_policy: null,
+  missing: ["seat_count", "noise_policy"],
+});
+const ONE_GAP = surveySpotFixture({
+  status: "draft",
+  seat_count: null,
+  missing: ["seat_count"],
+});
+const FULL = surveySpotFixture({ status: "draft" });
+const SAVE = /^Save( and next)?$/;
 const at = (spot: SurveySpot) => `/survey/spots/${spot.id}`;
 
 test("a new spot is created on the phone and opens its overview, then moves to its real id", async () => {
@@ -47,16 +60,154 @@ test("a new spot is created on the phone and opens its overview, then moves to i
   expect(created?.lat).toBe(40.9154);
 });
 
-test("an incomplete draft lists what is missing as links and cannot publish", async () => {
+/** Opens the Actions sheet from the action bar and returns it. */
+async function openActions() {
+  fireEvent.click(await screen.findByRole("button", { name: t("common.actions") }));
+  return screen.findByRole("dialog", { name: t("common.actions") });
+}
+
+test("a blocked draft: Publish stays focusable, says why, and lists every blocker", async () => {
   const app = testApp({ spots: [DRAFT] });
   renderRoute(app, at(DRAFT));
-  const missing = await screen.findByRole("link", {
+  const publish = await screen.findByRole("button", { name: t("spot.publish") });
+  expect(publish.getAttribute("aria-disabled")).toBe("true");
+  expect(publish).toHaveProperty("disabled", false);
+  const reason = document.getElementById(publish.getAttribute("aria-describedby") ?? "");
+  expect(reason?.textContent).toBe(t("spot.publish.blocked.reason", { count: 2 }));
+  fireEvent.click(publish);
+  const sheet = await screen.findByRole("dialog", { name: t("spot.publish.blocked.title") });
+  const seats = within(sheet).getByRole("link", {
     name: t("spot.publish.blocked.item", { field: t("field.seat_count") }),
   });
-  expect(missing.getAttribute("href")).toBe(`${at(DRAFT)}/seating`);
-  expect(screen.getByRole("button", { name: t("spot.publish") })).toHaveProperty("disabled", true);
+  expect(seats.getAttribute("href")).toBe(`${at(DRAFT)}/seating`);
+  // Directions are an identity field, so they link too; nothing queued by tapping Publish.
+  expect(
+    within(sheet).getByRole("link", {
+      name: t("spot.publish.blocked.item", { field: t("field.directions") }),
+    }),
+  ).toBeTruthy();
+  expect(app.deps.outbox.getSnapshot().records).toEqual([]);
+});
+
+test("a draft with no check at all names it as a blocker without a link", async () => {
+  const unchecked = surveySpotFixture({
+    status: "draft",
+    verified: {},
+    missing: ["last_verified"],
+  });
+  renderRoute(testApp({ spots: [unchecked] }), at(unchecked));
+  fireEvent.click(await screen.findByRole("button", { name: t("spot.publish") }));
+  const sheet = await screen.findByRole("dialog", { name: t("spot.publish.blocked.title") });
+  expect(
+    within(sheet).getByText(t("spot.publish.blocked.item", { field: t("field.last_verified") })),
+  ).toBeTruthy();
+  expect(within(sheet).queryByRole("link")).toBeNull();
+});
+
+test("the next button opens the first missing section", async () => {
+  const app = testApp({ spots: [DRAFT] });
+  const view = renderRoute(app, at(DRAFT));
+  // Directions (identity) come before seat count, so identity is the first section with a gap.
+  fireEvent.click(
+    await screen.findByRole("link", {
+      name: t("spot.next", { section: t("section.identity.name") }),
+    }),
+  );
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(DRAFT)}/identity`));
+});
+
+test("rows show the fact, or a red Missing, and the step line says what is next", async () => {
+  renderRoute(testApp({ spots: [DRAFT] }), at(DRAFT));
+  const seating = await screen.findByRole("link", { name: /Seating/ });
+  expect(within(seating).getByText(t("spot.section.missing"))).toBeTruthy();
   const required = screen.getByRole("region", { name: t("spot.group.required") });
-  expect(within(required).getAllByText(t("spot.section.missing")).length).toBeGreaterThan(0);
+  const identity = within(required).getAllByRole("link")[0];
+  expect(identity?.getAttribute("href")).toBe(`${at(DRAFT)}/identity`);
+  // Identity lacks directions, so it says Missing instead of showing a fact.
+  expect(within(identity as HTMLElement).getByText(t("spot.section.missing"))).toBeTruthy();
+  expect(
+    screen.getByText(new RegExp(`Next: ${t("section.identity.name")}`), {
+      selector: ".progress-line",
+    }),
+  ).toBeTruthy();
+  const bar = screen.getByRole("img", { name: /^\d of 6 done$/ });
+  // DRAFT lacks directions (Basics) and seat count (Seating); the other four are done.
+  expect(bar.getAttribute("aria-label")).toBe("4 of 6 done");
+  expect(document.querySelector(".progress-line")?.textContent?.startsWith("4 of 6")).toBe(true);
+  expect(screen.getByRole("region", { name: t("spot.group.required") })).toBeTruthy();
+  expect(screen.getByRole("region", { name: t("spot.group.extras") })).toBeTruthy();
+});
+
+test("only required sections go red: an empty extras or optional row is ink with a muted fact", async () => {
+  const bare = surveySpotFixture({
+    status: "draft",
+    seat_count: null,
+    estimates: [],
+    photos: [],
+    hours: [],
+  });
+  renderRoute(testApp({ spots: [bare] }), at(bare));
+  const busyness = await screen.findByRole("link", { name: /Busyness/ });
+  expect(within(busyness).getByText(t("spot.section.not_set"))).toBeTruthy();
+  expect(busyness.querySelector(".pill")).toBeNull();
+  expect(busyness.querySelector(".icon--red")).toBeNull();
+  const photos = screen.getByRole("link", { name: /Photos/ });
+  expect(within(photos).getByText(t("spot.section.none"))).toBeTruthy();
+  expect(photos.querySelector(".pill")).toBeNull();
+  expect(photos.querySelector(".icon--ink")).not.toBeNull();
+  const required = screen.getByRole("region", { name: t("spot.group.required") });
+  const seating = within(required).getByRole("link", { name: /Seating/ });
+  expect(seating.querySelector(".icon--red")).not.toBeNull();
+});
+
+test("a filled-in row shows its fact on the right", async () => {
+  const full = surveySpotFixture({ status: "draft", seat_count: 64, floor: "3" });
+  renderRoute(testApp({ spots: [full] }), at(full));
+  const seating = await screen.findByRole("link", { name: /Seating/ });
+  expect(within(seating).getByText("64 seats")).toBeTruthy();
+  expect(within(screen.getByRole("link", { name: /Basics/ })).getByText("Floor 3")).toBeTruthy();
+});
+
+test("every spot shows when it was last checked, or that it never was", async () => {
+  const checked = surveySpotFixture({
+    status: "published",
+    verified: { identity: "2026-09-01T15:00:00.000Z", seating: "2026-10-01T15:00:00.000Z" },
+  });
+  const never = surveySpotFixture({ status: "draft", verified: {}, missing: ["last_verified"] });
+  const first = renderRoute(testApp({ spots: [checked] }), at(checked));
+  expect(await screen.findByText(t("spot.section.verified", { date: "Sep 1" }))).toBeTruthy();
+  first.unmount();
+  renderRoute(testApp({ spots: [never] }), at(never));
+  expect(await screen.findByText(t("home.stale.never"))).toBeTruthy();
+});
+
+test("Actions lists next missing, a photo, and the guided walk", async () => {
+  const app = testApp({ spots: [DRAFT] });
+  const view = renderRoute(app, at(DRAFT));
+  const sheet = await openActions();
+  expect(
+    within(sheet).getByRole("link", {
+      name: t("spot.actions.next_missing", { section: t("section.identity.name") }),
+    }),
+  ).toBeTruthy();
+  expect(
+    within(sheet)
+      .getByRole("link", { name: t("spot.actions.add_photo") })
+      .getAttribute("href"),
+  ).toBe(`${at(DRAFT)}/photos`);
+  expect(within(sheet).queryByRole("button", { name: t("spot.unpublish") })).toBeNull();
+  fireEvent.click(within(sheet).getByRole("link", { name: new RegExp(t("spot.actions.walk")) }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(DRAFT)}/identity`));
+  // The walk only navigates: nothing was marked checked or queued, and the editor accepts the param.
+  expect(view.router.state.location.search).toEqual({ walk: 1 });
+  expect(app.deps.outbox.getSnapshot().records).toEqual([]);
+  expect(await screen.findByRole("button", { name: t("editor.save_next") })).toBeTruthy();
+});
+
+test("an unknown walk value is ignored, not an error", async () => {
+  const view = renderRoute(testApp({ spots: [DRAFT] }), `${at(DRAFT)}/identity?walk=banana`);
+  expect(await screen.findByRole("button", { name: SAVE })).toBeTruthy();
+  expect(view.router.state.location.search).toEqual({});
 });
 
 test("a complete draft publishes through the queue and says so", async () => {
@@ -86,20 +237,20 @@ test("the last editor sees why someone else reviews; a teammate gets Looks right
 });
 
 test("saving a section queues it, toasts, and returns to the overview", async () => {
-  const app = testApp({ spots: [DRAFT] });
-  const view = renderRoute(app, `${at(DRAFT)}/seating`);
+  const app = testApp({ spots: [ONE_GAP] });
+  const view = renderRoute(app, `${at(ONE_GAP)}/seating`);
   const seats = await screen.findByRole("textbox", { name: t("seating.seat_count.label") });
   fireEvent.change(seats, { target: { value: "40" } });
   fireEvent.click(screen.getByRole("button", { name: t("editor.save") }));
-  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(DRAFT)));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(ONE_GAP)));
   expect(await screen.findByText(t("editor.saved"))).toBeTruthy();
-  expect(app.server.inner.spot(DRAFT.id).seat_count).toBe(40);
+  expect(app.server.inner.spot(ONE_GAP.id).seat_count).toBe(40);
 });
 
 test("an empty required field shows its message and nothing is queued", async () => {
   const app = testApp({ spots: [DRAFT] });
   renderRoute(app, `${at(DRAFT)}/seating`);
-  fireEvent.click(await screen.findByRole("button", { name: t("editor.save") }));
+  fireEvent.click(await screen.findByRole("button", { name: SAVE }));
   expect(await screen.findByText(t("editor.invalid"))).toBeTruthy();
   expect(screen.getByText(t("seating.seat_count.invalid"))).toBeTruthy();
   expect(app.deps.outbox.getSnapshot().records).toEqual([]);
@@ -154,9 +305,14 @@ test("a conflict resolves both ways from the overview", async () => {
     name: t("conflict.title", { section: t("section.seating.name") }),
   });
   expect(within(sheet).getByText(t("conflict.body", { name: "Jordan" }))).toBeTruthy();
-  expect(
-    within(sheet).getByRole("rowheader", { name: t("seating.seat_count.label") }),
-  ).toBeTruthy();
+  const yours = within(sheet).getByRole("region", { name: t("conflict.yours") });
+  const theirs = within(sheet).getByRole("region", { name: t("conflict.theirs") });
+  expect(within(yours).getByText(t("seating.seat_count.label"))).toBeTruthy();
+  expect(within(theirs).getByText(t("seating.seat_count.label"))).toBeTruthy();
+  expect(within(theirs).getByText("99")).toBeTruthy();
+  expect(within(yours).queryByText("99")).toBeNull();
+  // Yours shows the value queued on this phone.
+  expect(within(yours).getByText("40")).toBeTruthy();
   fireEvent.click(within(sheet).getByRole("button", { name: t("conflict.keep_mine") }));
   expect(await screen.findByText(t("conflict.resolved"))).toBeTruthy();
   await waitFor(() => expect(app.server.inner.spot(spot.id).version).toBe(5));
@@ -214,11 +370,133 @@ test("estimates cycle on tap and save only the cells set", async () => {
   });
 });
 
+test("hours: each day is one row with a three-way control behind it, and a copy button", async () => {
+  renderRoute(testApp({ spots: [FULL] }), `${at(FULL)}/hours`);
+  fireEvent.click(await screen.findByRole("button", { name: /^Mon,/ }));
+  const mon = screen.getByRole("group", { name: t("hours.day.mon") });
+  expect(within(mon).getByRole("radio", { name: t("hours.mode.hours") })).toBeTruthy();
+  expect(within(mon).getByRole("radio", { name: t("hours.mode.closed") })).toBeTruthy();
+  expect(within(mon).getByRole("radio", { name: t("hours.mode.all_day") })).toBeTruthy();
+  expect(screen.queryByRole("checkbox", { name: t("hours.closed") })).toBeNull();
+  expect(screen.getByRole("button", { name: t("hours.copy_weekdays") })).toBeTruthy();
+});
+
+test("hours: a collapsed day says its hours, Closed, or Open 24 hours, and a tap opens it", async () => {
+  const spot = surveySpotFixture({
+    hours: [
+      { day_of_week: 1, opens: "08:00", closes: "02:00", last_entry: null, is_exam: false },
+      { day_of_week: 2, opens: "09:00", closes: "17:30", last_entry: null, is_exam: false },
+      { day_of_week: 0, opens: "00:00", closes: "24:00", last_entry: null, is_exam: false },
+    ],
+  });
+  renderRoute(testApp({ spots: [spot] }), `${at(spot)}/hours`);
+  const head = async (day: string) => {
+    const buttons = await screen.findAllByRole("button", { name: new RegExp(`^${day},`) });
+    return buttons[0] as HTMLElement;
+  };
+  const mon = await head("Mon");
+  expect(mon.textContent).toContain("8:00 AM to 2:00 AM next day");
+  expect((await head("Tue")).textContent).toContain("9:00 AM to 5:30 PM");
+  expect((await head("Wed")).textContent).toContain(t("hours.closed"));
+  expect((await head("Sun")).textContent).toContain(t("hours.all_day"));
+  expect(mon.getAttribute("aria-expanded")).toBe("false");
+  const panel = document.getElementById(mon.getAttribute("aria-controls") ?? "");
+  expect(panel?.hasAttribute("hidden")).toBe(true);
+  fireEvent.click(mon);
+  expect(mon.getAttribute("aria-expanded")).toBe("true");
+  expect(panel?.hasAttribute("hidden")).toBe(false);
+});
+
+test("hours: next day sits under Closes, not Opens; the control switches the day's mode", async () => {
+  const spot = surveySpotFixture({
+    hours: [{ day_of_week: 1, opens: "08:00", closes: "02:00", last_entry: null, is_exam: false }],
+  });
+  renderRoute(testApp({ spots: [spot] }), `${at(spot)}/hours`);
+  fireEvent.click(await screen.findByRole("button", { name: /^Mon,/ }));
+  const mon = screen.getByRole("group", { name: t("hours.day.mon") });
+  const next = within(mon.closest(".day") as HTMLElement).getByText(t("hours.next_day"));
+  expect(
+    within(next.parentElement as HTMLElement).queryByLabelText(t("hours.closes")),
+  ).not.toBeNull();
+  expect(within(next.parentElement as HTMLElement).queryByLabelText(t("hours.opens"))).toBeNull();
+  fireEvent.click(within(mon).getByRole("radio", { name: t("hours.mode.closed") }));
+  expect(within(mon.closest(".day") as HTMLElement).queryByLabelText(t("hours.closes"))).toBeNull();
+  const head = mon.closest(".day")?.querySelector(".day__head");
+  expect(head?.textContent).toContain(t("hours.closed"));
+  fireEvent.click(within(mon).getByRole("radio", { name: t("hours.mode.all_day") }));
+  expect(head?.textContent).toContain(t("hours.all_day"));
+  fireEvent.click(within(mon).getByRole("radio", { name: t("hours.mode.hours") }));
+  expect(within(mon.closest(".day") as HTMLElement).getByLabelText(t("hours.closes"))).toBeTruthy();
+});
+
+test("hours: a day with an error is locked open and says so", async () => {
+  const spot = surveySpotFixture({
+    hours: [{ day_of_week: 1, opens: "09:00", closes: "09:00", last_entry: null, is_exam: false }],
+  });
+  renderRoute(testApp({ spots: [spot] }), `${at(spot)}/hours`);
+  const mon = await screen.findByRole("button", { name: /^Mon,/ });
+  expect(mon.getAttribute("aria-disabled")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: SAVE }));
+  expect(await screen.findByText(t("hours.invalid.same_time"))).toBeTruthy();
+  expect(mon.getAttribute("aria-expanded")).toBe("true");
+  expect(mon.getAttribute("aria-disabled")).toBe("true");
+  fireEvent.click(mon);
+  expect(mon.getAttribute("aria-expanded")).toBe("true");
+});
+
+test("hours: copy Monday fills the weekday rows", async () => {
+  const spot = surveySpotFixture({
+    hours: [{ day_of_week: 1, opens: "09:00", closes: "17:00", last_entry: null, is_exam: false }],
+  });
+  renderRoute(testApp({ spots: [spot] }), `${at(spot)}/hours`);
+  fireEvent.click(await screen.findByRole("button", { name: t("hours.copy_weekdays") }));
+  const fri = screen.getByRole("button", { name: /^Fri,/ });
+  expect(fri.textContent).toContain("9:00 AM to 5:00 PM");
+  expect(screen.getByRole("button", { name: /^Sat,/ }).textContent).toContain(t("hours.closed"));
+});
+
+test("seating and amenity options each carry a 16 px icon at stroke 1.75, checked or not", async () => {
+  const spot = surveySpotFixture({
+    status: "draft",
+    seat_types: [{ type: "carrel", count: 0 }],
+  });
+  renderRoute(testApp({ spots: [spot] }), `${at(spot)}/seating`);
+  const carrel = (await screen.findByRole("checkbox", { name: t("seating.type.carrel") })).closest(
+    "label",
+  );
+  const soft = screen.getByRole("checkbox", { name: t("seating.type.soft") }).closest("label");
+  for (const tag of [carrel, soft]) {
+    const svg = tag?.querySelector("svg");
+    expect(svg?.getAttribute("width")).toBe("16");
+    expect(svg?.getAttribute("stroke-width")).toBe("1.75");
+  }
+  expect(document.querySelectorAll(".tags .tag svg")).toHaveLength(
+    document.querySelectorAll(".tags .tag").length,
+  );
+});
+
+test("busyness: time blocks are rows and days are columns, with no live wording", async () => {
+  const empty = surveySpotFixture({ estimates: [] });
+  renderRoute(testApp({ spots: [empty] }), `${at(empty)}/estimates`);
+  const grid = await screen.findByTestId("busyness-grid");
+  const rows = within(grid).getAllByRole("rowheader");
+  expect(rows.map((r) => r.textContent)).toEqual([
+    t("estimates.morning"),
+    t("estimates.afternoon"),
+    t("estimates.evening"),
+    t("estimates.night"),
+  ]);
+  expect(within(grid).getAllByRole("columnheader")).toHaveLength(2);
+  expect(screen.getByText(t("estimates.helper"))).toBeTruthy();
+  expect(within(grid).getAllByRole("button")).toHaveLength(8);
+});
+
 test("an admin unpublishes a published spot after confirming, online only", async () => {
   const published = surveySpotFixture({ status: "published" });
   const app = testApp({ spots: [published], me: { ...ME, role: "admin" } });
   renderRoute(app, at(published));
-  fireEvent.click(await screen.findByRole("button", { name: t("spot.unpublish") }));
+  const sheet = await openActions();
+  fireEvent.click(within(sheet).getByRole("button", { name: t("spot.unpublish") }));
   const confirm = await screen.findByRole("dialog", {
     name: t("spot.unpublish.confirm.title", { name: published.official_name }),
   });
@@ -445,6 +723,92 @@ test("a picked photo is queued; an oversize or unreadable one shows its error", 
   expect(screen.queryByText(t("photos.too_big"))).toBeNull();
 });
 
+test("photos: the cover carries a pill and the others offer Use as cover", async () => {
+  const other = { ...PHOTO, id: "00000000-0000-4000-8000-0000000000b2", is_cover: false };
+  const spot = surveySpotFixture({
+    photos: [
+      { ...PHOTO, spot_id: DRAFT.id, is_cover: true },
+      { ...other, spot_id: DRAFT.id },
+    ],
+  });
+  renderRoute(testApp({ spots: [spot] }), `${at(spot)}/photos`);
+  const pill = await screen.findByText(t("photos.is_cover"), { exact: true });
+  expect(pill.closest(".pill")).not.toBeNull();
+  expect(screen.getAllByRole("button", { name: t("photos.cover") })).toHaveLength(1);
+});
+
+test("photos: only an admin sees Approve on a photo awaiting approval", async () => {
+  const waiting = surveySpotFixture({
+    photos: [{ ...PHOTO, spot_id: DRAFT.id, approved: false, approved_at: null }],
+  });
+  renderRoute(testApp({ spots: [waiting] }), `${at(waiting)}/photos`);
+  await screen.findByText(t("photos.awaiting"));
+  expect(screen.queryByRole("button", { name: t("photos.approve") })).toBeNull();
+});
+
+test("photos: an admin sees Approve, disabled offline", async () => {
+  const waiting = surveySpotFixture({
+    photos: [{ ...PHOTO, spot_id: DRAFT.id, approved: false, approved_at: null }],
+  });
+  const app = testApp({ spots: [waiting], me: { ...ME, role: "admin" } });
+  renderRoute(app, `${at(waiting)}/photos`);
+  const button = await screen.findByRole("button", { name: t("photos.approve") });
+  expect(button).toHaveProperty("disabled", false);
+  act(() => app.network.set(false));
+  await waitFor(() => expect(button).toHaveProperty("disabled", true));
+});
+
+test("busyness: a tap announces the cell's new level", async () => {
+  const empty = surveySpotFixture({ estimates: [] });
+  renderRoute(testApp({ spots: [empty] }), `${at(empty)}/estimates`);
+  const live = await screen.findByTestId("busyness-live");
+  expect(live.getAttribute("aria-live")).toBe("polite");
+  fireEvent.click(
+    screen.getAllByRole("button", {
+      name: new RegExp(t("estimates.bucket.unset")),
+    })[0] as HTMLElement,
+  );
+  expect(live.textContent).toContain(t("estimates.bucket.empty"));
+});
+
+test("a failed pending photo offers Retry only when retrying can work", async () => {
+  const app = testApp({ spots: [DRAFT] });
+  await app.deps.started;
+  app.server.inner.failWith.push(422);
+  await app.deps.outbox.addPhoto(DRAFT.id, DRAFT.version, new Uint8Array([1, 2, 3]), new Date());
+  await app.deps.outbox.idle();
+  renderRoute(app, `${at(DRAFT)}/photos`);
+  await screen.findByText(t("spot.section.failed"));
+  expect(screen.getByRole("button", { name: t("common.retry") })).toBeTruthy();
+});
+
+test("a failed pending photo that cannot be retried has no Retry", async () => {
+  const app = testApp({ spots: [DRAFT] });
+  await app.deps.started;
+  app.server.inner.failWith.push(413);
+  await app.deps.outbox.addPhoto(DRAFT.id, DRAFT.version, new Uint8Array([1, 2, 3]), new Date());
+  await app.deps.outbox.idle();
+  renderRoute(app, `${at(DRAFT)}/photos`);
+  await screen.findByText(t("spot.section.failed"));
+  expect(screen.queryByRole("button", { name: t("common.retry") })).toBeNull();
+});
+
+test("a photo still on the phone shows Not synced yet and no Retry", async () => {
+  const app = testApp({ spots: [DRAFT] });
+  await app.deps.started;
+  app.network.set(false);
+  await app.deps.outbox.addPhoto(DRAFT.id, DRAFT.version, new Uint8Array([1, 2, 3]), new Date());
+  renderRoute(app, `${at(DRAFT)}/photos`);
+  expect(await screen.findByText(t("photos.not_synced"))).toBeTruthy();
+  expect(screen.queryByRole("button", { name: t("common.retry") })).toBeNull();
+});
+
+test("a photo with no bytes says Image unavailable", async () => {
+  const spot = surveySpotFixture({ photos: [{ ...PHOTO, spot_id: DRAFT.id }] });
+  renderRoute(testApp({ spots: [spot] }), `${at(spot)}/photos`);
+  expect(await screen.findByText(t("photos.unavailable"))).toBeTruthy();
+});
+
 test("a synced photo is set as the cover", async () => {
   const spot = surveySpotFixture({ photos: [{ ...PHOTO, spot_id: DRAFT.id }] });
   const app = testApp({ spots: [spot] });
@@ -469,13 +833,13 @@ test("publishing offline queues it and says it goes live after syncing", async (
 });
 
 test("saving does not trip the leave guard on the way back", async () => {
-  const app = testApp({ spots: [DRAFT] });
-  const view = renderRoute(app, `${at(DRAFT)}/seating`);
+  const app = testApp({ spots: [ONE_GAP] });
+  const view = renderRoute(app, `${at(ONE_GAP)}/seating`);
   fireEvent.change(await screen.findByRole("textbox", { name: t("seating.seat_count.label") }), {
     target: { value: "40" },
   });
   fireEvent.click(screen.getByRole("button", { name: t("editor.save") }));
-  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(DRAFT)));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(ONE_GAP)));
   expect(screen.queryByRole("dialog", { name: t("editor.discard_changes.title") })).toBeNull();
 });
 
@@ -563,8 +927,10 @@ test("two quick Publish taps while the server is failing show no Published toast
   app.server.inner.failFor.add(ready.id);
   fireEvent.click(publish);
   fireEvent.click(publish);
+  // The server refused the send (a 500 keeps the write queued); the pass has ended.
+  await waitFor(() => expect(app.server.inner.requests.length).toBeGreaterThan(0));
   await app.deps.outbox.idle();
-  await new Promise((r) => setTimeout(r, 50));
+  await act(async () => undefined);
   expect(screen.queryByText(t("spot.publish.done"))).toBeNull();
   expect(app.deps.outbox.getSnapshot().records.length).toBe(1);
 });
@@ -598,17 +964,17 @@ test("a section that does not exist is not found", async () => {
 });
 
 test("a save that throws names the problem and stays on the editor", async () => {
-  const app = testApp({ spots: [DRAFT] });
+  const app = testApp({ spots: [ONE_GAP] });
   app.deps.outbox.enqueue = async () => {
     throw new Error("indexeddb timeout");
   };
-  const view = renderRoute(app, `${at(DRAFT)}/seating`);
+  const view = renderRoute(app, `${at(ONE_GAP)}/seating`);
   fireEvent.change(await screen.findByRole("textbox", { name: t("seating.seat_count.label") }), {
     target: { value: "40" },
   });
   fireEvent.click(screen.getByRole("button", { name: t("editor.save") }));
   expect((await screen.findByRole("alert")).textContent).toBe(t("common.save_failed"));
-  expect(view.router.state.location.pathname).toBe(`${at(DRAFT)}/seating`);
+  expect(view.router.state.location.pathname).toBe(`${at(ONE_GAP)}/seating`);
 });
 
 test("a retry or discard that throws says so instead of closing silently", async () => {
@@ -628,4 +994,233 @@ test("a retry or discard that throws says so instead of closing silently", async
   const confirm = await screen.findByRole("dialog", { name: t("failed.discard") });
   fireEvent.click(within(confirm).getByRole("button", { name: t("failed.discard") }));
   expect(await screen.findByText(t("common.save_failed"))).toBeTruthy();
+});
+
+test("a write queued before the surveyor's own unpublish is not a conflict with it", async () => {
+  const published = surveySpotFixture({ status: "published", version: 3 });
+  const app = testApp({ spots: [published], me: { ...ME, role: "admin" } });
+  await app.deps.started;
+  // Nothing sends while the outbox is stopped, so the write waits at the version the surveyor saw.
+  app.deps.outbox.stop();
+  await app.deps.outbox.enqueue(
+    { kind: "spot.section", spot_id: published.id, payload: SEATING },
+    3,
+  );
+  renderRoute(app, at(published));
+  fireEvent.click(within(await openActions()).getByRole("button", { name: t("spot.unpublish") }));
+  const confirm = await screen.findByRole("dialog", {
+    name: t("spot.unpublish.confirm.title", { name: published.official_name }),
+  });
+  fireEvent.click(
+    within(confirm).getByRole("button", { name: t("spot.unpublish.confirm.action") }),
+  );
+  await waitFor(() => expect(app.server.inner.spot(published.id).version).toBe(4));
+  await screen.findByText(t("spot.status.draft"));
+  await act(async () => {
+    app.deps.outbox.resume();
+    await app.deps.outbox.idle();
+  });
+  await waitFor(() => expect(app.deps.outbox.getSnapshot().records).toEqual([]));
+  expect(app.server.inner.spot(published.id).version).toBe(5);
+});
+
+async function setSeats(value: string) {
+  fireEvent.change(await screen.findByRole("textbox", { name: t("seating.seat_count.label") }), {
+    target: { value },
+  });
+}
+
+test("Save and next goes to the next unfinished required section", async () => {
+  const app = testApp({ spots: [TWO_GAPS] });
+  const view = renderRoute(app, `${at(TWO_GAPS)}/seating`);
+  await setSeats("40");
+  fireEvent.click(screen.getByRole("button", { name: t("editor.save_next") }));
+  await waitFor(() =>
+    expect(view.router.state.location.pathname).toBe(`${at(TWO_GAPS)}/environment`),
+  );
+  expect(view.router.state.location.search).toEqual({});
+  expect(await screen.findByRole("heading", { level: 1, name: "Noise and feel" })).toBeTruthy();
+  await waitFor(() => expect(app.server.inner.spot(TWO_GAPS.id).seat_count).toBe(40));
+});
+
+test("with nothing left after this one, the button is Save and returns to the overview", async () => {
+  const app = testApp({ spots: [ONE_GAP] });
+  const view = renderRoute(app, `${at(ONE_GAP)}/seating`);
+  await setSeats("40");
+  expect(screen.queryByRole("button", { name: t("editor.save_next") })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: t("editor.save") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(ONE_GAP)));
+});
+
+test("an optional section saves back to the overview", async () => {
+  const app = testApp({ spots: [TWO_GAPS] });
+  const view = renderRoute(app, `${at(TWO_GAPS)}/late_night`);
+  expect(screen.queryByRole("button", { name: t("editor.save_next") })).toBeNull();
+  fireEvent.click(await screen.findByRole("button", { name: t("editor.save") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(TWO_GAPS)));
+});
+
+test("Nothing changed checks the section and returns to the overview", async () => {
+  const app = testApp({ spots: [TWO_GAPS] });
+  const view = renderRoute(app, `${at(TWO_GAPS)}/access`);
+  fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(TWO_GAPS)));
+  expect(await screen.findByText(t("editor.verify.done"))).toBeTruthy();
+});
+
+test("the editor shows progress, what comes next, and when the section was last checked", async () => {
+  renderRoute(testApp({ spots: [TWO_GAPS] }), `${at(TWO_GAPS)}/seating`);
+  expect(await screen.findByRole("img", { name: "4 of 6 done" })).toBeTruthy();
+  expect(screen.getByText(`4 of 6 · After this: ${t("section.environment.name")}`)).toBeTruthy();
+  expect(screen.getByText(t("home.stale.never"))).toBeTruthy();
+});
+
+test("with nothing after it the progress line is just the count", async () => {
+  renderRoute(testApp({ spots: [FULL] }), `${at(FULL)}/identity`);
+  expect(await screen.findByText("6 of 6")).toBeTruthy();
+  expect(screen.getByText(/^Checked [A-Z][a-z]{2} \d{1,2}$/)).toBeTruthy();
+});
+
+test("a guided walk checks each section in turn, then returns with a toast", async () => {
+  const app = testApp({ spots: [FULL] });
+  // Offline, so every check stays queued where this test can read it.
+  app.network.set(false);
+  const view = renderRoute(app, `${at(FULL)}/identity?walk=1`);
+  for (const section of ["access", "seating", "power", "environment", "use_fit"]) {
+    // Not marked checked until this section is opened and answered.
+    fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+    await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(FULL)}/${section}`));
+    expect(view.router.state.location.search).toEqual({ walk: 1 });
+  }
+  // The last one is plain Save: nothing is left.
+  expect(screen.queryByRole("button", { name: t("editor.save_next") })).toBeNull();
+  expect(screen.getByRole("button", { name: t("editor.save") })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: t("editor.verify") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(FULL)));
+  expect(view.router.state.location.search).toEqual({});
+  // Still only on this phone, so the toast says so instead of claiming the server has it.
+  expect(await screen.findByText("Checked 6 sections, saved on this phone")).toBeTruthy();
+  expect(screen.queryByText("Checked 6 sections")).toBeNull();
+  // Each section was checked on its own: one verify write per required section.
+  const groups = app.deps.outbox
+    .getSnapshot()
+    .records.flatMap((r) => (r.kind === "spot.verify" ? r.payload.groups : []));
+  expect(groups.sort()).toEqual([
+    "access",
+    "environment",
+    "identity",
+    "power",
+    "seating",
+    "use_fit",
+  ]);
+});
+
+test("in a walk, Save goes to the next section and keeps the walk", async () => {
+  const app = testApp({ spots: [TWO_GAPS] });
+  const view = renderRoute(app, `${at(TWO_GAPS)}/seating?walk=1`);
+  await setSeats("40");
+  expect(screen.getByRole("button", { name: t("editor.save_next") })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: t("editor.save_next") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(TWO_GAPS)}/power`));
+  expect(view.router.state.location.search).toEqual({ walk: 1 });
+});
+
+test("a walk skips sections already checked in it", async () => {
+  const app = testApp({ spots: [FULL] });
+  const view = renderRoute(app, `${at(FULL)}/seating?walk=1`);
+  const go = async (section: SurveySection, title: string) => {
+    await view.router.navigate({
+      to: "/survey/spots/$id/$section",
+      params: { id: FULL.id, section },
+      search: { walk: 1 },
+    });
+    await screen.findByRole("heading", { level: 1, name: title });
+  };
+  const verify = async (expected: string) => {
+    fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+    await waitFor(() =>
+      expect(view.router.state.location.pathname).toBe(`${at(FULL)}/${expected}`),
+    );
+  };
+  await verify("power"); // seating checked
+  await go("identity", t("section.identity.name"));
+  await verify("access"); // identity checked
+  await verify("power"); // access checked; seating is skipped, it was checked first
+  await verify("environment"); // power checked; the walk goes on past the ones already done
+});
+
+test("without ?walk=1 nothing is walked and no walk toast shows", async () => {
+  const app = testApp({ spots: [FULL] });
+  const view = renderRoute(app, `${at(FULL)}/use_fit`);
+  fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(FULL)));
+  expect(screen.queryByText(/^Checked \d+ sections?$/)).toBeNull();
+});
+
+test("online, the walk's final toast waits for the server and then says Checked", async () => {
+  const app = testApp({ spots: [FULL] });
+  const view = renderRoute(app, `${at(FULL)}/identity?walk=1`);
+  for (const section of ["access", "seating", "power", "environment", "use_fit"]) {
+    fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+    await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(FULL)}/${section}`));
+  }
+  fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(at(FULL)));
+  expect(await screen.findByText("Checked 6 sections")).toBeTruthy();
+  expect(screen.queryByText(/saved on this phone/)).toBeNull();
+});
+
+test("online, a held queue says the checks are only on this phone", async () => {
+  const app = testApp({ spots: [FULL] });
+  await app.deps.started;
+  // Online, but sending is held: the last check cannot reach the server.
+  app.deps.outbox.stop();
+  const view = renderRoute(app, `${at(FULL)}/identity?walk=1`);
+  for (const section of ["access", "seating", "power", "environment", "use_fit", null]) {
+    fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+    const to = section === null ? at(FULL) : `${at(FULL)}/${section}`;
+    await waitFor(() => expect(view.router.state.location.pathname).toBe(to));
+  }
+  expect(screen.queryByText(/^Checked \d+ sections?$/)).toBeNull();
+  // Past the settle wait it says so, instead of claiming the server has it.
+  app.clock.set(new Date(app.clock.now().getTime() + 10_000).toISOString());
+  expect(await screen.findByText("Checked 6 sections, saved on this phone")).toBeTruthy();
+  expect(screen.queryByText("Checked 6 sections")).toBeNull();
+  expect(app.deps.outbox.getSnapshot().records).toHaveLength(6);
+});
+
+test("a walk starts over when the spot changes", async () => {
+  const other = surveySpotFixture({
+    id: "7a1c2b3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+    slug: "other-spot",
+    status: "draft",
+  });
+  const app = testApp({ spots: [FULL, other] });
+  const view = renderRoute(app, `${at(FULL)}/access?walk=1`);
+  fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(FULL)}/seating`));
+  await view.router.navigate({
+    to: "/survey/spots/$id/$section",
+    params: { id: other.id, section: "identity" },
+    search: { walk: 1 },
+  });
+  await screen.findByText(other.official_name);
+  fireEvent.click(await screen.findByRole("button", { name: t("editor.verify") }));
+  // Access was checked in the other spot's walk; here it is still to do.
+  await waitFor(() => expect(view.router.state.location.pathname).toBe(`${at(other)}/access`));
+});
+
+test("the chosen building is marked in the list with a check", async () => {
+  renderRoute(testApp(), "/survey/spots/new");
+  fireEvent.change(await screen.findByRole("searchbox", { name: t("new.building.label") }), {
+    target: { value: "melv" },
+  });
+  const option = await screen.findByRole("button", { name: "Melville Library" });
+  fireEvent.click(option);
+  fireEvent.change(screen.getByRole("searchbox", { name: t("new.building.label") }), {
+    target: { value: "melv" },
+  });
+  const chosen = await screen.findByRole("button", { name: "Melville Library" });
+  expect(chosen.getAttribute("aria-pressed")).toBe("true");
+  expect(chosen.querySelector("svg.picker__check")).not.toBeNull();
 });

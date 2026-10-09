@@ -3,6 +3,7 @@ import { LocateFixed } from "lucide-react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { GOOD_FIX_METERS, type LocationState } from "../lib/location.ts";
 import { Button } from "../ui/Button.tsx";
+import { Icon } from "../ui/Icon.tsx";
 
 /** Optional: fills the spot's point from the phone. The building alone is always enough. */
 export function LocationButton(props: {
@@ -20,7 +21,8 @@ export function LocationButton(props: {
   return (
     <div className="field">
       <Button
-        icon={<LocateFixed aria-hidden="true" size={20} strokeWidth={2.25} />}
+        variant="ghost"
+        icon={<Icon icon={LocateFixed} />}
         disabled={state.kind === "pending"}
         onClick={() => void locate()}
       >

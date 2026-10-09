@@ -3,143 +3,133 @@
  * conflict view, hours, the busyness grid, and photos. Tokens only.
  */
 
-/* An entered value printed on the line, in ballpoint blue */
-.entered {
-  color: var(--color-accent);
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.picker__option {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-height: var(--size-line);
-  padding: var(--space-xs) 0;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-}
-
-.picker__option[aria-pressed="true"] {
-  color: var(--color-accent);
-  font-weight: 600;
-}
-
-.pinned__note {
-  color: var(--color-textMuted);
-  font-size: var(--fontSize-small);
-}
-
-/* Conflict view: yours and on the server, field by field */
-.diff {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.diff th,
-.diff td {
-  padding: var(--space-xs) var(--space-xxs);
-  border-bottom: var(--size-rule) solid var(--color-border);
-  text-align: left;
-  vertical-align: top;
-  overflow-wrap: anywhere;
-  font-size: var(--fontSize-small);
-}
-
-.diff tbody th {
-  font-weight: 600;
-}
-
-.diff__mine {
-  color: var(--color-accent);
-  font-weight: 600;
-}
-
+/* The "Can't publish yet" sheet: one 48 px row per blocker, links where a section can fix it. */
 .blockers {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xxs) var(--space-sm);
-  font-size: var(--fontSize-small);
+  margin-bottom: var(--space-xs);
 }
 
-.blockers a {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--size-tapTarget);
-  color: var(--color-danger);
+/* Hours: one row per day, times side by side, hairlines between days */
+.hours-term {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fontSize-group);
   font-weight: 600;
 }
 
-.admin-actions {
+/* One 52 px row per day that opens to its editor; a hairline closes each day. */
+.day {
+  border-bottom: 1px solid var(--color-line);
+}
+
+.day__head {
+  gap: var(--space-xs);
+}
+
+.day__name {
+  flex: none;
+  min-width: 3ch;
+}
+
+.day__summary {
+  flex: 1;
+  color: var(--color-muted);
+  font-size: var(--fontSize-small);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.day__chev {
+  flex: none;
+  color: var(--color-muted);
+  transition: transform var(--duration-fast) var(--easing-standard);
+}
+
+.day__chev--open {
+  transform: rotate(180deg);
+}
+
+.day__panel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
-  padding-top: var(--space-md);
+  gap: var(--space-sm);
+  padding: var(--space-xxs) 0 var(--space-md);
 }
 
-.spot-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.day__panel[hidden] {
+  display: none;
 }
 
-/* Hours: one block per day */
+.day__panel > .segmented {
+  padding: 0;
+  border-bottom: 0;
+}
+
 .day__times {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: var(--space-xs);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: var(--space-sm);
 }
 
 .day__time {
   display: flex;
   flex-direction: column;
   gap: var(--space-xxs);
-  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.day__closes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+  min-width: 0;
+}
+
+.day__label {
+  color: var(--color-muted);
+  font-size: var(--fontSize-small);
 }
 
 .day__next {
-  align-self: center;
-  color: var(--color-accent);
+  color: var(--color-muted);
   font-size: var(--fontSize-small);
   font-weight: 600;
 }
 
-.day__toggles {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: var(--space-lg);
-}
-
-.day__toggles .check {
-  border-bottom: 0;
-}
-
-.checks .check:last-child {
-  border-bottom: 0;
-}
-
-/* Busyness grid: a fill line rises with the bucket */
+/* Busyness grid: time blocks down, weekdays and weekends across. A fill rises with the guess. */
 .grid {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0 var(--space-xs);
   table-layout: fixed;
 }
 
-.grid thead th,
-.grid tbody th {
-  padding: var(--space-xs) var(--space-xxs);
+.grid th:first-child {
+  width: 30%;
+}
+
+.grid__head {
+  padding: 0 var(--space-xxs);
+  color: var(--color-ink);
+  font-size: var(--fontSize-label);
+  font-weight: 600;
   text-align: left;
 }
 
+thead .grid__head {
+  color: var(--color-muted);
+  padding-bottom: var(--space-xxs);
+}
+
+.grid__block > svg {
+  display: inline-block;
+  margin-right: var(--space-xs);
+  vertical-align: -3px;
+  color: var(--color-muted);
+}
+
 .grid td {
-  padding: var(--space-xxs);
+  padding: 0 var(--space-xxs);
 }
 
 .cell {
@@ -148,19 +138,30 @@
   align-items: flex-end;
   width: 100%;
   min-height: 56px;
-  padding: var(--space-xs);
-  border: var(--size-rule) solid var(--color-borderStrong);
-  border-radius: var(--radius-control);
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-edge);
+  border-radius: var(--radius-m);
   background: linear-gradient(
     to top,
-    color-mix(in srgb, var(--color-accent) 22%, transparent) calc(var(--fill) * 100%),
-    var(--color-background) 0
+    color-mix(in oklab, var(--color-ink) 16%, var(--color-paper)) calc(var(--fill) * 100%),
+    var(--color-paper) 0
   );
-  color: var(--color-accent);
-  font-weight: 700;
+  color: var(--color-ink);
+  font-weight: 600;
   text-align: left;
   cursor: pointer;
-  transition: background var(--duration-fast) var(--easing-standard);
+  transition:
+    background var(--duration-fast) var(--easing-standard),
+    transform var(--duration-fast) var(--easing-standard);
+}
+
+.cell:active {
+  transform: scale(var(--press-control));
+}
+
+.cell:focus-visible {
+  outline: 2px solid var(--color-red);
+  outline-offset: 2px;
 }
 
 /* Fill heights follow FULLNESS_RATIO in packages/core. */
@@ -190,32 +191,41 @@
 
 .cell--unset {
   border-style: dashed;
-  color: var(--color-textMuted);
+  color: var(--color-muted);
   font-weight: 500;
 }
 
 .cell__text {
   position: relative;
-  font-size: var(--fontSize-small);
-  line-height: var(--lineHeight-tight);
+  font-size: var(--fontSize-label);
+  line-height: var(--lineHeight-snug);
 }
 
-/* Photos */
+/* Photos: 4:3 tiles in two columns, three from 768 px */
 .photos {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-lg) var(--space-sm);
+}
+
+@media (min-width: 768px) {
+  .photos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .photo {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
-  padding-bottom: var(--space-md);
-  border-bottom: var(--size-rule) solid var(--color-border);
+  min-width: 0;
+}
+
+.photo__frame {
+  position: relative;
 }
 
 .photo__img {
@@ -223,8 +233,34 @@
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
-  border-radius: var(--radius-card);
-  background: var(--color-surface);
+  border-radius: var(--radius-m);
+  background: var(--color-mist);
+}
+
+.photo__img--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  color: var(--color-muted);
+}
+
+.photo__missing {
+  margin: 0;
+  font-size: var(--fontSize-small);
+}
+
+.photo__badge {
+  position: absolute;
+  left: var(--space-xs);
+  bottom: var(--space-xs);
+}
+
+.photo__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
 }
 
 .photo__actions {
@@ -235,15 +271,32 @@
 }
 
 .checklist {
+  list-style: none;
   margin: 0;
-  padding-left: var(--space-lg);
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: var(--space-sm);
+}
+
+.checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.checklist svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--color-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cell {
     transition: none;
+  }
+
+  .cell:active {
+    transform: none;
   }
 }

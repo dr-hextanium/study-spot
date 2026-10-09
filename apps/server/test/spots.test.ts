@@ -6,8 +6,10 @@ import {
   building,
   bundle_state,
   campus,
+  photo_blob,
   spot,
   spot_hours,
+  spot_photo,
   spot_verification,
   write_receipt,
 } from "@study-spot/db";
@@ -100,6 +102,77 @@ test("the list summarizes every spot with verification age and hours state", asy
     hours_confirmed: false,
   });
 });
+
+test("the survey list carries an approved cover's id, and nothing else", async () => {
+  const ctx = await setup();
+  const me = await signIn(ctx);
+  const sha = "b".repeat(64);
+  await ctx.db.insert(photo_blob).values({
+    sha256: sha,
+    bytes: new Uint8Array([0xff, 0xd8, 0xff]),
+    content_type: "image/jpeg",
+    byte_size: 3,
+  });
+  const photo = async (
+    spotId: string,
+    over: { is_cover: boolean; approved: boolean; blob?: boolean },
+  ) => {
+    const [row] = await ctx.db
+      .insert(spot_photo)
+      .values({
+        spot_id: spotId,
+        blob_sha256: over.blob === false ? null : sha,
+        taken_at: NOW,
+        is_cover: over.is_cover,
+        approved_at: over.approved ? NOW : null,
+      })
+      .returning({ id: spot_photo.id });
+    if (!row) throw new Error("insert returned nothing");
+    return row.id;
+  };
+  const ids = ctx.ids.spotIds;
+  const [seedCover] = await ctx.db
+    .select({ id: spot_photo.id })
+    .from(spot_photo)
+    .where(and(eq(spot_photo.spot_id, ids["central-reading-room"]), eq(spot_photo.is_cover, true)));
+  // The seed already gives Central Reading Room an approved cover with bytes.
+  const a = await photo(ids["sac-lounge"], { is_cover: true, approved: true });
+  await photo(ids["union-draft"], { is_cover: true, approved: false });
+  await photo(ids["kelly-rcc"], { is_cover: false, approved: true });
+  const other = await foreignSpot(ctx);
+  await photo(other, { is_cover: true, approved: true });
+
+  const list = SpotList.parse(
+    body(await ctx.app.inject({ method: "GET", url: "/survey/spots", headers: me.headers })),
+  );
+  const cover = (slug: string) => list.spots.find((s) => s.slug === slug)?.cover_photo_id;
+  expect(cover("sac-lounge")).toBe(a);
+  expect(cover("union-draft")).toBeNull();
+  expect(cover("kelly-rcc")).toBeNull();
+  expect(cover("central-reading-room")).toBe(seedCover?.id);
+  expect(list.spots.some((s) => s.slug === "other-spot")).toBe(false);
+});
+
+async function foreignSpot(ctx: TestContext): Promise<string> {
+  await ctx.db.insert(campus).values({ id: "other", name: "Other", tz: "America/New_York" });
+  await ctx.db
+    .insert(building)
+    .values({ id: "other-hall", campus_id: "other", name: "Other Hall", lat: 1, lng: 1 });
+  await ctx.db.insert(bundle_state).values({ campus_id: "other", dirty: false, write_seq: 0 });
+  const [row] = await ctx.db
+    .insert(spot)
+    .values({
+      slug: "other-spot",
+      building_id: "other-hall",
+      floor: "1",
+      official_name: "Other Spot",
+      lat: 1,
+      lng: 1,
+    })
+    .returning({ id: spot.id });
+  if (!row) throw new Error("insert returned nothing");
+  return row.id;
+}
 
 test("a spot detail includes current-term hours, estimates, photos, and missing fields", async () => {
   const ctx = await setup();

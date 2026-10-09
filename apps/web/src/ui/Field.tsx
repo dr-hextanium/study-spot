@@ -1,4 +1,6 @@
+import { CircleAlert, type LucideIcon } from "lucide-react";
 import { type ReactNode, useId } from "react";
+import { Icon } from "./Icon.tsx";
 
 type FieldProps = {
   label: string;
@@ -6,26 +8,29 @@ type FieldProps = {
   error?: string | undefined;
   /** "Optional" suffix on a screen that mixes required and optional fields. */
   optional?: string | undefined;
+  icon?: LucideIcon | undefined;
   children: (ids: { inputId: string; describedBy: string | undefined }) => ReactNode;
 };
 
 /**
- * One line of the divided back: the printed label on the rule, the entered
- * value under it in ballpoint blue, helper or error text below.
+ * One field: an optional icon and label above, the entry under it, helper or
+ * error text below, a hairline at the bottom.
  */
-export function Field({ label, helper, error, optional, children }: FieldProps) {
+export function Field({ label, helper, error, optional, icon, children }: FieldProps) {
   const inputId = useId();
   const helpId = useId();
   const describedBy = error !== undefined || helper !== undefined ? helpId : undefined;
   return (
     <div className={`field${error === undefined ? "" : " field--error"}`}>
-      <label className="label field__label" htmlFor={inputId}>
+      <label className="field__label" htmlFor={inputId}>
+        {icon === undefined ? null : <Icon icon={icon} size={16} />}
         {label}
         {optional === undefined ? null : <span className="field__optional">{optional}</span>}
       </label>
       {children({ inputId, describedBy })}
       {error !== undefined ? (
         <p className="field__error" id={helpId}>
+          <Icon icon={CircleAlert} size={16} />
           {error}
         </p>
       ) : helper !== undefined ? (
@@ -44,6 +49,7 @@ type TextFieldProps = {
   helper?: string | undefined;
   error?: string | undefined;
   optional?: string | undefined;
+  icon?: LucideIcon | undefined;
   placeholder?: string | undefined;
   multiline?: boolean;
   inputMode?: "text" | "numeric" | "decimal" | "url";
@@ -53,7 +59,13 @@ type TextFieldProps = {
 
 export function TextField(props: TextFieldProps) {
   return (
-    <Field label={props.label} helper={props.helper} error={props.error} optional={props.optional}>
+    <Field
+      label={props.label}
+      helper={props.helper}
+      error={props.error}
+      optional={props.optional}
+      icon={props.icon}
+    >
       {({ inputId, describedBy }) =>
         props.multiline === true ? (
           <textarea

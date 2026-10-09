@@ -1,18 +1,25 @@
-import "@fontsource/public-sans/latin-600.css";
-import "@fontsource/public-sans/latin-700.css";
+import "./ui/tokens.css";
+import "./ui/fonts.css";
 import "./ui/styles.css";
 import "./screens/spot.css";
-import { t, tokens } from "@study-spot/ui-logic";
+import "./screens/admin.css";
+import { t } from "@study-spot/ui-logic";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { AppProvider } from "./app/AppProvider.tsx";
 import { createAppDeps } from "./app/deps.ts";
+import { scrollKey } from "./app/scrollKey.ts";
 import { parseWebEnv } from "./env.ts";
 import { routeTree } from "./routeTree.gen.ts";
-import { installTheme } from "./ui/theme.ts";
+import { watchSystemTheme } from "./ui/themePref.ts";
 
-export const router = createRouter({ routeTree, defaultPreload: false, scrollRestoration: true });
+export const router = createRouter({
+  routeTree,
+  defaultPreload: false,
+  scrollRestoration: true,
+  getScrollRestorationKey: scrollKey,
+});
 
 declare module "@tanstack/react-router" {
   interface Register {
@@ -20,7 +27,7 @@ declare module "@tanstack/react-router" {
   }
 }
 
-installTheme(tokens);
+watchSystemTheme();
 const root = document.getElementById("root");
 if (root === null) throw new Error("missing #root");
 const parsed = parseWebEnv(import.meta.env);

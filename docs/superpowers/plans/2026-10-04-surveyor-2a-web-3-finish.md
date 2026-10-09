@@ -921,7 +921,7 @@ Pass condition: every material fix in the list is made (with a test where behavi
 - [ ] **Step 5: Full check and commit the detector config**
 
 Run (servers from Step 2 stopped): `bun run typecheck && bun run lint && bun test && bun run --filter '@study-spot/web' test && (cd apps/web && bun run e2e)`
-Expected: all pass, 12 Playwright tests.
+Expected: all pass, 26 Playwright tests (the count after the redesign; it was 12 when this plan was written). Note: the detector ignore for the stamp easing was reverted when the redesign removed the stamp, so no `.impeccable/config.json` change is committed.
 
 ```bash
 git add .impeccable/config.json

@@ -1,13 +1,43 @@
 import { randomUUID } from "node:crypto";
+import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { API_ORIGIN } from "../playwright.config.ts";
 import { call, completeSpot, draftSpot, getSpot, surveyorInvite, tokenOf } from "./api.ts";
 import { expect, pinClock, signIn, test } from "./fixtures.ts";
+import { layoutProblems } from "./layout.ts";
 import { bigJpeg, GPS_MARK, jpegMarkers, withExif } from "./photo.ts";
 
 async function saveSection(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Save", exact: true })).toBeHidden();
+  const before = page.url();
+  await page.getByRole("button", { name: /^Save( and next)?$/ }).click();
+  await expect(page).not.toHaveURL(before);
+  // Save and next lands on the next editor; these flows want the overview, so step back to it.
+  if (/\/survey\/spots\/[^/]+\/[a-z_]+$/.test(page.url())) {
+    await page.getByRole("link", { name: "Back" }).click();
+  }
+  await expect(page).toHaveURL(/\/survey\/spots\/[^/]+$/);
+}
+
+/**
+ * An open sheet at phone, tablet and laptop widths: no layout problems, axe clean.
+ * Set SHEET_SHOTS to a folder to keep a screenshot of each (animations off).
+ */
+async function checkSheet(page: Page, label: string): Promise<void> {
+  const shots = process.env.SHEET_SHOTS;
+  const back = page.viewportSize();
+  for (const width of [375, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.locator(".sheet[open]").waitFor();
+    expect(await layoutProblems(page), `${label} @${width}`).toEqual([]);
+    const axe = await new AxeBuilder({ page }).analyze();
+    expect(
+      axe.violations.map((v) => v.id),
+      `${label} @${width}`,
+    ).toEqual([]);
+    if (shots !== undefined)
+      await page.screenshot({ path: `${shots}/${label}-${width}.png`, animations: "disabled" });
+  }
+  if (back !== null) await page.setViewportSize(back);
 }
 
 async function openSection(page: Page, name: string): Promise<void> {
@@ -51,10 +81,11 @@ test("acceptance 1: a spot made offline with every required field and a photo sy
   await page.getByRole("group", { name: "Group work" }).getByRole("radio", { name: "No" }).check();
   await saveSection(page);
   await openSection(page, "Hours");
+  await page.getByRole("button", { name: /^Mon,/ }).click();
   await page
     .getByRole("group", { name: "Mon" })
-    .getByRole("checkbox", { name: "Closed" })
-    .uncheck();
+    .getByRole("radio", { name: "Hours", exact: true })
+    .check();
   await page.getByRole("button", { name: "Copy Monday to weekdays" }).click();
   await saveSection(page);
 
@@ -65,7 +96,7 @@ test("acceptance 1: a spot made offline with every required field and a photo sy
   const chooser = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "Got it" }).click();
   await (await chooser).setFiles({ name: "IMG_0001.jpg", mimeType: "image/jpeg", buffer: photo });
-  await expect(page.getByText("Not synced yet")).toBeVisible();
+  await expect(page.getByText("Not synced yet", { exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Back" }).click();
 
   await page.getByRole("button", { name: "Publish", exact: true }).click();
@@ -76,7 +107,7 @@ test("acceptance 1: a spot made offline with every required field and a photo sy
 
   await page.context().setOffline(false);
   await expect(page.getByRole("button", { name: "All synced" })).toBeVisible({ timeout: 60_000 });
-  await expect(page.locator(".stamp-row").getByText("Published", { exact: true })).toBeVisible();
+  await expect(page.locator(".meta").getByText("Published", { exact: true })).toBeVisible();
   const id = new URL(page.url()).pathname.split("/").at(-1) ?? "";
   expect(id).toMatch(/^[0-9a-f-]{36}$/);
   const token = await tokenOf(page);
@@ -132,13 +163,25 @@ test("acceptance 4: a conflicting edit from two phones resolves both ways", asyn
   await edit(phoneB, "11");
   await edit(page, "22");
   await expect(page.getByRole("button", { name: "All synced" })).toBeVisible();
+  // The sync sheet lists the waiting edit while phone B is offline.
+  await phoneB.getByRole("button", { name: /Offline|waiting/ }).click();
+  await expect(phoneB.getByRole("dialog", { name: "Changes on this phone" })).toBeVisible();
+  await checkSheet(phoneB, "sync");
+  await phoneB.getByRole("button", { name: "Close" }).click();
   await other.setOffline(false);
   await expect(
-    phoneB.getByText("Someone else changed this spot. Pick which version to keep."),
+    phoneB.getByText("Someone else changed this spot. Pick which version to keep.", {
+      exact: true,
+    }),
   ).toBeVisible({ timeout: 60_000 });
   await phoneB.getByRole("button", { name: "Open the conflict", exact: true }).click();
-  await expect(phoneB.getByRole("cell", { name: "11" })).toBeVisible();
-  await expect(phoneB.getByRole("cell", { name: "22" })).toBeVisible();
+  await expect(
+    phoneB.getByRole("region", { name: "Yours" }).getByText("11", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    phoneB.getByRole("region", { name: "On the server" }).getByText("22", { exact: true }),
+  ).toBeVisible();
+  await checkSheet(phoneB, "conflict");
   await phoneB.getByRole("button", { name: "Keep mine" }).click();
   await expect(phoneB.getByRole("button", { name: "All synced" })).toBeVisible({ timeout: 60_000 });
   await expect.poll(async () => (await getSpot(await tokenOf(page), spot.id)).seat_count).toBe(11);
@@ -184,7 +227,7 @@ test("acceptance 3: a second surveyor can mark a spot reviewed; the one who edit
 
   await editor.page.goto(`/survey/spots/${spot.id}`);
   await expect(
-    editor.page.getByText("You edited this last, so someone else reviews it."),
+    editor.page.getByText("You edited this last, so someone else reviews it.", { exact: true }),
   ).toBeVisible();
   await expect(editor.page.getByRole("button", { name: "Looks right" })).toBeHidden();
 
@@ -204,7 +247,7 @@ test("acceptance 3: a second surveyor can mark a spot reviewed; the one who edit
   await reviewer.context.close();
 });
 
-test("a 60-character spot name at 360 px truncates in the header and nothing scrolls sideways", async ({
+test("a 60-character spot name at 360 px wraps in the large title and nothing scrolls sideways", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 740 });
@@ -219,9 +262,13 @@ test("a 60-character spot name at 360 px truncates in the header and nothing scr
     el.scrollWidth > el.clientWidth,
   ]);
   expect(overflow).toBe(0);
-  expect(clipped).toBe(true);
+  // The large title wraps, so the whole name stays readable instead of clipping (spec 5).
+  expect(clipped).toBe(false);
   await expect(page.getByRole("button", { name: "All synced" })).toBeInViewport();
-  // Blockers wrap as 44 px links that stay inside the screen.
+  // Blockers are 44 px links that stay inside the screen.
+  // aria-disabled is not "enabled" to Playwright's click, so press it the way a keyboard does.
+  await page.getByRole("button", { name: "Publish", exact: true }).focus();
+  await page.keyboard.press("Enter");
   const blockers = page.locator(".blockers a");
   await expect(blockers.first()).toBeVisible();
   for (const box of await blockers.evaluateAll((els) =>
@@ -234,4 +281,25 @@ test("a 60-character spot name at 360 px truncates in the header and nothing scr
     expect(box.left).toBeGreaterThanOrEqual(0);
     expect(box.right).toBeLessThanOrEqual(360);
   }
+});
+
+test("the guided walk checks each section in turn and ends on the overview with a toast", async ({
+  page,
+}) => {
+  await signIn(page);
+  const spot = await completeSpot(await tokenOf(page), `Walk ${Date.now()}`);
+  await page.goto(`/survey/spots/${spot.id}`);
+  await page.getByRole("button", { name: "Actions" }).click();
+  await page.getByRole("link", { name: /Check each section/ }).click();
+  await expect(page).toHaveURL(/\/identity\?walk=1$/);
+  for (const section of ["access", "seating", "power", "environment", "use_fit"]) {
+    await page.getByRole("button", { name: "Nothing changed" }).click();
+    await expect(page).toHaveURL(new RegExp(`/${section}\\?walk=1$`));
+  }
+  // Six quick checks queue six writes. Let them reach the server first: a last check that is
+  // still queued after the settle wait honestly says "saved on this phone" instead.
+  await expect(page.getByRole("button", { name: "All synced" })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Nothing changed" }).click();
+  await expect(page).toHaveURL(new RegExp(`/survey/spots/${spot.id}$`));
+  await expect(page.getByText("Checked 6 sections", { exact: true })).toBeVisible();
 });

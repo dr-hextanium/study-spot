@@ -1,6 +1,7 @@
 export * from "./api.ts";
 export * from "./failure.ts";
 export * from "./forms.ts";
+export * from "./home.ts";
 export * from "./outbox.ts";
 export * from "./outboxStore.ts";
 export * from "./session.ts";

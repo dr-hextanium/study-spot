@@ -6,7 +6,9 @@ import {
   reviewAction,
   type SectionStatus,
   type SpotView,
+  type StepProgress,
   sectionStatuses,
+  stepProgress,
 } from "@study-spot/ui-logic";
 import { useIsRestoring } from "@tanstack/react-query";
 import { useDeps } from "../app/AppProvider.tsx";
@@ -25,6 +27,7 @@ export type SpotViewState =
       view: SpotView;
       statuses: SectionStatus[];
       readiness: PublishReadiness;
+      progress: StepProgress;
       review: "button" | "own" | "none";
       tz: string;
     };
@@ -57,6 +60,7 @@ export function useSpotView(id: string): SpotViewState {
     view,
     statuses: sectionStatuses(view, { now: clock.now(), tz }),
     readiness: publishReadiness(view),
+    progress: stepProgress(view),
     review,
     tz,
   };

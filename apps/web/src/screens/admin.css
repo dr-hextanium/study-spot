@@ -1,0 +1,71 @@
+/* Admin screen of survey mode. Tokens only. */
+
+.admin-section {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-sm);
+}
+
+.admin-section > .group-heading {
+  margin-bottom: 0;
+}
+
+/* The role switch sits right above its button: no field hairline or padding between them. */
+.admin-section > .field {
+  padding: 0;
+  border-bottom: 0;
+}
+
+.admin-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs) var(--space-sm);
+}
+
+.admin-stat {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fontSize-figure);
+  line-height: var(--lineHeight-snug);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-warn {
+  flex: none;
+  color: var(--color-red);
+}
+
+/* A link shown once: mono on a mist box that wraps anywhere, so a long URL never overflows. */
+.created-link {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border-radius: var(--radius-m);
+  background: var(--color-mist);
+}
+
+.created-link__url {
+  margin: 0;
+  max-width: 100%;
+  font-family: var(--font-mono);
+  font-size: var(--fontSize-small);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.admin-photo__from {
+  margin: 0;
+  font-size: var(--fontSize-small);
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
+.admin-photo__actions {
+  flex-direction: column;
+  align-items: stretch;
+}

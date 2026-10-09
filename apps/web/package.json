@@ -11,7 +11,8 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@fontsource/public-sans": "^5.3.0",
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
     "@study-spot/core": "workspace:*",
     "@study-spot/ui-logic": "workspace:*",
     "@tanstack/query-async-storage-persister": "^5.104.1",
@@ -26,10 +27,11 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "@tanstack/router-plugin": "^1.168.42",
-    "@testing-library/react": "^16.3.3",
     "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",

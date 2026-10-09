@@ -14,6 +14,15 @@ function jpeg(size = 64, seed = 1): Uint8Array {
   return bytes;
 }
 
+/** Blobs stored since `seeded`: the seed's own sample photos have bytes too. */
+async function addedBlobs(ctx: TestContext, seeded: ReadonlySet<string>) {
+  return (await ctx.db.select().from(photo_blob)).filter((b) => !seeded.has(b.sha256));
+}
+
+async function seededBlobs(ctx: TestContext): Promise<Set<string>> {
+  return new Set((await ctx.db.select().from(photo_blob)).map((b) => b.sha256));
+}
+
 function upload(
   ctx: TestContext,
   who: SignedIn,
@@ -59,6 +68,7 @@ async function uploaded(ctx: TestContext, who: SignedIn, seed: number): Promise<
 
 test("an upload stores the blob once and adds an unapproved photo", async () => {
   const ctx = await setup();
+  const seeded = await seededBlobs(ctx);
   const me = await signIn(ctx);
   const spotId = ctx.ids.spotIds["sac-lounge"];
   const res = await upload(ctx, me, { spot_id: spotId, client_write_id: writeId() });
@@ -75,7 +85,7 @@ test("an upload stores the blob once and adds an unapproved photo", async () => 
 
   // Same bytes again under a new write id: a second photo row, still one blob.
   await upload(ctx, me, { spot_id: spotId, client_write_id: writeId() });
-  const blobs = await ctx.db.select().from(photo_blob);
+  const blobs = await addedBlobs(ctx, seeded);
   expect(blobs.map((b) => b.sha256)).toEqual([sha256Hex(jpeg())]);
   expect(blobs[0]?.byte_size).toBe(64);
   expect(await ctx.db.select().from(spot_photo).where(eq(spot_photo.spot_id, spotId))).toHaveLength(
@@ -97,6 +107,7 @@ test("replaying an upload adds no second photo", async () => {
 
 test("type and size limits: non-JPEG is 415, over the limit is 413, nothing stored", async () => {
   const ctx = await setup();
+  const seeded = await seededBlobs(ctx);
   const me = await signIn(ctx);
   const fields = { spot_id: ctx.ids.spotIds["sac-lounge"], client_write_id: writeId() };
   const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -119,11 +130,12 @@ test("type and size limits: non-JPEG is 415, over the limit is 413, nothing stor
   );
   expect(over.statusCode).toBe(413);
   expect(body(over)).toMatchObject({ error: "photo_too_large" });
-  expect(await ctx.db.select().from(photo_blob)).toHaveLength(1);
+  expect(await addedBlobs(ctx, seeded)).toHaveLength(1);
 });
 
 test("an unknown spot or an offline local id stores no blob", async () => {
   const ctx = await setup();
+  const seeded = await seededBlobs(ctx);
   const me = await signIn(ctx);
   const unknown = await upload(ctx, me, {
     spot_id: "8d0f7c1e-2b7a-4c39-9a51-3f6f4f0f2a11",
@@ -142,7 +154,7 @@ test("an unknown spot or an offline local id stores no blob", async () => {
     null,
   );
   expect(noFile.statusCode).toBe(400);
-  expect(await ctx.db.select().from(photo_blob)).toEqual([]);
+  expect(await addedBlobs(ctx, seeded)).toEqual([]);
 });
 
 test("taken_at from a phone clock in the future is clamped to the server clock", async () => {
@@ -229,6 +241,7 @@ test("the image route serves exact bytes to signed-in surveyors only", async () 
 
 test("a photo or spot in another campus is a 404 and stores nothing", async () => {
   const ctx = await setup();
+  const seeded = await seededBlobs(ctx);
   const me = await signIn(ctx);
   const admin = await signIn(ctx, "admin", "Admin");
   await ctx.db.insert(campus).values({ id: "other", name: "Other", tz: "America/New_York" });
@@ -256,7 +269,7 @@ test("a photo or spot in another campus is a 404 and stores nothing", async () =
 
   const up = await upload(ctx, me, { spot_id: foreign.id, client_write_id: writeId() });
   expect(up.statusCode).toBe(404);
-  expect(await ctx.db.select().from(photo_blob)).toEqual([]);
+  expect(await addedBlobs(ctx, seeded)).toEqual([]);
   for (const action of ["cover", "approve", "reject"]) {
     const res = await photoAction(ctx, admin, photo.id, action);
     expect(res.statusCode).toBe(404);

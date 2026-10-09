@@ -9,6 +9,33 @@ import {
 } from "@study-spot/core";
 import { type SpotView, t } from "@study-spot/ui-logic";
 import {
+  Accessibility,
+  AppWindow,
+  Armchair,
+  ArrowUpDown,
+  CalendarClock,
+  Expand,
+  KeyRound,
+  Lamp,
+  LayoutGrid,
+  Lightbulb,
+  Moon,
+  Phone,
+  Plug,
+  Presentation,
+  Signal,
+  Sun,
+  Table,
+  Thermometer,
+  ThermometerSun,
+  Usb,
+  UserCheck,
+  Users,
+  Utensils,
+  Volume2,
+  Wifi,
+} from "lucide-react";
+import {
   AMENITY_COPY,
   CALLS_OPTIONS,
   CELL_OPTIONS,
@@ -21,7 +48,8 @@ import {
   TABLE_COPY,
   TEMPERATURE_OPTIONS,
 } from "../../lib/fields.ts";
-import { Check } from "../../ui/Check.tsx";
+import { AMENITY_ICON, SEAT_TYPE_ICON, TABLE_ICON } from "../../lib/icons.ts";
+import { Check, TagGroup } from "../../ui/Check.tsx";
 import { OptionalChoice, TriState, YesNo } from "../../ui/Choices.tsx";
 import { TextField } from "../../ui/Field.tsx";
 import { Segmented } from "../../ui/Segmented.tsx";
@@ -54,6 +82,7 @@ export function AccessEditor({ view }: EditorProps) {
           <>
             <Segmented
               label={t("access.eligibility.label")}
+              icon={Users}
               helper={t("access.eligibility.helper")}
               error={errorFor(form.errors, "eligibility")}
               layout="list"
@@ -77,12 +106,14 @@ export function AccessEditor({ view }: EditorProps) {
             />
             <OptionalChoice
               label={t("access.entry.label")}
+              icon={KeyRound}
               options={ENTRY_OPTIONS}
               value={v.entry_method}
               onChange={(x) => set("entry_method", x)}
             />
             <Check
               label={t("access.reservable.label")}
+              icon={CalendarClock}
               checked={v.reservable === true}
               onChange={(x) => set("reservable", x)}
             />
@@ -122,18 +153,20 @@ export function SeatingEditor({ view }: EditorProps) {
           <>
             <Stepper
               label={t("seating.seat_count.label")}
+              icon={Armchair}
               helper={t("seating.seat_count.helper")}
               error={errorFor(form.errors, "seat_count", t("seating.seat_count.invalid"))}
               value={v.seat_count}
               min={1}
               onChange={(x) => set("seat_count", x)}
             />
-            <fieldset className="field checks">
-              <legend className="label field__label">{t("seating.types.label")}</legend>
+            <TagGroup label={t("seating.types.label")} icon={LayoutGrid}>
               {SEAT_TYPE.map((type: SeatType) => (
                 <Check
                   key={type}
+                  variant="tag"
                   label={t(SEAT_TYPE_COPY[type])}
+                  icon={SEAT_TYPE_ICON[type]}
                   checked={types.some((s) => s.type === type)}
                   onChange={(on) =>
                     set(
@@ -145,20 +178,22 @@ export function SeatingEditor({ view }: EditorProps) {
                   }
                 />
               ))}
-            </fieldset>
-            <fieldset className="field checks">
-              <legend className="label field__label">{t("seating.tables.label")}</legend>
+            </TagGroup>
+            <TagGroup label={t("seating.tables.label")} icon={Table}>
               {TABLE_CONFIG.map((c: TableConfig) => (
                 <Check
                   key={c}
+                  variant="tag"
                   label={t(TABLE_COPY[c])}
+                  icon={TABLE_ICON[c]}
                   checked={tables.includes(c)}
                   onChange={(on) => set("table_configs", toggle(tables, c, on))}
                 />
               ))}
-            </fieldset>
+            </TagGroup>
             <Stepper
               label={t("seating.max_group.label")}
+              icon={Users}
               value={v.max_group_size}
               min={1}
               max={200}
@@ -166,6 +201,7 @@ export function SeatingEditor({ view }: EditorProps) {
             />
             <TriState
               label={t("seating.spread_out.label")}
+              icon={Expand}
               value={v.spread_out_room}
               onChange={(x) => set("spread_out_room", x)}
             />
@@ -185,6 +221,7 @@ export function PowerEditor({ view }: EditorProps) {
           <>
             <Stepper
               label={t("power.outlets.label")}
+              icon={Plug}
               helper={t("power.outlets.helper")}
               error={errorFor(form.errors, "outlet_coverage_pct")}
               value={
@@ -198,11 +235,13 @@ export function PowerEditor({ view }: EditorProps) {
             />
             <TriState
               label={t("power.usb.label")}
+              icon={Usb}
               value={v.usb_outlets}
               onChange={(x) => set("usb_outlets", x)}
             />
             <TextField
               label={t("power.wifi.label")}
+              icon={Wifi}
               helper={t("power.wifi.helper")}
               inputMode="decimal"
               value={v.wifi_mbps === null ? "" : String(v.wifi_mbps)}
@@ -214,6 +253,7 @@ export function PowerEditor({ view }: EditorProps) {
             />
             <OptionalChoice
               label={t("power.cell.label")}
+              icon={Signal}
               options={CELL_OPTIONS}
               value={v.cell_signal}
               onChange={(x) => set("cell_signal", x)}
@@ -234,6 +274,7 @@ export function EnvironmentEditor({ view }: EditorProps) {
           <>
             <Segmented
               label={t("env.noise.label")}
+              icon={Volume2}
               helper={t("env.noise.helper")}
               error={errorFor(form.errors, "noise_policy")}
               layout="list"
@@ -243,28 +284,33 @@ export function EnvironmentEditor({ view }: EditorProps) {
             />
             <TriState
               label={t("env.light.natural")}
+              icon={Sun}
               value={v.natural_light}
               onChange={(x) => set("natural_light", x)}
             />
             <OptionalChoice
               label={t("env.lighting.label")}
+              icon={Lamp}
               options={LIGHTING_OPTIONS}
               value={v.lighting}
               onChange={(x) => set("lighting", x)}
             />
             <OptionalChoice
               label={t("env.temperature.label")}
+              icon={Thermometer}
               options={TEMPERATURE_OPTIONS}
               value={v.temperature}
               onChange={(x) => set("temperature", x)}
             />
             <TriState
               label={t("env.temperature_consistent.label")}
+              icon={ThermometerSun}
               value={v.temperature_consistent}
               onChange={(x) => set("temperature_consistent", x)}
             />
             <TriState
               label={t("env.windows.label")}
+              icon={AppWindow}
               value={v.windows_view}
               onChange={(x) => set("windows_view", x)}
             />
@@ -284,6 +330,7 @@ export function UseFitEditor({ view }: EditorProps) {
           <>
             <Segmented
               label={t("use.food.label")}
+              icon={Utensils}
               error={errorFor(form.errors, "food_policy")}
               options={FOOD_OPTIONS}
               value={v.food_policy}
@@ -291,6 +338,7 @@ export function UseFitEditor({ view }: EditorProps) {
             />
             <YesNo
               label={t("use.group.label")}
+              icon={Users}
               helper={t("use.group.helper")}
               error={errorFor(form.errors, "group_work_ok")}
               value={v.group_work_ok}
@@ -298,6 +346,7 @@ export function UseFitEditor({ view }: EditorProps) {
             />
             <OptionalChoice
               label={t("use.calls.label")}
+              icon={Phone}
               layout="list"
               options={CALLS_OPTIONS}
               value={v.calls_ok}
@@ -305,6 +354,7 @@ export function UseFitEditor({ view }: EditorProps) {
             />
             <TriState
               label={t("use.whiteboard.label")}
+              icon={Presentation}
               value={v.whiteboard}
               onChange={(x) => set("whiteboard", x)}
             />
@@ -328,6 +378,7 @@ export function AmenitiesEditor({ view }: EditorProps) {
               <Stepper
                 key={a}
                 label={t(AMENITY_COPY[a])}
+                icon={AMENITY_ICON[a]}
                 value={minutes(a)}
                 min={0}
                 max={60}
@@ -356,16 +407,19 @@ export function AccessibilityEditor({ view }: EditorProps) {
         <>
           <TriState
             label={t("a11y.step_free")}
+            icon={Accessibility}
             value={form.values.step_free}
             onChange={(x) => set("step_free", x)}
           />
           <TriState
             label={t("a11y.elevator")}
+            icon={ArrowUpDown}
             value={form.values.elevator}
             onChange={(x) => set("elevator", x)}
           />
           <TriState
             label={t("a11y.seating")}
+            icon={Armchair}
             value={form.values.accessible_seating}
             onChange={(x) => set("accessible_seating", x)}
           />
@@ -382,16 +436,19 @@ export function LateNightEditor({ view }: EditorProps) {
         <>
           <TriState
             label={t("late.past_midnight")}
+            icon={Moon}
             value={form.values.open_past_midnight}
             onChange={(x) => set("open_past_midnight", x)}
           />
           <TriState
             label={t("late.staffed")}
+            icon={UserCheck}
             value={form.values.staffed_late}
             onChange={(x) => set("staffed_late", x)}
           />
           <TriState
             label={t("late.lit_route")}
+            icon={Lightbulb}
             value={form.values.lit_route_to_residences}
             onChange={(x) => set("lit_route_to_residences", x)}
           />

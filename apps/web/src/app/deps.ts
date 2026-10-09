@@ -15,6 +15,7 @@ import {
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { QueryClient } from "@tanstack/react-query";
 import type { Persister } from "@tanstack/react-query-persist-client";
+import { z } from "zod";
 import {
   browserIds,
   browserTimers,
@@ -38,9 +39,20 @@ import { createSessionState, type SessionState } from "./sessionState.ts";
 
 export type AppDeps = {
   api: SurveyApi;
+  /**
+   * The session store. buildAppDeps subscribes `resumeOnNewSession` to it, and
+   * that subscription is what makes `join()` resume the outbox and reads, in this
+   * tab and others. Any other way to build AppDeps must do the same.
+   */
   session: SessionState;
   auth: AuthState;
   outbox: Outbox;
+  /**
+   * Signs this phone out, no UI yet: stops the outbox (no send starts after it),
+   * clears the survey query cache in memory and on disk, then clears the session.
+   * Queued writes stay in IndexedDB for the next sign-in to send.
+   */
+  signOut(): Promise<void>;
   /** The outbox's start(): its first sync pass of this page load has ended once it resolves. */
   started: Promise<void>;
   queryClient: QueryClient;
@@ -87,7 +99,7 @@ export function createQueryClient(): QueryClient {
 }
 
 /**
- * Signing in again, in this tab or another, resumes this tab: reads and the
+ * Signing in again with a new token, in this tab or another, resumes this tab: reads and the
  * outbox leave their signed-out state and the survey queries load again. The
  * session store is the one place all tabs agree on, so this listens there.
  */
@@ -101,13 +113,69 @@ export function resumeOnNewSession(deps: {
   let last = session.token();
   return session.subscribe(() => {
     const token = session.token();
-    const wasOut = auth.signedOut() || outbox.getSnapshot().signedOut;
     const changed = token !== last;
     last = token;
-    if (token === null || !(changed || wasOut)) return;
+    // A save of the same token proves nothing new: the server refused it, so a
+    // re-login hands out a fresh one. Resuming on it would only fail again.
+    if (token === null || !changed) return;
     auth.reset();
     outbox.resume();
     void queryClient.invalidateQueries();
+  });
+}
+
+/**
+ * Who the queued writes belong to after a sign-out cleared the session. Written only
+ * when the queue is not empty; the invite flow compares it with the next surveyor.
+ */
+export const OWNER_KEY = "outbox:owner";
+export const QueueOwner = z.object({ id: z.string(), display_name: z.string() });
+export type QueueOwner = z.infer<typeof QueueOwner>;
+
+/** Signs out: stop sending, drop cached server data, then drop the session. */
+export function createSignOut(deps: {
+  cache: KeyValueCache;
+  session: SessionState;
+  outbox: Outbox;
+  queryClient: QueryClient;
+  persister: Persister;
+}): () => Promise<void> {
+  return async () => {
+    deps.outbox.stop();
+    const me = deps.session.current();
+    if (me !== null && deps.outbox.getSnapshot().records.length > 0) {
+      const owner: QueueOwner = { id: me.surveyor.id, display_name: me.surveyor.display_name };
+      try {
+        await deps.cache.set(OWNER_KEY, JSON.stringify(owner));
+      } catch {
+        // Without the note the next join is not asked; the queue itself is untouched.
+      }
+    }
+    deps.queryClient.clear();
+    // The copy is a cache: a failed removal costs only a stale snapshot.
+    try {
+      await deps.persister.removeClient();
+    } catch {
+      // Nothing to do: the in-memory copy is already gone.
+    }
+    deps.session.clear();
+  };
+}
+
+/** The persisted survey query cache, kept in `cache` (IndexedDB on the phone). */
+export function createSurveyPersister(cache: KeyValueCache): Persister {
+  // The persisted copy is a cache: a storage failure (quota, timeout) costs only the copy.
+  return createAsyncStoragePersister({
+    storage: createPersistStorage(cache),
+    key: "query:survey",
+    throttleTime: 250,
+    deserialize: (raw) => {
+      try {
+        return sanitizePersisted(JSON.parse(raw));
+      } catch {
+        return sanitizePersisted(null);
+      }
+    },
   });
 }
 
@@ -160,24 +228,13 @@ function buildAppDeps(env: { apiBaseUrl: string; dataBaseUrl: string }): AppDeps
   const queryClient = createQueryClient();
   resumeOnNewSession({ session, auth, outbox, queryClient });
   outbox.onApplied((spot: SurveySpot) => applyServerSpot(queryClient, spot));
-  // The persisted copy is a cache: a storage failure (quota, timeout) costs only the copy.
-  const persister = createAsyncStoragePersister({
-    storage: createPersistStorage(stores.cache),
-    key: "query:survey",
-    throttleTime: 250,
-    deserialize: (raw) => {
-      try {
-        return sanitizePersisted(JSON.parse(raw));
-      } catch {
-        return sanitizePersisted(null);
-      }
-    },
-  });
+  const persister = createSurveyPersister(stores.cache);
   return {
     api,
     session,
     auth,
     outbox,
+    signOut: createSignOut({ cache: stores.cache, session, outbox, queryClient, persister }),
     started: outbox.start(),
     queryClient,
     persister,

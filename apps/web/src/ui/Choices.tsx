@@ -1,4 +1,5 @@
 import { t } from "@study-spot/ui-logic";
+import type { LucideIcon } from "lucide-react";
 import { type Option, Segmented } from "./Segmented.tsx";
 
 const UNKNOWN = "__unknown";
@@ -8,10 +9,11 @@ type TriProps = {
   value: boolean | null;
   onChange: (value: boolean | null) => void;
   helper?: string;
+  icon?: LucideIcon;
 };
 
 /** Yes, No, or Not sure for an optional fact; Not sure stores nothing. */
-export function TriState({ label, value, onChange, helper }: TriProps) {
+export function TriState({ label, value, onChange, helper, icon }: TriProps) {
   const options: Option<"yes" | "no" | typeof UNKNOWN>[] = [
     { value: "yes", label: t("common.yes") },
     { value: "no", label: t("common.no") },
@@ -20,6 +22,7 @@ export function TriState({ label, value, onChange, helper }: TriProps) {
   return (
     <Segmented
       label={label}
+      icon={icon}
       helper={helper}
       options={options}
       value={value === null ? UNKNOWN : value ? "yes" : "no"}
@@ -29,6 +32,7 @@ export function TriState({ label, value, onChange, helper }: TriProps) {
 }
 
 type YesNoProps = {
+  icon?: LucideIcon;
   label: string;
   value: boolean | null;
   onChange: (value: boolean) => void;
@@ -37,10 +41,11 @@ type YesNoProps = {
 };
 
 /** A required yes or no: no third option. */
-export function YesNo({ label, value, onChange, helper, error }: YesNoProps) {
+export function YesNo({ label, value, onChange, helper, error, icon }: YesNoProps) {
   return (
     <Segmented
       label={label}
+      icon={icon}
       helper={helper}
       error={error}
       options={[
@@ -60,6 +65,7 @@ type OptionalProps<V extends string> = {
   onChange: (value: V | null) => void;
   helper?: string;
   layout?: "row" | "list";
+  icon?: LucideIcon;
 };
 
 /** One of a few options, plus Not sure for an optional field. */
@@ -72,6 +78,7 @@ export function OptionalChoice<V extends string>(p: OptionalProps<V>) {
   return (
     <Segmented<V | typeof UNKNOWN>
       label={p.label}
+      icon={p.icon}
       helper={p.helper}
       layout={p.layout ?? "row"}
       options={options}

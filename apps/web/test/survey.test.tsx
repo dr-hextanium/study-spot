@@ -10,12 +10,12 @@ test("/ redirects to /survey, which resolves for a signed-in phone", async () =>
     await view.router.load();
   });
   expect(view.router.state.location.pathname).toBe("/survey");
-  expect(screen.queryByText(t("auth.expired.title"))).toBeNull();
+  expect(screen.queryByRole("heading", { name: t("auth.expired.title") })).toBeNull();
 });
 
 test("a phone with no session says Sign in again", async () => {
   renderRoute(testApp({ me: null }), "/survey");
-  expect(await screen.findByText(t("auth.expired.title"))).toBeTruthy();
+  expect(await screen.findByRole("heading", { name: t("auth.expired.title") })).toBeTruthy();
 });
 
 test("a 401 on a read signs the survey out and keeps the queue", async () => {
@@ -24,7 +24,7 @@ test("a 401 on a read signs the survey out and keeps the queue", async () => {
   await act(async () => {
     app.deps.auth.markSignedOut();
   });
-  expect(await screen.findByText(t("auth.expired.title"))).toBeTruthy();
+  expect(await screen.findByRole("heading", { name: t("auth.expired.title") })).toBeTruthy();
   expect(app.deps.session.current()).not.toBeNull();
 });
 
@@ -35,7 +35,7 @@ test("an outbox 401 pause shows Sign in again and keeps the pending write", asyn
   await act(async () => {
     await app.deps.outbox.createSpot(identity());
   });
-  expect(await screen.findByText(t("auth.expired.title"))).toBeTruthy();
+  expect(await screen.findByRole("heading", { name: t("auth.expired.title") })).toBeTruthy();
   expect(app.deps.outbox.getSnapshot().signedOut).toBe(true);
   expect(app.deps.outbox.getSnapshot().records.map((r) => r.state)).toEqual(["pending"]);
 });
@@ -49,7 +49,7 @@ test("signing out in place moves focus to the Sign in again screen", async () =>
   await act(async () => {
     app.deps.auth.markSignedOut();
   });
-  await screen.findByText(t("auth.expired.title"));
+  await screen.findByRole("heading", { name: t("auth.expired.title") });
   expect(document.activeElement?.tagName).toBe("MAIN");
 });
 
@@ -62,7 +62,7 @@ test("signing in again after an outbox 401 sends the waiting write", async () =>
   await act(async () => {
     await app.deps.outbox.createSpot(identity());
   });
-  await screen.findByText(t("auth.expired.title"));
+  await screen.findByRole("heading", { name: t("auth.expired.title") });
   expect(app.server.inner.spots.size).toBe(0);
   // The server accepts the fresh session; the re-login invite hands it out.
   app.server.unauthorized = false;
@@ -90,7 +90,7 @@ test("a read-only 401 shows Sign in again while the outbox stays fine", async ()
   const app = testApp();
   app.server.unauthorized = true;
   renderRoute(app, "/survey");
-  expect(await screen.findByText(t("auth.expired.title"))).toBeTruthy();
+  expect(await screen.findByRole("heading", { name: t("auth.expired.title") })).toBeTruthy();
   expect(app.deps.auth.signedOut()).toBe(true);
   expect(app.deps.outbox.getSnapshot().signedOut).toBe(false);
 });
@@ -102,7 +102,7 @@ test("a session saved in another tab resumes this tab's sync", async () => {
   await act(async () => {
     await app.deps.outbox.createSpot(identity());
   });
-  await screen.findByText(t("auth.expired.title"));
+  await screen.findByRole("heading", { name: t("auth.expired.title") });
   app.deps.auth.markSignedOut();
   app.server.unauthorized = false;
   // Another tab joined again: it writes the session store, this tab hears a storage event.
@@ -114,4 +114,49 @@ test("a session saved in another tab resumes this tab's sync", async () => {
   expect(app.deps.auth.signedOut()).toBe(false);
   expect(app.deps.outbox.getSnapshot().signedOut).toBe(false);
   expect(app.deps.session.token()).toBe(NEW_TOKEN);
+});
+
+test("saving the same token again does not resume a signed-out outbox", async () => {
+  const app = testApp();
+  app.server.unauthorized = true;
+  renderRoute(app, "/survey");
+  await act(async () => {
+    await app.deps.outbox.createSpot(identity());
+  });
+  await screen.findByRole("heading", { name: t("auth.expired.title") });
+  expect(app.deps.outbox.getSnapshot().signedOut).toBe(true);
+  const me = app.deps.session.current();
+  if (me === null) throw new Error("no session");
+  act(() => {
+    app.deps.session.save({ token: me.token, surveyor: me.surveyor });
+  });
+  expect(app.deps.outbox.getSnapshot().signedOut).toBe(true);
+  expect(app.deps.auth.signedOut()).toBe(true);
+  // A fresh token resumes.
+  app.server.unauthorized = false;
+  act(() => {
+    app.deps.session.save({ token: NEW_TOKEN, surveyor: me.surveyor });
+  });
+  await waitFor(() => expect(app.deps.outbox.getSnapshot().signedOut).toBe(false));
+});
+
+test.each([
+  "/survey",
+  "/survey/spots/new",
+  "/survey/admin",
+  `/survey/spots/${"1".repeat(8)}-1111-4111-8111-${"1".repeat(12)}`,
+  `/survey/spots/${"1".repeat(8)}-1111-4111-8111-${"1".repeat(12)}/seating`,
+])("%s says Sign in again when the phone has no session", async (path) => {
+  renderRoute(testApp({ me: null }), path);
+  expect(
+    await screen.findByRole("heading", { name: t("auth.expired.title"), level: 1 }),
+  ).toBeTruthy();
+  expect(screen.getByText(t("auth.expired.body"))).toBeTruthy();
+});
+
+test("an unknown address says not found and links back to the spot list", async () => {
+  const view = renderRoute(testApp(), "/survey/spots/not-an-id");
+  const back = await screen.findByRole("link", { name: t("nav.back_to_spots") });
+  fireEvent.click(back);
+  await waitFor(() => expect(view.router.state.location.pathname).toBe("/survey"));
 });

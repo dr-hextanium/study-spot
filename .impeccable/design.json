@@ -1,0 +1,567 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-09T04:54:52+00:00",
+  "title": "Design System: Perch survey mode (Seawolf)",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#FBFAF9",
+        "tonalRamp": [
+          "oklch(from #FBFAF9 15% c h)",
+          "oklch(from #FBFAF9 27% c h)",
+          "oklch(from #FBFAF9 39% c h)",
+          "oklch(from #FBFAF9 51% c h)",
+          "oklch(from #FBFAF9 63% c h)",
+          "oklch(from #FBFAF9 75% c h)",
+          "oklch(from #FBFAF9 85% c h)",
+          "oklch(from #FBFAF9 95% c h)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#1A1717",
+        "tonalRamp": [
+          "oklch(from #1A1717 15% c h)",
+          "oklch(from #1A1717 27% c h)",
+          "oklch(from #1A1717 39% c h)",
+          "oklch(from #1A1717 51% c h)",
+          "oklch(from #1A1717 63% c h)",
+          "oklch(from #1A1717 75% c h)",
+          "oklch(from #1A1717 85% c h)",
+          "oklch(from #1A1717 95% c h)"
+        ]
+      },
+      "red": {
+        "role": "primary",
+        "displayName": "Seawolf Red",
+        "canonical": "#990000",
+        "tonalRamp": [
+          "oklch(from #990000 15% c h)",
+          "oklch(from #990000 27% c h)",
+          "oklch(from #990000 39% c h)",
+          "oklch(from #990000 51% c h)",
+          "oklch(from #990000 63% c h)",
+          "oklch(from #990000 75% c h)",
+          "oklch(from #990000 85% c h)",
+          "oklch(from #990000 95% c h)"
+        ]
+      },
+      "mist": {
+        "role": "neutral",
+        "displayName": "Mist",
+        "canonical": "#ECE8E6",
+        "tonalRamp": [
+          "oklch(from #ECE8E6 15% c h)",
+          "oklch(from #ECE8E6 27% c h)",
+          "oklch(from #ECE8E6 39% c h)",
+          "oklch(from #ECE8E6 51% c h)",
+          "oklch(from #ECE8E6 63% c h)",
+          "oklch(from #ECE8E6 75% c h)",
+          "oklch(from #ECE8E6 85% c h)",
+          "oklch(from #ECE8E6 95% c h)"
+        ]
+      },
+      "onRed": {
+        "role": "primary",
+        "displayName": "On Red",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "oklch(from #FFFFFF 15% c h)",
+          "oklch(from #FFFFFF 27% c h)",
+          "oklch(from #FFFFFF 39% c h)",
+          "oklch(from #FFFFFF 51% c h)",
+          "oklch(from #FFFFFF 63% c h)",
+          "oklch(from #FFFFFF 75% c h)",
+          "oklch(from #FFFFFF 85% c h)",
+          "oklch(from #FFFFFF 95% c h)"
+        ]
+      },
+      "paper-dark": {
+        "role": "neutral",
+        "displayName": "Paper (dark)",
+        "canonical": "#151313",
+        "tonalRamp": [
+          "oklch(from #151313 15% c h)",
+          "oklch(from #151313 27% c h)",
+          "oklch(from #151313 39% c h)",
+          "oklch(from #151313 51% c h)",
+          "oklch(from #151313 63% c h)",
+          "oklch(from #151313 75% c h)",
+          "oklch(from #151313 85% c h)",
+          "oklch(from #151313 95% c h)"
+        ]
+      },
+      "ink-dark": {
+        "role": "neutral",
+        "displayName": "Ink (dark)",
+        "canonical": "#EEEAE8",
+        "tonalRamp": [
+          "oklch(from #EEEAE8 15% c h)",
+          "oklch(from #EEEAE8 27% c h)",
+          "oklch(from #EEEAE8 39% c h)",
+          "oklch(from #EEEAE8 51% c h)",
+          "oklch(from #EEEAE8 63% c h)",
+          "oklch(from #EEEAE8 75% c h)",
+          "oklch(from #EEEAE8 85% c h)",
+          "oklch(from #EEEAE8 95% c h)"
+        ]
+      },
+      "red-dark": {
+        "role": "primary",
+        "displayName": "Seawolf Red (dark)",
+        "canonical": "#EF6B63",
+        "tonalRamp": [
+          "oklch(from #EF6B63 15% c h)",
+          "oklch(from #EF6B63 27% c h)",
+          "oklch(from #EF6B63 39% c h)",
+          "oklch(from #EF6B63 51% c h)",
+          "oklch(from #EF6B63 63% c h)",
+          "oklch(from #EF6B63 75% c h)",
+          "oklch(from #EF6B63 85% c h)",
+          "oklch(from #EF6B63 95% c h)"
+        ]
+      },
+      "mist-dark": {
+        "role": "neutral",
+        "displayName": "Mist (dark)",
+        "canonical": "#262222",
+        "tonalRamp": [
+          "oklch(from #262222 15% c h)",
+          "oklch(from #262222 27% c h)",
+          "oklch(from #262222 39% c h)",
+          "oklch(from #262222 51% c h)",
+          "oklch(from #262222 63% c h)",
+          "oklch(from #262222 75% c h)",
+          "oklch(from #262222 85% c h)",
+          "oklch(from #262222 95% c h)"
+        ]
+      },
+      "onRed-dark": {
+        "role": "primary",
+        "displayName": "On Red (dark)",
+        "canonical": "#151313",
+        "tonalRamp": [
+          "oklch(from #151313 15% c h)",
+          "oklch(from #151313 27% c h)",
+          "oklch(from #151313 39% c h)",
+          "oklch(from #151313 51% c h)",
+          "oklch(from #151313 63% c h)",
+          "oklch(from #151313 75% c h)",
+          "oklch(from #151313 85% c h)",
+          "oklch(from #151313 95% c h)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "muted-dark": {
+        "role": "neutral",
+        "displayName": "Muted (dark)",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "line-dark": {
+        "role": "neutral",
+        "displayName": "Line (dark)",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "edge": {
+        "role": "neutral",
+        "displayName": "Edge",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "edge-dark": {
+        "role": "neutral",
+        "displayName": "Edge (dark)",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "hover": {
+        "role": "neutral",
+        "displayName": "Hover",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "hover-dark": {
+        "role": "neutral",
+        "displayName": "Hover (dark)",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "redTint": {
+        "role": "primary",
+        "displayName": "Red Tint",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "redTint-dark": {
+        "role": "primary",
+        "displayName": "Red Tint (dark)",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "redHover": {
+        "role": "primary",
+        "displayName": "Red Hover",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "redHover-dark": {
+        "role": "primary",
+        "displayName": "Red Hover (dark)",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "redPress": {
+        "role": "primary",
+        "displayName": "Red Press",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "redPress-dark": {
+        "role": "primary",
+        "displayName": "Red Press (dark)",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "inkHover": {
+        "role": "neutral",
+        "displayName": "Ink Hover",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "inkHover-dark": {
+        "role": "neutral",
+        "displayName": "Ink Hover (dark)",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "mistHover": {
+        "role": "neutral",
+        "displayName": "Mist Hover",
+        "derived": "oklab mix, see frontmatter"
+      },
+      "mistHover-dark": {
+        "role": "neutral",
+        "displayName": "Mist Hover (dark)",
+        "derived": "oklab mix, see frontmatter"
+      }
+    },
+    "typographyMeta": {
+      "large": {
+        "displayName": "Large title",
+        "purpose": "The one h1 per screen."
+      },
+      "figure": {
+        "displayName": "Figure",
+        "purpose": "Stepper values and admin counts."
+      },
+      "group": {
+        "displayName": "Group heading",
+        "purpose": "Group headings and sheet titles."
+      },
+      "barTitle": {
+        "displayName": "Bar title",
+        "purpose": "Small top bar title after the large title scrolls away."
+      },
+      "input": {
+        "displayName": "Input",
+        "purpose": "Text inside inputs and search, 16 px so phones do not zoom."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text."
+      },
+      "body-strong": {
+        "displayName": "Body strong",
+        "purpose": "Row titles, button labels, field labels."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Segmented labels, tags, chips, meta line."
+      },
+      "small": {
+        "displayName": "Small",
+        "purpose": "Row subtitles, facts, helpers."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Pills and counts."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "One-time invite links only."
+      }
+    },
+    "sizes": [
+      {
+        "name": "tapTarget",
+        "value": "44px"
+      },
+      {
+        "name": "bar",
+        "value": "52px"
+      },
+      {
+        "name": "actionBar",
+        "value": "88px"
+      },
+      {
+        "name": "updateCard",
+        "value": "72px"
+      },
+      {
+        "name": "row",
+        "value": "52px"
+      },
+      {
+        "name": "control",
+        "value": "46px"
+      },
+      {
+        "name": "thumb",
+        "value": "40px"
+      },
+      {
+        "name": "tag",
+        "value": "36px"
+      },
+      {
+        "name": "choice",
+        "value": "48px"
+      },
+      {
+        "name": "column",
+        "value": "680px"
+      }
+    ],
+    "shadows": [
+      {
+        "name": "sheet",
+        "value": "0 -10px 40px -10px color-mix(in oklab, var(--color-ink) 30%, transparent)",
+        "purpose": "Bottom sheet and centered dialog."
+      },
+      {
+        "name": "scrim",
+        "value": "color-mix(in oklab, var(--color-ink) 30%, transparent)",
+        "purpose": "Sheet backdrop."
+      },
+      {
+        "name": "floating-tray",
+        "value": "0 12px 40px -12px color-mix(in oklab, var(--color-ink) 22%, transparent)",
+        "purpose": "Action bar from 768 px only."
+      },
+      {
+        "name": "thumb",
+        "value": "0 1px 2px color-mix(in oklab, var(--color-ink) 12%, transparent)",
+        "purpose": "Segmented control thumb."
+      }
+    ],
+    "motion": [
+      {
+        "name": "duration-fast",
+        "value": "120ms",
+        "purpose": "Hover, press, color changes."
+      },
+      {
+        "name": "duration-base",
+        "value": "220ms",
+        "purpose": "Large title handoff, toasts, switch, theme change."
+      },
+      {
+        "name": "duration-slow",
+        "value": "320ms",
+        "purpose": "Sheet slide."
+      },
+      {
+        "name": "duration-reduced",
+        "value": "80ms",
+        "purpose": "All transitions under reduced motion; opacity and color only."
+      },
+      {
+        "name": "easing-standard",
+        "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "Every transition."
+      },
+      {
+        "name": "press-row",
+        "value": "0.985",
+        "purpose": "Row press scale."
+      },
+      {
+        "name": "press-control",
+        "value": "0.97",
+        "purpose": "Control press scale (tags, chips, stepper, icon button, segmented option)."
+      },
+      {
+        "name": "segmented-glide",
+        "value": "180ms",
+        "purpose": "Segmented thumb glide; a literal in CSS, not a token."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide",
+        "value": "768px",
+        "purpose": "Centered dialog sheets, floating action bar, three-column photos."
+      }
+    ],
+    "icons": {
+      "set": "Lucide",
+      "strokeWidth": 1.75,
+      "defaultSize": "20px",
+      "labelSize": "16px"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one red action per screen.",
+      "html": "<button class=\"ds-btn-primary\">Publish</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border:0;border-radius:12px;font:600 15px/1 \"Instrument Sans Variable\",ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background-color 120ms cubic-bezier(0.2,0.8,0.2,1),transform 120ms cubic-bezier(0.2,0.8,0.2,1);background:var(--color-red);color:var(--color-onRed);}.ds-btn-primary:hover{background:var(--color-redHover);}.ds-btn-primary:active{background:var(--color-redPress);transform:translateY(1px) scale(0.99);}.ds-btn-primary:focus-visible{outline:2px solid var(--color-red);outline-offset:2px;}"
+    },
+    {
+      "name": "Ink Button",
+      "kind": "button",
+      "refersTo": "button-ink",
+      "description": "Strong secondary, such as Next: Seating.",
+      "html": "<button class=\"ds-btn-ink\">Next: Seating</button>",
+      "css": ".ds-btn-ink{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border:0;border-radius:12px;font:600 15px/1 \"Instrument Sans Variable\",ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background-color 120ms cubic-bezier(0.2,0.8,0.2,1),transform 120ms cubic-bezier(0.2,0.8,0.2,1);background:var(--color-ink);color:var(--color-paper);}.ds-btn-ink:hover{background:var(--color-inkHover);}.ds-btn-ink:active{transform:translateY(1px) scale(0.99);}.ds-btn-ink:focus-visible{outline:2px solid var(--color-red);outline-offset:2px;}"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Ordinary secondary on mist; danger is the same box with red text.",
+      "html": "<button class=\"ds-btn-quiet\">Looks right</button> <button class=\"ds-btn-quiet ds-btn-danger\">Unpublish</button>",
+      "css": ".ds-btn-quiet{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border:0;border-radius:12px;font:600 15px/1 \"Instrument Sans Variable\",ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background-color 120ms cubic-bezier(0.2,0.8,0.2,1),transform 120ms cubic-bezier(0.2,0.8,0.2,1);background:var(--color-mist);color:var(--color-ink);}.ds-btn-danger{color:var(--color-red);}.ds-btn-quiet:hover{background:var(--color-mistHover);}.ds-btn-quiet:active{transform:translateY(1px) scale(0.99);}.ds-btn-quiet:focus-visible{outline:2px solid var(--color-red);outline-offset:2px;}"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Icon plus label above, paper input, hairline below.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field__label\" for=\"ds-name\">Name</label><input id=\"ds-name\" class=\"ds-input\" placeholder=\"Room or area name\"></div>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:8px;padding:16px 0;border-bottom:1px solid var(--color-line);font-family:\"Instrument Sans Variable\",ui-sans-serif,system-ui,sans-serif;}.ds-field__label{font-size:15px;font-weight:600;color:var(--color-ink);}.ds-input{min-height:46px;padding:8px 12px;border:1px solid var(--color-edge);border-radius:12px;background:var(--color-paper);color:var(--color-ink);font:inherit;font-size:16px;}.ds-input::placeholder{color:var(--color-muted);}.ds-input:hover:not(:focus-visible){background:var(--color-hover);}.ds-input:focus-visible{outline:2px solid transparent;border-color:var(--color-red);box-shadow:0 0 0 1px var(--color-red);}"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "custom",
+      "refersTo": "segmented-track",
+      "description": "Mist track, paper thumb that glides to the choice.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\" aria-label=\"Theme\"><span class=\"ds-seg__thumb\"></span><button role=\"radio\" aria-checked=\"true\">Light</button><button role=\"radio\" aria-checked=\"false\">Dark</button><button role=\"radio\" aria-checked=\"false\">System</button></div>",
+      "css": ".ds-seg{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:4px;border-radius:12px;background:var(--color-mist);isolation:isolate;max-width:320px;}.ds-seg__thumb{position:absolute;z-index:-1;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/3);border-radius:8px;background:var(--color-paper);box-shadow:0 1px 2px color-mix(in oklab,var(--color-ink) 12%,transparent);transition:transform 180ms cubic-bezier(0.2,0.8,0.2,1);}.ds-seg button{min-height:44px;border:0;border-radius:8px;background:transparent;color:var(--color-muted);font:600 14px/1.08 \"Instrument Sans Variable\",ui-sans-serif,system-ui,sans-serif;cursor:pointer;}.ds-seg button[aria-checked=true]{color:var(--color-ink);}.ds-seg button:hover:not([aria-checked=true]){color:var(--color-ink);}.ds-seg button:active:not([aria-checked=true]){transform:scale(0.97);}.ds-seg button:focus-visible{outline:2px solid var(--color-red);outline-offset:-2px;}"
+    },
+    {
+      "name": "Tag Toggle",
+      "kind": "chip",
+      "refersTo": "tag",
+      "description": "36 px pill with an icon; selected fills ink.",
+      "html": "<button class=\"ds-tag\" aria-pressed=\"false\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg>Outlets</button> <button class=\"ds-tag\" aria-pressed=\"true\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg>Whiteboard</button>",
+      "css": ".ds-tag{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--color-edge);border-radius:999px;background:var(--color-paper);color:var(--color-ink);font:600 14px/1 \"Instrument Sans Variable\",ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background-color 120ms,transform 120ms;}.ds-tag[aria-pressed=true]{background:var(--color-ink);border-color:var(--color-ink);color:var(--color-paper);}.ds-tag:hover:not([aria-pressed=true]){background:var(--color-hover);}.ds-tag:active{transform:scale(0.97);}.ds-tag:focus-visible{outline:2px solid var(--color-red);outline-offset:2px;}"
+    },
+    {
+      "name": "Row with Pill",
+      "kind": "custom",
+      "refersTo": "row",
+      "description": "52 px list row: icon, name, the fact or a red Missing pill on the right.",
+      "html": "<ul class=\"ds-rows\"><li><a class=\"ds-row\" href=\"#\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg><span class=\"ds-row__title\">Seating</span><span class=\"ds-row__fact\">30 seats</span></a></li><li><a class=\"ds-row\" href=\"#\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"/><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"/></svg><span class=\"ds-row__title\">Noise and feel</span><span class=\"ds-pill ds-pill--red\">Missing</span></a></li></ul>",
+      "css": ".ds-rows{list-style:none;margin:0;padding:0;font-family:\"Instrument Sans Variable\",ui-sans-serif,system-ui,sans-serif;}.ds-row{display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 10px;border-radius:12px;color:var(--color-ink);text-decoration:none;transition:background-color 120ms,transform 120ms;}.ds-row svg{color:var(--color-muted);flex:none;}.ds-row__title{flex:1;font-weight:600;font-size:15px;}.ds-row__fact{color:var(--color-muted);font-size:13px;}.ds-row:hover{background:var(--color-hover);}.ds-row:active{background:var(--color-mist);transform:scale(0.985);}.ds-row:focus-visible{outline:2px solid var(--color-red);outline-offset:2px;}.ds-pill{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:999px;background:var(--color-mist);font-size:12px;font-weight:600;}.ds-pill--red{background:var(--color-redTint);color:var(--color-red);}"
+    },
+    {
+      "name": "Step Bar",
+      "kind": "custom",
+      "refersTo": "step-current",
+      "description": "One segment per required section: done ink, current red and taller, todo mist.",
+      "html": "<div class=\"ds-steps\" role=\"img\" aria-label=\"4 of 6 done\"><span class=\"d\"></span><span class=\"d\"></span><span class=\"d\"></span><span class=\"d\"></span><span class=\"c\"></span><span></span></div><p class=\"ds-steps__line\">4 of 6 · Next: Seating</p>",
+      "css": ".ds-steps{display:flex;align-items:center;gap:6px;}.ds-steps span{flex:1;height:4px;border-radius:999px;background:var(--color-mist);}.ds-steps .d{background:var(--color-ink);}.ds-steps .c{height:6px;background:var(--color-red);}.ds-steps__line{margin:8px 0 0;color:var(--color-muted);font:400 14px/1.5 \"Instrument Sans Variable\",ui-sans-serif,system-ui,sans-serif;}"
+    },
+    {
+      "name": "Search",
+      "kind": "input",
+      "refersTo": "search",
+      "description": "44 px mist search field.",
+      "html": "<label class=\"ds-search\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m21 21-4.34-4.34\"/><circle cx=\"11\" cy=\"11\" r=\"8\"/></svg><input type=\"search\" placeholder=\"Search spots\" aria-label=\"Search spots\"></label>",
+      "css": ".ds-search{display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;border-radius:12px;background:var(--color-mist);color:var(--color-muted);}.ds-search input{flex:1;min-width:0;border:0;background:transparent;color:var(--color-ink);font:400 16px \"Instrument Sans Variable\",ui-sans-serif,system-ui,sans-serif;}.ds-search input:focus{outline:none;}.ds-search:focus-within{outline:2px solid var(--color-red);outline-offset:2px;}"
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "Ink confirmation; says Saved only after the server accepts.",
+      "html": "<button class=\"ds-toast\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg><span>Saved on this phone</span></button>",
+      "css": ".ds-toast{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:8px 14px;border:0;border-radius:12px;background:var(--color-ink);color:var(--color-paper);font:500 14px \"Instrument Sans Variable\",ui-sans-serif,system-ui,sans-serif;cursor:pointer;}.ds-toast:focus-visible{outline:2px solid var(--color-red);outline-offset:2px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Seawolf",
+    "overview": "**Creative North Star: \"Seawolf\"**\n\nSeawolf is a quiet tool that says more with less. A surveyor holds a phone at arm's length in afternoon sun or in a fluorescent basement at night, and the screen answers three questions without decoration: what is left (the step bar), what needs me (red), and what is done (the fact on the right of each row). A big Newsreader title opens every screen; everything under it is compact Instrument Sans rows in the density of a command palette, with the calm spacing of a notes page.\n\nThe system is four colors and oklab mixes of them. Paper, ink, Stony Brook red and mist do all the work; there is no status hue, no gradient, no texture, no illustration. Depth is reserved for things that float over the page (the sheet, the floating action bar on wide screens, the segmented thumb). Motion is short and physical: a press scales the thing you touched, the segmented thumb glides to your choice the moment your finger lands, sheets slide up, and the large title hands off to a small bar title as it scrolls away.\n\nScope and lineage. This file records survey mode (`/invite`, `/survey`, new spot, spot overview, section editors, admin) as built at the end of the surveyor redesign. Student mode is not built; it keeps the postcard idea (decision 12) and its surfaces are designed separately, so nothing here binds them. Retired: the earlier surveyor world \"The Divided Back\" (decision 14: printed labels on ruled lines, ballpoint-blue entries, rubber-stamp status, postmark rings, an ink band). Decision 20 replaced it with Seawolf; none of those devices exist in this build.\n\nThe app icon is a red Newsreader P on paper (`apps/web/public/icons/icon.svg`, provenance in `PROVENANCE.txt`): the same two typefaces' world, the same one red.",
+    "keyCharacteristics": [
+      "Four colors plus oklab mixes; red is the only accent and it always means something.",
+      "Newsreader for large titles, group headings, bar titles and figures; Instrument Sans for everything else.",
+      "Lists of 52 px rows: lead icon or thumbnail, name, and the fact or a pill on the right.",
+      "One centered 680 px column on every width; phone first, no second pane.",
+      "Lucide icons at a 1.75 stroke, 20 px by default, 16 px beside labels.",
+      "Light by default, with a per-device light, dark or system switch applied before first paint."
+    ],
+    "rules": [
+      {
+        "name": "The Four Colors Rule",
+        "body": "Paper, ink, red and mist, and oklab mixes of them. Nothing else enters the palette: no green for done, no amber for waiting, no blue for links. Scrims and shadows are ink mixed into transparent and are not tokens.",
+        "section": "colors"
+      },
+      {
+        "name": "The Red Means You Rule",
+        "body": "Red appears where the surveyor has to act or look: the one primary action, the current step, a missing required section, a conflict, a failed save, an error, the focus ring. It is never decoration and never a heading color. The one primary button is the only large red fill; every other red surface is a pill, a reason box or a 6 px step.",
+        "section": "colors"
+      },
+      {
+        "name": "The Icon Plus Red Rule",
+        "body": "Status is carried by an icon and, when it needs the surveyor, by red. A state is never shown by color alone: the current step is also taller, trouble pills carry an icon, a danger banner always carries its icon.",
+        "section": "colors"
+      },
+      {
+        "name": "The Serif Is For Names And Numbers Rule",
+        "body": "Newsreader sets titles, group headings, bar titles and figures. It never sets a control, a label, a helper or a button.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Small Caps Rule",
+        "body": "Labels are sentence case at normal tracking. No uppercase labels, no tracked-out small text, and no label lines set above a heading to introduce it.",
+        "section": "typography"
+      },
+      {
+        "name": "The 44 Rule",
+        "body": "Every hit area is at least 44 px. Controls drawn smaller (the 40 px icon button, the 32 px filter chip, the 36 px tag, the 40 px stepper buttons) extend an invisible hit area to 44 px.",
+        "section": "layout"
+      },
+      {
+        "name": "The Floating Things Only Rule",
+        "body": "A shadow means the element is over the page: a sheet, the floating action bar, the segmented thumb. Nothing at rest in the flow casts one.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do build every color from paper, ink, red and mist, and the oklab mixes named in the frontmatter.",
+      "Do give each screen exactly one red-filled button, the action the screen exists for; use ink, quiet, ghost or danger for everything else.",
+      "Do keep red for things that need the surveyor (missing required sections, conflicts, failed saves, errors, the current step) and for focus rings.",
+      "Do pair every status with an icon, and change shape or size as well as color where state matters (the current step is taller).",
+      "Do give every control a hit area of at least 44 px, extending an invisible area when the drawing is smaller.",
+      "Do show \"Saved\", \"Marked as checked\" or \"All synced\" only after the server has accepted the write; say \"Saved on this phone\" until then.",
+      "Do show the last-checked date for every spot on its overview, including \"Never checked\", and on every published spot's Home row.",
+      "Do honor reduced motion: nothing slides, scales or spins; opacity and color changes run at 80 ms, and sheets fade instead of sliding.",
+      "Do put names and numbers in Newsreader and everything else in Instrument Sans, with Lucide icons at a 1.75 stroke.",
+      "Do write copy short and literal, with commas or colons where a dash might go."
+    ],
+    "donts": [
+      "Don't add a status hue: no green for done, no amber for waiting, no blue for info. Done is ink, todo is mist, attention is red.",
+      "Don't use red as decoration, for headings, or as a large background.",
+      "Don't put a second red-filled button on a screen, and don't fill a destructive button red; danger is red text on mist.",
+      "Don't shadow anything that sits in the page flow; shadows are for sheets, the floating action bar and the segmented thumb.",
+      "Don't decorate: hairlines separate items, but nothing imitates a printed form (no lines to write on, no faux-printed seals or date rings), and there are no colored status chips or tracked uppercase labels.",
+      "Don't show a write as saved or synced before the server accepts it, and never show a forecast as live.",
+      "Don't shrink a hit area below 44 px.",
+      "Don't use em-dashes in UI copy, docs or comments."
+    ]
+  }
+}

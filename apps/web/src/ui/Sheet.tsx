@@ -1,6 +1,7 @@
 import { t } from "@study-spot/ui-logic";
 import { X } from "lucide-react";
 import { type ReactNode, useEffect, useId, useRef } from "react";
+import { IconButton } from "./Button.tsx";
 
 type Props = {
   open: boolean;
@@ -13,8 +14,8 @@ type Props = {
 
 /**
  * A bottom sheet on the native modal <dialog>: focus moves in and is trapped,
- * Escape and the close button dismiss, and the page behind is inert. The only
- * element in survey mode that casts a shadow.
+ * Escape and the close button dismiss, and the page behind is inert. Slides up
+ * on phones, a centered dialog from 768 px. Floating things (sheets, toasts) are the only elements that cast a shadow.
  */
 export function Sheet({ open, title, onClose, children, actions }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -37,13 +38,12 @@ export function Sheet({ open, title, onClose, children, actions }: Props) {
         onClose();
       }}
     >
+      <div className="sheet__grab" aria-hidden="true" />
       <div className="sheet__head">
         <h2 className="sheet__title" id={titleId}>
           {title}
         </h2>
-        <button type="button" className="icon-btn" aria-label={t("common.close")} onClick={onClose}>
-          <X aria-hidden="true" size={22} strokeWidth={2.25} />
-        </button>
+        <IconButton label={t("common.close")} icon={X} onClick={onClose} />
       </div>
       <div className="sheet__body">{children}</div>
       {actions === undefined ? null : <div className="sheet__actions">{actions}</div>}
@@ -78,7 +78,7 @@ export function ConfirmSheet(p: ConfirmProps) {
           >
             <span className="btn__label">{p.action}</span>
           </button>
-          <button type="button" className="btn btn--wide btn--secondary" onClick={p.onCancel}>
+          <button type="button" className="btn btn--wide btn--quiet" onClick={p.onCancel}>
             <span className="btn__label">{p.cancel}</span>
           </button>
         </>

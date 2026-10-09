@@ -1,20 +1,23 @@
 import type { SurveyPhoto } from "@study-spot/core";
-import { type PendingPhoto, type SpotView, t } from "@study-spot/ui-logic";
-import { Camera, ImagePlus } from "lucide-react";
+import { failureView, type PendingPhoto, type SpotView, t } from "@study-spot/ui-logic";
+import { Camera, Check, CircleAlert, Images, Smartphone, Star } from "lucide-react";
 import { useRef, useState } from "react";
 import { useDeps } from "../../app/AppProvider.tsx";
-import { applyServerSpot } from "../../app/serverCache.ts";
+import { adoptServerSpot } from "../../app/serverCache.ts";
 import { useOnline } from "../../hooks/useOnline.ts";
+import { useOutboxSnapshot } from "../../hooks/useOutbox.ts";
 import { usePhotoUrl } from "../../hooks/usePhotoUrl.ts";
 import { useSession } from "../../hooks/useSession.ts";
 import { useToasts } from "../../hooks/useToasts.tsx";
 import { shrinkPhoto } from "../../lib/photo.ts";
 import { Banner } from "../../ui/Banner.tsx";
 import { Button } from "../../ui/Button.tsx";
+import { Icon } from "../../ui/Icon.tsx";
+import { PhotoImage } from "../../ui/PhotoImage.tsx";
+import { Pill } from "../../ui/Pill.tsx";
 import { Screen } from "../../ui/Screen.tsx";
 import { Sheet } from "../../ui/Sheet.tsx";
-import { StampChip } from "../../ui/StampChip.tsx";
-import { SurveyHeader } from "../SurveyHeader.tsx";
+import { SyncStatus } from "../SyncStatus.tsx";
 
 /** Shown before the first photo of a browser session (journey B6). */
 export const CHECKLIST_KEY = "survey:photo-checklist-seen";
@@ -49,8 +52,8 @@ function ServerPhoto(props: { photo: SurveyPhoto; view: SpotView }) {
   const { me } = useSession();
   const online = useOnline();
   const toasts = useToasts();
-  const url = usePhotoUrl({ photoId: photo.id });
-  const own = me !== null && me.role !== "admin" && photo.uploaded_by === me.id;
+  const source = usePhotoUrl({ photoId: photo.id });
+  const admin = me !== null && me.role === "admin";
   const [approving, setApproving] = useState(false);
   async function approve() {
     if (approving) return;
@@ -64,7 +67,7 @@ function ServerPhoto(props: { photo: SurveyPhoto; view: SpotView }) {
   async function approveOnce() {
     const res = await api.approvePhoto(photo.id, { client_write_id: crypto.randomUUID() });
     if (res.kind === "ok") {
-      applyServerSpot(queryClient, res.value);
+      await adoptServerSpot(queryClient, outbox, res.value);
       toasts.show(t("photos.approve.done"));
     } else {
       toasts.show(t("error.generic"));
@@ -79,29 +82,27 @@ function ServerPhoto(props: { photo: SurveyPhoto; view: SpotView }) {
   }
   return (
     <li className="photo">
-      {url === null ? (
-        <div className="photo__img photo__img--empty" />
-      ) : (
-        <img className="photo__img" src={url} alt={t("photos.alt")} />
-      )}
-      <div className="stamp-row">
+      <div className="photo__frame">
+        <PhotoImage source={source} alt={t("photos.alt")} />
         {photo.is_cover ? (
-          <StampChip tone="ink" filled>
-            {t("photos.is_cover")}
-          </StampChip>
+          <span className="photo__badge">
+            <Pill icon={Star}>{t("photos.is_cover")}</Pill>
+          </span>
         ) : null}
-        {photo.approved ? (
-          <StampChip tone="green">{t("photos.approved")}</StampChip>
-        ) : (
-          <StampChip tone="amber">{t("photos.awaiting")}</StampChip>
-        )}
+      </div>
+      <div className="photo__meta">
+        <Pill icon={photo.approved ? Check : undefined}>
+          {photo.approved ? t("photos.approved") : t("photos.awaiting")}
+        </Pill>
       </div>
       <div className="photo__actions">
-        {photo.is_cover ? null : <Button onClick={() => void cover()}>{t("photos.cover")}</Button>}
-        {photo.approved ? null : own ? (
-          <p className="field__helper">{t("photos.approve.own")}</p>
-        ) : (
-          <Button disabled={!online || approving} onClick={() => void approve()}>
+        {photo.is_cover ? null : (
+          <Button variant="quiet" onClick={() => void cover()}>
+            {t("photos.cover")}
+          </Button>
+        )}
+        {photo.approved || !admin ? null : (
+          <Button variant="quiet" disabled={!online || approving} onClick={() => void approve()}>
             {t("photos.approve")}
           </Button>
         )}
@@ -111,20 +112,45 @@ function ServerPhoto(props: { photo: SurveyPhoto; view: SpotView }) {
 }
 
 function LocalPhoto(props: { photo: PendingPhoto }) {
-  const url = usePhotoUrl({ clientWriteId: props.photo.client_write_id });
+  const { outbox } = useDeps();
+  const toasts = useToasts();
+  const source = usePhotoUrl({ clientWriteId: props.photo.client_write_id });
+  const record = useOutboxSnapshot().records.find(
+    (r) => r.client_write_id === props.photo.client_write_id,
+  );
+  const failed = props.photo.state === "failed";
+  const canRetry = failed && record !== undefined && failureView(record.error).canRetry;
   return (
     <li className="photo">
-      {url === null ? (
-        <div className="photo__img photo__img--empty" />
-      ) : (
-        <img className="photo__img" src={url} alt={t("photos.alt")} />
-      )}
-      <div className="stamp-row">
-        <StampChip tone={props.photo.state === "failed" ? "red" : "blue"}>
-          {props.photo.state === "failed" ? t("spot.section.failed") : t("photos.not_synced")}
-        </StampChip>
+      <div className="photo__frame">
+        <PhotoImage source={source} alt={t("photos.alt")} />
       </div>
-      <p className="field__helper">{t("photos.cover.wait")}</p>
+      <div className="photo__meta">
+        {failed ? (
+          <Pill tone="red" icon={CircleAlert}>
+            {t("spot.section.failed")}
+          </Pill>
+        ) : (
+          <Pill icon={Smartphone}>{t("photos.not_synced")}</Pill>
+        )}
+      </div>
+      {canRetry ? (
+        <div className="photo__actions">
+          <Button
+            variant="quiet"
+            onClick={() => {
+              outbox.retry(props.photo.client_write_id).catch(() => {
+                void outbox.reload().catch(() => undefined);
+                toasts.show(t("common.save_failed"));
+              });
+            }}
+          >
+            {t("common.retry")}
+          </Button>
+        </div>
+      ) : (
+        <p className="field__helper">{t("photos.cover.wait")}</p>
+      )}
     </li>
   );
 }
@@ -186,26 +212,28 @@ export function PhotosEditor({ view }: { view: SpotView }) {
   const pending = view.pendingPhotos;
   return (
     <>
-      <SurveyHeader
+      <Screen
         title={t("section.photos.name")}
         back={{ to: "/survey/spots/$id", params: { id: view.spot.id } }}
-      />
-      <Screen
+        trailing={<SyncStatus variant="icon" />}
+        stacked
+        meta={<p className="editor-name">{view.spot.official_name}</p>}
         action={
           <>
             <Button
               variant="primary"
               wide
               disabled={busy}
-              icon={<Camera aria-hidden="true" size={20} strokeWidth={2.25} />}
+              icon={<Icon icon={Camera} />}
               onClick={() => pick("camera")}
             >
               {busy ? t("photos.processing") : t("photos.take")}
             </Button>
             <Button
+              variant="quiet"
               wide
               disabled={busy}
-              icon={<ImagePlus aria-hidden="true" size={20} strokeWidth={2.25} />}
+              icon={<Icon icon={Images} />}
               onClick={() => pick("library")}
             >
               {t("photos.choose")}
@@ -213,7 +241,6 @@ export function PhotosEditor({ view }: { view: SpotView }) {
           </>
         }
       >
-        <p className="lede spot-name">{view.spot.official_name}</p>
         {problem === null ? null : (
           <Banner>
             {problem === "too_big"
@@ -283,7 +310,10 @@ export function PhotosEditor({ view }: { view: SpotView }) {
       >
         <ul className="checklist">
           {CHECKLIST.map((id) => (
-            <li key={id}>{t(id)}</li>
+            <li key={id}>
+              <Icon icon={Check} size={16} />
+              {t(id)}
+            </li>
           ))}
         </ul>
       </Sheet>

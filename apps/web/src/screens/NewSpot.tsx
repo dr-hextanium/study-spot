@@ -1,6 +1,7 @@
 import type { IdentitySection } from "@study-spot/core";
 import { localIdFor, t } from "@study-spot/ui-logic";
 import { useNavigate } from "@tanstack/react-router";
+import { Layers, Signpost, Tag, Type } from "lucide-react";
 import { useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { useCampus } from "../hooks/useQueries.ts";
@@ -11,7 +12,7 @@ import { TextField } from "../ui/Field.tsx";
 import { Screen } from "../ui/Screen.tsx";
 import { BuildingPicker, LAST_BUILDING_KEY } from "./BuildingPicker.tsx";
 import { LocationButton } from "./LocationButton.tsx";
-import { SurveyHeader } from "./SurveyHeader.tsx";
+import { SyncStatus } from "./SyncStatus.tsx";
 
 function lastBuilding(): string | null {
   try {
@@ -86,65 +87,65 @@ export function NewSpot() {
   }
 
   return (
-    <>
-      <SurveyHeader title={t("new.title")} back={{ to: "/survey" }} />
-      <Screen
-        action={
-          <>
-            {saveFailed ? (
-              <p className="pinned__note" role="alert">
-                {t("common.save_failed")}
-              </p>
-            ) : null}
-            {ready ? null : <p className="pinned__note">{t("new.blocked")}</p>}
-            <Button
-              variant="primary"
-              wide
-              disabled={!ready || saving}
-              onClick={() => void create()}
-            >
-              {t("new.save")}
-            </Button>
-          </>
-        }
-      >
-        <BuildingPicker
-          buildings={buildings}
-          value={buildingId}
-          onChange={(b) => setBuildingId(b.id)}
-        />
-        <TextField
-          label={t("new.floor.label")}
-          helper={t("new.floor.helper")}
-          value={floor}
-          onChange={setFloor}
-          maxLength={20}
-        />
-        <TextField
-          label={t("new.official_name.label")}
-          helper={t("new.official_name.helper")}
-          value={name}
-          onChange={setName}
-          maxLength={200}
-        />
-        <TextField
-          label={t("new.common_name.label")}
-          optional={t("common.optional")}
-          value={commonName}
-          onChange={setCommonName}
-          maxLength={200}
-        />
-        <LocationButton state={location} onChange={setLocation} />
-        <TextField
-          label={t("new.directions.label")}
-          helper={t("new.directions.helper")}
-          placeholder={t("new.directions.placeholder")}
-          value={directions}
-          onChange={setDirections}
-          multiline
-          maxLength={2000}
-        />
-      </Screen>
-    </>
+    <Screen
+      title={t("new.title")}
+      back={{ to: "/survey" }}
+      trailing={<SyncStatus variant="icon" />}
+      stacked
+      action={
+        <>
+          {saveFailed ? (
+            <p className="actionbar__note" role="alert">
+              {t("common.save_failed")}
+            </p>
+          ) : null}
+          {ready ? null : <p className="actionbar__note">{t("new.blocked")}</p>}
+          <Button variant="primary" wide disabled={!ready || saving} onClick={() => void create()}>
+            {t("new.save")}
+          </Button>
+        </>
+      }
+    >
+      <BuildingPicker
+        buildings={buildings}
+        value={buildingId}
+        onChange={(b) => setBuildingId(b.id)}
+      />
+      <TextField
+        label={t("new.floor.label")}
+        helper={t("new.floor.helper")}
+        icon={Layers}
+        value={floor}
+        onChange={setFloor}
+        maxLength={20}
+      />
+      <TextField
+        label={t("new.official_name.label")}
+        helper={t("new.official_name.helper")}
+        icon={Type}
+        value={name}
+        onChange={setName}
+        maxLength={200}
+      />
+      <TextField
+        label={t("new.common_name.label")}
+        optional={t("common.optional")}
+        icon={Tag}
+        value={commonName}
+        onChange={setCommonName}
+        maxLength={200}
+      />
+      <LocationButton state={location} onChange={setLocation} />
+      <TextField
+        label={t("new.directions.label")}
+        helper={t("new.directions.helper")}
+        placeholder={t("new.directions.placeholder")}
+        icon={Signpost}
+        value={directions}
+        onChange={setDirections}
+        multiline
+        maxLength={2000}
+      />
+    </Screen>
   );
 }

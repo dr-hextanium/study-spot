@@ -8,7 +8,7 @@ export function useOutboxSnapshot(): OutboxSnapshot {
   return useSyncExternalStore(outbox.subscribe, outbox.getSnapshot);
 }
 
-/** What the header postmark says. Reads count as signed out too (a 401 on the list). */
+/** What the sync status says. Reads count as signed out too (a 401 on the list). */
 export function useSyncHeader(): SyncHeader {
   const { auth } = useDeps();
   const snapshot = useOutboxSnapshot();

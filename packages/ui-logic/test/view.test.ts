@@ -3,15 +3,19 @@ import type { SpotSummary, SurveyorPublic } from "@study-spot/core";
 import { surveySpotFixture } from "../../core/test/fixtures/survey-spot.ts";
 import {
   buildSpotView,
+  nextAfter,
   type OutboxSnapshot,
   OVERVIEW_ORDER,
   publishReadiness,
   REQUIRED_PARTS,
+  REQUIRED_SECTIONS,
   reviewAction,
   type SpotView,
   sectionStatuses,
+  stepProgress,
   surveyHome,
   syncHeader,
+  walkNext,
 } from "../src/index.ts";
 import {
   create,
@@ -207,16 +211,24 @@ function summary(over: Partial<SpotSummary>): SpotSummary {
     updated_at: "2026-10-05T15:00:00.000Z",
     oldest_verified_at: "2026-10-01T15:00:00.000Z",
     hours_confirmed: true,
+    cover_photo_id: null,
     ...over,
   };
 }
+
+const COVER = "5b0f7c1e-2b7a-4c39-9a51-3f6f4f0f2a21";
 
 test("home: attention by urgency, oldest checks first, drafts with part counts", () => {
   const ids = (n: number) => `8d0f7c1e-2b7a-4c39-9a51-3f6f4f0f2a2${n}`;
   const list = {
     term: TERM,
     spots: [
-      summary({ id: ids(1), official_name: "Hours gap", hours_confirmed: false }),
+      summary({
+        id: ids(1),
+        official_name: "Hours gap",
+        hours_confirmed: false,
+        cover_photo_id: COVER,
+      }),
       summary({
         id: ids(2),
         official_name: "Bo's edit",
@@ -226,7 +238,7 @@ test("home: attention by urgency, oldest checks first, drafts with part counts",
       }),
       summary({ id: ids(3), official_name: "Broken" }),
       summary({ id: ids(4), official_name: "Never", oldest_verified_at: null }),
-      summary({ id: ids(5), official_name: "Draft", status: "draft" }),
+      summary({ id: ids(5), official_name: "Draft", status: "draft", cover_photo_id: COVER }),
     ],
   };
   const records = [section(ids(3), SEATING, { state: "failed" }), create(LOCAL)];
@@ -238,9 +250,28 @@ test("home: attention by urgency, oldest checks first, drafts with part counts",
     ["Hours gap", "hours_unconfirmed"],
   ]);
   expect(home.stale.map((r) => r.name)).toEqual(["Never", "Bo's edit", "Broken", "Hours gap"]);
+  // Covers ride along on every kind of row; a draft only on this phone has none.
+  expect(home.attention.map((r) => r.coverPhotoId)).toEqual([null, null, COVER]);
+  expect(home.stale.map((r) => r.coverPhotoId)).toEqual([null, null, null, COVER]);
+  expect(home.drafts.map((r) => r.coverPhotoId)).toEqual([COVER, null]);
   expect(home.drafts).toEqual([
-    { spotId: ids(5), name: "Draft", localOnly: false, requiredDone: 6 },
-    { spotId: LOCAL, name: "SAC Lounge", localOnly: true, requiredDone: 1 },
+    expect.objectContaining({
+      spotId: ids(5),
+      name: "Draft",
+      localOnly: false,
+      editedByMe: true,
+      updatedAt: "2026-10-05T15:00:00.000Z",
+      lastSeq: null,
+      progress: expect.objectContaining({ done: 5, total: 6 }),
+    }),
+    expect.objectContaining({
+      spotId: LOCAL,
+      name: "SAC Lounge",
+      localOnly: true,
+      editedByMe: true,
+      updatedAt: null,
+      progress: expect.objectContaining({ total: 6 }),
+    }),
   ]);
 });
 
@@ -312,4 +343,68 @@ test("the sync header never says all synced while unreadable writes exist", () =
   };
   expect(syncHeader(base)).toEqual({ kind: "unreadable", count: 2 });
   expect(syncHeader({ ...base, online: false })).toEqual({ kind: "unreadable", count: 2 });
+});
+
+test("the step bar has one step per section needed to publish, hours excluded", () => {
+  expect(REQUIRED_SECTIONS).toEqual([
+    "identity",
+    "access",
+    "seating",
+    "power",
+    "environment",
+    "use_fit",
+  ]);
+  const p = stepProgress(view());
+  expect(p.total).toBe(6);
+  expect(p.steps).toHaveLength(6);
+});
+
+test("progress marks the first unfinished section current, or the one being edited", () => {
+  const v = view([], {
+    seat_count: null,
+    missing: ["seat_count", "noise_policy"],
+    noise_policy: null,
+  });
+  expect(stepProgress(v)).toEqual({
+    steps: ["done", "done", "current", "done", "todo", "done"],
+    done: 4,
+    total: 6,
+    next: "seating",
+  });
+  expect(stepProgress(v, "use_fit").steps).toEqual([
+    "done",
+    "done",
+    "todo",
+    "done",
+    "todo",
+    "current",
+  ]);
+  expect(stepProgress(v, "photos").steps[2]).toBe("current");
+});
+
+test("next after: the next unfinished required section, wrapping, never itself", () => {
+  const v = view([], {
+    seat_count: null,
+    missing: ["seat_count", "noise_policy"],
+    noise_policy: null,
+  });
+  expect(nextAfter(v, "seating")).toBe("environment");
+  expect(nextAfter(v, "environment")).toBe("seating");
+  expect(nextAfter(v, "use_fit")).toBe("seating");
+  expect(nextAfter(v, "hours")).toBeNull();
+  const done = view([], { seat_count: 112, missing: [] });
+  expect(nextAfter(done, "identity")).toBeNull();
+});
+
+test("walkNext goes forward through unchecked required sections and skips checked ones", () => {
+  expect(walkNext(["identity"], "identity")).toBe("access");
+  expect(walkNext(["identity", "access"], "access")).toBe("seating");
+  // Skips a section already checked in this walk.
+  expect(walkNext(["identity", "seating"], "identity")).toBe("access");
+  expect(walkNext(["identity", "access", "seating"], "access")).toBe("power");
+  // Wraps to an earlier section left unchecked, and ends when none is left.
+  expect(walkNext(["use_fit"], "use_fit")).toBe("identity");
+  expect(walkNext([...REQUIRED_SECTIONS], "use_fit")).toBeNull();
+  // An optional section is not part of the walk's order.
+  expect(walkNext([], "hours")).toBe(REQUIRED_SECTIONS[0] ?? null);
 });

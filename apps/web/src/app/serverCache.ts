@@ -5,6 +5,7 @@ import {
   type SpotSummary,
   SurveySpot,
 } from "@study-spot/core";
+import type { Outbox } from "@study-spot/ui-logic";
 import type { QueryClient } from "@tanstack/react-query";
 import type { PersistedClient } from "@tanstack/react-query-persist-client";
 import { z } from "zod";
@@ -48,6 +49,11 @@ export function summaryOf(
     updated_at: spot.updated_at,
     oldest_verified_at: oldestVerified(spot),
     hours_confirmed: spot.hours.length > 0,
+    // The server list also requires stored bytes (apps/server/src/spots/load.ts), which the
+    // photo shape here does not carry. Every upload stores its bytes (photos/write.ts), so an
+    // approved cover without bytes is a legacy or imported row; until the next list fetch the
+    // thumbnail then shows its fallback, and the fetch corrects the id.
+    cover_photo_id: spot.photos.find((p) => p.is_cover && p.approved)?.id ?? null,
   };
 }
 
@@ -117,9 +123,11 @@ const EMPTY: PersistedClient = {
 export function sanitizePersisted(raw: unknown): PersistedClient {
   const parsed = Envelope.safeParse(raw);
   if (!parsed.success) return EMPTY;
-  const kept = parsed.data.clientState.queries.filter((q) => {
+  const kept = parsed.data.clientState.queries.flatMap((q) => {
     const entry = KEY_SCHEMAS.find((e) => e.match(q.queryKey));
-    return entry?.schema.safeParse(q.state.data).success === true;
+    const data = entry?.schema.safeParse(q.state.data);
+    // Keep the parsed value, so defaults added since it was stored are filled in.
+    return data?.success === true ? [{ ...q, state: { ...q.state, data: data.data } }] : [];
   });
   // The envelope and every kept query's data are checked above; the other fields
   // are TanStack's own dehydrated query state, passed through as stored.
@@ -139,4 +147,22 @@ export function shouldPersistQuery(q: {
   state: { data: unknown };
 }): boolean {
   return q.queryKey[0] === "survey" && q.state.data !== undefined;
+}
+
+/**
+ * A spot the server returned for this surveyor's own admin action (unpublish, photo
+ * approval or rejection). Updates the cached copy and the outbox's stored version, as
+ * a sent write's answer does, so a write queued on the spot is not a conflict with it.
+ */
+export async function adoptServerSpot(
+  qc: QueryClient,
+  outbox: Pick<Outbox, "noteServerVersion">,
+  spot: SurveySpot,
+): Promise<void> {
+  applyServerSpot(qc, spot);
+  try {
+    await outbox.noteServerVersion(spot.id, spot.version);
+  } catch {
+    // Storage trouble: the worst case is the conflict this call prevents.
+  }
 }

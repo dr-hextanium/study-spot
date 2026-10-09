@@ -24,7 +24,7 @@ import {
   type TermRow,
   term,
 } from "@study-spot/db";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull } from "drizzle-orm";
 
 /** The campus's current term, else the next one, else null (pickTerm in campus local time). */
 export async function currentTerm(db: Db, campusId: string, now: Date): Promise<TermRow | null> {
@@ -212,6 +212,22 @@ export async function listSurveySpots(db: Db, campusId: string, now: Date): Prom
           .from(spot_hours)
           .where(eq(spot_hours.term_id, termRow.id));
 
+  // Only this campus, only an approved cover whose bytes are stored.
+  const covers = await db
+    .select({ spot_id: spot_photo.spot_id, id: spot_photo.id })
+    .from(spot_photo)
+    .innerJoin(spot, eq(spot.id, spot_photo.spot_id))
+    .innerJoin(building, eq(building.id, spot.building_id))
+    .where(
+      and(
+        eq(building.campus_id, campusId),
+        eq(spot_photo.is_cover, true),
+        isNotNull(spot_photo.approved_at),
+        isNotNull(spot_photo.blob_sha256),
+      ),
+    );
+  const coverOf = new Map(covers.map((c) => [c.spot_id, c.id]));
+
   const oldest = new Map<string, Date>();
   for (const v of verifications) {
     const prev = oldest.get(v.spot_id);
@@ -240,6 +256,7 @@ export async function listSurveySpots(db: Db, campusId: string, now: Date): Prom
       updated_at: s.updated_at.toISOString(),
       oldest_verified_at: oldest.get(s.id)?.toISOString() ?? null,
       hours_confirmed: withHours.has(s.id),
+      cover_photo_id: coverOf.get(s.id) ?? null,
     })),
   };
 }

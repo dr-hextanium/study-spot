@@ -15,10 +15,14 @@ import { Toast } from "../ui/Toast.tsx";
 export const SETTLE_WAIT_MS = 3_000;
 export const TOAST_MS = 4_000;
 
+/** A toast line: a deck id, or text already built from the deck (a count). */
+export type ToastLine = PlainCopyId | { text: string };
+const lineText = (l: ToastLine): string => (typeof l === "string" ? t(l) : l.text);
+
 type Tracked = {
   id: string;
-  done: PlainCopyId;
-  waiting: PlainCopyId;
+  done: ToastLine;
+  waiting: ToastLine;
   since: number;
   /** Where the write goes, to tell a folded conflict from a write another tab applied. */
   spotId: string | null;
@@ -33,7 +37,7 @@ export type ToastApi = {
    * after SETTLE_WAIT_MS or the phone is offline. A write that fails or
    * conflicts gets no success toast; the header and banner say so.
    */
-  track(clientWriteId: string, copy: { done: PlainCopyId; waiting: PlainCopyId }): void;
+  track(clientWriteId: string, copy: { done: ToastLine; waiting: ToastLine }): void;
 };
 
 const ToastContext = createContext<ToastApi | null>(null);
@@ -65,9 +69,10 @@ export function ToastProvider(props: { children: ReactNode }) {
       for (const w of tracked.current) {
         const r = records.find((x) => x.client_write_id === w.id);
         if (r === undefined) {
-          if (applied.current.delete(w.id) || !foldedIntoConflict(records, w)) show(t(w.done));
+          if (applied.current.delete(w.id) || !foldedIntoConflict(records, w))
+            show(lineText(w.done));
         } else if (r.state === "failed" || r.state === "conflict") continue;
-        else if (now - w.since >= SETTLE_WAIT_MS || !network.online()) show(t(w.waiting));
+        else if (now - w.since >= SETTLE_WAIT_MS || !network.online()) show(lineText(w.waiting));
         else left.push(w);
       }
       tracked.current = left;
@@ -88,7 +93,7 @@ export function ToastProvider(props: { children: ReactNode }) {
     show,
     track(id, copy) {
       if (!network.online()) {
-        show(t(copy.waiting));
+        show(lineText(copy.waiting));
         return;
       }
       const record = outbox.getSnapshot().records.find((r) => r.client_write_id === id);

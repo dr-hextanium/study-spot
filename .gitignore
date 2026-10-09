@@ -27,3 +27,7 @@ apps/web/dev-dist/
 apps/web/test-results/
 apps/web/playwright-report/
 apps/web/e2e/.state/
+.claude/tmp/
+
+# Stray Playwright output from a run in the wrong directory
+/test-results/

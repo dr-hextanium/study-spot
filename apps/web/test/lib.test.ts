@@ -9,6 +9,7 @@ import {
   type DayHours,
   dayProblem,
   fromWeek,
+  timeLabel,
   toWeek,
 } from "../src/lib/hours.ts";
 import { GOOD_FIX_METERS, spotPoint } from "../src/lib/location.ts";
@@ -167,4 +168,13 @@ test("a stored 24:00 close reads as next day, like a typed midnight", () => {
   expect(closesNextDay(open("24:00"))).toBe(true);
   expect(closesNextDay(open("00:00"))).toBe(true);
   expect(closesNextDay(open("22:00"))).toBe(false);
+});
+
+test("times read as 12-hour clock labels, midnight as 12:00 AM", () => {
+  expect(timeLabel("08:00")).toBe("8:00 AM");
+  expect(timeLabel("12:30")).toBe("12:30 PM");
+  expect(timeLabel("22:00")).toBe("10:00 PM");
+  expect(timeLabel("00:00")).toBe("12:00 AM");
+  expect(timeLabel("24:00")).toBe("12:00 AM");
+  expect(timeLabel("02:05")).toBe("2:05 AM");
 });

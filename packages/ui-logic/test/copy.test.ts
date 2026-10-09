@@ -17,21 +17,28 @@ const deck = parseCopyDeck(
  */
 const SAMPLE: Readonly<Record<string, string>> = {
   block: "Afternoon",
+  building: "Melville Library",
   bucket: "Nearly full",
+  closes: "12:00 AM",
   count: "12",
   date: "Oct 15",
   day: "Weekdays",
+  done: "4",
   field: "outlet coverage",
   fields: "directions, seat count",
+  floor: "2",
   meters: "120",
   minutes: "15",
   name: "Jordan Rivera",
+  new: "Ana Lopez",
+  opens: "10:00 AM",
   percent: "100",
   reason: "seat count is required",
   section: "Power and signal",
   spot: "SAC Lounge",
   term: "Fall 2026",
   time: "Oct 15, 3:40 PM",
+  total: "6",
   what: "Power and signal for SAC Lounge",
 };
 
@@ -93,12 +100,8 @@ test("the deck covers the states added by review fixes", () => {
 });
 
 test("plural picks the singular id for 1 and fills count otherwise", () => {
-  expect(plural(1, "home.attention.failed_one", "home.attention.failed")).toBe(
-    "1 change didn't save",
-  );
-  expect(plural(3, "home.attention.failed_one", "home.attention.failed")).toBe(
-    "3 changes didn't save",
-  );
+  expect(plural(1, "home.unreadable_one", "home.unreadable")).toBe("1 change can't be read");
+  expect(plural(3, "home.unreadable_one", "home.unreadable")).toBe("3 changes can't be read");
   expect(plural(0, "sync.unreadable_one", "sync.unreadable")).toBe("0 changes can't be read");
   // @ts-expect-error the plural form must take exactly { count }
   plural(2, "common.save", "sync.what.create");

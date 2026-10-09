@@ -5,10 +5,10 @@
 ### Repository layout (monorepo, Bun workspaces)
 ```
 packages/core     Zod schemas, inferred types, scoring, forecasting, live-blend math, API client. Pure TS, no runtime-specific APIs, unit tested.
-packages/ui-logic Shared React hooks, presenters, UI copy, design tokens, platform adapter interfaces. No DOM, no React Native. Reused by apps/web and apps/mobile.
+packages/ui-logic Presenters, view model, offline outbox, UI copy, design tokens, platform adapter interfaces. No DOM, no React. React hooks live in apps/web/src/hooks for now (they typecheck under ui-logic's no-DOM config, so they can move when apps/mobile exists).
 packages/db       Drizzle schema, migrations (drizzle-kit), drizzle-zod generated schemas, typed query helpers.
 apps/server       Fastify API, scheduled jobs.
-apps/web          React + Vite PWA (vite-plugin-pwa).
+apps/web          React 19 + Vite PWA (vite-plugin-pwa, prompt updates), TanStack Router file routes, TanStack Query persisted to IndexedDB.
 apps/mobile       Expo app. Do not create until the v1 gate in [roadmap.md](roadmap.md) is met.
 ```
 
@@ -51,7 +51,9 @@ apps/mobile       Expo app. Do not create until the v1 gate in [roadmap.md](road
 - Map: MapLibre GL JS with OSM tiles, wrapped behind a thin `Map` component interface so a later Expo port swaps only the implementation (MapLibre React Native bindings).
 - Push: Web Push (iOS only for installed PWAs; see [product-design.md](product-design.md) caveat).
 - Noise: `getUserMedia` in foreground, compute level on device, send only the bucket, never store or transmit audio.
-- Surveyor mode: same PWA, role-gated. Structured attribute form, headcount entry, designated noise-phone flag.
+- Surveyor mode: same PWA, routes under `/survey`, bearer session in localStorage. Browser adapters in `apps/web/src/adapters` (IndexedDB through `idb` with timeouts, fetch, Web Locks, BroadcastChannel). Unit tests: Vitest with jsdom (`bun run --filter '@study-spot/web' test`, kept out of `bun test` by `bunfig.toml`). Browser tests: Playwright on a phone profile against the real server (`bun run --filter '@study-spot/web' e2e`).
+- Fonts are self-hosted through `@fontsource-variable` (Newsreader, Instrument Sans). No font CDN.
+- The theme boot script is inline in `apps/web/index.html`, so the theme applies before first paint.
 
 ### Rejected platform options
 - Expo with web target from day one: weaker web output, map libraries do not unify, pays native complexity before it is needed.
@@ -61,3 +63,5 @@ apps/mobile       Expo app. Do not create until the v1 gate in [roadmap.md](road
 
 ### Hosting
 Free or near-free tiers. Open source repository from day one.
+
+The inline theme boot script in `apps/web/index.html` needs its sha256 in any future `script-src` CSP.

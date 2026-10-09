@@ -121,9 +121,12 @@ export async function completeSpot(
 }
 
 /** A new-surveyor invite link made by an admin, as a path to open in another context. */
-export async function surveyorInvite(adminToken: string): Promise<string> {
+export async function surveyorInvite(
+  adminToken: string,
+  role: "surveyor" | "admin" = "surveyor",
+): Promise<string> {
   const res = CreateInviteResponse.parse(
-    await call(adminToken, "POST", "/admin/invites", { role: "surveyor" }),
+    await call(adminToken, "POST", "/admin/invites", { role }),
   );
   const url = new URL(res.url);
   return `${url.pathname}${url.search}`;

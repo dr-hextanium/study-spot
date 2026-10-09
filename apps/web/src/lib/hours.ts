@@ -92,3 +92,11 @@ export const DEFAULT_OPEN: DayHours = {
 export function timeInputValue(time: string): string {
   return time === ALL_DAY_CLOSES ? ALL_DAY_OPENS : time;
 }
+
+/** "08:00" reads "8:00 AM"; midnight, stored as 00:00 or 24:00, reads "12:00 AM". */
+export function timeLabel(time: string): string {
+  const [h, m] = time.split(":");
+  const hour = Number(h) % 24;
+  const minute = (m ?? "00").padStart(2, "0");
+  return `${hour % 12 === 0 ? 12 : hour % 12}:${minute} ${hour < 12 ? "AM" : "PM"}`;
+}

@@ -106,7 +106,7 @@ export type Outbox = ReturnType<typeof createOutbox>;
 export function createOutbox(deps: OutboxDeps) {
   const store = createOutboxStore(deps);
   const lock = deps.lock ?? createLocalLock();
-  let liveness = deps.liveness ?? createLocalLiveness(deps.cache);
+  let liveness = deps.liveness ?? createLocalLiveness(deps.cache, deps.ids);
   const signal = deps.signal ?? createLocalSignal(deps.cache);
   /** Queue changes, the pick of the next write, and its result write never interleave. */
   const locked = <T>(fn: () => Promise<T>): Promise<T> => lock.run(OUTBOX_LOCK, fn);
@@ -471,6 +471,8 @@ export function createOutbox(deps: OutboxDeps) {
     let held = false;
     try {
       for (;;) {
+        // stop() (sign-out) can land during a send; nothing new starts after it.
+        if (stopped) break;
         const { next: picked, held: heldNow } = await pick(skipped);
         held = heldNow;
         if (picked === null) break;
@@ -535,54 +537,56 @@ export function createOutbox(deps: OutboxDeps) {
     signal.post();
   }
 
+  /** Loads the queue, resets writes cut off mid-send, and starts listening for triggers. */
+  async function start(): Promise<void> {
+    stopped = false;
+    ready = false;
+    // Reading the queue needs neither the liveness hold nor the lock, so it goes first.
+    load();
+    // Triggers listen from the start, whatever happens to the steps below.
+    unsubscribe = [
+      signal.subscribe(() => {
+        void refresh().catch(() => undefined);
+        void sync();
+      }),
+      deps.network.subscribe((online) => {
+        emit({ online });
+        if (online) void sync();
+      }),
+      deps.foreground.subscribe(() => void sync()),
+    ];
+    // The network may have changed between createOutbox and subscribing.
+    emit({ online: deps.network.online() });
+    try {
+      self = await liveness.hold();
+    } catch {
+      // Web Locks failed: this tab then answers for itself only, like a browser without them.
+      liveness = createLocalLiveness(deps.cache, deps.ids);
+      self = await liveness.hold();
+    }
+    try {
+      await locked(async () => {
+        for (const r of await store.list()) {
+          // A live tab's in-flight write is left alone; a gone tab's goes back in the queue.
+          if (r.state === "syncing" && r.owner !== self && !(await sendingElsewhere(r))) {
+            await store.put({ ...r, state: "pending" });
+          }
+        }
+        for (const moved of rewriteSpotIds(await store.list(), await store.idMap())) {
+          await store.put(moved);
+        }
+      });
+      signal.post();
+    } catch {
+      // Storage trouble: the queue is untouched; the next pass or read tries again.
+    }
+    ready = true;
+    await refresh().catch(() => undefined);
+    await sync();
+  }
+
   return {
-    /** Loads the queue, resets writes cut off mid-send, and starts listening for triggers. */
-    async start(): Promise<void> {
-      stopped = false;
-      ready = false;
-      // Reading the queue needs neither the liveness hold nor the lock, so it goes first.
-      load();
-      // Triggers listen from the start, whatever happens to the steps below.
-      unsubscribe = [
-        signal.subscribe(() => {
-          void refresh().catch(() => undefined);
-          void sync();
-        }),
-        deps.network.subscribe((online) => {
-          emit({ online });
-          if (online) void sync();
-        }),
-        deps.foreground.subscribe(() => void sync()),
-      ];
-      // The network may have changed between createOutbox and subscribing.
-      emit({ online: deps.network.online() });
-      try {
-        self = await liveness.hold();
-      } catch {
-        // Web Locks failed: this tab then answers for itself only, like a browser without them.
-        liveness = createLocalLiveness(deps.cache);
-        self = await liveness.hold();
-      }
-      try {
-        await locked(async () => {
-          for (const r of await store.list()) {
-            // A live tab's in-flight write is left alone; a gone tab's goes back in the queue.
-            if (r.state === "syncing" && r.owner !== self && !(await sendingElsewhere(r))) {
-              await store.put({ ...r, state: "pending" });
-            }
-          }
-          for (const moved of rewriteSpotIds(await store.list(), await store.idMap())) {
-            await store.put(moved);
-          }
-        });
-        signal.post();
-      } catch {
-        // Storage trouble: the queue is untouched; the next pass or read tries again.
-      }
-      ready = true;
-      await refresh().catch(() => undefined);
-      await sync();
-    },
+    start,
     stop(): void {
       stopped = true;
       ready = false;
@@ -667,6 +671,18 @@ export function createOutbox(deps: OutboxDeps) {
         for (const d of doomed) await store.remove(d.client_write_id);
       }),
     /**
+     * Drops every queued write (unreadable ones too) and its photo bytes, for a phone handed to another surveyor.
+     * One step under the lock, so no write is picked between two removals.
+     */
+    async discardAll(): Promise<void> {
+      await locked(async () => {
+        for (const r of await store.list()) await store.remove(r.client_write_id);
+        for (const key of await store.unreadable()) await store.removeUnreadable(key);
+      });
+      await refresh();
+      signal.post();
+    },
+    /**
      * Keep mine: send again on top of the server's version, with a new id.
      * Keep theirs: drop the write and adopt the server's spot.
      * Writes queued behind it chain from the server's version either way.
@@ -706,10 +722,42 @@ export function createOutbox(deps: OutboxDeps) {
       signal.post();
       await refresh();
     },
-    /** After signing in again on this phone. */
+    /**
+     * The server changed a spot outside the outbox (this surveyor's own unpublish or photo
+     * approval) and answered with its new version. Adopts it only when it is exactly one past
+     * the version this phone knows: then it stores it and moves an unsent write's base version
+     * up, so the write is not a conflict with the surveyor's own action. Anything else changes
+     * nothing, so a real conflict surfaces. Never lowers a version.
+     *
+     * Known limit: a write already in flight (sent, answer not yet back) is not rebased. If the
+     * surveyor's own bump lands while it is on the wire, the server answers 409 and the
+     * surveyor sees one conflict to resolve with Keep mine. Rebasing it here could hide a real
+     * conflict, because the server may have judged it against the old base already.
+     */
+    async noteServerVersion(spotId: string, version: number): Promise<void> {
+      await locked(async () => {
+        // Unpublish and approve carry no base version, so only a bump of exactly one past
+        // what this phone knows can be the surveyor's own. A bigger jump hides someone
+        // else's edit, which must still surface as a conflict.
+        const stored = await store.version(spotId);
+        if (stored !== null && stored !== version - 1) return;
+        await raiseVersion(spotId, version);
+        for (const r of await store.list()) {
+          if (r.spot_id !== spotId || r.state !== "pending") continue;
+          if (r.base_version !== version - 1) continue;
+          if (r.kind === "spot.section" || r.kind === "spot.verify" || r.kind === "spot.review") {
+            await store.put({ ...r, base_version: version });
+          }
+        }
+      });
+      await refresh();
+      signal.post();
+    },
+    /** After signing in again on this phone. Starts the outbox again if stop() ended it (sign-out). */
     resume(): void {
       emit({ signedOut: false });
-      void sync();
+      if (stopped) void start();
+      else void sync();
     },
     syncNow: (): Promise<void> => sync(),
     /** Resolves when the current pass (if any) ends, without asking for another. */

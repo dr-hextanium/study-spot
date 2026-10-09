@@ -1,163 +1,227 @@
-import type { AttentionRow, DraftRow, OutboxSnapshot, StaleRow } from "@study-spot/ui-logic";
-import { plural, t } from "@study-spot/ui-logic";
-import { type ReactNode, useEffect, useState } from "react";
-import { useDeps } from "../app/AppProvider.tsx";
+import {
+  HOME_FILTERS,
+  type HomeFilter,
+  type HomeRow,
+  homeList,
+  keepGoing,
+  type OutboxSnapshot,
+  plural,
+  t,
+} from "@study-spot/ui-logic";
+import { Link } from "@tanstack/react-router";
+import { ArrowRight, Ellipsis, History, Plus, Shield } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useOnline } from "../hooks/useOnline.ts";
 import { useOutboxSnapshot } from "../hooks/useOutbox.ts";
 import { useCampusTz } from "../hooks/useQueries.ts";
 import { useSurveyHome } from "../hooks/useSurveyHome.ts";
-import { shortDate } from "../lib/format.ts";
+import { homeFactEnd, homeFactSub } from "../lib/facts.tsx";
+import { sectionName } from "../lib/format.ts";
+import { useHomeState } from "../lib/homeState.ts";
 import { Banner } from "../ui/Banner.tsx";
-import { RuledRow } from "../ui/RuledRow.tsx";
+import { IconButton } from "../ui/Button.tsx";
+import { CoverThumb } from "../ui/CoverThumb.tsx";
+import { FilterChips } from "../ui/FilterChips.tsx";
+import { Icon } from "../ui/Icon.tsx";
+import { Row } from "../ui/Row.tsx";
 import { GroupHeading, Screen } from "../ui/Screen.tsx";
-import { SurveyHeader } from "./SurveyHeader.tsx";
+import { Search } from "../ui/Search.tsx";
+import { Sheet } from "../ui/Sheet.tsx";
+import { StepBar } from "../ui/StepBar.tsx";
+import { ThemeSwitch } from "../ui/ThemeSwitch.tsx";
+import { SyncSheet } from "./SyncSheet.tsx";
+import { SyncStatus } from "./SyncStatus.tsx";
 import type { SpotLinkFor } from "./spotLink.ts";
 
-function attentionText(row: AttentionRow): string {
-  switch (row.reason) {
-    case "conflict":
-      return t("home.attention.conflict");
-    case "failed":
-      return plural(row.count, "home.attention.failed_one", "home.attention.failed");
-    case "unreviewed":
-      return t("home.attention.unreviewed", { name: row.editor });
-    case "hours_unconfirmed":
-      return t("home.attention.hours_unconfirmed", { term: row.term });
-  }
-}
-
-function staleText(row: StaleRow, tz: string): string {
-  return row.oldestVerifiedAt === null
-    ? t("home.stale.never")
-    : t("home.stale.row", { date: shortDate(row.oldestVerifiedAt, tz) });
-}
-
-/** No count when this phone has never loaded the draft's details. */
-function draftText(row: DraftRow): string | undefined {
-  return row.requiredDone === null ? undefined : t("home.drafts.row", { count: row.requiredDone });
-}
-
 /**
- * Writes still waiting, shown only when some were still queued once this page
- * load's first sync pass ended (journey edge 9). It follows the live queue, so
- * it goes away once they sync.
+ * Writes still waiting, shown only when some were queued when this screen first
+ * saw the loaded queue (journey edge 9). The decision is made once, on the first
+ * snapshot with `loaded` true: before that, an empty queue is a default, not a
+ * fact. It follows the live queue after that, so it goes away once they sync.
  */
 function usePendingAfterOpen(): number {
-  const { started, outbox } = useDeps();
   const snapshot = useOutboxSnapshot();
-  const [leftAtOpen, setLeftAtOpen] = useState(false);
+  const [leftAtOpen, setLeftAtOpen] = useState<boolean | null>(null);
+  const loaded = snapshot.loaded;
+  const left = waiting(snapshot) > 0;
   useEffect(() => {
-    let live = true;
-    started
-      .then(() => {
-        if (live) setLeftAtOpen(waiting(outbox.getSnapshot()) > 0);
-      })
-      .catch(() => undefined);
-    return () => {
-      live = false;
-    };
-  }, [started, outbox]);
-  return leftAtOpen ? waiting(snapshot) : 0;
+    if (loaded) setLeftAtOpen((decided) => decided ?? left);
+  }, [loaded, left]);
+  return leftAtOpen === true ? waiting(snapshot) : 0;
 }
 
 function waiting(snapshot: OutboxSnapshot): number {
   return snapshot.records.filter((r) => r.state === "pending" || r.state === "syncing").length;
 }
 
-function List(props: { title: string; children: ReactNode; empty: string | null }) {
-  return (
-    <section aria-label={props.title}>
-      <GroupHeading>{props.title}</GroupHeading>
-      {props.empty === null ? (
-        <ul className="ruled-list">{props.children}</ul>
-      ) : (
-        <p className="empty">{props.empty}</p>
-      )}
-    </section>
-  );
-}
+const EMPTY: Record<
+  Exclude<HomeFilter, "all">,
+  "home.empty.attention" | "home.drafts.empty" | "home.empty.due"
+> = {
+  attention: "home.empty.attention",
+  drafts: "home.drafts.empty",
+  due: "home.empty.due",
+};
 
 /**
- * What to do next and whether data is safe. `spotLink` turns a row into a link
- * to the spot (wired once the overview exists); `action` is the pinned button.
+ * The first screen: where to pick up (Keep going), then one searchable,
+ * filterable list of spots with one fact each. `spotLink` turns a row into a
+ * link to the spot.
  */
-export function Home(props: { spotLink?: SpotLinkFor; action?: ReactNode; admin?: ReactNode }) {
+export function Home(props: { spotLink?: SpotLinkFor; isAdmin: boolean }) {
   const online = useOnline();
   const tz = useCampusTz();
   const { home, noList } = useSurveyHome();
   const pendingAtOpen = usePendingAfterOpen();
+  const [state, setState] = useHomeState();
+  const [actions, setActions] = useState(false);
+  const [syncOpen, setSyncOpen] = useState(false);
   const link = props.spotLink;
-  const rows = home ?? { attention: [], stale: [], drafts: [], unreadable: 0 };
-  const firstRun = !noList && rows.stale.length === 0 && rows.drafts.length === 0;
+  const data = home ?? { attention: [], stale: [], drafts: [], unreadable: 0 };
+  const firstRun = !noList && data.stale.length === 0 && data.drafts.length === 0;
+  const { rows, counts } = homeList(data, { ...state, now: new Date() });
+  const keep = keepGoing(data.drafts);
+  const keepProgress = keep?.progress ?? null;
+  const options = HOME_FILTERS.map((value) => ({
+    value,
+    label: t(`home.filter.${value}`),
+    count: counts[value],
+  }));
+  const listHeadingId = "home-list-heading";
+  const empty =
+    state.query.trim() !== ""
+      ? t("home.empty.search")
+      : state.filter === "all"
+        ? null
+        : t(EMPTY[state.filter]);
 
   return (
-    <>
-      <SurveyHeader title={t("home.title")} />
-      <Screen action={props.action}>
-        {props.admin === undefined ? null : <nav className="home-admin">{props.admin}</nav>}
-        {pendingAtOpen > 0 ? (
-          <Banner tone="note">
-            {plural(pendingAtOpen, "sync.leave_warning_one", "sync.leave_warning")}
-          </Banner>
-        ) : null}
-        {noList && !online ? <p className="lede">{t("home.offline_first")}</p> : null}
-        {firstRun ? (
-          <section className="first-run">
-            <h2 className="title">{t("home.empty.title")}</h2>
-            <p className="lede">{t("home.empty.body")}</p>
-          </section>
-        ) : null}
-        <List
-          title={t("home.attention.title")}
-          empty={
-            rows.attention.length === 0 && rows.unreadable === 0 ? t("home.attention.empty") : null
+    <Screen
+      title={t("home.title")}
+      {...(props.isAdmin
+        ? {
+            trailing: (
+              <IconButton label={t("home.admin")} icon={Shield} link={{ to: "/survey/admin" }} />
+            ),
           }
-        >
-          {rows.unreadable > 0 ? (
-            <RuledRow
-              label={plural(rows.unreadable, "home.unreadable_one", "home.unreadable")}
-              tone="missing"
+        : {})}
+      action={
+        <>
+          <SyncStatus variant="bar" />
+          <Link to="/survey/spots/new" className="btn btn--primary actionbar__main">
+            <Icon icon={Plus} />
+            <span className="btn__label">{t("home.new_spot")}</span>
+          </Link>
+          <IconButton
+            label={t("common.actions")}
+            icon={Ellipsis}
+            onClick={() => setActions(true)}
+          />
+        </>
+      }
+    >
+      {pendingAtOpen > 0 ? (
+        <Banner tone="note">
+          {plural(pendingAtOpen, "sync.leave_warning_one", "sync.leave_warning")}
+        </Banner>
+      ) : null}
+      {noList && !online ? <p className="lede">{t("home.offline_first")}</p> : null}
+      {firstRun ? (
+        <section className="first-run">
+          <h2 className="group-heading">{t("home.empty.title")}</h2>
+          <p className="lede">{t("home.empty.body")}</p>
+        </section>
+      ) : null}
+      {keep !== null && link !== undefined ? (
+        <Link {...link(keep.spotId)} className="keep">
+          {keep.coverPhotoId === null ? null : (
+            <CoverThumb photoId={keep.coverPhotoId} size="card" />
+          )}
+          <span className="keep__text">
+            <span className="keep__name truncate">{keep.name}</span>
+            {keepProgress === null ? null : (
+              <StepBar
+                steps={keepProgress.steps}
+                label={t("progress.label", {
+                  done: keepProgress.done,
+                  total: keepProgress.total,
+                })}
+              />
+            )}
+            <span className="keep__next">
+              {keepProgress === null
+                ? t("home.keep_going")
+                : keepProgress.next === null
+                  ? t("home.keep_going.ready")
+                  : t("home.keep_going.next", {
+                      section: sectionName(keepProgress.next),
+                      count: keepProgress.total - keepProgress.done,
+                    })}
+            </span>
+          </span>
+          <Icon icon={ArrowRight} />
+        </Link>
+      ) : null}
+      <Search
+        label={t("home.search.label")}
+        value={state.query}
+        onChange={(query) => setState({ ...state, query })}
+      />
+      <FilterChips
+        label={t("home.filter.label")}
+        options={options}
+        value={state.filter}
+        onChange={(filter) => setState({ ...state, filter })}
+      />
+      {data.unreadable > 0 ? (
+        <Banner tone="note">
+          {plural(data.unreadable, "home.unreadable_one", "home.unreadable")}
+        </Banner>
+      ) : null}
+      <section {...(firstRun ? {} : { "aria-labelledby": listHeadingId })}>
+        {firstRun ? null : (
+          <GroupHeading id={listHeadingId}>{t(`home.group.${state.filter}`)}</GroupHeading>
+        )}
+        {empty === null || rows.length > 0 ? null : <p className="empty">{empty}</p>}
+        {rows.length === 0 ? null : (
+          <ul className="row-list">
+            {rows.map((row: HomeRow) => (
+              <Row
+                key={row.spotId}
+                title={row.name}
+                compact
+                {...(row.coverPhotoId === null
+                  ? {}
+                  : { lead: <CoverThumb photoId={row.coverPhotoId} size="row" /> })}
+                end={homeFactEnd(row.fact, tz)}
+                {...(homeFactSub(row, tz) === undefined ? {} : { sub: homeFactSub(row, tz) })}
+                {...(link === undefined ? {} : { link: link(row.spotId) })}
+              />
+            ))}
+          </ul>
+        )}
+      </section>
+      <Sheet open={actions} title={t("common.actions")} onClose={() => setActions(false)}>
+        <ul className="row-list">
+          <Row
+            title={t("sync.sheet.title")}
+            lead={<Icon icon={History} />}
+            onClick={() => {
+              setActions(false);
+              setSyncOpen(true);
+            }}
+          />
+          {props.isAdmin ? (
+            <Row
+              title={t("home.admin")}
+              lead={<Icon icon={Shield} />}
+              link={{ to: "/survey/admin" }}
             />
           ) : null}
-          {rows.attention.map((row) => (
-            <RuledRow
-              key={`${row.spotId}:${row.reason}`}
-              label={row.name}
-              value={attentionText(row)}
-              tone={row.reason === "conflict" || row.reason === "failed" ? "missing" : "muted"}
-              {...(link === undefined ? {} : { link: link(row.spotId) })}
-            />
-          ))}
-        </List>
-        <List
-          title={t("home.drafts.title")}
-          empty={rows.drafts.length === 0 ? t("home.drafts.empty") : null}
-        >
-          {rows.drafts.map((row) => (
-            <RuledRow
-              key={row.spotId}
-              label={row.name}
-              value={draftText(row)}
-              tone="muted"
-              {...(link === undefined ? {} : { link: link(row.spotId) })}
-            />
-          ))}
-        </List>
-        <List
-          title={t("home.stale.title")}
-          empty={rows.stale.length === 0 ? t("home.stale.empty") : null}
-        >
-          {rows.stale.map((row) => (
-            <RuledRow
-              key={row.spotId}
-              label={row.name}
-              value={staleText(row, tz)}
-              tone={row.oldestVerifiedAt === null ? "missing" : "muted"}
-              {...(link === undefined ? {} : { link: link(row.spotId) })}
-            />
-          ))}
-        </List>
-      </Screen>
-    </>
+        </ul>
+        <ThemeSwitch />
+      </Sheet>
+      <SyncSheet open={syncOpen} onClose={() => setSyncOpen(false)} />
+    </Screen>
   );
 }

@@ -62,6 +62,7 @@ test("publisher warnings are reworded with the spot name and field names", () =>
       building_name: "SAC",
       oldest_verified_at: null,
       hours_confirmed: true,
+      cover_photo_id: null,
     },
   ];
   expect(publishWarningText("skipped sac-lounge: missing directions, seat_count", spots)).toBe(
