@@ -55,11 +55,11 @@ export function OverviewSkeleton() {
 }
 
 /** A section editor whose spot is not on this phone yet: the real title, then fields in mist. */
-export function EditorSkeleton(props: { section: OverviewSection }) {
+export function EditorSkeleton(props: { id: string; section: OverviewSection }) {
   return (
     <Screen
       title={sectionName(props.section)}
-      back={{ to: "/survey" }}
+      back={{ to: "/survey/spots/$id", params: { id: props.id } }}
       trailing={<SyncStatus variant="icon" />}
       stacked
       action={<SkelBar stacked />}

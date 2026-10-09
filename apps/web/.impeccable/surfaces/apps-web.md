@@ -33,7 +33,7 @@ FINISH: unreviewed and undocumented is unfinished. This build ends with the fini
 
 ## Signature interaction
 
-Instant choice: segmented controls show the new choice on pointerdown and the paper thumb glides there (180 ms); rows press to 0.985; sheets slide up (320 ms); the large title hands off to the bar title as it scrolls away (220 ms); a change of screen cross-fades with a 6 px rise (200 ms), over a mist skeleton when the data is not here yet. Reduced motion: no transforms, 80 ms fades.
+Instant choice: segmented controls show the new choice on pointerdown and the paper thumb glides there (180 ms); rows press to 0.985; sheets slide up (320 ms); the large title hands off to the bar title as it scrolls away (220 ms); a change of screen cross-fades with a 6 px rise (220 ms), over a mist skeleton when the data is not here yet. Reduced motion: no transforms, 80 ms fades.
 
 ## Unresolved
 

@@ -261,7 +261,7 @@ function PublishSection(props: { online: boolean }) {
   return (
     <Section id="admin-publish" title={t("admin.publish.title")}>
       {status.isPending && status.fetchStatus === "fetching" ? (
-        <Loading>
+        <Loading announce={false}>
           <span className="admin-stats">
             <Skel kind="title" w="60%" />
             <Skel kind="pill" w="88px" />
@@ -397,7 +397,7 @@ function PhotosSection(props: { online: boolean }) {
   return (
     <Section id="admin-photos" title={t("admin.photos.title")}>
       {pending.isPending && pending.fetchStatus === "fetching" ? (
-        <Loading>
+        <Loading announce={false}>
           <span className="photos">
             <Skel kind="photo" />
             <Skel kind="photo" />

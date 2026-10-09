@@ -1690,7 +1690,7 @@ span.editor-meta {
 }
 
 :root:active-view-transition-type(route)::view-transition-new(root) {
-  animation: route-in 200ms var(--easing-standard) both;
+  animation: route-in var(--duration-base) var(--easing-standard) both;
 }
 
 @keyframes route-out {

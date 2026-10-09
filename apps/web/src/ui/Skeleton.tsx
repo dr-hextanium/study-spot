@@ -1,21 +1,35 @@
 import { t } from "@study-spot/ui-logic";
-import type { CSSProperties, ReactNode } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 
 /**
  * Stand-ins for content that is not here yet. A skeleton never pretends to be
  * data: the blocks are plain mist shapes hidden from assistive tech, the region
  * is aria-busy, and a polite "Loading" from the copy deck says what is going on.
+ * The status sits beside the busy region, not in it, and gets its text after it
+ * mounts: a live region that arrives already filled is often not read out.
+ * `announce={false}` for a second skeleton on the same screen, so it is said once.
  */
-export function Loading(props: { children: ReactNode; className?: string }) {
+export function Loading(props: { children: ReactNode; className?: string; announce?: boolean }) {
+  const announce = props.announce ?? true;
+  const [said, setSaid] = useState(false);
+  useEffect(() => {
+    if (!announce) return;
+    const id = setTimeout(() => setSaid(true), 0);
+    return () => clearTimeout(id);
+  }, [announce]);
   return (
-    <div className={props.className} aria-busy="true">
-      <p role="status" className="visually-hidden">
-        {t("common.loading")}
-      </p>
-      <div aria-hidden="true" className="skel-group">
-        {props.children}
+    <>
+      {announce ? (
+        <p role="status" className="visually-hidden">
+          {said ? t("common.loading") : ""}
+        </p>
+      ) : null}
+      <div className={props.className} aria-busy="true">
+        <div aria-hidden="true" className="skel-group">
+          {props.children}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

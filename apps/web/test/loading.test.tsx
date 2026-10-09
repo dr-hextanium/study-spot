@@ -20,8 +20,10 @@ function expectSkeleton() {
   expect(busy?.querySelector(".skel")).not.toBeNull();
   // The mist blocks are not read out.
   expect(busy?.querySelector('.skel:not([aria-hidden="true"] .skel)')).toBeNull();
+  // The polite status is beside the busy region, so the busy region does not hold it back.
   const status = screen.getAllByRole("status").find((el) => el.textContent === t("common.loading"));
   expect(status).toBeTruthy();
+  expect(status?.closest('[aria-busy="true"]')).toBeNull();
 }
 
 test("an overview not on this phone yet shows its skeleton, then the spot", async () => {

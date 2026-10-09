@@ -98,7 +98,7 @@ function SectionRoute() {
     return state.kind === "missing" ? (
       <NotFound message={t("spot.not_found")} sync />
     ) : (
-      <EditorSkeleton section={section} />
+      <EditorSkeleton id={id} section={section} />
     );
   }
   const Editor = EDITORS[section];
