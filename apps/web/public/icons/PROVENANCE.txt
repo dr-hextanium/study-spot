@@ -1,2 +1,2 @@
-icon.svg: authored for Perch (postmark rings and cancellation waves), no third-party artwork.
+icon.svg: Newsreader P (SIL OFL 1.1) outlined for Perch, Seawolf palette; no third-party artwork.
 PNG icons: rendered from icon.svg by apps/web/e2e/render-icons.ts (headless Chromium).
