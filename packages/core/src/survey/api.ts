@@ -125,6 +125,11 @@ export const PublishStatus = z.object({
    * publish from here waits. Null when the lease is free or held by this server.
    */
   waiting_until: z.iso.datetime().nullable().default(null),
+  /**
+   * Whose lease: "other" for another process, "last_deploy" for this server holding
+   * it after a deployment POST that got no answer. Null when not waiting.
+   */
+  waiting_for: z.enum(["other", "last_deploy"]).nullable().default(null),
 });
 export type PublishStatus = z.infer<typeof PublishStatus>;
 

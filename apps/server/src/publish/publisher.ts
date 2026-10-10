@@ -115,6 +115,8 @@ export function createPublisher(deps: PublisherDeps): Publisher {
   let inFlight: Promise<PublishOutcome> | null = null;
   let queued: Promise<PublishOutcome> | null = null;
   let closed = false;
+  /** Lease owner id of this server's last run, when it is still held after an unanswered POST. */
+  let heldBackOwner: string | null = null;
 
   function clearRetry(): void {
     cancelRetry?.();
@@ -177,6 +179,8 @@ export function createPublisher(deps: PublisherDeps): Publisher {
   }
 
   async function releaseLease(owner: string, holdSecs: number): Promise<void> {
+    // Remembered so status reports this server's own hold as such, not as another process.
+    heldBackOwner = holdSecs > 0 ? owner : null;
     try {
       await deps.db
         .update(bundle_state)
@@ -532,17 +536,20 @@ export function createPublisher(deps: PublisherDeps): Publisher {
     async status() {
       const row = await readState();
       const warnings = Warnings.safeParse(row?.last_warnings);
-      // An unexpired lease while this server runs nothing belongs to another process,
-      // live or crashed: publishing waits for it, which is not the same as running.
+      // An unexpired lease while this server runs nothing is either this server holding on
+      // after a deployment POST that got no answer, or another process, live or crashed.
+      // Publishing waits for it either way, which is not the same as running.
       const [lease] = await deps.db
         .select({ held: sql<boolean>`${bundle_state.publishing_until} > now()` })
         .from(bundle_state)
         .where(eq(bundle_state.campus_id, deps.campusId));
       const waiting = inFlight === null && lease?.held === true;
+      const own = heldBackOwner !== null && row?.publishing_owner === heldBackOwner;
       return {
         dirty: row?.dirty ?? false,
         running: inFlight !== null,
         waiting_until: waiting ? (row?.publishing_until?.toISOString() ?? null) : null,
+        waiting_for: waiting ? (own ? "last_deploy" : "other") : null,
         last_published_at: row?.last_published_at?.toISOString() ?? null,
         last_hash: row?.last_hash ?? null,
         last_attempt_at: row?.last_attempt_at?.toISOString() ?? null,

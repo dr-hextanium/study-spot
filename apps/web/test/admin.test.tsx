@@ -96,12 +96,42 @@ test("publish status reads the server's warnings in the deck's words, and Publis
 
 test("a lease held by another process shows when publishing can resume, not Publishing", async () => {
   const app = testApp({ me: ADMIN, spots: [] });
-  app.server.admin.waitingUntil = "2026-10-13T18:07:00.000Z";
+  app.server.admin.waitingUntil = new Date(Date.now() + 7 * 60_000).toISOString();
   renderRoute(app, "/survey/admin");
   expect(await screen.findByText(/Another publish has the lock until/)).toBeTruthy();
   expect(screen.queryByText(t("admin.publish.running"))).toBeNull();
   const button = screen.getByRole("button", { name: t("admin.publish.now") });
   expect(button.hasAttribute("disabled")).toBe(true);
+});
+
+test("this server's own unanswered deploy reads as that, not as another publish", async () => {
+  const app = testApp({ me: ADMIN, spots: [] });
+  app.server.admin.waitingUntil = new Date(Date.now() + 60_000).toISOString();
+  app.server.admin.waitingFor = "last_deploy";
+  renderRoute(app, "/survey/admin");
+  expect(await screen.findByText(/Last publish got no answer/)).toBeTruthy();
+  expect(screen.queryByText(/Another publish has the lock/)).toBeNull();
+});
+
+test("a lease time already past does not block Publish now", async () => {
+  const app = testApp({ me: ADMIN, spots: [] });
+  app.server.admin.waitingUntil = new Date(Date.now() - 1000).toISOString();
+  renderRoute(app, "/survey/admin");
+  const button = await screen.findByRole("button", { name: t("admin.publish.now") });
+  await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false));
+  expect(screen.queryByText(/Another publish has the lock/)).toBeNull();
+});
+
+test("Publish now comes back once the lease time passes, with fresh status", async () => {
+  const app = testApp({ me: ADMIN, spots: [] });
+  app.server.admin.waitingUntil = new Date(Date.now() + 300).toISOString();
+  renderRoute(app, "/survey/admin");
+  expect(await screen.findByText(/Another publish has the lock until/)).toBeTruthy();
+  // The server's lease is gone by the time the screen asks again.
+  app.server.admin.waitingUntil = null;
+  const button = screen.getByRole("button", { name: t("admin.publish.now") });
+  await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false), { timeout: 3000 });
+  expect(screen.queryByText(/Another publish has the lock/)).toBeNull();
 });
 
 test("never published and nothing dirty: no Up to date, the spots waiting instead", async () => {

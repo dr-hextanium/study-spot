@@ -259,6 +259,9 @@ test("after a deployment POST that did not answer, the lease is held a while lon
     .from(bundle_state)
     .where(eq(bundle_state.campus_id, "sbu"));
   expect(held?.held).toBe(true);
+  // This server says its own last deploy is unconfirmed; another one sees another process.
+  expect((await p.status()).waiting_for).toBe("last_deploy");
+  expect((await ctx.publisher.status()).waiting_for).toBe("other");
   // Another process waits it out.
   expect((await ctx.publisher.runNow()).ok).toBe(false);
   p.close();
@@ -364,6 +367,7 @@ test("status after a crashed run says publishing waits for the lease, not that i
   const status = await ctx.publisher.status();
   expect(status.running).toBe(false);
   expect(status.waiting_until).toBe(until ?? "missing");
+  expect(status.waiting_for).toBe("other");
 
   await ctx.db
     .update(bundle_state)

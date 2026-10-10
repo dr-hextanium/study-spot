@@ -116,6 +116,8 @@ export class TestServer implements Http {
     neverDirty: boolean;
     /** Another process holds the publish lease until this time. */
     waitingUntil: string | null;
+    /** Whose lease: another process, or this server holding on after an unanswered deploy. */
+    waitingFor: "other" | "last_deploy";
     inviteGate: Promise<void> | null;
     /** Holds the spot list answer until it settles. */
     listGate: Promise<void> | null;
@@ -136,6 +138,7 @@ export class TestServer implements Http {
     publishFails: false,
     neverDirty: false,
     waitingUntil: null,
+    waitingFor: "other",
     inviteGate: null,
     listGate: null,
     spotGate: null,
@@ -232,6 +235,7 @@ export class TestServer implements Http {
         warnings: this.admin.warnings,
         last_error: null,
         waiting_until: this.admin.waitingUntil,
+        waiting_for: this.admin.waitingUntil === null ? null : this.admin.waitingFor,
       });
     }
     if (path === "/admin/photos/pending") return ok({ photos: this.admin.photos });

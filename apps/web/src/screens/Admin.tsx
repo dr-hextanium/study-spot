@@ -2,7 +2,7 @@ import type { SurveyorRole } from "@perch/core";
 import { plural, publishWarningText, t } from "@perch/ui-logic";
 import { useIsFetching, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Ellipsis, Shield, TriangleAlert, UserCog } from "lucide-react";
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { keys } from "../app/keys.ts";
 import { unwrap } from "../app/queries.ts";
@@ -255,6 +255,23 @@ function PublishSection(props: { online: boolean }) {
     else toasts.show(t("error.generic"));
   }
   const s = status.data;
+  // The lease time is the server's; once it passes, ask again so the button comes back.
+  const waitingUntil = s?.waiting_until ?? null;
+  const [waitPassed, setWaitPassed] = useState<string | null>(null);
+  useEffect(() => {
+    if (waitingUntil === null) return;
+    const ms = Date.parse(waitingUntil) - Date.now();
+    if (ms <= 0) {
+      setWaitPassed(waitingUntil);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setWaitPassed(waitingUntil);
+      void qc.invalidateQueries({ queryKey: keys.publish });
+    }, ms);
+    return () => clearTimeout(timer);
+  }, [waitingUntil, qc]);
+  const leaseWaiting = waitingUntil !== null && waitPassed !== waitingUntil;
   // Null until the list exists: a count of zero would claim there is nothing waiting.
   const waiting =
     list.data === undefined ? null : list.data.spots.filter((x) => x.status === "published").length;
@@ -289,9 +306,16 @@ function PublishSection(props: { online: boolean }) {
               <Pill>{t("admin.publish.clean")}</Pill>
             )}
           </div>
-          {s.waiting_until === null ? null : (
+          {!leaseWaiting || waitingUntil === null ? null : (
             <p className="admin-stat">
-              {t("admin.publish.waiting", { time: dateTime(s.waiting_until, tz) })}
+              {t(
+                s.waiting_for === "last_deploy"
+                  ? "admin.publish.waiting_self"
+                  : "admin.publish.waiting",
+                {
+                  time: dateTime(waitingUntil, tz),
+                },
+              )}
             </p>
           )}
           {s.last_error === null ? null : (
@@ -315,9 +339,7 @@ function PublishSection(props: { online: boolean }) {
         </>
       )}
       <Button
-        disabled={
-          !props.online || running || s?.running === true || (s?.waiting_until ?? null) !== null
-        }
+        disabled={!props.online || running || s?.running === true || leaseWaiting}
         onClick={() => void publishNow()}
       >
         {running || s?.running === true ? t("admin.publish.running") : t("admin.publish.now")}

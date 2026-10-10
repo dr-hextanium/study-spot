@@ -440,6 +440,7 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | admin.publish.now | Publish now | 14 | |
 | admin.publish.running | Publishing | 12 | |
 | admin.publish.waiting | Another publish has the lock until {time} | 52 | another server holds the publish lease, or a crashed run left it; it expires on its own |
+| admin.publish.waiting_self | Last publish got no answer. Retry after {time} | 60 | this server holds the lease after a deployment that did not answer, in case it still lands |
 | admin.publish.error | Last publish failed: {reason} | 70 | |
 | admin.publish.warnings.title | Skipped spots | 16 | |
 | admin.publish.warning.item | {name}: {reason} | 80 | reason from buildBundle, reworded by plan D |
