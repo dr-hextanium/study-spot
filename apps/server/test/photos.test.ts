@@ -318,6 +318,37 @@ test("an offloaded photo is served from the data site, and a bad copy is a 404",
   expect((await image()).statusCode).toBe(404);
 });
 
+test("re-uploading a cleared photo's bytes puts them back in Postgres", async () => {
+  const ctx = await setup();
+  const admin = await signIn(ctx, "admin", "Admin");
+  const id = await uploaded(ctx, admin, 10);
+  expect((await photoAction(ctx, admin, id, "approve")).statusCode).toBe(200);
+  const sha = sha256Hex(jpeg(64, 10));
+  const outcome = await ctx.publisher.runNow();
+  expect(outcome.ok && outcome.offloaded.includes(sha)).toBe(true);
+
+  const again = await upload(
+    ctx,
+    admin,
+    { spot_id: ctx.ids.spotIds["sac-lounge"], client_write_id: writeId() },
+    jpeg(64, 10),
+  );
+  expect(again.statusCode).toBe(201);
+  const [row] = await ctx.db.select().from(photo_blob).where(eq(photo_blob.sha256, sha));
+  expect(Array.from(row?.bytes ?? [])).toEqual(Array.from(jpeg(64, 10)));
+  expect(row?.offloaded_at).toBeNull();
+
+  // Served from Postgres now, whatever the data site holds.
+  writeFileSync(join(ctx.publishDir, `photos/${sha}.jpg`), jpeg(64, 11));
+  const res = await ctx.app.inject({
+    method: "GET",
+    url: `/survey/photos/${id}/image`,
+    headers: admin.headers,
+  });
+  expect(res.statusCode).toBe(200);
+  expect(Array.from(res.rawPayload)).toEqual(Array.from(jpeg(64, 10)));
+});
+
 test("a photo or spot in another campus is a 404 and stores nothing", async () => {
   const ctx = await setup();
   const seeded = await seededBlobs(ctx);

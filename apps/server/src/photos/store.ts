@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { type Db, photo_blob } from "@perch/db";
-import { eq } from "drizzle-orm";
+import { eq, isNull, sql } from "drizzle-orm";
 import type { DataSite } from "../publish/dataSite.ts";
 import { pagesHash } from "../publish/pagesTarget.ts";
 
@@ -17,16 +17,19 @@ export function photoPath(sha256: string): string {
  * row and hash there, and its bytes are read back from the data site.
  */
 export type PhotoStore = {
-  /** Idempotent: storing the same bytes twice keeps one copy. */
-  put(blob: PhotoBlob): Promise<void>;
+  /**
+   * Idempotent: storing the same bytes twice keeps one copy. Storing the bytes of a
+   * blob that was cleared puts them back. `db` may be a transaction.
+   */
+  put(blob: PhotoBlob, db?: Db): Promise<void>;
   /** Postgres bytes, or an offloaded photo's data-site copy if its sha256 matches; else null. */
   get(sha256: string): Promise<Uint8Array | null>;
 };
 
 export function postgresPhotoStore(db: Db, dataSite: DataSite): PhotoStore {
   return {
-    async put(blob) {
-      await db
+    async put(blob, tx = db) {
+      await tx
         .insert(photo_blob)
         .values({
           sha256: blob.sha256,
@@ -35,7 +38,11 @@ export function postgresPhotoStore(db: Db, dataSite: DataSite): PhotoStore {
           byte_size: blob.bytes.byteLength,
           pages_hash: pagesHash(blob.bytes, photoPath(blob.sha256)),
         })
-        .onConflictDoNothing();
+        .onConflictDoUpdate({
+          target: photo_blob.sha256,
+          set: { bytes: sql`excluded.bytes`, offloaded_at: null },
+          where: isNull(photo_blob.bytes),
+        });
     },
     async get(sha256) {
       const [row] = await db
