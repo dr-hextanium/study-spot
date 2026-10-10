@@ -289,6 +289,11 @@ function PublishSection(props: { online: boolean }) {
               <Pill>{t("admin.publish.clean")}</Pill>
             )}
           </div>
+          {s.waiting_until === null ? null : (
+            <p className="admin-stat">
+              {t("admin.publish.waiting", { time: dateTime(s.waiting_until, tz) })}
+            </p>
+          )}
           {s.last_error === null ? null : (
             <Banner>{t("admin.publish.error", { reason: s.last_error })}</Banner>
           )}
@@ -310,7 +315,9 @@ function PublishSection(props: { online: boolean }) {
         </>
       )}
       <Button
-        disabled={!props.online || running || s?.running === true}
+        disabled={
+          !props.online || running || s?.running === true || (s?.waiting_until ?? null) !== null
+        }
         onClick={() => void publishNow()}
       >
         {running || s?.running === true ? t("admin.publish.running") : t("admin.publish.now")}

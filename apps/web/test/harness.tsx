@@ -102,6 +102,8 @@ export class TestServer implements Http {
     publishFails: boolean;
     /** Report a never-published bundle as not dirty, as the server does before any write. */
     neverDirty: boolean;
+    /** Another process holds the publish lease until this time. */
+    waitingUntil: string | null;
     inviteGate: Promise<void> | null;
     /** Holds the spot list answer until it settles. */
     listGate: Promise<void> | null;
@@ -121,6 +123,7 @@ export class TestServer implements Http {
     photos: [],
     publishFails: false,
     neverDirty: false,
+    waitingUntil: null,
     inviteGate: null,
     listGate: null,
     spotGate: null,
@@ -216,6 +219,7 @@ export class TestServer implements Http {
         last_attempt_at: null,
         warnings: this.admin.warnings,
         last_error: null,
+        waiting_until: this.admin.waitingUntil,
       });
     }
     if (path === "/admin/photos/pending") return ok({ photos: this.admin.photos });

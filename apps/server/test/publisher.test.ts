@@ -281,6 +281,7 @@ test("admin publish endpoints: status, publish now, admin only", async () => {
     last_attempt_at: null,
     warnings: [],
     last_error: null,
+    waiting_until: null,
   });
   const res = await ctx.app.inject({
     method: "POST",

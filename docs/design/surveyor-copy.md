@@ -439,6 +439,7 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 | admin.publish.first_many | {count} spots waiting for the first publish | 44 | |
 | admin.publish.now | Publish now | 14 | |
 | admin.publish.running | Publishing | 12 | |
+| admin.publish.waiting | Another publish has the lock until {time} | 52 | another server holds the publish lease, or a crashed run left it; it expires on its own |
 | admin.publish.error | Last publish failed: {reason} | 70 | |
 | admin.publish.warnings.title | Skipped spots | 16 | |
 | admin.publish.warning.item | {name}: {reason} | 80 | reason from buildBundle, reworded by plan D |

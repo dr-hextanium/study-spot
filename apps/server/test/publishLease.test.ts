@@ -78,7 +78,11 @@ test("two publishers on one database never deploy at the same time", async () =>
 
   const runA = pa.runNow();
   await a.waiting;
-  expect((await pb.status()).running).toBe(true);
+  const seen = await pb.status();
+  expect(seen.running).toBe(false);
+  expect(seen.waiting_until).not.toBeNull();
+  expect((await pa.status()).running).toBe(true);
+  expect((await pa.status()).waiting_until).toBeNull();
   const busy = await pb.runNow();
   expect(busy.ok).toBe(false);
   if (!busy.ok) expect(busy.error).toBe("another publish is running");
@@ -341,4 +345,29 @@ test("a run that lost its lease after deploying writes no publish state", async 
   expect(row?.dirty).toBe(true);
   expect(row?.last_error).toBeNull();
   expect(row?.publishing_owner).toBe("thief");
+});
+
+test("status after a crashed run says publishing waits for the lease, not that it runs", async () => {
+  const ctx = await setup();
+  await ctx.db
+    .insert(bundle_state)
+    .values({
+      campus_id: "sbu",
+      publishing_owner: "crashed",
+      publishing_until: sql`now() + interval '7 minutes'`,
+    })
+    .onConflictDoUpdate({
+      target: bundle_state.campus_id,
+      set: { publishing_owner: "crashed", publishing_until: sql`now() + interval '7 minutes'` },
+    });
+  const until = (await leaseRow(ctx))?.publishing_until?.toISOString();
+  const status = await ctx.publisher.status();
+  expect(status.running).toBe(false);
+  expect(status.waiting_until).toBe(until ?? "missing");
+
+  await ctx.db
+    .update(bundle_state)
+    .set({ publishing_until: sql`now() - interval '1 second'` })
+    .where(eq(bundle_state.campus_id, "sbu"));
+  expect((await ctx.publisher.status()).waiting_until).toBeNull();
 });

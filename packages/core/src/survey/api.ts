@@ -120,6 +120,11 @@ export const PublishStatus = z.object({
   last_attempt_at: z.iso.datetime().nullable(),
   warnings: z.array(z.string()),
   last_error: z.string().nullable(),
+  /**
+   * Another process (live, or crashed) holds the publish lease until this time, so a
+   * publish from here waits. Null when the lease is free or held by this server.
+   */
+  waiting_until: z.iso.datetime().nullable().default(null),
 });
 export type PublishStatus = z.infer<typeof PublishStatus>;
 

@@ -94,6 +94,16 @@ test("publish status reads the server's warnings in the deck's words, and Publis
   expect(await screen.findByText(t("admin.publish.clean"))).toBeTruthy();
 });
 
+test("a lease held by another process shows when publishing can resume, not Publishing", async () => {
+  const app = testApp({ me: ADMIN, spots: [] });
+  app.server.admin.waitingUntil = "2026-10-13T18:07:00.000Z";
+  renderRoute(app, "/survey/admin");
+  expect(await screen.findByText(/Another publish has the lock until/)).toBeTruthy();
+  expect(screen.queryByText(t("admin.publish.running"))).toBeNull();
+  const button = screen.getByRole("button", { name: t("admin.publish.now") });
+  expect(button.hasAttribute("disabled")).toBe(true);
+});
+
 test("never published and nothing dirty: no Up to date, the spots waiting instead", async () => {
   const live = surveySpotFixture({ status: "published", version: 3 });
   const draft = surveySpotFixture({ id: "6f1d1a2e-6c55-4b5b-8b0e-0d7f4f5c1a09", status: "draft" });

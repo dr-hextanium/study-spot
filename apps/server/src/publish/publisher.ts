@@ -532,14 +532,17 @@ export function createPublisher(deps: PublisherDeps): Publisher {
     async status() {
       const row = await readState();
       const warnings = Warnings.safeParse(row?.last_warnings);
-      // Another process holding an unexpired lease is running too.
+      // An unexpired lease while this server runs nothing belongs to another process,
+      // live or crashed: publishing waits for it, which is not the same as running.
       const [lease] = await deps.db
         .select({ held: sql<boolean>`${bundle_state.publishing_until} > now()` })
         .from(bundle_state)
         .where(eq(bundle_state.campus_id, deps.campusId));
+      const waiting = inFlight === null && lease?.held === true;
       return {
         dirty: row?.dirty ?? false,
-        running: inFlight !== null || lease?.held === true,
+        running: inFlight !== null,
+        waiting_until: waiting ? (row?.publishing_until?.toISOString() ?? null) : null,
         last_published_at: row?.last_published_at?.toISOString() ?? null,
         last_hash: row?.last_hash ?? null,
         last_attempt_at: row?.last_attempt_at?.toISOString() ?? null,
