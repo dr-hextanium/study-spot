@@ -28,8 +28,10 @@ export function DataState(props: { state: BundleState }) {
           ["96px", "64px", "56px", "88px"],
         ].map((widths) => (
           <span key={widths.join()} className="chips">
-            {widths.map((w) => (
-              <Skel key={w} kind="chip" w={w} />
+            {widths.map((w, i) => (
+              // Widths repeat inside a row, so the position is the stable key.
+              // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list, never reordered
+              <Skel key={i} kind="chip" w={w} />
             ))}
           </span>
         ))}
