@@ -56,12 +56,22 @@ export function createNetworkStatus(win: Window = window): NetworkStatus {
  * full disk; callers handle that.
  */
 export function createLocalStorage(win: Window = window): KeyValueStorage {
+  return guardedStorage(() => win.localStorage);
+}
+
+/** sessionStorage (one tab session) with the same in-memory fallback as createLocalStorage. */
+export function createTabStorage(win: Window = window): KeyValueStorage {
+  return guardedStorage(() => win.sessionStorage);
+}
+
+function guardedStorage(pick: () => Storage): KeyValueStorage {
   try {
     // Probe key only; keeps the old project name, nothing to migrate.
     const probe = "study-spot:probe";
-    win.localStorage.setItem(probe, "1");
-    win.localStorage.removeItem(probe);
-    return win.localStorage;
+    const storage = pick();
+    storage.setItem(probe, "1");
+    storage.removeItem(probe);
+    return storage;
   } catch {
     const memory = new Map<string, string>();
     return {
@@ -143,4 +153,18 @@ export function createShare(nav: Navigator = navigator): Share {
       }
     },
   };
+}
+
+/**
+ * Sends the pick ping. Fire and forget: no cookies, no preflight (text/plain), survives the
+ * page closing, and a failure is dropped.
+ */
+export function sendPickPing(url: string, body: string): void {
+  void fetch(url, {
+    method: "POST",
+    body,
+    keepalive: true,
+    credentials: "omit",
+    headers: { "content-type": "text/plain" },
+  }).catch(() => {});
 }
