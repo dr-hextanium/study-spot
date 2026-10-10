@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseBundle } from "@perch/core";
 import type { Page } from "@playwright/test";
+import { DATA_ORIGIN } from "../playwright.config.ts";
 import { completeSpot, getSpot, tokenOf } from "./api.ts";
 import { expect, serverState, signIn, test } from "./fixtures.ts";
 import { bigJpeg } from "./photo.ts";
@@ -85,7 +86,9 @@ test("acceptance 2: after Publish now the data site's bundle has the spot and it
   await page.getByRole("button", { name: "Publish now" }).click();
   const dir = serverState().publishDir;
   const cover = (await getSpot(token, spot.id)).photos.find((p) => p.is_cover);
-  expect(cover?.url).toMatch(/^http:\/\/data\.localhost:8788\/photos\/[0-9a-f]{64}\.jpg$/);
+  expect(cover?.url).toMatch(
+    new RegExp(`^${DATA_ORIGIN.replace(/\./g, "\\.")}/photos/[0-9a-f]{64}\\.jpg$`),
+  );
   // Poll the files themselves: the page's status text may already match before the click lands.
   await expect
     .poll(

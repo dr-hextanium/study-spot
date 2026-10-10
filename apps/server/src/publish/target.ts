@@ -39,6 +39,7 @@ export const MUTABLE_PATHS: ReadonlySet<string> = new Set(["bundle-latest.json",
 export const DATA_HEADERS = [
   "/*",
   "  Access-Control-Allow-Origin: *",
+  "  Access-Control-Expose-Headers: Date",
   "/bundle-latest.json",
   "  Cache-Control: no-cache",
   "/bundle.*",

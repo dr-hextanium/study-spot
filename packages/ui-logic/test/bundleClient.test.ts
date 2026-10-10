@@ -1,6 +1,6 @@
 import { beforeEach, expect, test } from "bun:test";
 import { makeBundleFixture } from "../../core/test/fixtures/bundle-v1.ts";
-import { lastGoodKey, loadBundle } from "../src/index.ts";
+import { lastGoodKey, loadBundle, readLastGood } from "../src/index.ts";
 import { FailingCache, FakeFetch, fixedClock, MemoryCache } from "./fakes.ts";
 
 const BASE = "https://cdn.example/data/sbu";
@@ -179,4 +179,59 @@ test("a clock behind generated_at reports age 0", async () => {
   const r = await loadBundle({ fetch: new FakeFetch(goodRoutes()), cache, clock: early }, BASE);
   expect(r.status).toBe("fresh");
   if (r.status !== "unavailable") expect(r.ageDays).toBe(0);
+});
+
+test("a fresh load reports clock skew from the pointer's Date header", async () => {
+  const fetch = new FakeFetch(goodRoutes());
+  // The device is 3 h behind the server.
+  fetch.date = "Tue, 13 Oct 2026 21:00:00 GMT";
+  const load = await loadBundle({ fetch, cache, clock: fixedClock("2026-10-13T18:00:00Z") }, BASE);
+  expect(load.status).toBe("fresh");
+  if (load.status !== "unavailable") expect(load.skewMs).toBe(3 * 3_600_000);
+});
+
+test("a cached load never reports skew", async () => {
+  const fetch = new FakeFetch(goodRoutes());
+  fetch.date = "Tue, 13 Oct 2026 21:00:00 GMT";
+  await loadBundle({ fetch, cache, clock }, BASE);
+  fetch.offline = true;
+  const load = await loadBundle({ fetch, cache, clock }, BASE);
+  expect(load.status).toBe("cached");
+  if (load.status !== "unavailable") expect(load.skewMs).toBe(0);
+});
+
+test("networkFailed is true only when the network failed", async () => {
+  const fetch = new FakeFetch(goodRoutes());
+  await loadBundle({ fetch, cache, clock }, BASE); // seed the cache
+  fetch.offline = true;
+  const offline = await loadBundle({ fetch, cache, clock }, BASE);
+  if (offline.status !== "unavailable") expect(offline.networkFailed).toBe(true);
+  const http503 = new FakeFetch(
+    new Map([[`${BASE}/bundle-latest.json`, { status: 503, text: "" }]]),
+  );
+  const failed = await loadBundle({ fetch: http503, cache, clock }, BASE);
+  if (failed.status !== "unavailable") expect(failed.networkFailed).toBe(true);
+  const newerFetch = new FakeFetch(
+    new Map([[`${BASE}/bundle-latest.json`, ok(pointer(2, "ffffffffffffffff"))]]),
+  );
+  const newer = await loadBundle({ fetch: newerFetch, cache, clock }, BASE);
+  expect(newer.status).toBe("cached");
+  if (newer.status !== "unavailable") {
+    expect(newer.updateAvailable).toBe(true);
+    expect(newer.networkFailed).toBe(false);
+  }
+  const fresh = await loadBundle({ fetch: new FakeFetch(goodRoutes()), cache, clock }, BASE);
+  if (fresh.status !== "unavailable") expect(fresh.networkFailed).toBe(false);
+});
+
+test("readLastGood returns the cached bundle without touching the network", async () => {
+  const fetch = new FakeFetch(goodRoutes());
+  await loadBundle({ fetch, cache, clock }, BASE);
+  const before = fetch.calls.length;
+  const cached = await readLastGood({ fetch, cache, clock }, BASE);
+  expect(cached?.status).toBe("cached");
+  expect(cached?.skewMs).toBe(0);
+  expect(cached?.networkFailed).toBe(false);
+  expect(fetch.calls.length).toBe(before);
+  expect(await readLastGood({ fetch, cache: new MemoryCache(), clock }, BASE)).toBeNull();
 });

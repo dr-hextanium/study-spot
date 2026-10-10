@@ -56,12 +56,22 @@ export function createNetworkStatus(win: Window = window): NetworkStatus {
  * full disk; callers handle that.
  */
 export function createLocalStorage(win: Window = window): KeyValueStorage {
+  return probedStorage(() => win.localStorage);
+}
+
+/** sessionStorage with the same probe and memory fallback as `createLocalStorage`. */
+export function createSessionStorage(win: Window = window): KeyValueStorage {
+  return probedStorage(() => win.sessionStorage);
+}
+
+function probedStorage(pick: () => Storage): KeyValueStorage {
   try {
+    const storage = pick();
     // Probe key only; keeps the old project name, nothing to migrate.
     const probe = "study-spot:probe";
-    win.localStorage.setItem(probe, "1");
-    win.localStorage.removeItem(probe);
-    return win.localStorage;
+    storage.setItem(probe, "1");
+    storage.removeItem(probe);
+    return storage;
   } catch {
     const memory = new Map<string, string>();
     return {

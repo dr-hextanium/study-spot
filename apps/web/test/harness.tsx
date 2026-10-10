@@ -1,16 +1,28 @@
-import type { CampusInfo, SpotList, SpotSummary, SurveyorPublic, SurveySpot } from "@perch/core";
 import {
+  type Bundle,
+  type CampusInfo,
+  parseBundle,
+  type SpotList,
+  type SpotSummary,
+  type SurveyorPublic,
+  type SurveySpot,
+} from "@perch/core";
+import {
+  type BundleState,
   createOutbox,
   createSessionStore,
   createSurveyApi,
   type FetchResponse,
   type Http,
   type HttpRequest,
+  type ReadyLoad,
 } from "@perch/ui-logic";
 import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/react-router";
 import { type RenderResult, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { z } from "zod";
+import { makeBundleFixture } from "../../../packages/core/test/fixtures/bundle-v1.ts";
+import { staticBundleStore } from "../../../packages/ui-logic/test/fakeBundleStore.ts";
 import { FakeSurveyServer } from "../../../packages/ui-logic/test/fakeServer.ts";
 import {
   FakeForeground,
@@ -248,7 +260,15 @@ export type TestApp = {
 
 /** App dependencies on fakes: in-memory storage, the fake server, manual timers. */
 export function testApp(
-  opts: { spots?: SurveySpot[]; me?: SurveyorPublic | null; now?: string } = {},
+  opts: {
+    spots?: SurveySpot[];
+    me?: SurveyorPublic | null;
+    now?: string;
+    /** The student bundle state. Default: ready with the v1 fixture, fresh, age 0. */
+    bundle?: BundleState;
+    /** Random source for picks. Default: seeded, so picks repeat. */
+    rand?: () => number;
+  } = {},
 ): TestApp {
   const server = new TestServer(opts.spots ?? []);
   const cache = new MemoryCache();
@@ -297,8 +317,46 @@ export function testApp(
     clock,
     apiBaseUrl: API,
     dataBaseUrl: "https://data.example",
+    bundle: staticBundleStore(opts.bundle ?? readyBundle(), () => clock.now()),
+    prefs: new MemoryStorage(),
+    tab: new MemoryStorage(),
+    rand: opts.rand ?? seededRand(1),
   };
   return { deps, server, network, timers, clock, cache, storage };
+}
+
+/**
+ * Deterministic [0, 1) generator. Same algorithm as `mulberry32` in
+ * packages/core/test/prng.ts (Phase A); swap to that import once it lands.
+ */
+export function seededRand(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** A ready bundle state around `bundle` (default: the v1 fixture), fresh and age 0. */
+export function readyBundle(bundle: Bundle = fixtureBundle()): BundleState {
+  const load: ReadyLoad = {
+    status: "fresh",
+    bundle,
+    ageDays: 0,
+    updateAvailable: false,
+    skewMs: 0,
+    networkFailed: false,
+  };
+  return { phase: "ready", load, refreshing: false, checkFailed: false };
+}
+
+function fixtureBundle(): Bundle {
+  const parsed = parseBundle(makeBundleFixture());
+  if (!parsed.ok) throw new Error(`bundle fixture invalid: ${parsed.detail}`);
+  return parsed.bundle;
 }
 
 export function renderApp(app: TestApp, ui: ReactNode): RenderResult {
