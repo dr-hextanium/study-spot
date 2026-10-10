@@ -42,3 +42,17 @@ export function hourText(at: Date, tz: string): string {
   const p = fmt(tz, "hour", { hour: "numeric", hourCycle: "h12" }).formatToParts(at);
   return `${part(p, "hour")} ${part(p, "dayPeriod")}`;
 }
+/** "02:00" -> "2:00 AM", "24:00" -> "12:00 AM". */
+export function timeOfDayText(hhmm: string): string {
+  const [hs, ms] = hhmm.split(":");
+  const h = Number(hs) % 24;
+  const period = h < 12 ? "AM" : "PM";
+  return `${h % 12 === 0 ? 12 : h % 12}:${ms ?? "00"} ${period}`;
+}
+const SUNDAY = Date.UTC(2026, 0, 4); // a Sunday
+/** 0 = Sunday -> "Sun". */
+export function dayShortName(dow: number): string {
+  return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short" }).format(
+    new Date(SUNDAY + dow * 86_400_000),
+  );
+}
