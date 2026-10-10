@@ -19,10 +19,12 @@ const SAMPLE: Readonly<Record<string, string>> = {
   block: "Afternoon",
   building: "Melville Library",
   bucket: "Nearly full",
+  busy: "Usually some seats, typical Tue 2 PM",
   closes: "12:00 AM",
   count: "12",
   date: "Oct 15",
   day: "Weekdays",
+  days: "4",
   done: "4",
   field: "outlet coverage",
   fields: "directions, seat count",
@@ -34,12 +36,15 @@ const SAMPLE: Readonly<Record<string, string>> = {
   opens: "10:00 AM",
   percent: "100",
   reason: "seat count is required",
+  scope: "Kelly Quad",
   section: "Power and signal",
   spot: "SAC Lounge",
+  status: "Open till 2:00 AM",
   term: "Fall 2026",
   time: "Oct 15, 3:40 PM",
   total: "6",
   what: "Power and signal for SAC Lounge",
+  when: "Tue 2 PM",
 };
 
 const ids = Object.keys(COPY) as CopyId[];

@@ -5,6 +5,8 @@ export * from "./contrast.ts";
 export * from "./copy/index.ts";
 export * from "./liveness.ts";
 export * from "./lock.ts";
+export * from "./student/browse.ts";
+export * from "./student/browseFilters.ts";
 export * from "./student/ping.ts";
 export * from "./survey/index.ts";
 export * from "./theme.ts";

@@ -605,6 +605,138 @@ Strings the built screens needed beyond the sections above: short header forms f
 | student.me.title | Me | 6 | large title |
 | student.data.loading | Loading spots | 20 | skeleton status |
 
+## Student: Browse
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.browse.view.label | View | 8 | segmented, label hidden |
+| student.browse.view.list | List | 6 | |
+| student.browse.view.map | Map | 6 | |
+| student.browse.search.label | Search spots | 20 | search field |
+| student.browse.arrive.label | Arriving | 10 | chips legend |
+| student.browse.arrive.now | Now | 6 | arrival time, not busyness |
+| student.browse.arrive.1 | In 1 hr | 8 | |
+| student.browse.arrive.2 | In 2 hr | 8 | |
+| student.browse.arrive.4 | In 4 hr | 8 | |
+| student.browse.arrive.tonight | Tonight 9 PM | 14 | |
+| student.browse.filters | Filters | 10 | |
+| student.browse.filters_count | Filters, {count} on | 20 | |
+| student.browse.filters.title | Filters | 10 | sheet title |
+| student.browse.filters.clear | Clear | 8 | |
+| student.browse.filters.done | Done | 8 | |
+| student.browse.open_only | Open when I get there | 24 | sheet switch |
+| student.browse.show_locked | Show spots I can't use | 28 | sheet switch |
+| student.browse.caption | Busyness is typical for {when}, not live. | 52 | above the list |
+| student.browse.count | {count} spots | 14 | meta |
+| student.browse.count_one | 1 spot | 8 | meta |
+| student.browse.hidden_locked | {count} spots hidden for access | 34 | |
+| student.browse.hidden_locked_one | 1 spot hidden for access | 30 | |
+| student.browse.empty | No spots match. Clear a filter. | 40 | |
+| student.browse.clear | Clear filters | 16 | |
+| student.browse.row.sub | {building} · {minutes} min · {status} | 70 | |
+| student.browse.status.closed | Closed then | 12 | at the chosen arrival time |
+| student.browse.status.hours_unknown | Hours not confirmed | 22 | |
+| student.browse.checked | Checked {date} | 20 | row end and map card |
+| student.browse.closes_in | Closes in {minutes} min | 22 | under an hour |
+| student.browse.open_till | Open till {closes} | 20 | |
+| student.browse.open_all_day | Open all day | 14 | 20 h or more left |
+| student.browse.lock.building | Residents of {scope} only | 40 | |
+| student.browse.lock.quad | Residents of {scope} only | 40 | |
+| student.browse.lock.grad | Grad students only | 20 | |
+| student.browse.lock.department | {scope} only | 36 | |
+| student.browse.lock.department_unknown | One department only | 20 | |
+| student.browse.lock.residents_unknown | Residents only | 16 | scope missing |
+| student.browse.lock.unverified | Access not confirmed yet | 26 | |
+| student.browse.busy.typical.empty | Usually empty, typical {when} | 40 | measured slot |
+| student.browse.busy.typical.some | Usually some seats, typical {when} | 44 | |
+| student.browse.busy.typical.filling | Usually filling up, typical {when} | 44 | |
+| student.browse.busy.typical.nearly_full | Usually nearly full, typical {when} | 44 | |
+| student.browse.busy.typical.full | Usually full, typical {when} | 40 | |
+| student.browse.busy.estimate.empty | Empty, estimate | 24 | surveyor estimate |
+| student.browse.busy.estimate.some | Some seats, estimate | 24 | |
+| student.browse.busy.estimate.filling | Filling up, estimate | 24 | |
+| student.browse.busy.estimate.nearly_full | Nearly full, estimate | 24 | |
+| student.browse.busy.estimate.full | Full, estimate | 24 | |
+| student.browse.busy.none | No busyness data yet | 24 | |
+| student.browse.busy.row.empty | Usually empty | 20 | row end; the caption carries "typical" |
+| student.browse.busy.row.some | Usually some seats | 20 | |
+| student.browse.busy.row.filling | Usually filling up | 20 | |
+| student.browse.busy.row.nearly_full | Usually nearly full | 20 | |
+| student.browse.busy.row.full | Usually full | 20 | |
+| student.browse.busy.row_estimate.empty | Empty, est. | 16 | |
+| student.browse.busy.row_estimate.some | Some seats, est. | 16 | |
+| student.browse.busy.row_estimate.filling | Filling up, est. | 16 | |
+| student.browse.busy.row_estimate.nearly_full | Nearly full, est. | 18 | |
+| student.browse.busy.row_estimate.full | Full, est. | 16 | |
+| student.browse.busy.row_none | No data yet | 12 | |
+| student.browse.data.today | Spots updated today | 24 | meta line |
+| student.browse.data.yesterday | Spots updated yesterday | 28 | |
+| student.browse.data.days | Spots updated {days} days ago | 32 | |
+| student.browse.data.old | These spots are {days} days old. Hours and busyness may have changed. | 80 | note banner over 3 days |
+| student.browse.data.offline | Offline. Using spots saved on this phone. | 48 | |
+| student.browse.data.unavailable | Can't load spots offline yet. Open once with signal. | 60 | spec wording |
+| student.browse.data.update_required | Update Perch to load spots. | 32 | spec wording |
+| student.bucket.empty | Empty | 8 | map legend |
+| student.bucket.some | Some seats | 12 | |
+| student.bucket.filling | Filling up | 12 | |
+| student.bucket.nearly_full | Nearly full | 12 | |
+| student.bucket.full | Full | 6 | |
+| student.bucket.none | No data | 8 | |
+| student.browse.filter.group.noise | Noise | 10 | |
+| student.browse.filter.group.power | Power and signal | 18 | |
+| student.browse.filter.group.seats | Seating | 10 | |
+| student.browse.filter.group.room | Room | 10 | |
+| student.browse.filter.group.rules | Rules | 10 | |
+| student.browse.filter.group.access | Getting in | 12 | |
+| student.browse.filter.group.nearby | Late and nearby | 18 | |
+| student.browse.filter.silent | Silent only | 14 | |
+| student.browse.filter.quiet | Quiet or silent | 16 | |
+| student.browse.filter.talking | Talking is fine | 16 | |
+| student.browse.filter.outlets | Outlets at most seats | 22 | |
+| student.browse.filter.usb | USB outlets | 14 | |
+| student.browse.filter.signal | Good cell signal | 18 | |
+| student.browse.filter.wifi | Wifi 50+ Mbps | 16 | |
+| student.browse.filter.calls | Calls OK | 10 | |
+| student.browse.filter.carrels | Carrels | 10 | |
+| student.browse.filter.booths | Booths | 10 | |
+| student.browse.filter.soft | Soft seating | 14 | |
+| student.browse.filter.small_tables | Small tables | 14 | |
+| student.browse.filter.large_tables | Large shared tables | 22 | |
+| student.browse.filter.solo_tables | Individual tables | 20 | |
+| student.browse.filter.big_room | 50+ seats | 10 | |
+| student.browse.filter.spread_out | Spread-out room | 18 | |
+| student.browse.filter.natural_light | Natural light | 14 | |
+| student.browse.filter.bright | Bright lighting | 16 | |
+| student.browse.filter.view | Window view | 14 | |
+| student.browse.filter.neutral_temp | Comfortable temperature | 26 | |
+| student.browse.filter.steady_temp | Steady temperature | 22 | |
+| student.browse.filter.food | Food OK | 10 | |
+| student.browse.filter.drinks | Drinks OK | 10 | |
+| student.browse.filter.group_ok | Group work OK | 14 | |
+| student.browse.filter.whiteboard | Whiteboard | 12 | |
+| student.browse.filter.reservable | Reservable | 12 | |
+| student.browse.filter.outdoor | Outdoors | 10 | |
+| student.browse.filter.step_free | Step-free | 12 | |
+| student.browse.filter.elevator | Elevator | 10 | |
+| student.browse.filter.accessible_seating | Accessible seating | 20 | |
+| student.browse.filter.open_entry | No swipe or desk | 18 | |
+| student.browse.filter.open_late | Open past midnight | 20 | |
+| student.browse.filter.staffed_late | Staffed late | 14 | |
+| student.browse.filter.lit_route | Lit walk home | 16 | |
+| student.browse.filter.late_food | Late food nearby | 18 | |
+| student.browse.filter.coffee | Coffee nearby | 16 | |
+| student.browse.filter.printer | Printer nearby | 16 | |
+| student.browse.filter.bathroom | Bathroom nearby | 18 | |
+| student.browse.filter.water | Water nearby | 16 | |
+| student.browse.filter.microwave | Microwave nearby | 18 | |
+| student.map.loading | Loading map | 14 | |
+| student.map.offline | The map needs a connection. The list works offline. | 56 | |
+| student.map.failed | The map didn't load. The list has every spot. | 52 | |
+| student.map.legend | Typical busyness, not live | 28 | legend title |
+| student.map.pin_label | {spot}, {busy} | 80 | pin aria-label |
+| student.map.open | Open spot | 12 | selected card link |
+| student.map.label | Map of study spots | 24 | map region name |
+
 ## Pending questions
 
 - Floor naming at Stony Brook (e.g. "Lower level" vs "B") should come from the first survey walk; the floor field is free text for now.
