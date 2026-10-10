@@ -162,7 +162,10 @@ function SpotBody(props: { bundle: Bundle; spot: BundleSpot; via: "pick" | undef
           href={directionsUrl(spot, ios)}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => pickPing(spot.id)}
+          onClick={() => {
+            // Only a spot reached from a pick counts; Browse and shared links send nothing.
+            if (via === "pick") pickPing(spot.id);
+          }}
         >
           <Icon icon={Navigation} />
           <span className="btn__label">{t("student.spot.directions")}</span>

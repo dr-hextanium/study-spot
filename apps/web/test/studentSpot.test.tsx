@@ -202,6 +202,14 @@ test("the Directions button pings once more", async () => {
   expect(a.pings[1]).toBe(a.pings[0]);
 });
 
+test("Directions without via=pick sends no ping", async () => {
+  const a = app();
+  renderRoute(a, "/spot/quiet-carrels");
+  const link = await screen.findByRole("link", { name: "Directions" });
+  fireEvent.click(link);
+  expect(a.pings).toEqual([]);
+});
+
 test("spot facts skip unknown values and label the rest", () => {
   const spot = makeScoringBundle().spots[0];
   if (spot === undefined) throw new Error("no spot");
