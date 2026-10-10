@@ -33,6 +33,13 @@ export const bundle_state = pgTable("bundle_state", {
   last_attempt_at: ts(),
   last_warnings: jsonb(),
   last_error: text(),
+  /**
+   * Publish lease, so only one process deploys a campus at a time. A run claims it
+   * with a conditional UPDATE, renews it before its deploy, and clears it at the end;
+   * a crashed run's lease expires at publishing_until.
+   */
+  publishing_owner: text(),
+  publishing_until: ts(),
 });
 
 /** Anonymous pick event: spot, day, hour only. No device or IP. Rolled up nightly then deleted. */

@@ -36,6 +36,13 @@
       "when": 1791616342320,
       "tag": "0004_photo_offload",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791617990203,
+      "tag": "0005_publish_lease",
+      "breakpoints": true
     }
   ]
 }

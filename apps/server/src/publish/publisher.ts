@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { BUNDLE_SCHEMA_MAJOR, BundlePointer, type PublishStatus } from "@perch/core";
 import {
   buildBundle,
@@ -8,7 +9,20 @@ import {
   spot,
   spot_photo,
 } from "@perch/db";
-import { and, asc, eq, exists, inArray, isNotNull, isNull, not, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  eq,
+  exists,
+  gt,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  not,
+  or,
+  sql,
+} from "drizzle-orm";
 import { z } from "zod";
 import type { Clock } from "../clock.ts";
 import { type PhotoStore, photoPath, sha256Hex } from "../photos/store.ts";
@@ -22,6 +36,12 @@ export const PUBLISH_DEBOUNCE_MS = 30_000;
 export const PUBLISH_MAX_WAIT_MS = 60_000;
 /** Retry delays after consecutive failures; the last repeats until a run succeeds. */
 export const PUBLISH_RETRY_MS: readonly number[] = [60_000, 120_000, 300_000];
+/**
+ * How long a publish lease lasts without renewal. A run renews it right before its
+ * deploy; a crashed run blocks other processes for at most this long.
+ */
+export const PUBLISH_LEASE_MS = 10 * 60_000;
+export const PUBLISH_BUSY = "another publish is running";
 
 /** Scheduling seam: real timers in production, a manual fake in tests. */
 export type Timers = { after(ms: number, fn: () => void): () => void };
@@ -48,7 +68,10 @@ export type PublisherDeps = {
   debounceMs?: number;
   maxWaitMs?: number;
   retryMs?: readonly number[];
+  leaseMs?: number;
   log?: (message: string, error?: unknown) => void;
+  /** Test seam: runs after the file set is built and before the lease renewal and deploy. */
+  beforeDeploy?: () => Promise<void>;
 };
 
 export type PublishOutcome =
@@ -80,6 +103,7 @@ export function createPublisher(deps: PublisherDeps): Publisher {
   const maxWaitMs = deps.maxWaitMs ?? PUBLISH_MAX_WAIT_MS;
   const retryMs = deps.retryMs ?? PUBLISH_RETRY_MS;
   const log = deps.log ?? (() => {});
+  const leaseSecs = (deps.leaseMs ?? PUBLISH_LEASE_MS) / 1000;
   const photoPrefix = `${deps.dataBaseUrl}/photos/`;
   let cancelTimer: (() => void) | null = null;
   let cancelRetry: (() => void) | null = null;
@@ -101,6 +125,62 @@ export function createPublisher(deps: PublisherDeps): Publisher {
       .from(bundle_state)
       .where(eq(bundle_state.campus_id, deps.campusId));
     return row ?? null;
+  }
+
+  /*
+   * The publish lease. inFlight and queued serialize runs inside one process; the
+   * lease serializes them across processes (a second server, a deploy overlap), so a
+   * run never deploys a manifest built before another run cleared photo bytes. It is
+   * a row in bundle_state, not an advisory lock, because Neon's pooler does not keep
+   * a session. Times come from the database clock, so process clocks do not matter.
+   */
+  const leaseUntil = () => sql`now() + make_interval(secs => ${leaseSecs}::double precision)`;
+
+  async function claimLease(owner: string): Promise<boolean> {
+    await deps.db.insert(bundle_state).values({ campus_id: deps.campusId }).onConflictDoNothing();
+    const rows = await deps.db
+      .update(bundle_state)
+      .set({ publishing_owner: owner, publishing_until: leaseUntil() })
+      .where(
+        and(
+          eq(bundle_state.campus_id, deps.campusId),
+          or(isNull(bundle_state.publishing_until), lt(bundle_state.publishing_until, sql`now()`)),
+        ),
+      )
+      .returning({ id: bundle_state.campus_id });
+    return rows.length > 0;
+  }
+
+  /** Extends the lease if this run still holds it; throws if another run took it. */
+  async function renewLease(owner: string): Promise<void> {
+    const rows = await deps.db
+      .update(bundle_state)
+      .set({ publishing_until: leaseUntil() })
+      .where(leaseHeldBy(owner))
+      .returning({ id: bundle_state.campus_id });
+    if (rows.length === 0) throw new Error("publish lease lost before the deploy");
+  }
+
+  function leaseHeldBy(owner: string) {
+    return and(
+      eq(bundle_state.campus_id, deps.campusId),
+      eq(bundle_state.publishing_owner, owner),
+      gt(bundle_state.publishing_until, sql`now()`),
+    );
+  }
+
+  async function releaseLease(owner: string): Promise<void> {
+    try {
+      await deps.db
+        .update(bundle_state)
+        .set({ publishing_owner: null, publishing_until: null })
+        .where(
+          and(eq(bundle_state.campus_id, deps.campusId), eq(bundle_state.publishing_owner, owner)),
+        );
+    } catch (err) {
+      // It expires on its own.
+      log("could not release the publish lease", err);
+    }
   }
 
   /** Spots of this campus. Other campuses share the database but have their own data site. */
@@ -168,8 +248,13 @@ export function createPublisher(deps: PublisherDeps): Publisher {
    * now serves with a matching sha256. Only photos used by approved rows of this
    * campus and by no row of another campus qualify. A photo that cannot be confirmed
    * keeps its bytes and is tried again after the next deploy. Never fails the publish.
+   * Runs under the publish lease, which the clearing UPDATE checks.
    */
-  async function offloadConfirmed(shas: readonly string[], at: Date): Promise<string[]> {
+  async function offloadConfirmed(
+    shas: readonly string[],
+    at: Date,
+    owner: string,
+  ): Promise<string[]> {
     const done: string[] = [];
     for (const sha of shas) {
       try {
@@ -200,6 +285,9 @@ export function createPublisher(deps: PublisherDeps): Publisher {
               isNotNull(photo_blob.bytes),
               exists(used(true)),
               not(exists(used(false))),
+              // Only while this run still holds the lease: a run that lost it may race
+              // a newer deploy whose manifest was built before these bytes were cleared.
+              exists(deps.db.select({ one: sql`1` }).from(bundle_state).where(leaseHeldBy(owner))),
             ),
           )
           .returning({ sha: photo_blob.sha256 });
@@ -219,7 +307,22 @@ export function createPublisher(deps: PublisherDeps): Publisher {
     cancelTimer = null;
     clearRetry();
     firstPendingAt = null;
+    const owner = randomUUID();
+    let leased = false;
     try {
+      leased = await claimLease(owner);
+      if (!leased) {
+        // Not a failure: the run holding the lease publishes. Try again later in case
+        // this process's writes landed after that run read write_seq.
+        if (!closed) {
+          clearRetry();
+          cancelRetry = timers.after(retryMs[0] ?? PUBLISH_MAX_WAIT_MS, () => {
+            cancelRetry = null;
+            void publisher.runNow();
+          });
+        }
+        return { ok: false, error: PUBLISH_BUSY };
+      }
       seq = (await readState())?.write_seq ?? 0;
 
       // Approved blob-backed photos of this campus get their absolute data-site URL before
@@ -269,10 +372,13 @@ export function createPublisher(deps: PublisherDeps): Publisher {
           bytes: async () => utf8(JSON.stringify(pointer)),
         },
       ];
+      await deps.beforeDeploy?.();
+      await renewLease(owner);
       const { uploaded } = await deps.target.deploy(files);
       const offloaded = await offloadConfirmed(
         photoFiles.filter((p) => !p.cleared).map((p) => p.sha),
         startedAt,
+        owner,
       );
 
       // Clear dirty only if no write landed while this run was building.
@@ -331,6 +437,8 @@ export function createPublisher(deps: PublisherDeps): Publisher {
         });
       }
       return { ok: false, error: message };
+    } finally {
+      if (leased) await releaseLease(owner);
     }
   }
 
@@ -374,9 +482,14 @@ export function createPublisher(deps: PublisherDeps): Publisher {
     async status() {
       const row = await readState();
       const warnings = Warnings.safeParse(row?.last_warnings);
+      // Another process holding an unexpired lease is running too.
+      const [lease] = await deps.db
+        .select({ held: sql<boolean>`${bundle_state.publishing_until} > now()` })
+        .from(bundle_state)
+        .where(eq(bundle_state.campus_id, deps.campusId));
       return {
         dirty: row?.dirty ?? false,
-        running: inFlight !== null,
+        running: inFlight !== null || lease?.held === true,
         last_published_at: row?.last_published_at?.toISOString() ?? null,
         last_hash: row?.last_hash ?? null,
         last_attempt_at: row?.last_attempt_at?.toISOString() ?? null,
