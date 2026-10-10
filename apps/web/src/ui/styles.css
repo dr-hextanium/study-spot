@@ -104,6 +104,11 @@ select {
   max-width: 60ch;
 }
 
+/* A button that follows body text in the flow (not in the action bar): room above it. */
+.inline-action {
+  margin-top: var(--space-md);
+}
+
 /* Fields: icon + label above, paper input, hairline below */
 
 .field {

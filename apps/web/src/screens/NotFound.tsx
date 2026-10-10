@@ -19,7 +19,7 @@ export function NotFound(props: { message?: string; sync?: boolean }) {
       {...(trailing === undefined ? {} : { trailing })}
     >
       <p className="lede">{message}</p>
-      <p>
+      <p className="inline-action">
         <Link to="/survey" replace className="btn btn--ink">
           <span className="btn__label">{t("nav.back_to_spots")}</span>
         </Link>
