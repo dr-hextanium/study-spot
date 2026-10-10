@@ -45,6 +45,9 @@ jobs:
           VITE_API_BASE_URL: https://api.example.invalid
           VITE_DATA_BASE_URL: https://data.example.invalid
 
+      - name: Map stays in its own lazy chunk
+        run: bun run --filter '@perch/web' check:chunks
+
       - name: Smoke (Node)
         run: bun run smoke:node
 
