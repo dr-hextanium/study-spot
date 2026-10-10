@@ -54,6 +54,12 @@ test("the data policy page renders the policy from the docs", async () => {
     expect(screen.getByRole("heading", { level: 2, name: h })).toBeTruthy();
   }
   expect(screen.getByText(/Your IP address\./)).toBeTruthy();
+  // What the app really does: the ping is off by default, the per-tab counted list lives
+  // in session storage, and exam-week estimates are worked out on the phone.
+  const text = document.body.textContent ?? "";
+  expect(text).toContain("Perch ships with them off");
+  expect(text).toContain("session storage");
+  expect(text).toMatch(/exam-week counts gets an estimate worked out on your phone/);
   const repo = screen.getByRole("link", { name: "https://github.com/dr-hextanium/perch" });
   expect(repo.getAttribute("href")).toBe("https://github.com/dr-hextanium/perch");
   expect(document.body.textContent ?? "").not.toMatch(/\*\*|^#/m);

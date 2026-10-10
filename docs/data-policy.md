@@ -10,14 +10,14 @@ These live in your browser's storage on this phone. They are never sent to us.
 - Your access settings: where you live, your quad, and whether you are a grad student. Nobody checks them. They only decide which spots you see as open to you.
 - Your custom presets, your Browse choices and the theme.
 - For the install note: how many visits picked a spot, and whether you said no.
-- The last few picks shown in this tab, so Something else and Surprise me do not repeat. They go when the tab closes.
+- The last few picks shown in this tab, so Something else and Surprise me do not repeat, and the list of spots this tab already counted (see pick counts below). Both are in this tab's session storage and go when the tab closes.
 - A copy of the spot list and photos, so Perch works offline.
 
 To delete all of it, clear this site's data in your browser settings.
 
 ## Kept on our server
 
-- Pick counts. When you tap Directions, or open a spot from your pick, the app sends that spot's id and nothing else. The server adds one to a count for that spot and hour, in memory, and saves the counts as one total per spot per day. Each tab counts a spot once. A count says how often a spot was picked, never by whom.
+- Pick counts, when they are on. Perch ships with them off; a build has to turn them on. Then, when you tap Directions, or open a spot from your pick, the app sends that spot's id and nothing else. The server adds one to a count for that spot and hour, in memory, and saves the counts as one total per spot per day. Each tab counts a spot once, using the list of counted spots it keeps in session storage. A count says how often a spot was picked, never by whom.
 - The spot directory: seats, outlets, noise rules, hours, photos and busyness estimates, entered by surveyors.
 - For surveyors only: the display name they chose, an email if they gave one, their role, the edits they made, and hashed sign-in tokens. Students have no account.
 
@@ -37,6 +37,7 @@ To delete all of it, clear this site's data in your browser settings.
 ## What Perch shows
 
 - Busyness is a typical level for that hour, or a surveyor's estimate, and it says which. It is never live.
+- In exam weeks, a spot with no exam-week counts gets an estimate worked out on your phone from its usual level, and it is labeled an estimate.
 - Perch shows busyness as words, not head counts, and never shows a head count under 5.
 - Every spot shows the date it was last checked.
 
