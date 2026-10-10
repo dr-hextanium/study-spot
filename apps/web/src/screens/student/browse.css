@@ -1,0 +1,31 @@
+/* Browse: layout glue only, from the existing tokens. */
+
+.browse__tools {
+  display: flex;
+  margin-top: var(--space-xxs);
+}
+
+.browse__caption {
+  margin: var(--space-xs) 0 var(--space-sm);
+}
+
+/* The row's end: the busyness word over the check date, both Small and muted. */
+.browse__end {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  color: var(--color-muted);
+  font-size: var(--fontSize-small);
+  text-align: right;
+}
+
+.browse__lock {
+  flex: none;
+  color: var(--color-muted);
+}
+
+.browse__empty {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-xs);
+}

@@ -1254,6 +1254,10 @@ div.row {
   font-weight: 600;
 }
 
+.row--muted .row__title {
+  color: var(--color-muted);
+}
+
 .row__sub {
   color: var(--color-muted);
   font-size: var(--fontSize-small);

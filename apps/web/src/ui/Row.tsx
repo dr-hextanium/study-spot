@@ -14,8 +14,10 @@ export function Row(props: {
   pressed?: boolean;
   /** A button row that cannot be pressed right now (a write is being queued). */
   disabled?: boolean;
+  /** A row for something the student cannot use: the title reads as muted. */
+  muted?: boolean;
 }) {
-  const className = `row${props.compact === true ? " row--compact" : ""}`;
+  const className = `row${props.compact === true ? " row--compact" : ""}${props.muted === true ? " row--muted" : ""}`;
   const body = (
     <>
       {props.lead}
