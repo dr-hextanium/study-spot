@@ -19,6 +19,18 @@
   text-align: right;
 }
 
+/* Rows keep the whole "building · walk · open till" line: it wraps rather than cuts off. */
+.browse__list .row__sub {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+/* The hidden-spots note lines up with the list's left edge. */
+.browse__hidden .btn {
+  padding-inline: 0;
+}
+
 .browse__lock {
   flex: none;
   color: var(--color-muted);

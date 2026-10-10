@@ -8,6 +8,12 @@
   border-radius: var(--radius-m);
 }
 
+/* On wider screens the cover stays a landscape strip instead of a tall block. */
+.spot-cover .photo,
+.spot-cover .photo__img {
+  max-height: calc(var(--space-xl) * 11);
+}
+
 .spot-actions {
   margin-top: var(--space-sm);
   display: flex;

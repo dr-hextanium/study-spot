@@ -1583,6 +1583,12 @@ div.row {
   gap: var(--space-xxs);
 }
 
+/* A separator dot before a meta item that follows another (layout, not copy). */
+.meta__item--dot::before {
+  content: "\00b7";
+  color: var(--color-muted);
+}
+
 .editor-name {
   margin: 0;
   color: var(--color-muted);

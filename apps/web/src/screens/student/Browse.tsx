@@ -79,8 +79,10 @@ export function Browse() {
       meta={
         <Meta>
           <span className="meta__item">{shown.count}</span>
-          <span className="meta__item">{age.line}</span>
-          {age.offline ? <span className="meta__item">{t("student.data.offline")}</span> : null}
+          <span className="meta__item meta__item--dot">{age.line}</span>
+          {age.offline ? (
+            <span className="meta__item meta__item--dot">{t("student.data.offline")}</span>
+          ) : null}
         </Meta>
       }
     >
@@ -125,7 +127,7 @@ export function Browse() {
           </Button>
         </div>
       ) : (
-        <ul className="row-list">
+        <ul className="row-list browse__list">
           {shown.rows.map((row) => (
             <Row
               key={row.spot.id}
@@ -148,9 +150,11 @@ export function Browse() {
       )}
 
       {hidden === null ? null : (
-        <Button variant="ghost" onClick={() => b.set({ showLocked: true })}>
-          {hidden}
-        </Button>
+        <div className="browse__hidden">
+          <Button variant="ghost" onClick={() => b.set({ showLocked: true })}>
+            {hidden}
+          </Button>
+        </div>
       )}
 
       <FiltersSheet
