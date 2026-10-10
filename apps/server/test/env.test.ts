@@ -50,3 +50,15 @@ test("RENDER_GIT_COMMIT is optional and passed through", () => {
   if (!set.ok) throw new Error(set.error);
   expect(set.env.RENDER_GIT_COMMIT).toBe("abc1234");
 });
+
+test("TRUST_PROXY_HOPS defaults to 1, allows 0, and rejects junk", () => {
+  const ok = parseEnv(fsEnv);
+  if (!ok.ok) throw new Error(ok.error);
+  expect(ok.env.TRUST_PROXY_HOPS).toBe(1);
+  const zero = parseEnv({ ...fsEnv, TRUST_PROXY_HOPS: "0" });
+  if (!zero.ok) throw new Error(zero.error);
+  expect(zero.env.TRUST_PROXY_HOPS).toBe(0);
+  expect(parseEnv({ ...fsEnv, TRUST_PROXY_HOPS: "-1" }).ok).toBe(false);
+  expect(parseEnv({ ...fsEnv, TRUST_PROXY_HOPS: "1.5" }).ok).toBe(false);
+  expect(parseEnv({ ...fsEnv, TRUST_PROXY_HOPS: "many" }).ok).toBe(false);
+});

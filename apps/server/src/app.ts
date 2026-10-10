@@ -12,6 +12,7 @@ import { HttpError } from "./http.ts";
 import type { PhotoStore } from "./photos/store.ts";
 import { createPingCounter, type PingCounter } from "./ping/counter.ts";
 import { flushPicks } from "./ping/flush.ts";
+import { dbKnownSpots, type KnownSpots } from "./ping/knownSpots.ts";
 import { createRateLimiter } from "./ping/rateLimit.ts";
 import { type Publisher, realTimers } from "./publish/publisher.ts";
 import { adminRoutes } from "./routes/admin.ts";
@@ -29,6 +30,8 @@ export type AppConfig = {
   campusId: string;
   /** The deployed git commit (RENDER_GIT_COMMIT), shown on /health; null when unknown. */
   commit: string | null;
+  /** Trusted proxy hops for the client address (TRUST_PROXY_HOPS). Defaults to 1. */
+  trustProxyHops?: number;
 };
 
 export type AppDeps = {
@@ -39,6 +42,8 @@ export type AppDeps = {
   photos: PhotoStore;
   /** In-memory pick counter; built from the database when omitted. */
   pings?: PingCounter;
+  /** Published spot ids the ping accepts; built from the database when omitted. */
+  knownSpots?: KnownSpots;
   logger?: boolean | { stream: { write(message: string): void } };
 };
 
@@ -51,13 +56,26 @@ function statusOf(err: unknown): number {
   return 500;
 }
 
+/**
+ * Requests are logged as method and url only: no remote address, no port, no headers, so a
+ * log line can never tie a request to a phone.
+ */
+function loggerOptions(logger: AppDeps["logger"]) {
+  if (!logger) return false;
+  const serializers = {
+    req: (req: { method: string; url: string }) => ({ method: req.method, url: req.url }),
+  };
+  return logger === true ? { serializers } : { serializers, stream: logger.stream };
+}
+
 export async function buildApp(deps: AppDeps) {
+  const hops = deps.config.trustProxyHops ?? 1;
   const app = Fastify({
-    logger: deps.logger ?? false,
-    // Render terminates TLS at one proxy hop: trust that peer and take the address it
-    // appended (the rightmost x-forwarded-for entry), so a client-sent header cannot spoof
-    // it. Fastify 5 fails closed on the number 1, so this is the same rule as a function.
-    trustProxy: (_addr, hop) => hop < 1,
+    logger: loggerOptions(deps.logger),
+    // Trust the proxy hops in front of us (Render: 1) and take the address the last trusted
+    // one appended, so a client-sent x-forwarded-for entry cannot spoof it. Fastify 5 fails
+    // closed on a bare number, so the rule is a function. 0 trusts nothing (no proxy).
+    trustProxy: hops === 0 ? false : (_addr, hop) => hop < hops,
   }).withTypeProvider<ZodTypeProvider>();
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
@@ -106,7 +124,8 @@ export async function buildApp(deps: AppDeps) {
     windowMs: 3_600_000,
     maxKeys: 5000,
   });
-  await app.register(pingRoutes({ pings, limiter }));
+  const known = deps.knownSpots ?? dbKnownSpots(deps.db, deps.config.campusId, deps.clock);
+  await app.register(pingRoutes({ pings, limiter, known }));
   app.addHook("onClose", () => pings.close());
   return app;
 }

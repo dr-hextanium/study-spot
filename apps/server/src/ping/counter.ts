@@ -6,6 +6,8 @@ export const PING_IDLE_MS = 600_000;
 /** Flush at most this long after the first unflushed ping. */
 export const PING_MAX_AGE_MS = 3_600_000;
 export const PING_MAX_KEYS = 500;
+/** While the database is down, keep at most this many keys; the oldest go first. */
+export const PING_MAX_RETAINED_KEYS = 2000;
 
 /** One aggregate: picks of a spot in one UTC hour. Never carries anything about a requester. */
 export type PingRow = { spot_id: string; at: string; count: number };
@@ -24,6 +26,7 @@ export type PingCounterDeps = {
   idleMs?: number;
   maxAgeMs?: number;
   maxKeys?: number;
+  maxRetainedKeys?: number;
   log?: (message: string) => void;
 };
 
@@ -38,8 +41,12 @@ export function createPingCounter(deps: PingCounterDeps): PingCounter {
   const idleMs = deps.idleMs ?? PING_IDLE_MS;
   const maxAgeMs = deps.maxAgeMs ?? PING_MAX_AGE_MS;
   const maxKeys = deps.maxKeys ?? PING_MAX_KEYS;
+  const maxRetained = deps.maxRetainedKeys ?? PING_MAX_RETAINED_KEYS;
   const log = deps.log ?? (() => {});
-  const counts = new Map<string, { spot_id: string; at: string; count: number }>();
+  type Entry = { spot_id: string; at: string; count: number };
+  let counts = new Map<string, Entry>();
+  // Set by a failed flush: key-count flushes wait for the idle timer instead of retrying per ping.
+  let backingOff = false;
   let cancelIdle: (() => void) | null = null;
   let cancelMaxAge: (() => void) | null = null;
 
@@ -62,16 +69,31 @@ export function createPingCounter(deps: PingCounterDeps): PingCounter {
     else counts.set(key, { spot_id: spotId, at, count });
   }
 
+  function trim(): void {
+    while (counts.size > maxRetained) {
+      const oldest = counts.keys().next();
+      if (oldest.done) break;
+      counts.delete(oldest.value);
+    }
+  }
+
   async function flushNow(): Promise<void> {
     cancelTimers();
     if (counts.size === 0) return;
     const rows = [...counts.values()].map((r) => ({ ...r }));
-    counts.clear();
+    counts = new Map();
     try {
       await deps.flush(rows);
+      backingOff = false;
     } catch {
-      // Keep the counts and try again later. The error body is never logged.
+      // Keep the counts, oldest first, and try again when the idle timer fires. The error
+      // body is never logged.
+      const newer = counts;
+      counts = new Map();
       for (const r of rows) merge(r.spot_id, r.at, r.count);
+      for (const r of newer.values()) merge(r.spot_id, r.at, r.count);
+      trim();
+      backingOff = true;
       armIdle();
       log("pick flush failed");
     }
@@ -82,7 +104,8 @@ export function createPingCounter(deps: PingCounterDeps): PingCounter {
       const hour = Math.floor(deps.clock.now().getTime() / HOUR_MS) * HOUR_MS;
       const wasEmpty = counts.size === 0;
       merge(spotId, new Date(hour).toISOString(), 1);
-      if (counts.size >= maxKeys) {
+      if (backingOff) trim();
+      else if (counts.size >= maxKeys) {
         void flushNow();
         return;
       }

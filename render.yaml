@@ -30,3 +30,5 @@ services:
         value: "perch-data"
       - key: CAMPUS_ID
         value: "sbu"
+      - key: TRUST_PROXY_HOPS
+        value: "1"

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { buildApp } from "../src/app.ts";
 import { createPingCounter, type PingRow } from "../src/ping/counter.ts";
 import { flushPicks } from "../src/ping/flush.ts";
+import { createKnownSpots } from "../src/ping/knownSpots.ts";
 import { createRateLimiter } from "../src/ping/rateLimit.ts";
 import { manualTimers, setup, testClock, WEB_ORIGIN } from "./helpers.ts";
 
@@ -171,7 +172,7 @@ test("flushPicks folds hours into the campus day and drops unknown and draft spo
   await flushPicks(ctx.db, "sbu", []);
 });
 
-async function pingApp(opts: { logStream?: { write(m: string): void } } = {}) {
+async function pingApp(opts: { logStream?: { write(m: string): void }; hops?: number } = {}) {
   const ctx = await setup();
   const pings = createPingCounter({
     clock: ctx.clock,
@@ -181,7 +182,12 @@ async function pingApp(opts: { logStream?: { write(m: string): void } } = {}) {
   const app = await buildApp({
     db: ctx.db,
     clock: ctx.clock,
-    config: { webOrigin: WEB_ORIGIN, campusId: "sbu", commit: null },
+    config: {
+      webOrigin: WEB_ORIGIN,
+      campusId: "sbu",
+      commit: null,
+      ...(opts.hops === undefined ? {} : { trustProxyHops: opts.hops }),
+    },
     publisher: ctx.publisher,
     photos: ctx.photos,
     pings,
@@ -198,8 +204,8 @@ async function pingApp(opts: { logStream?: { write(m: string): void } } = {}) {
 }
 
 test("POST /ping/pick answers an empty 204 and counts one", async () => {
-  const { pings, ping } = await pingApp();
-  const res = await ping(SPOT_A, "203.0.113.1");
+  const { ctx, pings, ping } = await pingApp();
+  const res = await ping(ctx.ids.spotIds["central-reading-room"], "203.0.113.1");
   expect(res.statusCode).toBe(204);
   expect(res.body).toBe("");
   expect(pings.pending()).toBe(1);
@@ -296,8 +302,153 @@ test("privacy: nothing about the requester is persisted", async () => {
 });
 
 test("a client-sent x-forwarded-for entry cannot dodge the limit", async () => {
-  const { pings, ping } = await pingApp();
+  const { ctx, pings, ping } = await pingApp();
+  const reading = ctx.ids.spotIds["central-reading-room"];
   // The proxy appends the real address last; earlier entries are client-controlled.
-  for (let i = 0; i < 31; i += 1) await ping(SPOT_A, `10.9.9.${i}, 203.0.113.5`);
+  for (let i = 0; i < 31; i += 1) await ping(reading, `10.9.9.${i}, 203.0.113.5`);
   expect(pings.pending()).toBe(30);
+});
+
+test("an unknown or draft spot id answers 204 and is not counted", async () => {
+  const { ctx, pings, ping } = await pingApp();
+  const unknown = await ping(SPOT_A, "203.0.113.1");
+  const draft = await ping(ctx.ids.spotIds["union-draft"], "203.0.113.1");
+  expect(unknown.statusCode).toBe(204);
+  expect(unknown.body).toBe("");
+  expect(draft.statusCode).toBe(204);
+  expect(pings.pending()).toBe(0);
+});
+
+test("known spots load lazily, are cached for 10 minutes, and keep the old set on failure", async () => {
+  const clock = testClock();
+  let loads = 0;
+  let fail = false;
+  const known = createKnownSpots({
+    clock,
+    load: async () => {
+      loads += 1;
+      if (fail) throw new Error("db asleep");
+      return [SPOT_A];
+    },
+  });
+  expect(loads).toBe(0);
+  expect(await known.has(SPOT_A)).toBe(true);
+  expect(await known.has(SPOT_B)).toBe(false);
+  expect(loads).toBe(1);
+  clock.advance(9 * MIN);
+  await known.has(SPOT_A);
+  expect(loads).toBe(1);
+  clock.advance(2 * MIN);
+  fail = true;
+  expect(await known.has(SPOT_A)).toBe(true);
+  expect(loads).toBe(2);
+  // A failed refresh waits out the interval too, so a down database is not hammered.
+  await known.has(SPOT_A);
+  expect(loads).toBe(2);
+  known.invalidate();
+  fail = false;
+  await known.has(SPOT_A);
+  expect(loads).toBe(3);
+});
+
+test("with no known set and a failing load, nothing counts", async () => {
+  const known = createKnownSpots({
+    clock: testClock(),
+    load: async () => {
+      throw new Error("db asleep");
+    },
+  });
+  expect(await known.has(SPOT_A)).toBe(false);
+});
+
+test("after a failed flush, key-count flushes back off until the idle timer", async () => {
+  const h = harness();
+  let attempts = 0;
+  const failing = createPingCounter({
+    clock: h.clock,
+    timers: h.timers,
+    maxKeys: 3,
+    flush: async () => {
+      attempts += 1;
+      throw new Error("down");
+    },
+  });
+  for (let i = 0; i < 3; i += 1) failing.add(`00000000-0000-4000-8000-00000000000${i}`);
+  await tick();
+  expect(attempts).toBe(1);
+  for (let i = 3; i < 10; i += 1) failing.add(`00000000-0000-4000-8000-00000000000${i}`);
+  await tick();
+  expect(attempts).toBe(1);
+  h.timers.advance(10 * MIN);
+  await tick();
+  expect(attempts).toBe(2);
+});
+
+test("retained keys are capped, dropping the oldest", async () => {
+  const batches: PingRow[][] = [];
+  let down = true;
+  const counter = createPingCounter({
+    clock: testClock(),
+    timers: manualTimers(),
+    maxKeys: 3,
+    maxRetainedKeys: 5,
+    flush: async (rows) => {
+      if (down) throw new Error("down");
+      batches.push(rows);
+    },
+  });
+  const id = (i: number) => `00000000-0000-4000-8000-00000000000${i}`;
+  for (let i = 0; i < 3; i += 1) counter.add(id(i));
+  await tick();
+  for (let i = 3; i < 9; i += 1) counter.add(id(i));
+  await tick();
+  down = false;
+  await counter.flushNow();
+  const kept = (batches[0] ?? []).map((r) => r.spot_id).sort();
+  expect(kept).toEqual([4, 5, 6, 7, 8].map(id));
+});
+
+test("a flush succeeding again resumes key-count flushes", async () => {
+  const h = harness({ maxKeys: 2 });
+  h.state.fail = true;
+  h.counter.add(SPOT_A);
+  h.counter.add(SPOT_B);
+  await tick();
+  expect(h.counter.pending()).toBe(2);
+  h.state.fail = false;
+  await h.counter.flushNow();
+  h.counter.add(SPOT_A);
+  h.counter.add(SPOT_B);
+  await tick();
+  expect(h.batches).toHaveLength(2);
+});
+
+test("TRUST_PROXY_HOPS: 0 ignores x-forwarded-for, 2 skips one more proxy", async () => {
+  const direct = await pingApp({ hops: 0 });
+  const reading = direct.ctx.ids.spotIds["central-reading-room"];
+  for (let i = 0; i < 31; i += 1) await direct.ping(reading, `203.0.113.${i}`);
+  expect(direct.pings.pending()).toBe(30);
+
+  const two = await pingApp({ hops: 2 });
+  const r2 = two.ctx.ids.spotIds["central-reading-room"];
+  // Edge appended last, proxy before it: the client is the entry two hops from the socket.
+  for (let i = 0; i < 31; i += 1) await two.ping(r2, `203.0.113.5, 10.1.1.${i}`);
+  expect(two.pings.pending()).toBe(30);
+});
+
+test("privacy: a request logged by the server carries no address or forwarded header", async () => {
+  const lines: string[] = [];
+  const { app } = await pingApp({ logStream: { write: (m) => lines.push(m) } });
+  await app.inject({
+    method: "GET",
+    url: "/health",
+    remoteAddress: "198.51.100.7",
+    headers: { "x-forwarded-for": "203.0.113.50", forwarded: "for=203.0.113.51" },
+  });
+  const out = lines.join("\n");
+  expect(out).toContain("/health");
+  expect(out).not.toContain("198.51.100.7");
+  expect(out).not.toContain("203.0.113.50");
+  expect(out).not.toContain("203.0.113.51");
+  expect(out).not.toContain("remoteAddress");
 });

@@ -1,6 +1,7 @@
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { z } from "zod";
 import type { PingCounter } from "../ping/counter.ts";
+import type { KnownSpots } from "../ping/knownSpots.ts";
 import type { RateLimiter } from "../ping/rateLimit.ts";
 
 const PingBody = z.object({ spot_id: z.uuid() });
@@ -11,7 +12,7 @@ const PingBody = z.object({ spot_id: z.uuid() });
  * silent in logs, and a limited or unknown spot still answers 204 so nothing leaks.
  */
 export const pingRoutes =
-  (deps: { pings: PingCounter; limiter: RateLimiter }): FastifyPluginAsyncZod =>
+  (deps: { pings: PingCounter; limiter: RateLimiter; known: KnownSpots }): FastifyPluginAsyncZod =>
   async (app) => {
     app.addContentTypeParser("text/plain", { parseAs: "string" }, (_req, body, done) => {
       try {
@@ -25,7 +26,10 @@ export const pingRoutes =
       "/ping/pick",
       { logLevel: "silent", schema: { body: PingBody } },
       async (req, reply) => {
-        if (deps.limiter.allow(req.ip)) deps.pings.add(req.body.spot_id);
+        // Only ids of published spots are counted, so random uuids cannot force flushes.
+        if (deps.limiter.allow(req.ip) && (await deps.known.has(req.body.spot_id))) {
+          deps.pings.add(req.body.spot_id);
+        }
         return reply.code(204).send();
       },
     );
