@@ -44,6 +44,24 @@ export async function pinClock(page: Page): Promise<void> {
 }
 
 /**
+ * Waits until the service worker controls this page, so a reload offline is served from
+ * its cache. The first load can finish before the worker claims it: reload once then.
+ */
+export async function waitForServiceWorker(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  const controlled = () => page.evaluate(() => navigator.serviceWorker.controller !== null);
+  await expect
+    .poll(controlled, { timeout: 5_000 })
+    .toBe(true)
+    .catch(async () => {
+      await page.reload();
+      await expect.poll(controlled, { timeout: 10_000 }).toBe(true);
+    });
+}
+
+/**
  * Overrides `page` so each test's browser clock starts at the server's E2E_NOW.
  * Pages from `browser.newContext()` do not go through this fixture: call
  * `pinClock` on them.
