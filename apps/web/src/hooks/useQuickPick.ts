@@ -7,12 +7,14 @@ import {
   draw,
   type EmptyHelp,
   explainEmpty,
+  type PickInput,
   type Preset,
   presetById,
   pushRecent,
   type RankResult,
   rankSpots,
   type SpotPick,
+  surpriseGroup,
   surpriseRank,
   TimeChoice,
   topPick,
@@ -101,9 +103,13 @@ export function useQuickPick(custom: readonly Preset[]): QuickPick {
   const preset = presetById(prefs.presetId, custom);
   const presets = useMemo(() => [...BUILTIN_PRESETS, ...custom], [custom]);
 
-  const ranks = useMemo((): { quick: RankResult; surprise: RankResult } | null => {
+  const ranks = useMemo((): {
+    input: PickInput;
+    quick: RankResult;
+    surprise: RankResult;
+  } | null => {
     if (bundle === null) return null;
-    const input = {
+    const input: PickInput = {
       bundle,
       now,
       // The saved id as is: core resolves it and flags one that is gone from the bundle.
@@ -115,10 +121,11 @@ export function useQuickPick(custom: readonly Preset[]): QuickPick {
       access,
     };
     return {
+      input,
       quick: rankSpots(input),
       // Surprise me ignores the preset, its group size included: the People stepper's
       // value when it is on screen, else one person.
-      surprise: surpriseRank({ ...input, group: preset.groupDefault === null ? 1 : prefs.group }),
+      surprise: surpriseRank({ ...input, group: surpriseGroup(input) }),
     };
   }, [bundle, now, prefs, preset, access]);
 
@@ -136,6 +143,11 @@ export function useQuickPick(custom: readonly Preset[]): QuickPick {
     pick ??= topPick(ranks.quick.ranked);
   }
   const primaryId = pick?.primary.spot.id ?? null;
+  // Each way out is checked by ranking again, so this only runs for an empty pick.
+  const empty = useMemo(
+    () => (ranks !== null && pick === null ? explainEmpty(ranks.input, ranks.quick) : null),
+    [ranks, pick],
+  );
 
   // Every primary shown goes into its own last-5 history, so the next draw avoids it.
   useEffect(() => {
@@ -185,7 +197,7 @@ export function useQuickPick(custom: readonly Preset[]): QuickPick {
     mode,
     pick,
     // A surprise pick can stand in for an empty quick pick: then there is nothing to explain.
-    empty: ranks !== null && pick === null ? explainEmpty(ranks.quick, access) : null,
+    empty,
     set,
     somethingElse: () => drawFrom(ranks?.quick.ranked, "pick"),
     surprise: () => drawFrom(ranks?.surprise.ranked, "surprise"),

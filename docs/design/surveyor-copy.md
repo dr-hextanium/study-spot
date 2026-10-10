@@ -786,14 +786,17 @@ Every Home string, including the presenters Home shares with the spot page and B
 | student.pick.surprise | Surprise me | 14 | ignores the preset, keeps the hard rules |
 | student.pick.only_one | That's the only good match right now. | 44 | toast |
 | student.pick.none_left | Nothing else is open for that long. | 40 | toast |
-| student.empty.title | Nothing fits right now. | 28 | |
+| student.empty.title | No spot fits those choices. | 28 | |
 | student.empty.closest | Closest open spot: {spot}, {minutes} min away. | 60 | |
 | student.empty.none_open | Nothing on campus is open for that long. | 48 | |
 | student.empty.loosen.preset | Try fewer filters, or let Perch surprise you. | 52 | |
-| student.empty.loosen.group | Try a smaller group. | 28 | |
-| student.empty.loosen.time | Try a shorter time. | 28 | |
+| student.empty.loosen.group | Try a smaller group. | 28 | offered only when it gives a pick |
+| student.empty.loosen.time | Try a longer time. The walk eats a short one. | 48 | offered only when it gives a pick |
+| student.empty.loosen.from | Try starting somewhere closer. | 36 | offered only when it gives a pick |
 | student.empty.loosen.access | Set your access to see more spots. | 40 | |
-| student.empty.try_short | Try 30 min | 12 | |
+| student.empty.try_group | Try {count} people | 16 | |
+| student.empty.try_time | Try {time} | 20 | a time chip's label |
+| student.empty.try_from | Start from {building} | 44 | |
 | student.home.access.note | In campus housing or a grad student? Set your access. | 60 | never says "live" |
 | student.home.access.action | Set access | 12 | |
 | student.home.access.dismiss | Not now | 10 | |

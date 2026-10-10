@@ -150,12 +150,32 @@ test("an empty pick names the closest spot and offers a way out", async () => {
     }),
   );
   await home(app);
-  expect(screen.getByText("Nothing fits right now.")).toBeTruthy();
+  expect(screen.getByText(t("student.empty.title"))).toBeTruthy();
   expect(screen.getByText("Closest open spot: Quiet Carrels, 0 min away.")).toBeTruthy();
   expect(document.querySelector(".pick-card")).toBeNull();
   await click(t("student.pick.surprise"));
   expect(screen.getByRole("heading", { name: t("student.pick.surprise_heading") })).toBeTruthy();
-  expect(screen.queryByText("Nothing fits right now.")).toBeNull();
+  expect(screen.queryByText(t("student.empty.title"))).toBeNull();
+});
+
+test("a group too big for every spot offers the largest group that fits, and it picks", async () => {
+  const app = testApp({ me: null });
+  app.deps.prefs.setItem(
+    PICK_PREFS_KEY,
+    JSON.stringify({
+      ...DEFAULT_PICK_PREFS,
+      presetId: "group",
+      group: 8,
+      from: "sac",
+      time: "120",
+    }),
+  );
+  await home(app);
+  expect(screen.getByText(t("student.empty.title"))).toBeTruthy();
+  expect(screen.getByText(t("student.empty.loosen.group"))).toBeTruthy();
+  await click(t("student.empty.try_group", { count: 6 }));
+  expect(document.querySelector(".pick-card")).not.toBeNull();
+  expect(JSON.parse(app.deps.prefs.getItem(PICK_PREFS_KEY) ?? "{}").group).toBe(6);
 });
 
 function aged(ageDays: number, checkFailed: boolean): BundleState {

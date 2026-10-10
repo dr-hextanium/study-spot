@@ -62,8 +62,9 @@ export function Home() {
           ) : q.empty !== null ? (
             <EmptyPick
               help={q.empty}
+              bundle={bundle}
               onSurprise={() => say(q.surprise())}
-              onShortTime={() => q.set({ time: "30" })}
+              onApply={(next) => q.set(next)}
             />
           ) : null}
           {!q.prefs.accessNoteDismissed && accessIsDefault ? (

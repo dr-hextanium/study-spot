@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { Bundle, BundleHours, BundleSpot } from "../bundle.ts";
 import { campusParts, isExamDate } from "../campusTime.ts";
 import { slotIndex } from "../slots.ts";
-import { type AccessProfile, accessFor } from "./access.ts";
+import { type AccessProfile, accessFor, scopeKey } from "./access.ts";
 import { type Criterion, fit, matchCriterion, topReasons } from "./criteria.ts";
 import { openSpan } from "./hours.ts";
 import type { Preset } from "./presets.ts";
@@ -210,7 +210,17 @@ export function surpriseRank(input: PickInput): RankResult {
   return run(input, { applyPreset: false });
 }
 
-export type Loosen = "preset" | "group" | "time" | "access";
+/**
+ * One change that turns an empty pick into a pick. Each one is checked by ranking again with
+ * it applied, so Home never offers a way out that leads nowhere. `access` carries a profile
+ * that would do it; Home only sends the student to Me, since access is theirs to declare.
+ */
+export type Loosen =
+  | { kind: "group"; group: number }
+  | { kind: "time"; time: TimeChoice }
+  | { kind: "from"; from: string }
+  | { kind: "preset" }
+  | { kind: "access"; access: AccessProfile };
 export type EmptyHelp = {
   closest: { spot: BundleSpot; walkMinutes: number } | null;
   loosen: Loosen | null;
@@ -223,8 +233,80 @@ const OPEN_BUT_FILTERED: readonly Exclusion[] = [
   "too_far",
 ];
 
-/** For an empty pick: the nearest open, usable spot that was filtered out, and one thing to loosen. */
-export function explainEmpty(result: RankResult, access: AccessProfile): EmptyHelp {
+/** The group size Surprise me uses: the Home group only when the preset has one. */
+export function surpriseGroup(input: Pick<PickInput, "preset" | "group">): number {
+  return input.preset.groupDefault === null ? 1 : input.group;
+}
+
+function* loosenings(input: PickInput, result: RankResult): Generator<Loosen> {
+  const has = (r: Exclusion): boolean => result.excluded.some((e) => e.reason === r);
+  if (has("group_too_big") && input.preset.groupDefault !== null) {
+    // The largest group that still fits, down to the People stepper's floor of 2.
+    for (let group = input.group - 1; group >= 2; group -= 1) yield { kind: "group", group };
+  }
+  // Every window needs the same 30 minutes after arrival, so a shorter one never helps a
+  // spot closing soon. A longer one leaves time after a long walk.
+  if (has("too_far")) {
+    for (const time of TIME_CHOICE.slice(TIME_CHOICE.indexOf(input.time) + 1)) {
+      yield { kind: "time", time };
+    }
+    const far = result.excluded
+      .filter((e) => e.reason === "too_far")
+      .sort((a, b) => (a.walkMinutes ?? 0) - (b.walkMinutes ?? 0));
+    const tried = new Set<string>([input.from]);
+    for (const e of far) {
+      if (tried.has(e.spot.building_id)) continue;
+      tried.add(e.spot.building_id);
+      yield { kind: "from", from: e.spot.building_id };
+    }
+  }
+  if (has("required")) yield { kind: "preset" };
+  const defaultAccess =
+    input.access.residence === null && input.access.quad === null && !input.access.grad;
+  if (defaultAccess) {
+    for (const e of result.excluded) {
+      if (e.reason !== "locked") continue;
+      const access = unlocking(e.spot, input.bundle);
+      if (access !== null) yield { kind: "access", access };
+    }
+  }
+}
+
+/** The smallest declared profile that opens a locked spot, or null when none can. */
+function unlocking(spot: BundleSpot, bundle: Bundle): AccessProfile | null {
+  const none: AccessProfile = { residence: null, quad: null, grad: false };
+  if (spot.eligibility === "grad_only") return { ...none, grad: true };
+  const scope = spot.eligibility_scope;
+  if (scope === null) return null;
+  const b = bundle.buildings.find(
+    (x) => x.id === scopeKey(scope) || scopeKey(x.name) === scopeKey(scope),
+  );
+  if (b === undefined) return null;
+  if (spot.eligibility === "residents_building") return { ...none, residence: b.id };
+  if (spot.eligibility === "residents_quad") return { ...none, quad: b.id };
+  return null;
+}
+
+function picks(input: PickInput, l: Loosen): boolean {
+  switch (l.kind) {
+    case "group":
+      return rankSpots({ ...input, group: l.group }).ranked.length > 0;
+    case "time":
+      return rankSpots({ ...input, time: l.time }).ranked.length > 0;
+    case "from":
+      return rankSpots({ ...input, from: l.from }).ranked.length > 0;
+    case "preset":
+      return surpriseRank({ ...input, group: surpriseGroup(input) }).ranked.length > 0;
+    case "access":
+      return rankSpots({ ...input, access: l.access }).ranked.length > 0;
+  }
+}
+
+/**
+ * For an empty pick: the nearest open, usable spot that was filtered out, and the first
+ * change that, applied, gives a pick. Null when no single change does (spots closing soon).
+ */
+export function explainEmpty(input: PickInput, result: RankResult): EmptyHelp {
   let closest: EmptyHelp["closest"] = null;
   for (const e of result.excluded) {
     if (!OPEN_BUT_FILTERED.includes(e.reason) || e.walkMinutes === null) continue;
@@ -232,16 +314,15 @@ export function explainEmpty(result: RankResult, access: AccessProfile): EmptyHe
       closest = { spot: e.spot, walkMinutes: e.walkMinutes };
     }
   }
-  const has = (r: Exclusion): boolean => result.excluded.some((e) => e.reason === r);
-  const defaultAccess = access.residence === null && access.quad === null && !access.grad;
-  const loosen: Loosen | null = has("required")
-    ? "preset"
-    : has("group_too_big")
-      ? "group"
-      : has("closing_soon") || has("too_far")
-        ? "time"
-        : has("locked") && defaultAccess
-          ? "access"
-          : null;
+  // Rank from the building the result used, so a fallback From is not suggested back.
+  const from = result.from ?? input.from;
+  const resolved = { ...input, from };
+  let loosen: Loosen | null = null;
+  for (const l of loosenings(resolved, result)) {
+    if (picks(resolved, l)) {
+      loosen = l;
+      break;
+    }
+  }
   return { closest, loosen };
 }
