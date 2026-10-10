@@ -688,6 +688,32 @@ Every Home string, including the presenters Home shares with the spot page and B
 | student.data.update_required | Update Perch to load spots. | 32 | spec wording |
 | student.data.update_available | A newer Perch reads newer spots. Reload to update. | 60 | |
 
+### Filters
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.filter.group.noise | Noise | 10 | |
+| student.filter.group.rules | Power and rules | 18 | |
+| student.filter.group.comfort | Room | 10 | |
+| student.filter.group.access | Getting in | 12 | |
+| student.filter.group.nearby | Late and nearby | 18 | |
+| student.filter.silent | Silent only | 14 | |
+| student.filter.quiet | Quiet or silent | 16 | |
+| student.filter.talking | Talking is fine | 16 | |
+| student.filter.outlets | Outlets at most seats | 22 | |
+| student.filter.calls | Calls OK | 10 | |
+| student.filter.food | Food OK | 10 | |
+| student.filter.drinks | Drinks OK | 10 | |
+| student.filter.group_ok | Group work OK | 14 | |
+| student.filter.whiteboard | Whiteboard | 12 | |
+| student.filter.big_room | 50+ seats | 10 | |
+| student.filter.natural_light | Natural light | 14 | |
+| student.filter.step_free | Step-free | 12 | |
+| student.filter.elevator | Elevator | 10 | |
+| student.filter.open_late | Open past midnight | 20 | |
+| student.filter.printer | Printer nearby | 16 | |
+| student.filter.coffee | Coffee nearby | 16 | |
+
 ## Pending questions
 
 - Floor naming at Stony Brook (e.g. "Lower level" vs "B") should come from the first survey walk; the floor field is free text for now.
