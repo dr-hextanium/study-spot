@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import {
   building,
   bundle_state,
@@ -239,4 +239,22 @@ test("write receipts store a json response", async () => {
     .values({ client_write_id: id, surveyor_id: s.id, response_json: response });
   const [r] = await db.select().from(write_receipt);
   expect(r?.response_json).toEqual(response);
+});
+
+test("a spot with photos cannot be deleted, so offloaded photos never vanish with it", async () => {
+  const { db, row } = await withSpot();
+  await db.insert(photo_blob).values({
+    sha256: "d".repeat(64),
+    bytes: null,
+    content_type: "image/jpeg",
+    byte_size: 8,
+    pages_hash: "b".repeat(32),
+  });
+  await db
+    .insert(spot_photo)
+    .values({ spot_id: row.id, blob_sha256: "d".repeat(64), taken_at: new Date() });
+  await expect(Promise.resolve(db.delete(spot).where(eq(spot.id, row.id)))).rejects.toThrow();
+  await db.delete(spot_photo).where(eq(spot_photo.spot_id, row.id));
+  await db.delete(spot).where(eq(spot.id, row.id));
+  expect(await db.select().from(spot)).toEqual([]);
 });

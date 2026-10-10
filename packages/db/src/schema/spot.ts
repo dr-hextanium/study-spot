@@ -221,9 +221,11 @@ export const spot_photo = pgTable(
   "spot_photo",
   {
     id: uuid().primaryKey().defaultRandom(),
+    // restrict, not cascade: a cascade would drop photo rows whose bytes may live only
+    // on the data site, and the next deploy would then drop the files too.
     spot_id: uuid()
       .notNull()
-      .references(() => spot.id, { onDelete: "cascade" }),
+      .references(() => spot.id, { onDelete: "restrict" }),
     url: text(),
     blob_sha256: text().references(() => photo_blob.sha256),
     taken_at: timestamp({ withTimezone: true }).notNull(),
