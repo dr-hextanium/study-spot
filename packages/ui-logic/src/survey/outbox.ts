@@ -466,7 +466,6 @@ export function createOutbox(deps: OutboxDeps) {
    */
   async function pass(): Promise<void> {
     if (stopped || !ready || snapshot.signedOut || !deps.network.online()) return;
-    emit({ syncing: true });
     const skipped = new Set<string>();
     let held = false;
     try {
@@ -476,6 +475,9 @@ export function createOutbox(deps: OutboxDeps) {
         const { next: picked, held: heldNow } = await pick(skipped);
         held = heldNow;
         if (picked === null) break;
+        // Only a pass that sends says so: one that finds every write held by another
+        // tab sends nothing, and flipping the flag on each wake-up made the label flicker.
+        if (!snapshot.syncing) emit({ syncing: true });
         signal.post();
         await refresh();
         // The network call runs outside the lock, so saves and discards are never blocked by it.
@@ -504,7 +506,7 @@ export function createOutbox(deps: OutboxDeps) {
       schedule(backoff);
     } finally {
       await refresh().catch(() => undefined);
-      emit({ syncing: false });
+      if (snapshot.syncing) emit({ syncing: false });
     }
   }
 

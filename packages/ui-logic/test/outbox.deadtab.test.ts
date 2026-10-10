@@ -136,3 +136,27 @@ test("a dead tab's late answer does not settle a write another tab took over", a
   expect(t.server.executed).toHaveLength(1);
   expect(t.server.spot(SPOT_A).version).toBe(4);
 });
+
+test("a tab whose writes are all held by another tab never says it is syncing", async () => {
+  const t = setup([surveySpotFixture({ id: SPOT_A, version: 3 })]);
+  const sender = t.make();
+  await sender.start();
+  const watcher = t.make();
+  await watcher.start();
+  const seen: boolean[] = [];
+  watcher.subscribe(() => seen.push(watcher.getSnapshot().syncing));
+  const gate = t.server.holdNext();
+  await sender.enqueue(power(SPOT_A), 3);
+  await gate.arrived;
+  // Every wake-up (the sender's signal, the foreground, the recheck) finds the spot held.
+  t.foreground.fire();
+  await watcher.idle();
+  t.timers.advance(HELD_RECHECK_MS);
+  await watcher.idle();
+  gate.release();
+  await sender.idle();
+  await watcher.idle();
+
+  expect(watcher.getSnapshot().records).toEqual([]);
+  expect(seen).not.toContain(true);
+});

@@ -241,18 +241,16 @@ test("coming online, the foreground, and a new write trigger sync; overlaps coll
   await box.idle();
   expect(box.getSnapshot().records).toEqual([]);
 
-  let passes = 0;
-  let wasSyncing = false;
-  box.subscribe(() => {
-    const { syncing } = box.getSnapshot();
-    if (syncing && !wasSyncing) passes += 1;
-    wasSyncing = syncing;
-  });
+  // A write the server keeps refusing is sent once per pass, so requests count passes.
+  t.server.failWith.push(503, 503, 503, 503);
+  await box.enqueue(power(SPOT_A), 5);
+  await box.idle();
+  const before = t.server.requests.length;
   t.foreground.fire();
   t.foreground.fire();
   t.foreground.fire();
   await box.idle();
-  expect(passes).toBe(2);
+  expect(t.server.requests.length - before).toBe(2);
 });
 
 test("an app killed mid-sync resends the same id and the server applies it once", async () => {
