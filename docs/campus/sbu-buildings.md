@@ -21,7 +21,7 @@ Notes:
 - Exam periods include Saturday and reading days inside them. Calendars say they are subject to change.
 - Health Sciences programs have their own calendar. Not modeled.
 
-## Buildings (31)
+## Buildings (38)
 
 Coordinates come from OpenStreetMap via Nominatim (one request a second, descriptive User-Agent), from the matched feature's point. Source is the OSM element at https://www.openstreetmap.org/. Names are OSM or common SBU names; check them against the SBU campus map. The brief's Health Sciences Center and Library are one row.
 
@@ -59,10 +59,27 @@ Coordinates come from OpenStreetMap via Nominatim (one request a second, descrip
 | west-apartments | West Apartments | 40.9124569 | -73.1346847 | [way/835672152](https://www.openstreetmap.org/way/835672152) | Residential area polygon centre |
 | chapin-apartments | Chapin Apartments | 40.9073085 | -73.1092909 | [way/837984214](https://www.openstreetmap.org/way/837984214) | Residential area polygon centre |
 
+Residence quad community centers (the "RCC" rows). Official names and hours: [Residential Community Centers](https://www.stonybrook.edu/commcms/studentaffairs/res/services/residentialcommunitycenters.php) (Tabler, Roth, Benedict, Alan S. deVries); [Mendelsohn Center](https://www.stonybrook.edu/commcms/undergraduate-colleges/communities-and-facilities/facilities/mendelsohncenter); [West Apartments](https://www.stonybrook.edu/commcms/studentaffairs/res/housing/undergraduate_housing/west_apartments.php); Chapin Commons on the [Fitness Centers](https://www.stonybrook.edu/commcms/studentaffairs/res/services/fitness_centers.php) page. SBU does not use the term "RCC". Kelly has no center of its own: its study space is the deVries (HDV/GLS) center, so there is no `kelly-rcc`. No H Quad commons was found; Benedict Community Center is the only candidate.
+
+| id | name | lat | lng | source (OSM) | notes |
+|---|---|---|---|---|---|
+| roosevelt-rcc | Alan S. deVries Center | 40.9121593 | -73.1299618 | [way/1308434317](https://www.openstreetmap.org/way/1308434317) | OSM places it in Kelly Quad; Campus Residences lists it as the Eleanor Roosevelt community center. Also serves Kelly |
+| tabler-rcc | Tabler Community Center | 40.9098669 | -73.127097 | [way/60923788](https://www.openstreetmap.org/way/60923788) | UNCONFIRMED: name is official; point is OSM's Tabler Center for Arts, Culture, and Humanities, not verified to be the same building |
+| roth-rcc | Roth Community Center | 40.911359 | -73.123898 | [way/583327342](https://www.openstreetmap.org/way/583327342) | UNCONFIRMED: name is official; no OSM match, point is the Roth Quad centre |
+| h-rcc | Benedict Community Center | 40.9195968 | -73.1186016 | [way/60922568](https://www.openstreetmap.org/way/60922568) | UNCONFIRMED: name is official; point is OSM's Benedict College (H Quad), not verified to hold the center |
+| mendelsohn-rcc | Mendelsohn Center | 40.9177462 | -73.1212657 | [way/376164548](https://www.openstreetmap.org/way/376164548) | UNCONFIRMED: SBU says it is in Gray Hall; no OSM match, point is Gray College |
+| west-rcc | West E Commons | 40.9124569 | -73.1346847 | [way/835672152](https://www.openstreetmap.org/way/835672152) | UNCONFIRMED: SBU names it (attached to Building E, area office); no OSM match, point is the West Apartments centre |
+| chapin-rcc | Chapin Commons | 40.9080987 | -73.1102916 | [way/833000705](https://www.openstreetmap.org/way/833000705) | name per SBU; OSM way found |
+
 ## UNCONFIRMED
 
 - `hsc-library`: coordinates are the Health Sciences Center building, not the library entrance.
 - `roosevelt-quad`: Nominatim only found a park feature (`way/632665541`) and an inner-quad lawn, not the residence area.
+- `tabler-rcc`: name is official; point is OSM's Tabler Center for Arts, Culture, and Humanities, not verified to be the same building
+- `roth-rcc`: name is official; no OSM match, point is the Roth Quad centre
+- `h-rcc`: name is official; point is OSM's Benedict College (H Quad), not verified to hold the center
+- `mendelsohn-rcc`: SBU says it is in Gray Hall; no OSM match, point is Gray College
+- `west-rcc`: SBU names it (attached to Building E, area office); no OSM match, point is the West Apartments centre
 
 ## Walk matrix
 
