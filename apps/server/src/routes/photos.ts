@@ -74,7 +74,7 @@ export function photoRoutes(deps: AppDeps): FastifyPluginAsyncZod {
         if (!isJpeg(file))
           throw new HttpError(415, { error: "photo_type", message: "Photos must be JPEG." });
 
-        // Check the spot before storing bytes, so a bad id leaves no orphan blob.
+        // Check the spot before the write, so a bad id is a plain 404.
         const now = deps.clock.now();
         const term = await currentTerm(deps.db, deps.config.campusId, now);
         if (!(await loadSurveySpot(deps.db, parsed.data.spot_id, deps.config.campusId, term))) {
@@ -82,12 +82,21 @@ export function photoRoutes(deps: AppDeps): FastifyPluginAsyncZod {
         }
 
         const sha256 = sha256Hex(file);
-        await deps.photos.put({ sha256, bytes: file, contentType: PHOTO_CONTENT_TYPE });
+        const bytes = file;
         const claimed = parsed.data.taken_at === undefined ? now : new Date(parsed.data.taken_at);
         // A phone clock running ahead must not date a photo in the future.
         const takenAt = claimed.getTime() > now.getTime() ? now : claimed;
-        const r = await spotWrite(me, parsed.data.client_write_id, "photo.upload", (tx, ctx) =>
-          addPhoto(tx, ctx, { spotId: parsed.data.spot_id, sha256, takenAt }),
+        // The bytes go in with the photo row in one transaction: a refused or replayed
+        // write stores nothing, and a reject deleting the same blob at once makes one of
+        // the two fail cleanly and roll back, so the client just retries.
+        const r = await spotWrite(
+          me,
+          parsed.data.client_write_id,
+          "photo.upload",
+          async (tx, ctx) => {
+            await deps.photos.put({ sha256, bytes, contentType: PHOTO_CONTENT_TYPE }, tx);
+            return addPhoto(tx, ctx, { spotId: parsed.data.spot_id, sha256, takenAt });
+          },
         );
         return reply.code(201).send(r.body);
       },

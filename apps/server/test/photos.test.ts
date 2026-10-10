@@ -349,6 +349,28 @@ test("re-uploading a cleared photo's bytes puts them back in Postgres", async ()
   expect(Array.from(res.rawPayload)).toEqual(Array.from(jpeg(64, 10)));
 });
 
+test("bytes are stored in the upload's own write: a refused write leaves no blob", async () => {
+  const ctx = await setup();
+  const seeded = await seededBlobs(ctx);
+  const me = await signIn(ctx);
+  const id = writeId();
+  const verify = await ctx.app.inject({
+    method: "POST",
+    url: `/survey/spots/${ctx.ids.spotIds["sac-lounge"]}/verify`,
+    headers: me.headers,
+    payload: { client_write_id: id, base_version: 1, groups: ["power"] },
+  });
+  expect(verify.statusCode).toBe(200);
+  const res = await upload(
+    ctx,
+    me,
+    { spot_id: ctx.ids.spotIds["sac-lounge"], client_write_id: id },
+    jpeg(64, 12),
+  );
+  expect(res.statusCode).toBe(422);
+  expect(await addedBlobs(ctx, seeded)).toEqual([]);
+});
+
 test("a photo or spot in another campus is a 404 and stores nothing", async () => {
   const ctx = await setup();
   const seeded = await seededBlobs(ctx);
