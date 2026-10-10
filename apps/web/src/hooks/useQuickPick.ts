@@ -1,9 +1,8 @@
 import {
-  AccessProfile,
+  type AccessProfile,
   BUILTIN_PRESETS,
   type Bundle,
   type Candidate,
-  DEFAULT_ACCESS,
   DEFAULT_FROM,
   draw,
   type EmptyHelp,
@@ -21,9 +20,11 @@ import {
 import {
   type BundleState,
   DEFAULT_PICK_PREFS,
+  notePickAction,
   PICK_PREFS_KEY,
   PickPrefs,
   type RECENT_KEY,
+  readAccess,
   readJson,
   readRecent,
   writeJson,
@@ -34,8 +35,6 @@ import { useDeps } from "../app/AppProvider.tsx";
 import { useBundle } from "./useBundle.ts";
 import { useCampusNow } from "./useCampusNow.ts";
 
-/** Written by Me (the access profile); Home only reads it. */
-export const ACCESS_KEY = "student:access";
 const ALTERNATES = 2;
 
 export type PickMode = "top" | "reroll" | "surprise";
@@ -63,6 +62,8 @@ export type QuickPick = {
   somethingElse(): DrawResult;
   surprise(): DrawResult;
   showTop(): void;
+  /** A pick action (Directions, a reroll, a surprise): counts this tab's visit once. */
+  notePick(): void;
 };
 
 type Shown = { mode: Exclude<PickMode, "top">; spotId: string };
@@ -84,12 +85,17 @@ export function useQuickPick(custom: readonly Preset[]): QuickPick {
   const deps = useDeps();
   const load = useBundle();
   const now = useCampusNow();
-  const [prefs, setPrefs] = useState<PickPrefs>(
-    () => readJson(deps.prefs, PICK_PREFS_KEY, PickPrefs, DEFAULT_PICK_PREFS).value,
-  );
-  const [access] = useState<AccessProfile>(
-    () => readJson(deps.prefs, ACCESS_KEY, AccessProfile, DEFAULT_ACCESS).value,
-  );
+  const [prefs, setPrefs] = useState<PickPrefs>(() => {
+    const saved = readJson(deps.prefs, PICK_PREFS_KEY, PickPrefs, DEFAULT_PICK_PREFS).value;
+    // A custom preset deleted on Me leaves its id behind: go back to the first built-in.
+    const known = [...BUILTIN_PRESETS, ...custom].some((p) => p.id === saved.presetId);
+    if (known) return saved;
+    const fixed = { ...saved, presetId: DEFAULT_PICK_PREFS.presetId };
+    writeJson(deps.prefs, PICK_PREFS_KEY, fixed);
+    return fixed;
+  });
+  // Written by Me; Home only reads it.
+  const [access] = useState<AccessProfile>(() => readAccess(deps.prefs).value);
   const [shown, setShown] = useState<Shown | null>(null);
   const bundle = load.phase === "ready" ? load.load.bundle : null;
   const preset = presetById(prefs.presetId, custom);
@@ -150,7 +156,12 @@ export function useQuickPick(custom: readonly Preset[]): QuickPick {
     if (Object.keys(next).some((k) => k !== "accessNoteDismissed")) setShown(null);
   };
 
+  const notePick = (): void => {
+    notePickAction(deps.prefs, deps.tab);
+  };
+
   const drawFrom = (ranked: readonly Candidate[] | undefined, kind: Kind): DrawResult => {
+    notePick();
     if (ranked === undefined || ranked.length === 0) return "none";
     const next = draw(ranked, readRecent(deps.tab, kind), deps.rand, primaryId);
     if (next === null) return "none";
@@ -179,5 +190,6 @@ export function useQuickPick(custom: readonly Preset[]): QuickPick {
     somethingElse: () => drawFrom(ranks?.quick.ranked, "pick"),
     surprise: () => drawFrom(ranks?.surprise.ranked, "surprise"),
     showTop: () => setShown(null),
+    notePick,
   };
 }

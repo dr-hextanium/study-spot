@@ -10,5 +10,9 @@ export function isIos(nav: Pick<Navigator, "userAgent" | "platform" | "maxTouchP
 export function isStandalone(win: Window): boolean {
   // navigator.standalone exists only in iOS Safari and is missing from lib.dom.
   const legacy = (win.navigator as Navigator & { standalone?: boolean }).standalone === true;
-  return legacy || win.matchMedia("(display-mode: standalone)").matches;
+  // Some embedded views (and jsdom) have no matchMedia: they are not the installed app.
+  return (
+    legacy ||
+    (typeof win.matchMedia === "function" && win.matchMedia("(display-mode: standalone)").matches)
+  );
 }

@@ -4,6 +4,7 @@ import {
   dayForecast,
   directionsUrl,
   lockText,
+  notePickAction,
   placeText,
   readAccess,
   spotName,
@@ -77,7 +78,7 @@ export function SpotPage(props: { slug: string; via: "pick" | undefined }) {
 
 function SpotBody(props: { bundle: Bundle; spot: BundleSpot; via: "pick" | undefined }) {
   const { bundle, spot, via } = props;
-  const { webShare, pickPing } = useDeps();
+  const { webShare, pickPing, prefs, tab } = useDeps();
   const toasts = useToasts();
   const now = useCampusNow();
   const ios = useIsIos();
@@ -90,7 +91,9 @@ function SpotBody(props: { bundle: Bundle; spot: BundleSpot; via: "pick" | undef
     if (via !== "pick" || pinged.current === spot.id) return;
     pinged.current = spot.id;
     pickPing(spot.id);
-  }, [via, spot.id, pickPing]);
+    // Opening a pick is a pick action: it counts this tab's visit for the install note.
+    notePickAction(prefs, tab);
+  }, [via, spot.id, pickPing, prefs, tab]);
 
   const name = spotName(spot);
   const checked = checkedView(spot, tz);
