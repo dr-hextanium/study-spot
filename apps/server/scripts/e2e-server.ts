@@ -84,7 +84,11 @@ const serveData = async (req: IncomingMessage, res: ServerResponse): Promise<voi
 };
 const dataServers = ["127.0.0.1", "::1"].map((host) => {
   const server = createServer((req, res) => void serveData(req, res));
-  server.on("error", (e) => console.error(`data server on ${host}:`, e.message));
+  server.on("error", (e: NodeJS.ErrnoException) => {
+    console.error(`data server on ${host}:`, e.message);
+    // A port held by another process would serve the wrong data silently.
+    if (e.code === "EADDRINUSE") process.exit(1);
+  });
   server.listen(env.E2E_DATA_PORT, host);
   return server;
 });
