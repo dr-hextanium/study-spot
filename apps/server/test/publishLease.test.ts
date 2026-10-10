@@ -2,8 +2,9 @@ import { expect, test } from "bun:test";
 import { bundle_state, photo_blob, spot, spot_photo } from "@perch/db";
 import { eq, sql } from "drizzle-orm";
 import { photoPath, postgresPhotoStore, sha256Hex } from "../src/photos/store.ts";
+import { type FetchLike, pagesTarget } from "../src/publish/pagesTarget.ts";
 import { createPublisher, type Publisher } from "../src/publish/publisher.ts";
-import type { PublishFile, PublishTarget } from "../src/publish/target.ts";
+import type { DeployOptions, PublishFile, PublishTarget } from "../src/publish/target.ts";
 import { fakePages, type Pages, target } from "./fakePages.ts";
 import { DATA_BASE_URL, manualTimers, NOW, setup, type TestContext } from "./helpers.ts";
 
@@ -18,14 +19,14 @@ function gate(inner: PublishTarget, shared: { active: number; max: number; deplo
     open = resolve;
   });
   const t: PublishTarget = {
-    async deploy(files: readonly PublishFile[]) {
+    async deploy(files: readonly PublishFile[], opts?: DeployOptions) {
       shared.active += 1;
       shared.max = Math.max(shared.max, shared.active);
       entered();
       await opened;
       try {
         shared.deploys += 1;
-        return await inner.deploy(files);
+        return await inner.deploy(files, opts);
       } finally {
         shared.active -= 1;
       }
@@ -148,7 +149,7 @@ test("a crashed run's lease expires and the next run takes it over", async () =>
   expect((await leaseRow(ctx))?.publishing_owner).toBeNull();
 });
 
-test("a run that lost its lease mid-deploy clears no bytes", async () => {
+test("a run that lost its lease mid-deploy posts nothing and clears no bytes", async () => {
   const pages = fakePages();
   const ctx = await setup({ target: target(pages), dataSite: pages.site });
   const sha = await approvedPhoto(ctx, 23);
@@ -162,7 +163,8 @@ test("a run that lost its lease mid-deploy clears no bytes", async () => {
     .where(eq(bundle_state.campus_id, "sbu"));
   a.open();
   const outcome = await runA;
-  expect(outcome.ok && outcome.offloaded).toEqual([]);
+  expect(outcome.ok).toBe(false);
+  expect(pages.deployments).toHaveLength(0);
   const [row] = await ctx.db.select().from(photo_blob).where(eq(photo_blob.sha256, sha));
   expect(row?.bytes).not.toBeNull();
   // The other owner's lease is left alone.
@@ -204,5 +206,55 @@ test("a run whose lease is gone before its deploy does not deploy", async () => 
   expect(outcome.ok).toBe(false);
   if (!outcome.ok) expect(outcome.error).toContain("lease");
   expect(deploys).toBe(0);
+  p.close();
+});
+
+test("a lease lost during the uploads stops the run before the deployment POST", async () => {
+  const pages = fakePages();
+  const ctx = await setup({ target: target(pages), dataSite: pages.site });
+  await approvedPhoto(ctx, 25);
+  const stealing: FetchLike = async (url, init) => {
+    if (url.endsWith("/pages/assets/upsert-hashes")) {
+      await ctx.db
+        .update(bundle_state)
+        .set({ publishing_owner: "thief" })
+        .where(eq(bundle_state.campus_id, "sbu"));
+    }
+    return pages.fetch(url, init);
+  };
+  const p = publisherOn(
+    ctx,
+    pages,
+    pagesTarget({ accountId: "acc", apiToken: "t", project: "perch-data", fetch: stealing }),
+  );
+  const outcome = await p.runNow();
+  expect(outcome.ok).toBe(false);
+  if (!outcome.ok) expect(outcome.error).toContain("lease");
+  expect(pages.deployments).toHaveLength(0);
+  p.close();
+});
+
+test("after a deployment POST that did not answer, the lease is held a while longer", async () => {
+  const pages = fakePages();
+  const ctx = await setup({ target: target(pages), dataSite: pages.site });
+  const dropping: FetchLike = async (url, init) => {
+    if (url.endsWith("/deployments")) throw new Error("socket hang up");
+    return pages.fetch(url, init);
+  };
+  const p = publisherOn(
+    ctx,
+    pages,
+    pagesTarget({ accountId: "acc", apiToken: "t", project: "perch-data", fetch: dropping }),
+  );
+  expect((await p.runNow()).ok).toBe(false);
+  const [held] = await ctx.db
+    .select({
+      held: sql<boolean>`${bundle_state.publishing_until} > now() + interval '60 seconds'`,
+    })
+    .from(bundle_state)
+    .where(eq(bundle_state.campus_id, "sbu"));
+  expect(held?.held).toBe(true);
+  // Another process waits it out.
+  expect((await ctx.publisher.runNow()).ok).toBe(false);
   p.close();
 });

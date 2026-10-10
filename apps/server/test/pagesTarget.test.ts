@@ -248,3 +248,66 @@ test("a file whose bytes cannot be read when needed fails before any deployment"
   ).rejects.toThrow("photo abc is gone");
   expect(cf.calls.some((c) => c.url === `${PROJECT}/deployments`)).toBe(false);
 });
+
+test("a failing beforeDeployment hook stops the deploy before the deployment POST", async () => {
+  const cf = fakeCloudflare((hashes) => hashes);
+  const target = pagesTarget({
+    accountId: "acc",
+    apiToken: "t",
+    project: "perch-data",
+    fetch: cf.fetch,
+  });
+  await expect(
+    target.deploy(files({ photo: 0 }), {
+      beforeDeployment: async () => {
+        throw new Error("publish lease lost");
+      },
+    }),
+  ).rejects.toThrow("publish lease lost");
+  expect(cf.calls.some((c) => c.url === `${PROJECT}/deployments`)).toBe(false);
+  expect(cf.calls.some((c) => c.url === `${CF_API}/pages/assets/upsert-hashes`)).toBe(true);
+});
+
+/** A Cloudflare that never answers, except by honoring the abort signal. */
+const hung: FetchLike = (_url, init) =>
+  new Promise((_resolve, reject) => {
+    init.signal?.addEventListener("abort", () => reject(new Error("aborted")));
+  });
+
+test("every Cloudflare call has a timeout", async () => {
+  const target = pagesTarget({
+    accountId: "acc",
+    apiToken: "t",
+    project: "perch-data",
+    fetch: hung,
+    callTimeoutMs: 20,
+  });
+  await expect(target.deploy(files({ photo: 0 }))).rejects.toThrow();
+});
+
+test("a deploy past its total budget stops before the deployment POST", async () => {
+  const cf = fakeCloudflare((hashes) => hashes);
+  let now = 0;
+  const slow: FetchLike = async (url, init) => {
+    now += 400;
+    return cf.fetch(url, init);
+  };
+  const target = pagesTarget({
+    accountId: "acc",
+    apiToken: "t",
+    project: "perch-data",
+    fetch: slow,
+    budgetMs: 1000,
+    now: () => now,
+  });
+  await expect(target.deploy(files({ photo: 0 }))).rejects.toThrow("budget");
+  expect(cf.calls.some((c) => c.url === `${PROJECT}/deployments`)).toBe(false);
+});
+
+test("the default budget leaves room inside the publish lease", async () => {
+  const { PAGES_DEPLOY_BUDGET_MS, PAGES_CALL_TIMEOUT_MS } = await import(
+    "../src/publish/pagesTarget.ts"
+  );
+  const { PUBLISH_LEASE_MS } = await import("../src/publish/publisher.ts");
+  expect(PAGES_DEPLOY_BUDGET_MS + PAGES_CALL_TIMEOUT_MS).toBeLessThanOrEqual(PUBLISH_LEASE_MS / 2);
+});

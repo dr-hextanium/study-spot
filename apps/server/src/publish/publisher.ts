@@ -42,6 +42,8 @@ export const PUBLISH_RETRY_MS: readonly number[] = [60_000, 120_000, 300_000];
  */
 export const PUBLISH_LEASE_MS = 10 * 60_000;
 export const PUBLISH_BUSY = "another publish is running";
+/** How long the lease is kept after a deployment POST that did not answer. */
+const POST_SETTLE_SECS = 120;
 
 /** Scheduling seam: real timers in production, a manual fake in tests. */
 export type Timers = { after(ms: number, fn: () => void): () => void };
@@ -169,11 +171,17 @@ export function createPublisher(deps: PublisherDeps): Publisher {
     );
   }
 
-  async function releaseLease(owner: string): Promise<void> {
+  async function releaseLease(owner: string, holdSecs: number): Promise<void> {
     try {
       await deps.db
         .update(bundle_state)
-        .set({ publishing_owner: null, publishing_until: null })
+        .set(
+          holdSecs > 0
+            ? {
+                publishing_until: sql`now() + make_interval(secs => ${holdSecs}::double precision)`,
+              }
+            : { publishing_owner: null, publishing_until: null },
+        )
         .where(
           and(eq(bundle_state.campus_id, deps.campusId), eq(bundle_state.publishing_owner, owner)),
         );
@@ -309,6 +317,8 @@ export function createPublisher(deps: PublisherDeps): Publisher {
     firstPendingAt = null;
     const owner = randomUUID();
     let leased = false;
+    /** True from the lease renewal before the deployment POST until the deploy returns. */
+    let posting = false;
     try {
       leased = await claimLease(owner);
       if (!leased) {
@@ -374,7 +384,13 @@ export function createPublisher(deps: PublisherDeps): Publisher {
       ];
       await deps.beforeDeploy?.();
       await renewLease(owner);
-      const { uploaded } = await deps.target.deploy(files);
+      const { uploaded } = await deps.target.deploy(files, {
+        beforeDeployment: async () => {
+          await renewLease(owner);
+          posting = true;
+        },
+      });
+      posting = false;
       const offloaded = await offloadConfirmed(
         photoFiles.filter((p) => !p.cleared).map((p) => p.sha),
         startedAt,
@@ -438,7 +454,9 @@ export function createPublisher(deps: PublisherDeps): Publisher {
       }
       return { ok: false, error: message };
     } finally {
-      if (leased) await releaseLease(owner);
+      // A deployment POST that failed or timed out may still land at Cloudflare a little
+      // later, so the lease is held a while longer instead of freed for another run.
+      if (leased) await releaseLease(owner, posting ? POST_SETTLE_SECS : 0);
     }
   }
 

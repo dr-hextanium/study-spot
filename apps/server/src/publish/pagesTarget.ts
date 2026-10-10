@@ -18,6 +18,13 @@ export const CF_API = "https://api.cloudflare.com/client/v4";
 /** wrangler's per-request upload bucket limits. */
 const MAX_BATCH_BYTES = 40 * 1024 * 1024;
 const MAX_BATCH_FILES = 2000;
+/** One Cloudflare call, body included. */
+export const PAGES_CALL_TIMEOUT_MS = 60_000;
+/**
+ * A whole deploy. With one call's timeout on top it stays well inside the publish
+ * lease (PUBLISH_LEASE_MS), which is renewed again right before the deployment POST.
+ */
+export const PAGES_DEPLOY_BUDGET_MS = 4 * 60_000;
 
 /** Pages asset key: blake3 of base64(content) + extension (no dot), first 32 hex chars. */
 export function pagesHash(bytes: Uint8Array, path: string): string {
@@ -41,16 +48,28 @@ export type PagesTargetOptions = {
   apiToken: string;
   project: string;
   fetch?: FetchLike;
+  callTimeoutMs?: number;
+  budgetMs?: number;
+  now?: () => number;
 };
 
 export function pagesTarget(opts: PagesTargetOptions): PublishTarget {
   const doFetch: FetchLike = opts.fetch ?? ((url, init) => fetch(url, init));
+  const callTimeoutMs = opts.callTimeoutMs ?? PAGES_CALL_TIMEOUT_MS;
+  const budgetMs = opts.budgetMs ?? PAGES_DEPLOY_BUDGET_MS;
+  const now = opts.now ?? (() => Date.now());
+  /** Set at the start of each deploy. */
+  let deadline = Number.POSITIVE_INFINITY;
   // Content-addressed paths never change, so their hash is computed once per process.
   const hashCache = new Map<string, string>();
   const projectUrl = `${CF_API}/accounts/${opts.accountId}/pages/projects/${opts.project}`;
 
   async function call<T>(url: string, init: RequestInit, schema: z.ZodType<T>): Promise<T> {
-    const res = await doFetch(url, init);
+    const remaining = deadline - now();
+    if (remaining <= 0) throw new Error(`Pages deploy went over its ${budgetMs} ms budget`);
+    // The signal also bounds reading the body.
+    const signal = AbortSignal.timeout(Math.min(callTimeoutMs, remaining));
+    const res = await doFetch(url, { ...init, signal });
     const text = await res.text();
     let json: unknown;
     try {
@@ -76,7 +95,8 @@ export function pagesTarget(opts: PagesTargetOptions): PublishTarget {
   }
 
   return {
-    async deploy(files) {
+    async deploy(files, deployOpts) {
+      deadline = now() + budgetMs;
       const { jwt } = await call(
         `${projectUrl}/upload-token`,
         { headers: { authorization: `Bearer ${opts.apiToken}` } },
@@ -141,6 +161,9 @@ export function pagesTarget(opts: PagesTargetOptions): PublishTarget {
       await call(`${CF_API}/pages/assets/upsert-hashes`, jsonPost(jwt, { hashes }), z.unknown());
 
       const manifest = Object.fromEntries(assets.map((a) => [`/${a.file.path}`, a.hash]));
+      // Checked here, not only before the deploy started: a slow upload must not let a
+      // stale manifest land after another process took the lease.
+      await deployOpts?.beforeDeployment?.();
       const form = new FormData();
       form.append("manifest", JSON.stringify(manifest));
       if (headersFile !== null) form.append("_headers", new Blob([headersFile]), "_headers");

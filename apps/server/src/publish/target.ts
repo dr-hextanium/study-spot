@@ -19,7 +19,18 @@ export type DeployResult = { uploaded: string[]; skipped: string[] };
  * that replaces the whole site (Cloudflare Pages) needs all of it, and a target
  * that adds files (a directory) may skip immutable files it already has.
  */
-export type PublishTarget = { deploy(files: readonly PublishFile[]): Promise<DeployResult> };
+export type PublishTarget = {
+  deploy(files: readonly PublishFile[], opts?: DeployOptions): Promise<DeployResult>;
+};
+
+export type DeployOptions = {
+  /**
+   * Runs right before the step that changes what the site serves (the Pages
+   * deployment POST, the pointer write). If it throws, the deploy stops there.
+   * The publisher renews its lease here.
+   */
+  beforeDeployment?: () => Promise<void>;
+};
 
 /** Paths whose content can change between publishes. Everything else is content-addressed. */
 export const MUTABLE_PATHS: ReadonlySet<string> = new Set(["bundle-latest.json", "_headers"]);

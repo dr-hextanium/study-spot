@@ -18,11 +18,12 @@ async function exists(path: string): Promise<boolean> {
  */
 export function fsTarget(dir: string): PublishTarget {
   return {
-    async deploy(files) {
+    async deploy(files, opts) {
       const uploaded: string[] = [];
       const skipped: string[] = [];
       for (const file of files) {
         const dest = join(dir, file.path);
+        if (file.path === "bundle-latest.json") await opts?.beforeDeployment?.();
         if (!MUTABLE_PATHS.has(file.path) && (await exists(dest))) {
           skipped.push(file.path);
           continue;
