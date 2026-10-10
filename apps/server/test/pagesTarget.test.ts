@@ -311,3 +311,66 @@ test("the default budget leaves room inside the publish lease", async () => {
   const { PUBLISH_LEASE_MS } = await import("../src/publish/publisher.ts");
   expect(PAGES_DEPLOY_BUDGET_MS + PAGES_CALL_TIMEOUT_MS).toBeLessThanOrEqual(PUBLISH_LEASE_MS / 2);
 });
+
+test("the deployment POST gets a full call timeout, however little budget is left", async () => {
+  const cf = fakeCloudflare((hashes) => hashes);
+  let now = 0;
+  const fetch: FetchLike = async (url, init) => {
+    now += 300;
+    if (url === `${PROJECT}/deployments`) {
+      // Slower than what is left of the budget, well inside one call's timeout.
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(resolve, 150);
+        init.signal?.addEventListener("abort", () => {
+          clearTimeout(timer);
+          reject(new Error("aborted"));
+        });
+      });
+    }
+    return cf.fetch(url, init);
+  };
+  const target = pagesTarget({
+    accountId: "acc",
+    apiToken: "t",
+    project: "perch-data",
+    fetch,
+    callTimeoutMs: 5000,
+    // Five calls at 300 each: 50 ms of budget is left for the POST.
+    budgetMs: 1250,
+    now: () => now,
+  });
+  await expect(target.deploy(files({ photo: 0 }))).resolves.toBeDefined();
+  expect(cf.calls.some((c) => c.url === `${PROJECT}/deployments`)).toBe(true);
+});
+
+test("each deploy keeps its own deadline", async () => {
+  const cf = fakeCloudflare((hashes) => hashes);
+  let now = 0;
+  let release: () => void = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let first = true;
+  const fetch: FetchLike = async (url, init) => {
+    if (first) {
+      first = false;
+      await gate;
+    }
+    return cf.fetch(url, init);
+  };
+  const target = pagesTarget({
+    accountId: "acc",
+    apiToken: "t",
+    project: "perch-data",
+    fetch,
+    budgetMs: 1000,
+    now: () => now,
+  });
+  const a = target.deploy(files({ photo: 0 }));
+  now = 500;
+  await target.deploy(files({ photo: 0 }));
+  // A started at 0 with a 1000 ms budget; B starting later must not extend it.
+  now = 1200;
+  release();
+  await expect(a).rejects.toThrow("budget");
+});

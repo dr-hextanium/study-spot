@@ -58,17 +58,18 @@ export function pagesTarget(opts: PagesTargetOptions): PublishTarget {
   const callTimeoutMs = opts.callTimeoutMs ?? PAGES_CALL_TIMEOUT_MS;
   const budgetMs = opts.budgetMs ?? PAGES_DEPLOY_BUDGET_MS;
   const now = opts.now ?? (() => Date.now());
-  /** Set at the start of each deploy. */
-  let deadline = Number.POSITIVE_INFINITY;
   // Content-addressed paths never change, so their hash is computed once per process.
   const hashCache = new Map<string, string>();
   const projectUrl = `${CF_API}/accounts/${opts.accountId}/pages/projects/${opts.project}`;
 
-  async function call<T>(url: string, init: RequestInit, schema: z.ZodType<T>): Promise<T> {
-    const remaining = deadline - now();
-    if (remaining <= 0) throw new Error(`Pages deploy went over its ${budgetMs} ms budget`);
+  async function call<T>(
+    url: string,
+    init: RequestInit,
+    schema: z.ZodType<T>,
+    timeoutMs: number,
+  ): Promise<T> {
     // The signal also bounds reading the body.
-    const signal = AbortSignal.timeout(Math.min(callTimeoutMs, remaining));
+    const signal = AbortSignal.timeout(timeoutMs);
     const res = await doFetch(url, { ...init, signal });
     const text = await res.text();
     let json: unknown;
@@ -96,11 +97,19 @@ export function pagesTarget(opts: PagesTargetOptions): PublishTarget {
 
   return {
     async deploy(files, deployOpts) {
-      deadline = now() + budgetMs;
+      // Local to this deploy, so a later deploy on the same target cannot extend it.
+      const deadline = now() + budgetMs;
+      /** One call's timeout, cut to what is left of the budget; throws once it is spent. */
+      const budgeted = (): number => {
+        const remaining = deadline - now();
+        if (remaining <= 0) throw new Error(`Pages deploy went over its ${budgetMs} ms budget`);
+        return Math.min(callTimeoutMs, remaining);
+      };
       const { jwt } = await call(
         `${projectUrl}/upload-token`,
         { headers: { authorization: `Bearer ${opts.apiToken}` } },
         z.object({ jwt: z.string().min(1) }),
+        budgeted(),
       );
 
       let headersFile: string | null = null;
@@ -122,6 +131,7 @@ export function pagesTarget(opts: PagesTargetOptions): PublishTarget {
           `${CF_API}/pages/assets/check-missing`,
           jsonPost(jwt, { hashes }),
           z.array(z.string()),
+          budgeted(),
         ),
       );
 
@@ -132,7 +142,7 @@ export function pagesTarget(opts: PagesTargetOptions): PublishTarget {
       let batchBytes = 0;
       const flush = async (): Promise<void> => {
         if (batch.length === 0) return;
-        await call(`${CF_API}/pages/assets/upload`, jsonPost(jwt, batch), z.unknown());
+        await call(`${CF_API}/pages/assets/upload`, jsonPost(jwt, batch), z.unknown(), budgeted());
         batch = [];
         batchBytes = 0;
       };
@@ -158,11 +168,17 @@ export function pagesTarget(opts: PagesTargetOptions): PublishTarget {
         uploaded.push(file.path);
       }
       await flush();
-      await call(`${CF_API}/pages/assets/upsert-hashes`, jsonPost(jwt, { hashes }), z.unknown());
+      await call(
+        `${CF_API}/pages/assets/upsert-hashes`,
+        jsonPost(jwt, { hashes }),
+        z.unknown(),
+        budgeted(),
+      );
 
       const manifest = Object.fromEntries(assets.map((a) => [`/${a.file.path}`, a.hash]));
       // Checked here, not only before the deploy started: a slow upload must not let a
       // stale manifest land after another process took the lease.
+      budgeted();
       await deployOpts?.beforeDeployment?.();
       const form = new FormData();
       form.append("manifest", JSON.stringify(manifest));
@@ -171,6 +187,9 @@ export function pagesTarget(opts: PagesTargetOptions): PublishTarget {
         `${projectUrl}/deployments`,
         { method: "POST", headers: { authorization: `Bearer ${opts.apiToken}` }, body: form },
         z.object({ id: z.string() }),
+        // The lease was just renewed, so the POST gets a whole call's time rather than
+        // a sliver of budget that could abort a deployment Cloudflare then applies.
+        callTimeoutMs,
       );
       return { uploaded, skipped };
     },
