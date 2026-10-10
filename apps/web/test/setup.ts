@@ -17,5 +17,6 @@ if (typeof HTMLDialogElement !== "undefined" && !("showModal" in HTMLDialogEleme
 
 afterEach(() => {
   cleanup();
-  sessionStorage.clear();
+  // Node 24 (CI) has no sessionStorage outside jsdom; node-environment tests skip it.
+  if (typeof sessionStorage !== "undefined") sessionStorage.clear();
 });
