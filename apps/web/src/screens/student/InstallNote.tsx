@@ -12,7 +12,8 @@ import {
   promptInstall,
   subscribeInstallPrompt,
 } from "../../app/installPrompt.ts";
-import { isIos, isStandalone } from "../../lib/platform.ts";
+import { useIsIos } from "../../hooks/useIsIos.ts";
+import { isStandalone } from "../../lib/platform.ts";
 import { Banner } from "../../ui/Banner.tsx";
 import { Button } from "../../ui/Button.tsx";
 import "./install.css";
@@ -26,8 +27,8 @@ export function InstallNote() {
   const { prefs } = useDeps();
   const [state, setState] = useState<InstallState>(() => readInstall(prefs));
   const available = useSyncExternalStore(subscribeInstallPrompt, installPromptAvailable);
+  const ios = useIsIos();
   if (!shouldOfferInstall(state, isStandalone(window))) return null;
-  const ios = isIos(window.navigator);
   if (!available && !ios) return null;
   const dismiss = (): void => {
     dismissInstall(prefs);

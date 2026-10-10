@@ -4,9 +4,9 @@ import { Link } from "@tanstack/react-router";
 import { X } from "lucide-react";
 import { useState } from "react";
 import { useDeps } from "../../app/AppProvider.tsx";
+import { useIsIos } from "../../hooks/useIsIos.ts";
 import { type DrawResult, useQuickPick } from "../../hooks/useQuickPick.ts";
 import { useToasts } from "../../hooks/useToasts.tsx";
-import { isIos } from "../../lib/platform.ts";
 import { Banner } from "../../ui/Banner.tsx";
 import { IconButton } from "../../ui/Button.tsx";
 import { Screen } from "../../ui/Screen.tsx";
@@ -24,6 +24,7 @@ export function Home() {
   const q = useQuickPick(custom);
   const { pickPing } = deps;
   const toasts = useToasts();
+  const ios = useIsIos();
   const say = (r: DrawResult) => {
     if (r === "same") toasts.show(t("student.pick.only_one"));
     if (r === "none") toasts.show(t("student.pick.none_left"));
@@ -57,7 +58,7 @@ export function Home() {
                     ? t("student.pick.surprise_heading")
                     : t("student.pick.heading")
                 }
-                directions={directionsUrl(q.pick.primary.spot, isIos(navigator))}
+                directions={directionsUrl(q.pick.primary.spot, ios)}
                 // The one moment a pick counts: never on render, reroll or surprise.
                 onDirections={() => {
                   if (q.pick !== null) pickPing(q.pick.primary.spot.id);

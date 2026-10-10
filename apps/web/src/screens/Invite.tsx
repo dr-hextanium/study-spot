@@ -5,9 +5,10 @@ import { Smartphone, User } from "lucide-react";
 import { useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { OWNER_KEY, QueueOwner } from "../app/deps.ts";
+import { useIsIos } from "../hooks/useIsIos.ts";
 import { useOnline } from "../hooks/useOnline.ts";
 import { useSession } from "../hooks/useSession.ts";
-import { isIos, isStandalone } from "../lib/platform.ts";
+import { isStandalone } from "../lib/platform.ts";
 import { Banner } from "../ui/Banner.tsx";
 import { Button } from "../ui/Button.tsx";
 import { TextField } from "../ui/Field.tsx";
@@ -43,7 +44,7 @@ export function Invite(props: { token: string; relogin: boolean }) {
   const [problem, setProblem] = useState<Problem>(tokenOk ? null : "invalid");
   /** The server accepted the link (it is spent) but a different surveyor holds this phone's queue. */
   const [held, setHeld] = useState<{ accepted: AcceptInviteResponse; owner: string } | null>(null);
-  const ios = isIos(navigator) && !isStandalone(window);
+  const ios = useIsIos() && !isStandalone(window);
 
   async function accept() {
     const display = name.trim();
