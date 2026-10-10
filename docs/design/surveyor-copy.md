@@ -747,6 +747,31 @@ Every Home string, including the presenters Home shares with the spot page and B
 | student.home.filters.clear | Clear | 8 | |
 | student.home.filters.done | Done | 8 | |
 
+### Home results
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.pick.heading | Your pick | 12 | |
+| student.pick.surprise_heading | Surprise pick | 16 | |
+| student.pick.alternates | Or try | 10 | |
+| student.pick.directions | Directions | 12 | primary, opens maps |
+| student.pick.something_else | Something else | 16 | reroll inside the filters |
+| student.pick.surprise | Surprise me | 14 | ignores the preset, keeps the hard rules |
+| student.pick.only_one | That's the only good match right now. | 44 | toast |
+| student.pick.none_left | Nothing else is open for that long. | 40 | toast |
+| student.empty.title | Nothing fits right now. | 28 | |
+| student.empty.closest | Closest open spot: {spot}, {minutes} min away. | 60 | |
+| student.empty.none_open | Nothing on campus is open for that long. | 48 | |
+| student.empty.loosen.preset | Try fewer filters, or let Perch surprise you. | 52 | |
+| student.empty.loosen.group | Try a smaller group. | 28 | |
+| student.empty.loosen.time | Try a shorter time. | 28 | |
+| student.empty.loosen.access | Set your access to see more spots. | 40 | |
+| student.empty.try_short | Try 30 min | 12 | |
+| student.home.access.note | In campus housing or a grad student? Set your access. | 60 | never says "live" |
+| student.home.access.action | Set access | 12 | |
+| student.home.access.dismiss | Not now | 10 | |
+| student.data.reload | Reload | 8 | |
+
 ## Pending questions
 
 - Floor naming at Stony Brook (e.g. "Lower level" vs "B") should come from the first survey walk; the floor field is free text for now.

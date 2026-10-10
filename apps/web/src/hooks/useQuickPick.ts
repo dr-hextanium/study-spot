@@ -173,8 +173,8 @@ export function useQuickPick(custom: readonly Preset[]): QuickPick {
     preset,
     mode,
     pick,
-    empty:
-      ranks !== null && ranks.quick.ranked.length === 0 ? explainEmpty(ranks.quick, access) : null,
+    // A surprise pick can stand in for an empty quick pick: then there is nothing to explain.
+    empty: ranks !== null && pick === null ? explainEmpty(ranks.quick, access) : null,
     set,
     somethingElse: () => drawFrom(ranks?.quick.ranked, "pick"),
     surprise: () => drawFrom(ranks?.surprise.ranked, "surprise"),

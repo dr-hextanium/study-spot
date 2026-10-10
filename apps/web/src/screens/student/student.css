@@ -3,3 +3,64 @@
 .query__more {
   padding: var(--space-field) 0 0;
 }
+
+/* The pick reuses the Keep going card, stacked, and is not itself pressable: its name and
+   buttons are. Without this, pressing a button inside would press the whole card. */
+.keep.pick-card {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-xxs);
+}
+
+.keep.pick-card:active {
+  background: transparent;
+  transform: none;
+}
+
+@media (hover: hover) {
+  .keep.pick-card:hover {
+    border-color: var(--color-line);
+  }
+}
+
+.pick-card__name {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pick-card__facts {
+  margin: var(--space-xs) 0 0;
+}
+
+/* Required and never cut short: it says whether the busyness is typical or an estimate. */
+.pick-card__busy {
+  margin: 0;
+  font-weight: 600;
+}
+
+.pick-card__reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xxs);
+  margin: var(--space-xs) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pick-card__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+
+.pick-card__actions > .btn--primary {
+  grid-column: 1 / -1;
+}
+
+/* An alternate's sub line carries the busyness basis ("typical", "estimate"): wrap, never cut. */
+.pick-alts .row__sub {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
