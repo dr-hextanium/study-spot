@@ -13,7 +13,7 @@
 .browse__end {
   display: grid;
   justify-items: end;
-  gap: 2px;
+  gap: calc(var(--space-xxs) / 2);
   color: var(--color-muted);
   font-size: var(--fontSize-small);
   text-align: right;
@@ -32,8 +32,8 @@
 
 /* The map: its frame and the pins. Pins use only the four palette colors and their mixes. */
 .map {
-  height: min(60vh, 520px);
-  min-height: 320px;
+  height: min(60vh, calc(var(--space-xl) * 16));
+  min-height: calc(var(--space-xl) * 10);
   margin-top: var(--space-xs);
   border-radius: var(--radius-m);
   overflow: hidden;
@@ -50,8 +50,8 @@
 .pin {
   display: inline-block;
   flex: none;
-  width: 28px;
-  height: 28px;
+  width: calc(var(--space-lg) + var(--space-xxs));
+  height: calc(var(--space-lg) + var(--space-xxs));
   padding: 0;
   border: 1px solid var(--color-edge);
   border-radius: var(--radius-pill);
@@ -61,11 +61,11 @@ button.pin {
   cursor: pointer;
 }
 
-/* The 44 px hit area, on the map's pin buttons only (the legend's swatches are not controls). */
+/* The 44 px hit area (28 + 2 x 8), on the map's pin buttons only (the legend's swatches are not controls). */
 button.pin::before {
   content: "";
   position: absolute;
-  inset: -8px;
+  inset: calc(var(--space-xs) * -1);
 }
 
 .pin--empty {
@@ -95,7 +95,7 @@ button.pin::before {
 
 .pin[aria-pressed="true"],
 .pin:focus-visible {
-  outline: 3px solid var(--color-red);
+  outline: 2px solid var(--color-red);
   outline-offset: 2px;
 }
 
@@ -120,8 +120,8 @@ button.pin::before {
 }
 
 .map-legend .pin {
-  width: 16px;
-  height: 16px;
+  width: var(--space-md);
+  height: var(--space-md);
 }
 
 .map-card {

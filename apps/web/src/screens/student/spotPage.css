@@ -16,7 +16,7 @@
 }
 
 .spot-actions .btn {
-  flex: 1 1 140px;
+  flex: 1 1 calc(var(--size-tapTarget) * 3);
 }
 
 .spot-body {
@@ -40,22 +40,23 @@
 
 .forecast__plot {
   position: relative;
-  padding-top: 22px;
+  /* Room for the hour label over the bars. */
+  padding-top: var(--space-lg);
 }
 
 .forecast__bars {
   position: relative;
   display: flex;
   align-items: flex-end;
-  gap: 2px;
-  height: 96px;
+  gap: calc(var(--space-xxs) / 2);
+  height: calc(var(--space-lg) * 4);
 }
 
 .forecast__bar {
   --bar: var(--bar-measured);
   flex: 1 1 0;
   min-width: 0;
-  border-radius: 2px 2px 0 0;
+  border-radius: calc(var(--radius-s) / 4) calc(var(--radius-s) / 4) 0 0;
 }
 
 .forecast__bar--measured {
@@ -78,8 +79,12 @@
 
 .forecast__now {
   position: absolute;
-  top: -22px;
-  left: clamp(36px, calc((var(--hour, 0) + 0.5) * 100% / 24), calc(100% - 36px));
+  top: calc(var(--space-lg) * -1);
+  left: clamp(
+    var(--size-tag),
+    calc((var(--hour, 0) + 0.5) * 100% / 24),
+    calc(100% - var(--size-tag))
+  );
   transform: translateX(-50%);
   color: var(--color-ink);
   font-size: var(--fontSize-small);
@@ -90,14 +95,14 @@
 
 .forecast__axis {
   position: relative;
-  height: 20px;
+  height: var(--space-field);
   margin-top: var(--space-xxs);
   border-top: 1px solid var(--color-line);
 }
 
 .forecast__tick {
   position: absolute;
-  top: 4px;
+  top: var(--space-xxs);
   left: calc(var(--hour, 0) * 100% / 24);
   color: var(--color-muted);
   font-size: var(--fontSize-small);
@@ -125,9 +130,9 @@
 .forecast__swatch {
   --bar: var(--bar-measured);
   display: inline-block;
-  width: 16px;
-  height: 12px;
-  border-radius: 2px;
+  width: var(--space-md);
+  height: var(--space-sm);
+  border-radius: calc(var(--radius-s) / 4);
 }
 
 .forecast__caption {
