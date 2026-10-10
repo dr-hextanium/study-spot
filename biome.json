@@ -24,6 +24,7 @@
     "rules": {
       "recommended": true,
       "suspicious": { "noExplicitAny": "error" },
+      "correctness": { "useHookAtTopLevel": "error" },
       "style": { "noNonNullAssertion": "error" }
     }
   },

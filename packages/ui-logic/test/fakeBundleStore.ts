@@ -11,3 +11,27 @@ export function staticBundleStore(state: BundleState, now: () => Date): BundleSt
     stop: () => {},
   };
 }
+
+/** A store whose state a test moves on (loading, then ready), telling subscribers each time. */
+export function settableBundleStore(
+  initial: BundleState,
+  now: () => Date,
+): BundleStore & { set(next: BundleState): void } {
+  let state = initial;
+  const listeners = new Set<() => void>();
+  return {
+    getSnapshot: () => state,
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    start: async () => {},
+    refresh: async () => {},
+    now,
+    stop: () => {},
+    set(next) {
+      state = next;
+      for (const l of listeners) l();
+    },
+  };
+}
