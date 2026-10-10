@@ -51,3 +51,28 @@ test("useCampusNow ticks every minute and when the page returns", () => {
     vi.useRealTimers();
   }
 });
+
+test("useCampusNow takes the corrected time as soon as the store learns the skew", () => {
+  const app = testApp({ me: null, now: "2026-10-10T09:00:00Z" });
+  let skewMs = 0;
+  const listeners = new Set<() => void>();
+  app.deps.bundle = {
+    ...app.deps.bundle,
+    now: () => new Date(app.clock.now().getTime() + skewMs),
+    subscribe: (l) => {
+      listeners.add(l);
+      return () => {
+        listeners.delete(l);
+      };
+    },
+  };
+  const { result } = renderHook(() => useCampusNow(), {
+    wrapper: ({ children }) => <AppProvider deps={app.deps}>{children}</AppProvider>,
+  });
+  expect(result.current.toISOString()).toBe("2026-10-10T09:00:00.000Z");
+  skewMs = 3 * 24 * 3_600_000;
+  act(() => {
+    for (const l of listeners) l();
+  });
+  expect(result.current.toISOString()).toBe("2026-10-13T09:00:00.000Z");
+});
