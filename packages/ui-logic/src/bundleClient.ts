@@ -1,7 +1,12 @@
-import { BUNDLE_SCHEMA_MAJOR, type Bundle, BundlePointer, parseBundle } from "@perch/core";
+import {
+  BUNDLE_SCHEMA_MAJOR,
+  type Bundle,
+  BundlePointer,
+  clockSkewMs,
+  parseBundle,
+} from "@perch/core";
 import { z } from "zod";
 import type { Clock, Fetch, KeyValueCache } from "./adapters.ts";
-import { clockSkewMs } from "./clockSkew.ts";
 
 /** Cache key for the last good bundle, one per campus base URL. */
 export function lastGoodKey(baseUrl: string): string {
