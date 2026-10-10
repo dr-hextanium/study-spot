@@ -22,11 +22,22 @@ export function DataState(props: { state: BundleState }) {
             <Skel w="40%" />
           </span>
         </span>
-        <Skel kind="control" w="100%" />
-        <span className="chips">
-          {["96px", "72px", "64px", "88px"].map((w) => (
-            <Skel key={w} kind="chip" w={w} />
-          ))}
+        {/* Two chip lines, How long and What for, then the More filters row. */}
+        {[
+          ["64px", "48px", "48px", "80px"],
+          ["96px", "64px", "56px", "88px"],
+        ].map((widths) => (
+          <span key={widths.join()} className="chips">
+            {widths.map((w) => (
+              <Skel key={w} kind="chip" w={w} />
+            ))}
+          </span>
+        ))}
+        <span className="row skel-row">
+          <Skel kind="icon" />
+          <span className="row__text">
+            <Skel w="32%" />
+          </span>
         </span>
         <span className="group-heading">
           <Skel kind="heading" w="32%" />
