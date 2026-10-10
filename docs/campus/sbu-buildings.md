@@ -221,6 +221,10 @@ Left out on purpose (not places a student would start or study from):
 - `mendelsohn-rcc`: SBU says it is in Gray Hall; no OSM match, point is Gray College
 - `west-rcc`: SBU names it (attached to Building E, area office); no OSM match, point is the West Apartments centre
 
+## Community center spots
+
+The bootstrap also adds one draft spot per community center above (`BOOTSTRAP_SPOTS` in `sbu.ts`): deVries, Tabler, Roth, Benedict, Mendelsohn, West E Commons and Chapin Commons. Each has its name, building and the building's point, a blank floor, and nothing verified. They show in the survey app as drafts; a surveyor sets the floor and point, surveys each section, and publishes. A rerun only adds a missing slug and never changes an existing spot.
+
 ## Walk matrix
 
 Not part of this bootstrap. `buildBundle` builds a full matrix and falls back to flagged straight-line estimates for any missing pair, so an empty `walk_matrix` is valid until the walk matrix task.

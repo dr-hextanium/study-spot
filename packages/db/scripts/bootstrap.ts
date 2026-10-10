@@ -14,6 +14,9 @@ try {
   console.log(`campus: ${report.campus}`);
   console.log(line("terms", report.terms));
   console.log(line("buildings", report.buildings));
+  console.log(
+    `spots: ${report.spots.inserted} draft inserted, ${report.spots.unchanged} already there`,
+  );
 } finally {
   await close();
 }

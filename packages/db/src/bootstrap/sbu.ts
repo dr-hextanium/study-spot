@@ -716,3 +716,67 @@ export const BOOTSTRAP_BUILDINGS = [
   { id: "wolfie-s-hut", campus_id: "sbu", name: "Wolfie's Hut", lat: 40.8966985, lng: -73.1265875 },
   { id: "yang-hall", campus_id: "sbu", name: "Yang Hall", lat: 40.9125097, lng: -73.1291023 },
 ];
+
+/**
+ * One draft spot per residential community center, so surveyors find them in
+ * the survey app. Identity only: floor is blank and nothing is verified until a
+ * surveyor saves each section. Drafts never reach the student bundle.
+ */
+export const BOOTSTRAP_SPOTS = [
+  {
+    slug: "devries-center",
+    building_id: "roosevelt-rcc",
+    official_name: "Alan S. deVries Center",
+    floor: "",
+    lat: 40.9121593,
+    lng: -73.1299618,
+  },
+  {
+    slug: "tabler-community-center",
+    building_id: "tabler-rcc",
+    official_name: "Tabler Community Center",
+    floor: "",
+    lat: 40.9098669,
+    lng: -73.127097,
+  },
+  {
+    slug: "roth-community-center",
+    building_id: "roth-rcc",
+    official_name: "Roth Community Center",
+    floor: "",
+    lat: 40.911359,
+    lng: -73.123898,
+  },
+  {
+    slug: "benedict-community-center",
+    building_id: "h-rcc",
+    official_name: "Benedict Community Center",
+    floor: "",
+    lat: 40.9195968,
+    lng: -73.1186016,
+  },
+  {
+    slug: "mendelsohn-center",
+    building_id: "mendelsohn-rcc",
+    official_name: "Mendelsohn Center",
+    floor: "",
+    lat: 40.9177462,
+    lng: -73.1212657,
+  },
+  {
+    slug: "west-e-commons",
+    building_id: "west-rcc",
+    official_name: "West E Commons",
+    floor: "",
+    lat: 40.9124569,
+    lng: -73.1346847,
+  },
+  {
+    slug: "chapin-commons",
+    building_id: "chapin-rcc",
+    official_name: "Chapin Commons",
+    floor: "",
+    lat: 40.9080987,
+    lng: -73.1102916,
+  },
+];
