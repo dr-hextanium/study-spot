@@ -605,6 +605,173 @@ Strings the built screens needed beyond the sections above: short header forms f
 | student.me.title | Me | 6 | large title |
 | student.data.loading | Loading spots | 20 | skeleton status |
 
+## Student: Home
+
+Every Home string, including the presenters Home shares with the spot page and Browse. Honesty: every busyness line says typical, estimate, or no data, and none says live.
+
+### Busyness
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.busy.typical.empty | Usually empty, typical {when} | 40 | measured slot |
+| student.busy.typical.some | Usually some seats, typical {when} | 44 | |
+| student.busy.typical.filling | Usually filling up, typical {when} | 44 | |
+| student.busy.typical.nearly_full | Usually nearly full, typical {when} | 44 | |
+| student.busy.typical.full | Usually full, typical {when} | 40 | |
+| student.busy.estimate.empty | Empty, estimate | 24 | surveyor estimate |
+| student.busy.estimate.some | Some seats, estimate | 24 | |
+| student.busy.estimate.filling | Filling up, estimate | 24 | |
+| student.busy.estimate.nearly_full | Nearly full, estimate | 24 | |
+| student.busy.estimate.full | Full, estimate | 24 | |
+| student.busy.none | No busyness data yet | 24 | |
+| student.busy.row.empty | Usually empty | 20 | Browse row end; list caption carries "typical" |
+| student.busy.row.some | Usually some seats | 20 | |
+| student.busy.row.filling | Usually filling up | 20 | |
+| student.busy.row.nearly_full | Usually nearly full | 20 | |
+| student.busy.row.full | Usually full | 20 | |
+| student.busy.row_estimate.empty | Empty, est. | 16 | |
+| student.busy.row_estimate.some | Some seats, est. | 16 | |
+| student.busy.row_estimate.filling | Filling up, est. | 16 | |
+| student.busy.row_estimate.nearly_full | Nearly full, est. | 18 | |
+| student.busy.row_estimate.full | Full, est. | 16 | |
+| student.busy.row_none | No data yet | 12 | |
+| student.seat.likely | Likely seats | 16 | P(seat) >= 0.7 |
+| student.seat.tight | Might be tight | 16 | >= 0.4 |
+| student.seat.unlikely | Probably full | 16 | below 0.4 |
+
+### Pick card and data age
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.pick.place | {building} · Floor {floor} | 44 | |
+| student.pick.walk | {minutes} min walk | 14 | |
+| student.pick.walk_here | In this building | 18 | walk 0 |
+| student.pick.closes_in | Closes in {minutes} min | 22 | under an hour |
+| student.pick.open_till | Open till {closes} | 20 | |
+| student.pick.open_all_day | Open all day | 14 | 20 h or more left |
+| student.pick.checked | Checked {date} | 16 | newest verified date |
+| student.reason.silent | Silent | 14 | |
+| student.reason.quiet | Quiet | 14 | |
+| student.reason.talking | Talking is fine | 18 | |
+| student.reason.outlets | Outlets at most seats | 22 | |
+| student.reason.carrels | Carrels | 14 | |
+| student.reason.small_tables | Small tables | 14 | |
+| student.reason.whiteboard | Whiteboard | 14 | |
+| student.reason.calls | Calls OK | 12 | |
+| student.reason.signal | Good signal | 14 | |
+| student.reason.open_late | Open past midnight | 20 | |
+| student.reason.staffed_late | Staffed late | 14 | |
+| student.reason.lit_route | Lit walk home | 14 | |
+| student.reason.late_food | Late food nearby | 18 | |
+| student.reason.group_ok | Group work OK | 16 | |
+| student.reason.natural_light | Natural light | 14 | |
+| student.reason.step_free | Step-free | 12 | |
+| student.reason.elevator | Elevator | 10 | |
+| student.reason.food_ok | Food OK | 10 | |
+| student.reason.drinks_ok | Drinks OK | 10 | |
+| student.reason.big_room | 50+ seats | 10 | |
+| student.reason.printer | Printer nearby | 16 | |
+| student.reason.coffee | Coffee nearby | 16 | |
+| student.lock.building | Residents of {scope} only | 40 | |
+| student.lock.quad | Residents of {scope} only | 40 | |
+| student.lock.grad | Grad students only | 20 | |
+| student.lock.department | {scope} only | 36 | |
+| student.lock.department_unknown | One department only | 20 | |
+| student.lock.residents_unknown | Residents only | 16 | scope missing |
+| student.lock.unverified | Access not confirmed yet | 26 | |
+| student.data.today | Spots updated today | 24 | meta line |
+| student.data.yesterday | Spots updated yesterday | 28 | |
+| student.data.days | Spots updated {days} days ago | 32 | |
+| student.data.old | These spots are {days} days old. Hours and busyness may have changed. | 80 | note banner over 3 days |
+| student.data.offline | Offline. Using spots saved on this phone. | 48 | |
+| student.data.unavailable | Can't load spots offline yet. Open once with signal. | 60 | spec wording |
+| student.data.update_required | Update Perch to load spots. | 32 | spec wording |
+| student.data.update_available | A newer Perch reads newer spots. Reload to update. | 60 | |
+
+### Filters
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.filter.group.noise | Noise | 10 | |
+| student.filter.group.rules | Power and rules | 18 | |
+| student.filter.group.comfort | Room | 10 | |
+| student.filter.group.access | Getting in | 12 | |
+| student.filter.group.nearby | Late and nearby | 18 | |
+| student.filter.silent | Silent only | 14 | |
+| student.filter.quiet | Quiet or silent | 16 | |
+| student.filter.talking | Talking is fine | 16 | |
+| student.filter.outlets | Outlets at most seats | 22 | |
+| student.filter.calls | Calls OK | 10 | |
+| student.filter.food | Food OK | 10 | |
+| student.filter.drinks | Drinks OK | 10 | |
+| student.filter.group_ok | Group work OK | 14 | |
+| student.filter.whiteboard | Whiteboard | 12 | |
+| student.filter.big_room | 50+ seats | 10 | |
+| student.filter.natural_light | Natural light | 14 | |
+| student.filter.step_free | Step-free | 12 | |
+| student.filter.elevator | Elevator | 10 | |
+| student.filter.open_late | Open past midnight | 20 | |
+| student.filter.printer | Printer nearby | 16 | |
+| student.filter.coffee | Coffee nearby | 16 | |
+
+### Home inputs
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.home.from.label | From | 8 | row title |
+| student.home.from.sheet | Where are you? | 20 | sheet title |
+| student.home.from.locate | Use my location | 20 | |
+| student.home.from.locating | Finding you | 16 | |
+| student.home.from.denied | Location is off. Pick a building instead. | 48 | |
+| student.home.from.imprecise | Location too rough. Pick a building instead. | 48 | |
+| student.home.from.located | Nearest building: {building} | 48 | |
+| student.home.from.privacy | Used once to find the nearest building. Never saved or sent. | 64 | |
+| student.home.from.search | Search buildings | 20 | |
+| student.home.from.none | No building by that name. | 28 | search found nothing |
+| student.home.from.fallback | Starting from {building} | 44 | saved building is gone from the spots |
+| student.home.time.label | How long | 12 | |
+| student.home.time.30 | 30 min | 8 | |
+| student.home.time.60 | 1 hr | 6 | |
+| student.home.time.120 | 2 hr | 6 | |
+| student.home.time.close | Till close | 12 | |
+| student.home.preset.label | What for | 12 | |
+| student.preset.silent_solo | Silent solo | 14 | |
+| student.preset.group | Group | 10 | |
+| student.preset.calls | Calls | 10 | |
+| student.preset.late_night | Late night | 12 | |
+| student.preset.quick_30 | Quick 30 | 10 | |
+| student.home.group.label | People | 10 | |
+| student.home.filters.button | More filters | 16 | |
+| student.home.filters.button_count | More filters, {count} on | 26 | |
+| student.home.filters.title | More filters | 16 | |
+| student.home.filters.clear | Clear | 8 | |
+| student.home.filters.done | Done | 8 | |
+
+### Home results
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.pick.heading | Your pick | 12 | |
+| student.pick.surprise_heading | Surprise pick | 16 | |
+| student.pick.alternates | Or try | 10 | |
+| student.pick.directions | Directions | 12 | primary, opens maps |
+| student.pick.something_else | Something else | 16 | reroll inside the filters |
+| student.pick.surprise | Surprise me | 14 | ignores the preset, keeps the hard rules |
+| student.pick.only_one | That's the only good match right now. | 44 | toast |
+| student.pick.none_left | Nothing else is open for that long. | 40 | toast |
+| student.empty.title | Nothing fits right now. | 28 | |
+| student.empty.closest | Closest open spot: {spot}, {minutes} min away. | 60 | |
+| student.empty.none_open | Nothing on campus is open for that long. | 48 | |
+| student.empty.loosen.preset | Try fewer filters, or let Perch surprise you. | 52 | |
+| student.empty.loosen.group | Try a smaller group. | 28 | |
+| student.empty.loosen.time | Try a shorter time. | 28 | |
+| student.empty.loosen.access | Set your access to see more spots. | 40 | |
+| student.empty.try_short | Try 30 min | 12 | |
+| student.home.access.note | In campus housing or a grad student? Set your access. | 60 | never says "live" |
+| student.home.access.action | Set access | 12 | |
+| student.home.access.dismiss | Not now | 10 | |
+| student.data.reload | Reload | 8 | |
+
 ## Pending questions
 
 - Floor naming at Stony Brook (e.g. "Lower level" vs "B") should come from the first survey walk; the floor field is free text for now.

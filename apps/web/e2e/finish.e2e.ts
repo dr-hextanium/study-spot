@@ -4,7 +4,7 @@ import { parseBundle } from "@perch/core";
 import type { Page } from "@playwright/test";
 import { DATA_ORIGIN } from "../playwright.config.ts";
 import { completeSpot, getSpot, tokenOf } from "./api.ts";
-import { expect, serverState, signIn, test } from "./fixtures.ts";
+import { expect, serverState, signIn, test, waitForServiceWorker } from "./fixtures.ts";
 import { bigJpeg } from "./photo.ts";
 
 /** True once the persisted query cache holds the spot list entry and this spot's own query. */
@@ -171,17 +171,7 @@ test("the app opens offline from the service worker with the cached list and spo
     publish: true,
   });
   await page.reload();
-  await page.evaluate(async () => {
-    await navigator.serviceWorker.ready;
-  });
-  const controlled = () => page.evaluate(() => navigator.serviceWorker.controller !== null);
-  await expect
-    .poll(controlled, { timeout: 5_000 })
-    .toBe(true)
-    .catch(async () => {
-      await page.reload();
-      await expect.poll(controlled, { timeout: 10_000 }).toBe(true);
-    });
+  await waitForServiceWorker(page);
   await page.goto(`/survey/spots/${spot.id}`);
   await expect(page.getByRole("heading", { name: spot.official_name, level: 1 })).toBeVisible();
   // The persister writes on a throttle: go offline only once the stored snapshot holds the list and this spot's own query.
