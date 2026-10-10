@@ -16,8 +16,8 @@ export default defineConfig({
       manifest: {
         name: "Perch",
         short_name: "Perch",
-        description: "Campus study spot guide: survey tools.",
-        start_url: "/survey",
+        description: "Find a study spot on campus.",
+        start_url: "/",
         scope: "/",
         display: "standalone",
         background_color: "#FBFAF9",

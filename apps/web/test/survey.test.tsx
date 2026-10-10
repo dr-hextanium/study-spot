@@ -4,8 +4,8 @@ import { expect, test, vi } from "vitest";
 import { identity } from "../../../packages/ui-logic/test/builders.ts";
 import { ME, renderRoute, testApp } from "./harness.tsx";
 
-test("/ redirects to /survey, which resolves for a signed-in phone", async () => {
-  const view = renderRoute(testApp(), "/");
+test("/survey resolves for a signed-in phone", async () => {
+  const view = renderRoute(testApp(), "/survey");
   await act(async () => {
     await view.router.load();
   });

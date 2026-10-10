@@ -1940,3 +1940,52 @@ span.editor-meta {
   margin-top: 2px;
   color: var(--color-red);
 }
+
+/* Student shell: the bottom tab bar and the room it needs. */
+.student {
+  padding-bottom: calc(var(--size-row) + env(safe-area-inset-bottom) + var(--space-lg));
+}
+
+.tabbar {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 10;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: color-mix(in oklab, var(--color-paper) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--color-line);
+}
+
+.tabbar__inner {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: var(--size-column);
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.tabbar__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xxs);
+  height: var(--size-row);
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: var(--lineHeight-snug);
+  text-decoration: none;
+  transition: background-color var(--duration-fast) var(--easing-standard);
+}
+
+.tabbar__item[aria-current="page"] {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+@media (hover: hover) {
+  .tabbar__item:hover {
+    background: var(--color-hover);
+  }
+}
