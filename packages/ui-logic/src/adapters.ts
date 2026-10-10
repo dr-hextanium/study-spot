@@ -93,9 +93,12 @@ export interface NetworkStatus {
 
 export type FetchResponse = { status: number; text: string };
 
+/** A GET response; `date` is the response's Date header, or null when not exposed. */
+export type FetchTextResponse = FetchResponse & { date: string | null };
+
 export interface Fetch {
   /** Rejects on network failure. Non-2xx statuses resolve normally. */
-  getText(url: string): Promise<FetchResponse>;
+  getText(url: string): Promise<FetchTextResponse>;
 }
 
 export type HttpMethod = "GET" | "POST" | "PUT";

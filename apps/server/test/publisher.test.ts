@@ -102,6 +102,9 @@ test("a publish writes photos, the hashed bundle, and the pointer, then clears d
   expect(readFileSync(join(ctx.publishDir, "_headers"), "utf8")).toContain(
     "Access-Control-Allow-Origin: *",
   );
+  expect(readFileSync(join(ctx.publishDir, "_headers"), "utf8")).toContain(
+    "Access-Control-Expose-Headers: Date",
+  );
 
   const after = await state(ctx);
   expect(after).toMatchObject({ dirty: false, last_hash: outcome.hash, last_error: null });

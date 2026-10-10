@@ -3,6 +3,7 @@ import type {
   Clock,
   Fetch,
   FetchResponse,
+  FetchTextResponse,
   Foreground,
   Http,
   HttpRequest,
@@ -38,17 +39,19 @@ export function fixedClock(iso: string): Clock {
 /** Routes URL to a response. Missing routes and "offline" mode reject like a network error. */
 export class FakeFetch implements Fetch {
   offline = false;
+  /** The Date header every response carries. */
+  date: string | null = null;
   readonly calls: string[] = [];
   readonly routes: Map<string, FetchResponse>;
   constructor(routes: Map<string, FetchResponse>) {
     this.routes = routes;
   }
-  async getText(url: string): Promise<FetchResponse> {
+  async getText(url: string): Promise<FetchTextResponse> {
     this.calls.push(url);
     if (this.offline) throw new Error("network down");
     const r = this.routes.get(url);
     if (!r) throw new Error(`no route for ${url}`);
-    return r;
+    return { ...r, date: this.date };
   }
 }
 
