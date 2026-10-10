@@ -70,7 +70,14 @@ export type Excluded = {
   reason: Exclusion;
   walkMinutes: number | null;
 };
-export type RankResult = { ranked: Candidate[]; excluded: Excluded[] };
+export type RankResult = {
+  ranked: Candidate[];
+  excluded: Excluded[];
+  /** The building walks were measured from, or null when the bundle has no buildings. */
+  from: string | null;
+  /** True when the asked-for building is not in the bundle and `from` replaced it. */
+  fromFallback: boolean;
+};
 
 /** A building the bundle knows: the saved one, else Melville Library, else the first by name. */
 export function resolveFrom(bundle: Bundle, from: string | null): string | null {
@@ -123,7 +130,11 @@ function evaluate(
         )
       : Number(input.time);
   const openAfterArrival = (span.closesAt.getTime() - arrival.getTime()) / MINUTE_MS;
-  if (openAfterArrival < Math.min(available, MIN_USEFUL_MINUTES)) return out("closing_soon", walk);
+  // Till close has no fixed window to compare with, so it needs the full useful minimum
+  // after arrival; otherwise a zero walk would let a spot closing in 15 minutes through.
+  const needed =
+    input.time === "close" ? MIN_USEFUL_MINUTES : Math.min(available, MIN_USEFUL_MINUTES);
+  if (openAfterArrival < needed) return out("closing_soon", walk);
 
   if (mode.applyPreset) {
     for (const c of [...input.preset.required, ...input.extra]) {
@@ -141,9 +152,13 @@ function evaluate(
     slotIndex(parts.slotDow, parts.hour),
     isExamDate(parts.date, bundle.term),
   );
-  const group = input.preset.groupDefault === null ? 1 : input.group;
+  // Quick pick sizes the group only for group presets. Surprise me ignores the preset
+  // entirely, so it always uses the Home group size (1 when none is set).
+  const group = mode.applyPreset && input.preset.groupDefault === null ? 1 : input.group;
+  if (spot.max_group_size !== null && group > spot.max_group_size) {
+    return out("group_too_big", walk);
+  }
   const p = pSeat(reading, spot, group);
-  if (p === 0) return out("group_too_big", walk);
   const tv = timeValue(available, walk);
   if (tv === 0) return out("too_far", walk);
   const f = mode.applyPreset ? fit(spot, input.preset.soft) : 1;
@@ -164,7 +179,12 @@ function evaluate(
   };
 }
 
-function run(input: PickInput, mode: Mode): RankResult {
+function run(rawInput: PickInput, mode: Mode): RankResult {
+  // An unknown building must not read as a zero-minute walk: use the default and say so.
+  const from = resolveFrom(rawInput.bundle, rawInput.from);
+  const fromFallback = from !== rawInput.from;
+  if (from === null) return { ranked: [], excluded: [], from: null, fromFallback };
+  const input = { ...rawInput, from };
   const hours = hoursBySpot(input.bundle);
   const ranked: Candidate[] = [];
   const excluded: Excluded[] = [];
@@ -177,7 +197,7 @@ function run(input: PickInput, mode: Mode): RankResult {
     (a, b) =>
       b.score - a.score || a.walkMinutes - b.walkMinutes || a.spot.slug.localeCompare(b.spot.slug),
   );
-  return { ranked, excluded };
+  return { ranked, excluded, from, fromFallback };
 }
 
 /** Quick pick: hard filters, the preset's required and extra filters, then fit * P(seat) * time value. */

@@ -10,6 +10,7 @@ import {
   surpriseRank,
 } from "../../src/index.ts";
 import { makeScoringBundle, SPOT } from "../fixtures/scoring-bundle.ts";
+import { mulberry32 } from "../prng.ts";
 
 const bundle = makeScoringBundle();
 const TUE_2PM = new Date("2026-10-13T18:00:00Z");
@@ -144,6 +145,122 @@ test("empty state names the closest filtered-out open spot and what to loosen", 
     extra: [{ attr: "seat_type", target: "carrel" }],
   });
   expect(explainEmpty(nightAll, DEFAULT_ACCESS).loosen).toBe("preset");
+});
+
+test("Till close: 15 minutes left is closing soon whether or not the walk is zero", () => {
+  const now = new Date("2026-10-14T05:45:00Z"); // 01:45 Wed, carrels close at 02:00
+  // Carrels are in the library: walk 0, so the old check (min(available, 30)) passed 15 >= 15.
+  const fromLibrary = rankSpots({ ...base, now, time: "close" });
+  expect(reasonOf(fromLibrary, SPOT.carrels)).toBe("closing_soon");
+  expect(slugs(fromLibrary)).toEqual(["reading-room"]);
+  const fromSac = rankSpots({ ...base, now, time: "close", from: "sac" });
+  expect(reasonOf(fromSac, SPOT.carrels)).toBe("closing_soon");
+  // Exactly 30 minutes left is enough
+  const enough = rankSpots({ ...base, now: new Date("2026-10-14T05:30:00Z"), time: "close" });
+  expect(enough.ranked.some((c) => c.spot.id === SPOT.carrels)).toBe(true);
+  expect(enough.ranked.find((c) => c.spot.id === SPOT.carrels)?.available).toBe(30);
+});
+
+test("property: scores are in [0, 1] and the list is sorted (seeded, random inputs)", () => {
+  const rand = mulberry32(2026);
+  const ids = [...bundle.buildings.map((x) => x.id), "gone-building"];
+  const presets = ["silent_solo", "group", "calls", "late_night", "quick_30"];
+  const times = ["30", "60", "120", "close"] as const;
+  const pick = <T>(xs: readonly T[]): T => xs[Math.floor(rand() * xs.length)] as T;
+  const start = Date.parse("2026-08-01T00:00:00Z");
+  for (let i = 0; i < 400; i += 1) {
+    const input: PickInput = {
+      ...base,
+      now: new Date(start + Math.floor(rand() * 365 * 24 * 60) * 60_000),
+      from: pick(ids),
+      time: pick(times),
+      group: 1 + Math.floor(rand() * 12),
+      preset: presetById(pick(presets), []),
+    };
+    for (const result of [rankSpots(input), surpriseRank(input)]) {
+      for (const c of result.ranked) {
+        expect(c.score).toBeGreaterThanOrEqual(0);
+        expect(c.score).toBeLessThanOrEqual(1);
+        expect(c.pSeat).toBeGreaterThanOrEqual(0);
+        expect(c.pSeat).toBeLessThanOrEqual(1);
+        expect(c.timeValue).toBeGreaterThan(0);
+        expect(c.timeValue).toBeLessThanOrEqual(1);
+        expect(c.fit).toBeGreaterThanOrEqual(0);
+        expect(c.fit).toBeLessThanOrEqual(1);
+      }
+      for (let j = 1; j < result.ranked.length; j += 1) {
+        const a = result.ranked[j - 1];
+        const b = result.ranked[j];
+        if (a === undefined || b === undefined) throw new Error("index");
+        const ordered =
+          a.score > b.score ||
+          (a.score === b.score &&
+            (a.walkMinutes < b.walkMinutes ||
+              (a.walkMinutes === b.walkMinutes && a.spot.slug.localeCompare(b.spot.slug) <= 0)));
+        expect(ordered).toBe(true);
+      }
+      expect(result.ranked.length + result.excluded.length).toBe(bundle.spots.length);
+    }
+  }
+});
+
+test("a huge group that underflows P(seat) to 0 is not reported as too big", () => {
+  const tiny = structuredClone(bundle);
+  const lounge = tiny.spots.find((s) => s.id === SPOT.sacLounge);
+  if (lounge === undefined) throw new Error("fixture");
+  lounge.max_group_size = null;
+  lounge.effective_capacity = 0.001;
+  // Measured slots skip the 0.7 * P + 0.15 shrink, so P underflows to exactly 0.
+  const loungeBusy = tiny.busyness[SPOT.sacLounge];
+  if (loungeBusy === undefined) throw new Error("fixture");
+  loungeBusy.confidence = loungeBusy.confidence.map(() => "measured" as const);
+  const r = rankSpots({
+    ...base,
+    bundle: tiny,
+    from: "sac",
+    time: "120",
+    preset: presetById("group", []),
+    group: 12,
+  });
+  // The only group_too_big exclusion is the real one: max_group_size 4 at the union
+  expect(reasonOf(r, SPOT.union)).toBe("group_too_big");
+  expect(reasonOf(r, SPOT.sacLounge)).toBeUndefined();
+  expect(r.ranked.find((c) => c.spot.id === SPOT.sacLounge)?.pSeat).toBe(0);
+});
+
+test("Surprise me ignores the preset's group default and uses the Home group size", () => {
+  const groupPreset = presetById("group", []); // groupDefault 3
+  // Home group is 1: the preset's default of 3 must not apply, so the 1-seat carrels qualify.
+  const solo = surpriseRank({ ...base, preset: groupPreset, group: 1 });
+  expect(solo.ranked.some((c) => c.spot.id === SPOT.carrels)).toBe(true);
+  // Home group is 5 with a preset that has no group at all: the size still applies.
+  const five = surpriseRank({ ...base, preset: presetById("silent_solo", []), group: 5 });
+  expect(reasonOf(five, SPOT.union)).toBe("group_too_big");
+  expect(reasonOf(five, SPOT.carrels)).toBe("group_too_big");
+  expect(slugs(five).sort()).toEqual(["reading-room", "sac-lounge"]);
+  // Quick pick keeps the old rule: no group preset, no group.
+  expect(rankSpots({ ...base, group: 5 }).ranked.some((c) => c.spot.id === SPOT.carrels)).toBe(
+    true,
+  );
+});
+
+test("an unknown from building falls back to the default and says so", () => {
+  const known = rankSpots(base);
+  expect(known.from).toBe("melville-library");
+  expect(known.fromFallback).toBe(false);
+  const gone = rankSpots({ ...base, from: "gone-building" });
+  expect(gone.from).toBe("melville-library");
+  expect(gone.fromFallback).toBe(true);
+  // Same result as asking from the default building, not a 0-minute walk from nowhere
+  expect(gone.ranked.map((c) => [c.spot.slug, c.walkMinutes])).toEqual(
+    known.ranked.map((c) => [c.spot.slug, c.walkMinutes]),
+  );
+  // Melville to the union is 6 minutes in the matrix; from nowhere it would have been 0
+  expect(gone.ranked.find((c) => c.spot.id === SPOT.union)?.walkMinutes).toBe(6);
+  expect(surpriseRank({ ...base, from: "gone-building" }).fromFallback).toBe(true);
+  // No buildings at all: an empty result, flagged, never a crash
+  const none = rankSpots({ ...base, bundle: { ...bundle, buildings: [] }, from: "x" });
+  expect(none).toEqual({ ranked: [], excluded: [], from: null, fromFallback: true });
 });
 
 test("busyness slots count from Monday while hours count from Sunday", () => {
