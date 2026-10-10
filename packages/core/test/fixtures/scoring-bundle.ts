@@ -20,8 +20,8 @@ export const SPOT = {
 
 const VERIFIED = { identity: "2026-10-05T15:00:00.000Z", hours: "2026-10-06T15:00:00.000Z" };
 
-type Required = Pick<BundleSpot, "id" | "slug" | "building_id" | "official_name">;
-function spot(o: Required & Partial<BundleSpot>): BundleSpot {
+type SpotKeys = Pick<BundleSpot, "id" | "slug" | "building_id" | "official_name">;
+function spot(o: SpotKeys & Partial<BundleSpot>): BundleSpot {
   return {
     floor: "1",
     common_name: null,

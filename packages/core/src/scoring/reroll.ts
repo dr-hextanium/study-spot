@@ -44,16 +44,16 @@ export function rerollPool(ranked: readonly Candidate[], recent: readonly string
   return oldest === undefined ? [] : [oldest];
 }
 
-export type Pick = { primary: Candidate; alternates: Candidate[] };
+export type SpotPick = { primary: Candidate; alternates: Candidate[] };
 
-function withAlternates(primary: Candidate, ranked: readonly Candidate[]): Pick {
+function withAlternates(primary: Candidate, ranked: readonly Candidate[]): SpotPick {
   return {
     primary,
     alternates: ranked.filter((c) => c.spot.id !== primary.spot.id).slice(0, ALTERNATES),
   };
 }
 
-export function topPick(ranked: readonly Candidate[]): Pick | null {
+export function topPick(ranked: readonly Candidate[]): SpotPick | null {
   const first = ranked[0];
   return first === undefined ? null : withAlternates(first, ranked);
 }
@@ -68,7 +68,7 @@ export function draw(
   recent: readonly string[],
   rand: () => number,
   current: string | null = null,
-): Pick | null {
+): SpotPick | null {
   const avoid = current === null ? recent : [current, ...recent.filter((id) => id !== current)];
   const primary = weightedSample(rerollPool(ranked, avoid), (c) => c.score, rand);
   return primary === null ? null : withAlternates(primary, ranked);
