@@ -8,6 +8,8 @@ export function Row(props: {
   lead?: ReactNode;
   end?: ReactNode;
   link?: LinkProps;
+  /** An address outside the app: opens in a new tab. */
+  href?: string;
   onClick?: () => void;
   compact?: boolean;
   /** A choice in a list: exposes the selected state to assistive tech. */
@@ -28,7 +30,11 @@ export function Row(props: {
   );
   return (
     <li className="row-item">
-      {props.link !== undefined ? (
+      {props.href !== undefined ? (
+        <a className={className} href={props.href} target="_blank" rel="noopener noreferrer">
+          {body}
+        </a>
+      ) : props.link !== undefined ? (
         <Link {...props.link} className={className}>
           {body}
         </Link>

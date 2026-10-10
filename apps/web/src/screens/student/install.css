@@ -1,0 +1,8 @@
+/* The install note's banner wraps its buttons under the text on a narrow phone. */
+.install-note .banner {
+  flex-wrap: wrap;
+}
+
+.install-note .banner__text {
+  flex: 1 1 14rem;
+}

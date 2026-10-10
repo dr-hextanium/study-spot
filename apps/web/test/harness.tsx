@@ -327,6 +327,7 @@ export function testApp(
     bundle: staticBundleStore(opts.bundle ?? readyBundle(), () => clock.now()),
     prefs: new MemoryStorage(),
     tab: new MemoryStorage(),
+    ids: sequentialIds("9100"),
     rand: opts.rand ?? mulberry32(1),
     pickPing: (spotId) => {
       pings.push(spotId);

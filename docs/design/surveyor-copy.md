@@ -605,6 +605,73 @@ Strings the built screens needed beyond the sections above: short header forms f
 | student.me.title | Me | 6 | large title |
 | student.data.loading | Loading spots | 20 | skeleton status |
 
+## Student: Me
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.me.access_heading | Access | 10 | |
+| student.me.residence.label | Where you live | 16 | |
+| student.me.residence.none | Off campus | 12 | |
+| student.me.quad.label | Quad | 6 | |
+| student.me.quad.none | None | 6 | |
+| student.me.grad.label | Grad student | 14 | |
+| student.me.access_helper | Unlocks spots for residents and grad students. Nobody checks this. | 72 | |
+| student.me.presets_heading | Presets | 10 | |
+| student.me.preset.builtin | Built in | 10 | |
+| student.me.preset.new | New preset | 14 | |
+| student.me.preset.name | Name | 8 | |
+| student.me.preset.save | Save preset | 14 | |
+| student.me.preset.delete | Delete preset | 14 | |
+| student.me.preset.delete_title | Delete {name}? | 34 | |
+| student.me.preset.delete_body | It goes away on this phone only. | 40 | |
+| student.me.preset.name_required | Give it a name. | 20 | |
+| student.me.preset.filters_required | Pick at least one filter. | 28 | |
+| student.me.preset.full | You can keep up to 10 presets. | 34 | |
+| student.preset.silent_solo | Silent solo | 14 | built-in preset name, also Home (plan C4) |
+| student.preset.group | Group | 10 | built-in preset name |
+| student.preset.calls | Calls | 10 | built-in preset name |
+| student.preset.late_night | Late night | 12 | built-in preset name |
+| student.preset.quick_30 | Quick 30 | 10 | built-in preset name |
+| student.me.look_heading | Look | 6 | |
+| student.me.privacy_heading | Privacy | 10 | |
+| student.me.privacy | Nothing about you is stored on our servers. Settings live on this phone. | 80 | spec wording |
+| student.me.data_policy | Data policy | 14 | |
+| student.me.source | Source code | 14 | |
+| student.me.licenses | Licenses | 12 | link to the license file |
+| student.me.licenses_body | Code is MIT. Spot data and photos are CC BY-SA 4.0. Map data is OpenStreetMap. | 90 | |
+| student.me.surveyor | Surveyor tools | 16 | only with a surveyor session |
+| student.me.reset_note | Your settings couldn't be read, so they were reset. | 56 | |
+| student.install.note | Add Perch to your home screen to open it faster. | 52 | |
+| student.install.add | Add | 6 | |
+| student.install.dismiss | No thanks | 10 | |
+| student.install.ios | In Safari, tap Share, then Add to Home Screen. | 52 | |
+
+## Student: filters
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.filter.group.noise | Noise | 10 | |
+| student.filter.group.rules | Power and rules | 18 | |
+| student.filter.group.comfort | Room | 10 | |
+| student.filter.group.access | Getting in | 12 | |
+| student.filter.group.nearby | Late and nearby | 18 | |
+| student.filter.silent | Silent only | 14 | |
+| student.filter.quiet | Quiet or silent | 16 | |
+| student.filter.talking | Talking is fine | 16 | |
+| student.filter.outlets | Outlets at most seats | 22 | |
+| student.filter.calls | Calls OK | 10 | |
+| student.filter.food | Food OK | 10 | |
+| student.filter.drinks | Drinks OK | 10 | |
+| student.filter.group_ok | Group work OK | 14 | |
+| student.filter.whiteboard | Whiteboard | 12 | |
+| student.filter.big_room | 50+ seats | 10 | |
+| student.filter.natural_light | Natural light | 14 | |
+| student.filter.step_free | Step-free | 12 | |
+| student.filter.elevator | Elevator | 10 | |
+| student.filter.open_late | Open past midnight | 20 | |
+| student.filter.printer | Printer nearby | 16 | |
+| student.filter.coffee | Coffee nearby | 16 | |
+
 ## Pending questions
 
 - Floor naming at Stony Brook (e.g. "Lower level" vs "B") should come from the first survey walk; the floor field is free text for now.
