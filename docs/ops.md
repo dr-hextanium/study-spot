@@ -163,11 +163,18 @@ Cloudflare now creates Git-connected apps as Workers projects. The PWA is static
 4. The production origin is `https://perch.<account-subdomain>.workers.dev` (live: `https://perch.try-perch-app.workers.dev`). Put it in `WEB_ORIGIN` on Render (Environment tab, save without deploying) and in the repo variable `WEB_ORIGIN`, then run a release (section 8) so the server picks it up.
 5. Check a build worked: the built `assets/index-*.js` must contain the API and data addresses. A build without them shows "This build has no server address".
 6. The release smoke also reads `bundle-latest.json` from the data site, so it fails until the first publish. After the first admin signs in, run Publish now, then re-run Actions > migrate on the current `v*` tag.
-7. Free limits (Workers Free): 3,000 build minutes a month, 1 build at a time, 20-minute timeout; 20,000 files per version, 25 MiB per file. The data site (`perch-data`, Pages direct upload) has 20,000 files and 25 MiB per file: each approved photo is one file, so plan cleanup before about 15,000 photos. A deploy of the data site drops older hashed bundles and photos; clients keep their cached bundle until they refetch the pointer.
+7. Free limits (Workers Free): 3,000 build minutes a month, 1 build at a time, 20-minute timeout; 20,000 files per version, 25 MiB per file. The data site (`perch-data`, Pages direct upload) has 20,000 files and 25 MiB per file: each approved photo is one file, so plan cleanup before about 15,000 photos. A deploy of the data site drops older hashed bundles and any photo it does not list; clients keep their cached bundle until they refetch the pointer. The publisher lists every photo whose bytes it has cleared from Postgres (section 10), so a deploy never drops one of those.
 
 ## 10. Backups and restore
 
 `backup.yml` runs Sundays 06:17 UTC and on demand: `pg_dump -Fc` from `BACKUP_DATABASE_URL`, encrypted with `age` to `BACKUP_AGE_RECIPIENT`, stored as artifact `perch-backup` for 90 days (the public-repo maximum). The artifact is downloadable by anyone, which is why it is encrypted. The data site also holds the last published bundle and photos, so published content survives a database loss; surveyor accounts, drafts, and unpublished photos do not.
+
+Photo bytes are not all in the backup. Since migration 0004, once a published photo is confirmed on `perch-data` (read back with a matching sha256), the publisher clears its bytes in Postgres and keeps only the row, the sha256 and the Pages asset hash. Published photo bytes then live only on the data site and are no longer in the database backups. Pending photos and photos not yet confirmed still have their bytes in Postgres and in the dump. What this means for restore:
+
+- A restored database brings back every photo row and hash but not the cleared bytes. The next publish lists those photos by their stored hash and does not need the bytes, so they stay on the data site as long as the `perch-data` project and its assets still exist.
+- If Cloudflare no longer has a cleared photo, the publish fetches it back from the live site. If the live site does not have it either, the publish fails, names the photo, and leaves the live site as it was. Check `last_error` on the admin publish screen.
+- Losing or deleting the `perch-data` Pages project loses every cleared photo, and no backup has a copy. Never delete or recreate that project. Before risky Cloudflare work, copy the photos with `curl` from the paths in the current bundle (`photos/<sha256>.jpg`). Older Pages deployments (the `<id>.perch-data.pages.dev` preview URLs) also still serve the photos they were deployed with.
+- A restore into a fresh Pages project means uploading the photos again from such a copy before the first publish. Otherwise that publish fails on the first missing photo.
 
 One-time setup (owner, two admins together):
 
@@ -199,7 +206,7 @@ Notes: `pg_dump` must be at least as new as Neon's server (the workflow installs
 Use if Render, Neon, or Pages become unusable. A small VPS (Hetzner-style, 2 GB RAM) runs everything on one box; it costs money and a card, so it is a fallback, not the plan. `PUBLISH_TARGET=fs` replaces Cloudflare: the publisher writes the data site to a directory and Caddy serves it.
 
 1. Install Postgres 17, Node 24, Caddy, Bun (for `bun install`). Create database and user, then `DATABASE_URL=postgres://perch:<pw>@127.0.0.1:5432/perch`. Run `bun run db:migrate` by hand.
-2. Clone the repo to `/srv/perch`, `bun install --frozen-lockfile`.
+2. Clone the repo to `/srv/perch`, `bun install --frozen-lockfile`. Copy every `photos/<sha256>.jpg` of the current bundle from the old data site into `/srv/perch-data/photos/` before the first publish: photos whose bytes were cleared from Postgres (section 10) exist nowhere else. On the VPS the same applies: back up `/srv/perch-data/photos` together with the database.
 3. `/etc/perch.env` (mode 600): `DATABASE_URL`, `WEB_ORIGIN=https://app.<domain>`, `DATA_BASE_URL=https://data.<domain>`, `PUBLISH_TARGET=fs`, `FS_PUBLISH_DIR=/srv/perch-data`, `PORT=3000`.
 4. `/etc/systemd/system/perch.service`: `ExecStart=/usr/bin/node /srv/perch/apps/server/src/main.ts`, `EnvironmentFile=/etc/perch.env`, `WorkingDirectory=/srv/perch`, `Restart=always`, `User=perch`.
 5. `/etc/caddy/Caddyfile`:

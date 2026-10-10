@@ -44,13 +44,15 @@ auth_session(id, surveyor_id, created_at, expires_at)        -- id = sha256(bear
 audit_log(id, surveyor_id, entity, entity_id, action, before_json, after_json, at)
 write_receipt(client_write_id, surveyor_id, received_at, response_json)   -- replayed on retry
 spot += status, review_state, reviewed_by, version, last_edited_by
-photo_blob(sha256, bytes, content_type, byte_size, created_at)
+photo_blob(sha256, bytes null, content_type, byte_size, pages_hash null, offloaded_at null, created_at)
 spot_photo(id, spot_id, url null, blob_sha256, taken_at, is_cover, uploaded_by, approved_by, approved_at)
 bundle_state(campus_id, dirty, write_seq, last_published_at, last_hash, last_deploy_hook_at,
              last_attempt_at, last_warnings, last_error)
 ```
 
-`spot_photo.url` is the absolute data-site URL, written by the publisher. `bundle_state.write_seq` increases on every dirty write; a publish clears `dirty` only if it did not change while the publish ran.
+`spot_photo.url` is the absolute data-site URL, written by the publisher.
+
+Photo bytes (decision 22): `photo_blob` is content-addressed and shared, so one blob can back several `spot_photo` rows. Pending photos keep their bytes in Postgres until reviewed. After each data-site deploy, the publisher fetches each published photo from `<DATA_BASE_URL>/photos/<sha256>.jpg` (cache-busted). If the sha256 of what comes back matches, it sets `bytes` to null, records `offloaded_at`, and keeps `sha256` and `pages_hash`, the Cloudflare Pages asset key of that path. This only happens when an approved photo row of the publishing campus uses the blob and no row of another campus does. Every deploy lists the bundle's photos plus every cleared blob still used by a photo row of the campus, even one whose spot is no longer published, because a Pages deploy drops any file it does not list and a cleared photo has no other copy. Cleared photos go into the manifest by `pages_hash`, so their bytes are not read. If Cloudflare reports one of those hashes missing, the bytes are fetched back from the live site and checked. If there is no good copy, the deploy stops before the deployment call, so the live site keeps the photo. The image route serves a cleared photo by fetching it from the data site and checking its sha256, and answers 404 if that fails. Rejecting a photo deletes its row, and also the blob when no other row uses it. `spot_photo.blob_sha256` stays set on cleared rows, because the cover query depends on it. `bundle_state.write_seq` increases on every dirty write; a publish clears `dirty` only if it did not change while the publish ran.
 
 Floor penalty added to walk_matrix lookups at query time. Walk matrix precomputed once from OpenStreetMap footpaths; campus is small enough that no live routing engine is needed.
 
