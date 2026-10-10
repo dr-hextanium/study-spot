@@ -11,11 +11,17 @@ export function minutesOf(t: string): number {
 
 type Span = { start: number; end: number; lastEntry: number | null };
 
-/** The rows that apply on a campus date: exam rows in the exam window when the spot has any. */
+/**
+ * The rows that apply on a campus date. In the exam window a weekday uses its
+ * exam rows when it has any, and otherwise falls back to its regular rows.
+ */
 function rowsOn(rows: readonly BundleHours[], date: string, term: BundleTerm): BundleHours[] {
-  const exam = isExamDate(date, term) && rows.some((r) => r.is_exam);
   const dow = weekdayOfDate(date); // hours use 0 = Sunday
-  return rows.filter((r) => r.is_exam === exam && r.day_of_week === dow);
+  if (isExamDate(date, term)) {
+    const exam = rows.filter((r) => r.is_exam && r.day_of_week === dow);
+    if (exam.length > 0) return exam;
+  }
+  return rows.filter((r) => !r.is_exam && r.day_of_week === dow);
 }
 
 function spansOn(rows: readonly BundleHours[], date: string, tz: string): Span[] {

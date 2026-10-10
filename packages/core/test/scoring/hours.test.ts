@@ -62,6 +62,26 @@ test("last entry closes the door before closing time", () => {
   expect(openSpan(rows, b.term, at("2026-10-14T03:01:00Z"), NY).open).toBe(false); // 23:01
 });
 
+test("exam day with no exam row for that weekday falls back to its regular hours", () => {
+  // Exam rows only for Thursday 2026-12-10; Friday 2026-12-11 is in the exam window too.
+  const rows = hoursOf(b, SPOT.union).map((h) => ({ ...h }));
+  const examThursday = {
+    spot_id: SPOT.union,
+    day_of_week: 4,
+    opens: "00:00",
+    closes: "24:00",
+    last_entry: null,
+    is_exam: true,
+  };
+  const mixed = [...rows, examThursday];
+  // Thu 03:00 EST: the exam row is 24h, so open (regular 08:00 would be closed)
+  expect(openSpan(mixed, b.term, at("2026-12-10T08:00:00Z"), NY).open).toBe(true);
+  // Fri 10:00 EST: no Friday exam row, so regular 08:00 to 24:00 applies, not closed
+  expect(openSpan(mixed, b.term, at("2026-12-11T15:00:00Z"), NY).open).toBe(true);
+  // Fri 03:00 EST: regular hours are not open yet
+  expect(openSpan(mixed, b.term, at("2026-12-11T08:00:00Z"), NY).open).toBe(false);
+});
+
 test("no rows means closed", () => {
   expect(span(SPOT.hoursTbd, "2026-10-13T18:00:00Z").open).toBe(false);
 });
