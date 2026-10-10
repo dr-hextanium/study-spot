@@ -21,7 +21,7 @@ Notes:
 - Exam periods include Saturday and reading days inside them. Calendars say they are subject to change.
 - Health Sciences programs have their own calendar. Not modeled.
 
-## Buildings (137)
+## Buildings (138)
 
 Coordinates come from OpenStreetMap via Nominatim (one request a second, descriptive User-Agent), from the matched feature's point. Source is the OSM element at https://www.openstreetmap.org/. Names are OSM or common SBU names; check them against the SBU campus map. The brief's Health Sciences Center and Library are one row.
 
@@ -71,7 +71,7 @@ Residence quad community centers (the "RCC" rows). Official names and hours: [Re
 | west-rcc | West E Commons | 40.9124569 | -73.1346847 | [way/835672152](https://www.openstreetmap.org/way/835672152) | UNCONFIRMED: SBU names it (attached to Building E, area office); no OSM match, point is the West Apartments centre |
 | chapin-rcc | Chapin Commons | 40.9080987 | -73.1102916 | [way/833000705](https://www.openstreetmap.org/way/833000705) | name per SBU; OSM way found |
 
-### Every other named building (99)
+### Every other named building (100)
 
 Pulled 2026-10-10 from Overpass: every `building` with a `name` inside the OSM campus area (relation 14321838), point is the element centre. Southampton, buildings already listed above, and anything within 12 m of another were left out first.
 
@@ -150,6 +150,7 @@ Pulled 2026-10-10 from Overpass: every `building` with a `name` inside the OSM c
 | sports-complex | Sports Complex | 40.9173444 | -73.1247268 | [way/54722854](https://www.openstreetmap.org/way/54722854) | OSM building=university |
 | stimson-hall | Stimson Hall | 40.9118343 | -73.1294746 | [way/60923545](https://www.openstreetmap.org/way/60923545) | OSM building=dormitory |
 | stony-brook-child-care | Stony Brook Child Care | 40.8987412 | -73.1290174 | [way/464235436](https://www.openstreetmap.org/way/464235436) | OSM building=school |
+| stony-brook-lirr-station | Stony Brook LIRR Station | 40.9213939 | -73.1274957 | [way/832752593](https://www.openstreetmap.org/way/832752593) | not SBU, kept because students use it all the time |
 | stony-brook-observatory | Stony Brook Observatory | 40.91471 | -73.1256773 | [way/838236980](https://www.openstreetmap.org/way/838236980) | OSM building=yes |
 | student-activity-center | Student Activity Center | 40.9144387 | -73.1247866 | [way/718409738](https://www.openstreetmap.org/way/718409738) | OSM building=yes |
 | student-health-center | Student Health Center | 40.9193259 | -73.1217468 | [way/60922573](https://www.openstreetmap.org/way/60922573) | OSM building=university |
@@ -204,7 +205,6 @@ Left out on purpose (not places a student would start or study from):
 - South Campus ([way/837580868](https://www.openstreetmap.org/way/837580868)): area name, not a building
 - South P Lot ([way/834586394](https://www.openstreetmap.org/way/834586394)): parking
 - Stony Brook Cogen Plant ([way/60922570](https://www.openstreetmap.org/way/60922570)): utility
-- Stony Brook LIRR Station ([way/832752593](https://www.openstreetmap.org/way/832752593)): train station, not SBU
 - Tabler Steps ([way/837628510](https://www.openstreetmap.org/way/837628510)): stairs
 - Water Treatment ([way/618591311](https://www.openstreetmap.org/way/618591311)): utility
 - West C ([way/837628499](https://www.openstreetmap.org/way/837628499)): unclear duplicate of West Apartments C

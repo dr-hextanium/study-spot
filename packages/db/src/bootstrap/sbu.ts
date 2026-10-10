@@ -229,7 +229,8 @@ export const BOOTSTRAP_BUILDINGS = [
   { id: "west-rcc", campus_id: "sbu", name: "West E Commons", lat: 40.9124569, lng: -73.1346847 },
   { id: "chapin-rcc", campus_id: "sbu", name: "Chapin Commons", lat: 40.9080987, lng: -73.1102916 },
   // Every other named SBU building on OpenStreetMap (2026-10-10), from each
-  // element's centre. Roads, utilities, parking and non-SBU buildings left out.
+  // element's centre. Roads, utilities, parking and non-SBU buildings left out,
+  // except the LIRR station, which students use all the time.
   {
     id: "administration",
     campus_id: "sbu",
@@ -554,6 +555,13 @@ export const BOOTSTRAP_BUILDINGS = [
     name: "Stony Brook Child Care",
     lat: 40.8987412,
     lng: -73.1290174,
+  },
+  {
+    id: "stony-brook-lirr-station",
+    campus_id: "sbu",
+    name: "Stony Brook LIRR Station",
+    lat: 40.9213939,
+    lng: -73.1274957,
   },
   {
     id: "stony-brook-observatory",
