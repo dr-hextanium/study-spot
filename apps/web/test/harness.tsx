@@ -1,11 +1,10 @@
-import {
-  type Bundle,
-  type CampusInfo,
-  parseBundle,
-  type SpotList,
-  type SpotSummary,
-  type SurveyorPublic,
-  type SurveySpot,
+import type {
+  Bundle,
+  CampusInfo,
+  SpotList,
+  SpotSummary,
+  SurveyorPublic,
+  SurveySpot,
 } from "@perch/core";
 import {
   type BundleState,
@@ -21,7 +20,8 @@ import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/rea
 import { type RenderResult, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { z } from "zod";
-import { makeBundleFixture } from "../../../packages/core/test/fixtures/bundle-v1.ts";
+import { makeScoringBundle } from "../../../packages/core/test/fixtures/scoring-bundle.ts";
+import { mulberry32 } from "../../../packages/core/test/prng.ts";
 import { staticBundleStore } from "../../../packages/ui-logic/test/fakeBundleStore.ts";
 import { FakeSurveyServer } from "../../../packages/ui-logic/test/fakeServer.ts";
 import {
@@ -266,7 +266,7 @@ export function testApp(
     spots?: SurveySpot[];
     me?: SurveyorPublic | null;
     now?: string;
-    /** The student bundle state. Default: ready with the v1 fixture, fresh, age 0. */
+    /** The student bundle state. Default: ready with the scoring fixture, fresh, age 0. */
     bundle?: BundleState;
     /** Random source for picks. Default: seeded, so picks repeat. */
     rand?: () => number;
@@ -323,7 +323,7 @@ export function testApp(
     bundle: staticBundleStore(opts.bundle ?? readyBundle(), () => clock.now()),
     prefs: new MemoryStorage(),
     tab: new MemoryStorage(),
-    rand: opts.rand ?? seededRand(1),
+    rand: opts.rand ?? mulberry32(1),
     pickPing: (spotId) => {
       pings.push(spotId);
     },
@@ -331,23 +331,8 @@ export function testApp(
   return { deps, server, network, timers, clock, cache, storage, pings };
 }
 
-/**
- * Deterministic [0, 1) generator. Same algorithm as `mulberry32` in
- * packages/core/test/prng.ts (Phase A); swap to that import once it lands.
- */
-export function seededRand(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/** A ready bundle state around `bundle` (default: the v1 fixture), fresh and age 0. */
-export function readyBundle(bundle: Bundle = fixtureBundle()): BundleState {
+/** A ready bundle state around `bundle` (default: the scoring fixture), fresh and age 0. */
+export function readyBundle(bundle: Bundle = makeScoringBundle()): BundleState {
   const load: ReadyLoad = {
     status: "fresh",
     bundle,
@@ -357,12 +342,6 @@ export function readyBundle(bundle: Bundle = fixtureBundle()): BundleState {
     networkFailed: false,
   };
   return { phase: "ready", load, refreshing: false, checkFailed: false };
-}
-
-function fixtureBundle(): Bundle {
-  const parsed = parseBundle(makeBundleFixture());
-  if (!parsed.ok) throw new Error(`bundle fixture invalid: ${parsed.detail}`);
-  return parsed.bundle;
 }
 
 export function renderApp(app: TestApp, ui: ReactNode): RenderResult {
