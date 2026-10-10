@@ -15,6 +15,7 @@ export function createWebLock(locks: LockApi): Lock {
   };
 }
 
+// Web Lock name. Keeps the old project name on purpose: tabs on the old and new build must see each other.
 export const TAB_LOCK_PREFIX = "study-spot:tab:";
 
 /**

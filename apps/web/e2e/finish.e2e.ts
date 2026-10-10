@@ -12,6 +12,7 @@ function cacheHolds(page: Page, name: string, id: string): Promise<boolean> {
     ({ name, id }) =>
       new Promise<boolean>((resolve) => {
         try {
+          // Same name as DB_NAME, which keeps the old project name on purpose.
           const open = indexedDB.open("study-spot");
           // A fresh database means the app has not stored anything: abort rather than create one.
           open.onupgradeneeded = () => {

@@ -2,6 +2,7 @@ import type { BinaryCache, KeyValueCache } from "@perch/ui-logic";
 import { type DBSchema, type IDBPDatabase, openDB } from "idb";
 import { withTimeout } from "./timeout.ts";
 
+// IndexedDB name. Keeps the old project name on purpose: renaming would orphan queued changes on phones that already use the app.
 export const DB_NAME = "study-spot";
 const DB_VERSION = 1;
 /** IndexedDB calls that take longer than this reject, so the outbox retries instead of hanging. */
