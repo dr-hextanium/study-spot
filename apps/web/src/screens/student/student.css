@@ -30,11 +30,14 @@
   min-width: 0;
 }
 
-/* The chips run out past the gutter, so a row that does not fit shows it can scroll. On the
-   left they stop at the label column, with room for the focus ring. */
+/* The chips run out past the gutter. On the left they stop at the label column, with room
+   for the focus ring. */
 .query__control > .chips {
   margin-inline: calc(var(--space-xs) * -1) calc(var(--space-gutter) * -1);
   padding-inline: var(--space-xs) var(--space-gutter);
+  /* A chip cut by the screen edge fades out in the gutter, so the row reads as scrollable.
+     A mask, so no new color. */
+  mask-image: linear-gradient(to left, transparent, #000 var(--space-gutter));
 }
 
 /* The screen's own gap already parts the pick from the question. */
