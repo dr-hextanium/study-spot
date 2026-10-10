@@ -92,6 +92,14 @@ test("clock skew is used only past 5 minutes and only from a real header", () =>
   expect(clockSkewMs(device, null)).toBe(0);
   expect(clockSkewMs(device, "not a date")).toBe(0);
   expect(clockSkewMs(device, "Tue, 13 Oct 2026 18:04:59 GMT")).toBe(0);
+  // Exactly 5:00 is still within tolerance, in both directions
+  expect(clockSkewMs(device, "Tue, 13 Oct 2026 18:05:00 GMT")).toBe(0);
+  expect(clockSkewMs(device, "Tue, 13 Oct 2026 17:55:00 GMT")).toBe(0);
+  // One second past it is used
+  expect(clockSkewMs(device, "Tue, 13 Oct 2026 18:05:01 GMT")).toBe(301_000);
+  // Negative skew: the device clock runs ahead of the server
+  expect(clockSkewMs(device, "Tue, 13 Oct 2026 17:54:59 GMT")).toBe(-301_000);
+  expect(clockSkewMs(device, "Tue, 13 Oct 2026 15:00:00 GMT")).toBe(-3 * 3_600_000);
   expect(clockSkewMs(device, "Tue, 13 Oct 2026 21:00:00 GMT")).toBe(3 * 3_600_000);
   expect(iso(correctedNow(device, -7_200_000))).toBe("2026-10-13T16:00:00.000Z");
 });
