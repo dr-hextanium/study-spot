@@ -21,7 +21,7 @@
 - Styling: colors, sizes, radii, durations, and easings only through the token variables from `toCssVariables`; no other hex values in CSS or TSX. 44 px minimum targets. No shadows except the sheet. Square 4 px corners.
 - No em-dashes anywhere (code, comments, docs, copy, commit messages). Use commas or colons.
 - Commits: Conventional Commits, subject 72 characters or fewer (aim for 50), imperative, lowercase, no trailing period, no attribution or co-author lines.
-- Every commit passes `bun run typecheck && bun run lint && bun test` and, once `apps/web` exists, `bun run --filter '@study-spot/web' test`. Run `bun run fix` before committing. The machine is often loaded: if `bun test` times out, rerun with `--timeout 60000` before suspecting code.
+- Every commit passes `bun run typecheck && bun run lint && bun test` and, once `apps/web` exists, `bun run --filter '@perch/web' test`. Run `bun run fix` before committing. The machine is often loaded: if `bun test` times out, rerun with `--timeout 60000` before suspecting code.
 - Playwright needs Chromium once per machine: `cd apps/web && bunx playwright install chromium` (CI uses `--with-deps`).
 
 ## Review Focus
@@ -179,7 +179,7 @@ Replace `packages/ui-logic/test/outbox.deadtab.test.ts`:
 
 ```ts
 import { expect, test } from "bun:test";
-import type { SurveySpot } from "@study-spot/core";
+import type { SurveySpot } from "@perch/core";
 import { surveySpotFixture } from "../../core/test/fixtures/survey-spot.ts";
 import { createOutbox, createSurveyApi, HELD_RECHECK_MS } from "../src/index.ts";
 import { POWER, SEATING, SPOT_A } from "./builders.ts";
@@ -511,7 +511,7 @@ export type NewWrite = DistributiveOmit<
 Replace `packages/ui-logic/src/survey/outbox.ts` (changes from plan B: imports and deps; `self` replaces the `mine` set; `enqueue` takes the version floor and starts its own pass before waking other tabs; `sendingElsewhere`, `pick`, and `settle` use owners; `pass` posts the signal and schedules the recheck; `start()` and `stop()` hold and release liveness):
 
 ```ts
-import type { IdentitySection, SurveySpot } from "@study-spot/core";
+import type { IdentitySection, SurveySpot } from "@perch/core";
 import type {
   BinaryCache,
   Clock,
@@ -1167,7 +1167,7 @@ Create `apps/server/test/campus.test.ts`:
 
 ```ts
 import { expect, test } from "bun:test";
-import { CampusInfo, CreateInviteResponse } from "@study-spot/core";
+import { CampusInfo, CreateInviteResponse } from "@perch/core";
 import { body, setup, signIn, WEB_ORIGIN } from "./helpers.ts";
 
 test("a signed-in surveyor reads the campus and its buildings by name", async () => {
@@ -1241,7 +1241,7 @@ test("campus() reads the campus route and a trailing slash in the base URL is dr
 - [ ] **Step 2: Run them and watch them fail**
 
 Run: `bun test apps/server/test/campus.test.ts packages/ui-logic/test/api.test.ts`
-Expected: FAIL. `CampusInfo` is not exported from `@study-spot/core`; `api.campus` is not a function; the route answers 404.
+Expected: FAIL. `CampusInfo` is not exported from `@perch/core`; `api.campus` is not a function; the route answers 404.
 
 - [ ] **Step 3: Add the schema, the route, and the hint**
 
@@ -1263,8 +1263,8 @@ export type CampusInfo = z.infer<typeof CampusInfo>;
 Create `apps/server/src/routes/campus.ts`:
 
 ```ts
-import { CampusInfo } from "@study-spot/core";
-import { building, campus } from "@study-spot/db";
+import { CampusInfo } from "@perch/core";
+import { building, campus } from "@perch/db";
 import { asc, eq } from "drizzle-orm";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import type { AppDeps } from "../app.ts";
@@ -1327,7 +1327,7 @@ and a `https://<pwa>/invite/<token>?relogin=1` link (the admin already exists, s
 
 - [ ] **Step 4: Add the client call and drop a trailing slash**
 
-In `packages/ui-logic/src/survey/api.ts`, add `CampusInfo,` to the `@study-spot/core` import (after `type ApiErrorCode,`). At the top of `createSurveyApi`, add:
+In `packages/ui-logic/src/survey/api.ts`, add `CampusInfo,` to the `@perch/core` import (after `type ApiErrorCode,`). At the top of `createSurveyApi`, add:
 
 ```ts
   const baseUrl = deps.baseUrl.replace(/\/+$/, "");
@@ -1704,7 +1704,7 @@ export function plural(count: number, one: PlainCopyId, many: CountCopyId): stri
 Create `packages/ui-logic/src/survey/failure.ts`:
 
 ```ts
-import { type SpotSummary, V0_FIELD, type V0Field } from "@study-spot/core";
+import { type SpotSummary, V0_FIELD, type V0Field } from "@perch/core";
 import { COPY, type PlainCopyId, t } from "../copy/index.ts";
 import type { WriteError } from "./writes.ts";
 
@@ -1865,9 +1865,9 @@ The empty app: package and tsconfigs wired into `tsc -b`, Vite with the TanStack
 - Create: `bunfig.toml`; Modify: `tsconfig.json`, `biome.json`, `.gitignore`, `.github/workflows/ci.yml`, `bun.lock`
 
 **Interfaces:**
-- Produces: package `@study-spot/web` (scripts `dev`, `build`, `preview`, `test`, `e2e`; output `apps/web/dist`), the deploy contract `VITE_API_BASE_URL` and `VITE_DATA_BASE_URL`.
+- Produces: package `@perch/web` (scripts `dev`, `build`, `preview`, `test`, `e2e`; output `apps/web/dist`), the deploy contract `VITE_API_BASE_URL` and `VITE_DATA_BASE_URL`.
 - Produces: `parseWebEnv(source): { ok: true; env: WebEnv } | { ok: false; error: string }`; `themeCss(tokens): string`; `installTheme(tokens, doc?): void`.
-- Consumes: `tokens`, `toCssVariables` from `@study-spot/ui-logic`.
+- Consumes: `tokens`, `toCssVariables` from `@perch/ui-logic`.
 
 - [ ] **Step 1: Create the package and configs**
 
@@ -1875,7 +1875,7 @@ The empty app: package and tsconfigs wired into `tsc -b`, Vite with the TanStack
 
 ```json
 {
-  "name": "@study-spot/web",
+  "name": "@perch/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -1888,8 +1888,8 @@ The empty app: package and tsconfigs wired into `tsc -b`, Vite with the TanStack
   },
   "dependencies": {
     "@fontsource/public-sans": "^5.3.0",
-    "@study-spot/core": "workspace:*",
-    "@study-spot/ui-logic": "workspace:*",
+    "@perch/core": "workspace:*",
+    "@perch/ui-logic": "workspace:*",
     "@tanstack/query-async-storage-persister": "^5.104.1",
     "@tanstack/react-query": "^5.104.1",
     "@tanstack/react-query-persist-client": "^5.104.1",
@@ -2212,14 +2212,14 @@ import { parseWebEnv } from "../src/env.ts";
 
 test("both deploy variables are required and lose a trailing slash", () => {
   const ok = parseWebEnv({
-    VITE_API_BASE_URL: "https://study-spot.onrender.com/",
-    VITE_DATA_BASE_URL: "https://study-spot-data.pages.dev",
+    VITE_API_BASE_URL: "https://perch-api.onrender.com/",
+    VITE_DATA_BASE_URL: "https://perch-data.pages.dev",
   });
   expect(ok).toEqual({
     ok: true,
     env: {
-      VITE_API_BASE_URL: "https://study-spot.onrender.com",
-      VITE_DATA_BASE_URL: "https://study-spot-data.pages.dev",
+      VITE_API_BASE_URL: "https://perch-api.onrender.com",
+      VITE_DATA_BASE_URL: "https://perch-data.pages.dev",
     },
   });
   expect(parseWebEnv({ VITE_API_BASE_URL: "https://x.example" }).ok).toBe(false);
@@ -2232,7 +2232,7 @@ test("both deploy variables are required and lose a trailing slash", () => {
 `apps/web/test/theme.test.ts`:
 
 ```ts
-import { tokens } from "@study-spot/ui-logic";
+import { tokens } from "@perch/ui-logic";
 import { expect, test } from "vitest";
 import { installTheme, themeCss } from "../src/ui/theme.ts";
 
@@ -2253,7 +2253,7 @@ test("the token stylesheet is installed once", () => {
 });
 ```
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: FAIL, `Cannot find module '../src/env.ts'` and `'../src/ui/theme.ts'`.
 
 - [ ] **Step 3: Add the env contract, the theme, and the entry**
@@ -2285,7 +2285,7 @@ export function parseWebEnv(source: Readonly<Record<string, unknown>>): EnvResul
 `apps/web/src/ui/theme.ts`:
 
 ```ts
-import { type Tokens, toCssVariables } from "@study-spot/ui-logic";
+import { type Tokens, toCssVariables } from "@perch/ui-logic";
 
 function block(selector: string, vars: Record<string, string>): string {
   const lines = Object.entries(vars).map(([name, value]) => `  ${name}: ${value};`);
@@ -2328,7 +2328,7 @@ export const Route = createRootRoute({ component: Outlet });
 `apps/web/src/main.tsx` (Task 8 replaces it):
 
 ```tsx
-import { tokens } from "@study-spot/ui-logic";
+import { tokens } from "@perch/ui-logic";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -2424,10 +2424,10 @@ Expected: `rendered 4 icons into .../apps/web/public/icons/`; the four PNGs and 
 
 - [ ] **Step 5: Build once to generate the route tree, then run the tests**
 
-Run: `VITE_API_BASE_URL=http://127.0.0.1:8787 VITE_DATA_BASE_URL=http://data.localhost:8788 bun run --filter '@study-spot/web' build`
+Run: `VITE_API_BASE_URL=http://127.0.0.1:8787 VITE_DATA_BASE_URL=http://data.localhost:8788 bun run --filter '@perch/web' build`
 Expected: `✓ built`, `PWA v2.0.0 ... files generated dist/sw.js`, and `apps/web/src/routeTree.gen.ts` exists (commit it; `tsc -b` runs before any build in CI).
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: PASS (3 tests).
 
 - [ ] **Step 6: Add the web steps to CI**
@@ -2436,10 +2436,10 @@ In `.github/workflows/ci.yml`, in the `check` job after the `Test` step, add:
 
 ```yaml
       - name: Web unit tests
-        run: bun run --filter '@study-spot/web' test
+        run: bun run --filter '@perch/web' test
 
       - name: Web build
-        run: bun run --filter '@study-spot/web' build
+        run: bun run --filter '@perch/web' build
         env:
           VITE_API_BASE_URL: https://api.example.invalid
           VITE_DATA_BASE_URL: https://data.example.invalid
@@ -2447,7 +2447,7 @@ In `.github/workflows/ci.yml`, in the `check` job after the `Test` step, add:
 
 - [ ] **Step 7: Typecheck, lint, commit**
 
-Run: `bun run fix && bun run typecheck && bun run lint && bun test && bun run --filter '@study-spot/web' test`
+Run: `bun run fix && bun run typecheck && bun run lint && bun test && bun run --filter '@perch/web' test`
 Expected: all pass; `bun test` reports no files from `apps/web`.
 
 ```bash
@@ -2467,7 +2467,7 @@ The web implementations: one IndexedDB database (`study-spot`, stores `kv` and `
 - Produces: `withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise<T>`; `openStores(name?): { cache: KeyValueCache; blobs: BinaryCache; close(): void }`, `STORAGE_TIMEOUT_MS = 10_000`; `createFetchHttp(fetchFn?): Http`, `JSON_TIMEOUT_MS = 75_000`, `UPLOAD_TIMEOUT_MS = 120_000`.
 - Produces: `type LockApi = { request<T>(name, cb: () => Promise<T>): Promise<T>; query(): Promise<{ held?: { name?: string }[] }> }`; `createWebLock(locks: LockApi): Lock`; `createWebLiveness(locks: LockApi, ids: Ids): Liveness`, `TAB_LOCK_PREFIX = "study-spot:tab:"`.
 - Produces: `systemClock`, `browserIds`, `browserTimers`, `createForeground(doc?)`, `createNetworkStatus(win?)`, `createLocalStorage(win?)`, `createBroadcastSignal(name?)`, `createGeolocation(nav?)`, `createShare(nav?)`, `OUTBOX_CHANNEL`, `GEO_TIMEOUT_MS`.
-- Consumes: the adapter interfaces from `@study-spot/ui-logic` (Task 1 adds `Liveness`, `QueueSignal`).
+- Consumes: the adapter interfaces from `@perch/ui-logic` (Task 1 adds `Liveness`, `QueueSignal`).
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -2476,7 +2476,7 @@ The web implementations: one IndexedDB database (`study-spot`, stores `kv` and `
 ```ts
 // @vitest-environment node
 import "fake-indexeddb/auto";
-import type { HttpRequest } from "@study-spot/ui-logic";
+import type { HttpRequest } from "@perch/ui-logic";
 import { expect, test, vi } from "vitest";
 import { createFetchHttp, JSON_TIMEOUT_MS } from "../src/adapters/http.ts";
 import { openStores } from "../src/adapters/idb.ts";
@@ -2775,7 +2775,7 @@ test("share copies the link, or opens the share sheet when the clipboard is bloc
 
 - [ ] **Step 2: Run them and watch them fail**
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: FAIL, the adapter modules do not exist.
 
 - [ ] **Step 3: Write the adapters**
@@ -2804,7 +2804,7 @@ export function withTimeout<T>(promise: Promise<T>, ms: number, what: string): P
 `apps/web/src/adapters/idb.ts`:
 
 ```ts
-import type { BinaryCache, KeyValueCache } from "@study-spot/ui-logic";
+import type { BinaryCache, KeyValueCache } from "@perch/ui-logic";
 import { type DBSchema, type IDBPDatabase, openDB } from "idb";
 import { withTimeout } from "./timeout.ts";
 
@@ -2893,7 +2893,7 @@ export function openStores(name: string = DB_NAME): Stores {
 `apps/web/src/adapters/http.ts`:
 
 ```ts
-import type { FetchResponse, Http, HttpRequest } from "@study-spot/ui-logic";
+import type { FetchResponse, Http, HttpRequest } from "@perch/ui-logic";
 
 /** Render's free tier can take most of a minute to wake, so JSON calls wait longer than that. */
 export const JSON_TIMEOUT_MS = 75_000;
@@ -2946,7 +2946,7 @@ export function createFetchHttp(fetchFn: FetchFn = (i, init) => fetch(i, init)):
 `apps/web/src/adapters/locks.ts`:
 
 ```ts
-import type { Ids, Liveness, Lock } from "@study-spot/ui-logic";
+import type { Ids, Liveness, Lock } from "@perch/ui-logic";
 
 /** The part of the Web Locks API the outbox needs; navigator.locks satisfies it. */
 export type LockApi = {
@@ -3015,7 +3015,7 @@ import type {
   QueueSignal,
   Share,
   Timers,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 
 export const systemClock: Clock = { now: () => new Date() };
 
@@ -3149,12 +3149,12 @@ export function createShare(nav: Navigator = navigator): Share {
 
 - [ ] **Step 4: Run the tests**
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: PASS (9 tests in `adapters.test.ts`, 6 in `browser.test.ts`).
 
 - [ ] **Step 5: Typecheck, lint, commit**
 
-Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`
+Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@perch/web' test`
 Expected: all pass. `typecheck` proves `navigator.locks` fits `LockApi` (the "fits" test).
 
 ```bash
@@ -3181,7 +3181,7 @@ The components the contract names, built on standard controls (native radios, ch
 `apps/web/test/components.test.tsx`:
 
 ```tsx
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { expect, test, vi } from "vitest";
@@ -3305,7 +3305,7 @@ test("a confirm sheet is a labelled dialog with both choices", () => {
 });
 ```
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: FAIL, `../src/ui/Button.tsx` and the other components do not exist.
 
 - [ ] **Step 2: Write the stylesheet**
@@ -4460,7 +4460,7 @@ export function Segmented<V extends string>({
 `apps/web/src/ui/Stepper.tsx`:
 
 ```tsx
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { Minus, Plus } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 
@@ -4593,7 +4593,7 @@ export function Check({ label, checked, onChange, helper }: Props) {
 `apps/web/src/ui/Sheet.tsx`:
 
 ```tsx
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { X } from "lucide-react";
 import { type ReactNode, useEffect, useId, useRef } from "react";
 
@@ -4839,7 +4839,7 @@ export function Banner(props: {
 `apps/web/src/ui/HeaderBand.tsx`:
 
 ```tsx
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { Link, type LinkProps } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
@@ -4917,7 +4917,7 @@ import {
   type SyncHeader,
   t,
   type WriteRecord,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import type { PostmarkState } from "../ui/Postmark.tsx";
 
 /** A check older than this reads as stale (dashed ring): about one term. */
@@ -5030,7 +5030,7 @@ export function whatOf(r: WriteRecord, name: string): string {
 `apps/web/src/ui/SyncPostmark.tsx`:
 
 ```tsx
-import type { SyncHeader } from "@study-spot/ui-logic";
+import type { SyncHeader } from "@perch/ui-logic";
 import { headerText } from "../lib/format.ts";
 
 /**
@@ -5068,12 +5068,12 @@ export function SyncPostmark(props: { header: SyncHeader; onOpen: () => void }) 
 
 - [ ] **Step 5: Run the tests**
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: PASS (8 component tests).
 
 - [ ] **Step 6: Typecheck, lint, commit**
 
-Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`
+Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@perch/web' test`
 Expected: all pass, and Biome reports no descending-specificity or `!important` findings in `styles.css`.
 
 ```bash
@@ -5109,7 +5109,7 @@ import type {
   SpotSummary,
   SurveyorPublic,
   SurveySpot,
-} from "@study-spot/core";
+} from "@perch/core";
 import {
   createOutbox,
   createSessionStore,
@@ -5117,7 +5117,7 @@ import {
   type FetchResponse,
   type Http,
   type HttpRequest,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import type { Persister } from "@tanstack/react-query-persist-client";
 import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/react-router";
 import { type RenderResult, render } from "@testing-library/react";
@@ -5298,7 +5298,7 @@ type TestRouter = ReturnType<typeof createRouter<typeof routeTree>>;
 `apps/web/test/serverCache.test.ts`:
 
 ```ts
-import type { SpotList, SurveySpot } from "@study-spot/core";
+import type { SpotList, SurveySpot } from "@perch/core";
 import { QueryClient } from "@tanstack/react-query";
 import { expect, test } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";
@@ -5376,7 +5376,7 @@ test("persisted queries are checked on restore: damaged or unknown ones are drop
 `apps/web/test/toasts.test.tsx`:
 
 ```tsx
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { act, screen } from "@testing-library/react";
 import { expect, test } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";
@@ -5429,7 +5429,7 @@ test("a write that fails gets no success toast", async () => {
 });
 ```
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: FAIL, the `src/app` and `src/hooks` modules do not exist.
 
 - [ ] **Step 2: Write the query layer and the cache rules**
@@ -5458,7 +5458,7 @@ import {
   SpotList as SpotListSchema,
   type SpotSummary,
   SurveySpot,
-} from "@study-spot/core";
+} from "@perch/core";
 import type { QueryClient } from "@tanstack/react-query";
 import type { PersistedClient } from "@tanstack/react-query-persist-client";
 import { z } from "zod";
@@ -5588,8 +5588,8 @@ export function sanitizePersisted(raw: unknown): PersistedClient {
 `apps/web/src/app/queries.ts`:
 
 ```ts
-import type { CampusInfo, SpotList, SurveySpot } from "@study-spot/core";
-import { type ApiResult, isLocalId, type SurveyApi } from "@study-spot/ui-logic";
+import type { CampusInfo, SpotList, SurveySpot } from "@perch/core";
+import { type ApiResult, isLocalId, type SurveyApi } from "@perch/ui-logic";
 import { queryOptions } from "@tanstack/react-query";
 import { keys } from "./keys.ts";
 import { mergeList, newerSpot } from "./serverCache.ts";
@@ -5682,7 +5682,7 @@ export function createAuthState(): AuthState {
 `apps/web/src/app/sessionState.ts`:
 
 ```ts
-import { SESSION_KEY, type SessionStore, type StoredSession } from "@study-spot/ui-logic";
+import { SESSION_KEY, type SessionStore, type StoredSession } from "@perch/ui-logic";
 
 /** The stored session as an external store, so screens re-render when it changes in any tab. */
 export type SessionState = {
@@ -5740,7 +5740,7 @@ export function createSessionState(store: SessionStore, win: Window = window): S
 `apps/web/src/app/deps.ts`:
 
 ```ts
-import type { SurveySpot } from "@study-spot/core";
+import type { SurveySpot } from "@perch/core";
 import {
   type BinaryCache,
   type Clock,
@@ -5753,7 +5753,7 @@ import {
   type Outbox,
   type Share,
   type SurveyApi,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { QueryClient } from "@tanstack/react-query";
 import type { Persister } from "@tanstack/react-query-persist-client";
@@ -5933,7 +5933,7 @@ export function useDeps(): AppDeps {
 `apps/web/src/hooks/useOutbox.ts`:
 
 ```ts
-import { type OutboxSnapshot, type SyncHeader, syncHeader } from "@study-spot/ui-logic";
+import { type OutboxSnapshot, type SyncHeader, syncHeader } from "@perch/ui-logic";
 import { useSyncExternalStore } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 
@@ -5970,7 +5970,7 @@ export function useOnline(): boolean {
 `apps/web/src/hooks/useSession.ts`:
 
 ```ts
-import type { AcceptInviteResponse, SurveyorPublic } from "@study-spot/core";
+import type { AcceptInviteResponse, SurveyorPublic } from "@perch/core";
 import { useSyncExternalStore } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { useOutboxSnapshot } from "./useOutbox.ts";
@@ -6028,8 +6028,8 @@ export function useCampusTz(): string {
 `apps/web/src/hooks/useSurveyHome.ts`:
 
 ```ts
-import type { SurveySpot } from "@study-spot/core";
-import { type SurveyHome, surveyHome } from "@study-spot/ui-logic";
+import type { SurveySpot } from "@perch/core";
+import { type SurveyHome, surveyHome } from "@perch/ui-logic";
 import { useQueryClient } from "@tanstack/react-query";
 import { keys } from "../app/keys.ts";
 import { useOutboxSnapshot } from "./useOutbox.ts";
@@ -6065,7 +6065,7 @@ export function useSurveyHome(): HomeState {
 `apps/web/src/hooks/useToasts.tsx`:
 
 ```tsx
-import { type PlainCopyId, t } from "@study-spot/ui-logic";
+import { type PlainCopyId, t } from "@perch/ui-logic";
 import {
   createContext,
   type ReactNode,
@@ -6162,12 +6162,12 @@ export function useToasts(): ToastApi {
 
 - [ ] **Step 5: Run the tests**
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: PASS. No `TimeoutOverflowWarning` is printed (the reason `gcTime` is `Infinity`).
 
 - [ ] **Step 6: Typecheck, lint, commit**
 
-Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`
+Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@perch/web' test`
 Expected: all pass.
 
 ```bash
@@ -6196,7 +6196,7 @@ The routes and the frame every survey screen shares: `/` redirects to `/survey`;
 `apps/web/test/invite.test.tsx`:
 
 ```tsx
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import { ME, renderRoute, TOKEN, testApp } from "./harness.tsx";
@@ -6270,7 +6270,7 @@ test("on an iPhone browser tab the note says to open the link in the installed a
 });
 ```
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: FAIL. The route tree has no `/invite/$token` (the memory router renders a not-found page) and `../src/screens` does not exist.
 
 - [ ] **Step 2: Write the helpers and the shell pieces**
@@ -6297,8 +6297,8 @@ export function isStandalone(win: Window): boolean {
 `apps/web/src/lib/names.ts`:
 
 ```ts
-import type { SpotList } from "@study-spot/core";
-import { bySeq, type WriteRecord } from "@study-spot/ui-logic";
+import type { SpotList } from "@perch/core";
+import { bySeq, type WriteRecord } from "@perch/ui-logic";
 
 /** Spot id to the name a surveyor last saw or typed, for the sync sheet. */
 export function spotNames(
@@ -6320,7 +6320,7 @@ export function spotNames(
 `apps/web/src/screens/SyncSheet.tsx`:
 
 ```tsx
-import { isLocalId, t } from "@study-spot/ui-logic";
+import { isLocalId, t } from "@perch/ui-logic";
 import { useEffect, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { useOutboxSnapshot, useSyncHeader } from "../hooks/useOutbox.ts";
@@ -6455,7 +6455,7 @@ export function SurveyHeader(props: { title: string; back?: LinkProps }) {
 `apps/web/src/screens/SignedOut.tsx`:
 
 ```tsx
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { HeaderBand } from "../ui/HeaderBand.tsx";
 import { Screen } from "../ui/Screen.tsx";
 
@@ -6478,7 +6478,7 @@ export function SignedOut() {
 
 ```tsx
 import { useRegisterSW } from "virtual:pwa-register/react";
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { Banner } from "../ui/Banner.tsx";
 import { Button } from "../ui/Button.tsx";
 
@@ -6509,8 +6509,8 @@ export function UpdatePrompt() {
 `apps/web/src/screens/Invite.tsx`:
 
 ```tsx
-import { OpaqueToken } from "@study-spot/core";
-import { t } from "@study-spot/ui-logic";
+import { OpaqueToken } from "@perch/core";
+import { t } from "@perch/ui-logic";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
@@ -6719,7 +6719,7 @@ function SurveyLayout() {
 import "@fontsource/public-sans/latin-600.css";
 import "@fontsource/public-sans/latin-700.css";
 import "./ui/styles.css";
-import { tokens } from "@study-spot/ui-logic";
+import { tokens } from "@perch/ui-logic";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -6761,15 +6761,15 @@ createRoot(root).render(
 
 - [ ] **Step 4: Regenerate the route tree and run the tests**
 
-Run: `VITE_API_BASE_URL=http://127.0.0.1:8787 VITE_DATA_BASE_URL=http://data.localhost:8788 bun run --filter '@study-spot/web' build`
+Run: `VITE_API_BASE_URL=http://127.0.0.1:8787 VITE_DATA_BASE_URL=http://data.localhost:8788 bun run --filter '@perch/web' build`
 Expected: builds; `routeTree.gen.ts` now lists `/`, `/invite/$token`, and `/survey`.
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: PASS (5 invite tests).
 
 - [ ] **Step 5: Typecheck, lint, commit**
 
-Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`
+Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@perch/web' test`
 Expected: all pass.
 
 ```bash
@@ -6795,7 +6795,7 @@ Home answers "what next, and is my data safe": Needs attention (conflicts and fa
 `apps/web/test/home.test.tsx`:
 
 ```tsx
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { expect, test } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";
@@ -6901,7 +6901,7 @@ test("first run offline with nothing cached says the list needs a connection", a
 });
 ```
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: FAIL; `/survey` renders an empty layout (no index route), so "No spots yet" and the lists are not found.
 
 - [ ] **Step 2: Write the screen and the route**
@@ -6918,8 +6918,8 @@ export type SpotLinkFor = (spotId: string) => LinkProps;
 `apps/web/src/screens/Home.tsx`:
 
 ```tsx
-import type { AttentionRow, DraftRow, StaleRow } from "@study-spot/ui-logic";
-import { plural, t } from "@study-spot/ui-logic";
+import type { AttentionRow, DraftRow, StaleRow } from "@perch/ui-logic";
+import { plural, t } from "@perch/ui-logic";
 import { type ReactNode, useEffect, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { useOnline } from "../hooks/useOnline.ts";
@@ -7090,15 +7090,15 @@ function HomeRoute() {
 
 - [ ] **Step 3: Regenerate the route tree and run the tests**
 
-Run: `VITE_API_BASE_URL=http://127.0.0.1:8787 VITE_DATA_BASE_URL=http://data.localhost:8788 bun run --filter '@study-spot/web' build`
+Run: `VITE_API_BASE_URL=http://127.0.0.1:8787 VITE_DATA_BASE_URL=http://data.localhost:8788 bun run --filter '@perch/web' build`
 Expected: builds; `routeTree.gen.ts` lists `/survey/`.
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: PASS (8 home tests, 46 web tests in all).
 
 - [ ] **Step 4: Typecheck, lint, commit**
 
-Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`
+Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@perch/web' test`
 Expected: all pass.
 
 ```bash
@@ -7128,8 +7128,8 @@ Playwright on a Pixel 7 profile against the production build under `vite preview
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { seed } from "@study-spot/db/seed";
-import { createTestDb } from "@study-spot/db/testing";
+import { seed } from "@perch/db/seed";
+import { createTestDb } from "@perch/db/testing";
 import { z } from "zod";
 import { buildApp } from "../src/app.ts";
 import { bootstrapAdminInvite } from "../src/auth/invites.ts";
@@ -7359,7 +7359,7 @@ In `.github/workflows/ci.yml`, add before the `postgres:` job:
         run: bunx playwright install --with-deps chromium
 
       - name: Playwright against the real server
-        run: bun run --filter '@study-spot/web' e2e
+        run: bun run --filter '@perch/web' e2e
         env:
           CI: "true"
 
@@ -7374,7 +7374,7 @@ In `.github/workflows/ci.yml`, add before the `postgres:` job:
 
 - [ ] **Step 5: Typecheck, lint, commit**
 
-Run: `bun run fix && bun run typecheck && bun run lint && bun test && bun run --filter '@study-spot/web' test`
+Run: `bun run fix && bun run typecheck && bun run lint && bun test && bun run --filter '@perch/web' test`
 Expected: all pass.
 
 ```bash

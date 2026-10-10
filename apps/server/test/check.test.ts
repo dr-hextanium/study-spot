@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
-import { buildBundle } from "@study-spot/db";
-import { seed } from "@study-spot/db/seed";
-import { createTestDb } from "@study-spot/db/testing";
+import { buildBundle } from "@perch/db";
+import { seed } from "@perch/db/seed";
+import { createTestDb } from "@perch/db/testing";
 import {
   type CheckOptions,
   type CheckResult,
@@ -9,9 +9,9 @@ import {
   type FetchLike,
 } from "../src/deploy/check.ts";
 
-const API = "https://study-spot-api.onrender.com";
-const WEB = "https://study-spot.pages.dev";
-const DATA = "https://study-spot-data.pages.dev";
+const API = "https://perch-api.onrender.com";
+const WEB = "https://perch.pages.dev";
+const DATA = "https://perch-data.pages.dev";
 const HASH = "0123456789abcdef";
 
 const db = await createTestDb();

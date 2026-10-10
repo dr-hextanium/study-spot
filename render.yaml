@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: study-spot-api
+    name: perch-api
     runtime: node
     plan: free
     region: virginia
@@ -27,6 +27,6 @@ services:
       - key: CF_API_TOKEN
         sync: false
       - key: CF_DATA_PROJECT
-        value: "study-spot-data"
+        value: "perch-data"
       - key: CAMPUS_ID
         value: "sbu"

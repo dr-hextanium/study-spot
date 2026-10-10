@@ -1,9 +1,9 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { type Db, surveyor } from "@study-spot/db";
-import { type SeedIds, seed } from "@study-spot/db/seed";
-import { createTestDb } from "@study-spot/db/testing";
+import { type Db, surveyor } from "@perch/db";
+import { type SeedIds, seed } from "@perch/db/seed";
+import { createTestDb } from "@perch/db/testing";
 import type { LightMyRequestResponse } from "fastify";
 import { type App, buildApp } from "../src/app.ts";
 import { createSession } from "../src/auth/sessions.ts";
@@ -14,8 +14,8 @@ import { createPublisher, type Publisher, type Timers } from "../src/publish/pub
 import type { PublishTarget } from "../src/publish/target.ts";
 
 export const NOW = new Date("2026-10-13T18:00:00Z");
-export const WEB_ORIGIN = "https://study-spot.pages.dev";
-export const DATA_BASE_URL = "https://study-spot-data.pages.dev";
+export const WEB_ORIGIN = "https://perch.pages.dev";
+export const DATA_BASE_URL = "https://perch-data.pages.dev";
 
 export type TestClock = Clock & { set(at: Date): void; advance(ms: number): void };
 

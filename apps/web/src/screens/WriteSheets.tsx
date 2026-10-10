@@ -1,4 +1,4 @@
-import { conflictDiff, failureView, t, type WriteRecord } from "@study-spot/ui-logic";
+import { conflictDiff, failureView, t, type WriteRecord } from "@perch/ui-logic";
 import { useNavigate } from "@tanstack/react-router";
 import { CircleAlert } from "lucide-react";
 import { useId, useState } from "react";

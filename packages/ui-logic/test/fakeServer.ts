@@ -1,4 +1,4 @@
-import { IdentitySection, SurveySpot } from "@study-spot/core";
+import { IdentitySection, SurveySpot } from "@perch/core";
 import { z } from "zod";
 import { surveySpotFixture } from "../../core/test/fixtures/survey-spot.ts";
 import type { FetchResponse, Http, HttpRequest } from "../src/index.ts";

@@ -1,4 +1,4 @@
-import type { Db } from "@study-spot/db";
+import type { Db } from "@perch/db";
 import type { FastifyRequest } from "fastify";
 import type { Clock } from "../clock.ts";
 import { HttpError } from "../http.ts";

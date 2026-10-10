@@ -1,4 +1,4 @@
-import type { IdentitySection, SurveySpot } from "@study-spot/core";
+import type { IdentitySection, SurveySpot } from "@perch/core";
 import type {
   BinaryCache,
   Clock,
@@ -93,7 +93,10 @@ type SendResult =
 /** After a write: go on, hold that spot for the rest of the pass, or end the pass. */
 type Step = "next" | "skip" | "stop";
 
-/** Lock name for the outbox's critical sections. */
+/**
+ * Lock name for the outbox's critical sections. Keeps the old project name on
+ * purpose: tabs on the old and new build must take turns on the same lock.
+ */
 export const OUTBOX_LOCK = "study-spot:outbox";
 
 export type Outbox = ReturnType<typeof createOutbox>;

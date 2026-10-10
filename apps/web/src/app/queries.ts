@@ -1,5 +1,5 @@
-import type { CampusInfo, SpotList, SurveySpot } from "@study-spot/core";
-import { type ApiResult, isLocalId, type SurveyApi } from "@study-spot/ui-logic";
+import type { CampusInfo, SpotList, SurveySpot } from "@perch/core";
+import { type ApiResult, isLocalId, type SurveyApi } from "@perch/ui-logic";
 import { queryOptions } from "@tanstack/react-query";
 import { keys } from "./keys.ts";
 import { mergeList, newerSpot } from "./serverCache.ts";

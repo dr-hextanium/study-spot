@@ -4,7 +4,7 @@
 
 **Goal:** Everything the surveyor PWA needs below the screens, in `packages/ui-logic`: a typed client for every plan A route, a stored bearer session, an offline outbox that survives dead zones, killed apps, conflicts, and two tabs, a local view model (spot overview, publish readiness, home lists, sync header), framework-free section forms with the conflict diff, and the typed copy module generated from the copy deck.
 
-**Architecture:** Pure TypeScript over platform adapters. `Http`, `KeyValueCache`, `BinaryCache`, `Clock`, `Ids`, `Timers`, `NetworkStatus`, and `Foreground` are interfaces that `apps/web` implements with browser APIs (plan D). The API client maps every response to an `ApiResult` union after validating it with plan A's schemas in `@study-spot/core`. The outbox stores one record per write, decides order with pure functions (`planEnqueue`, `nextToSend`), and runs one sync pass at a time. View functions apply queued writes on top of server state. Stores expose `subscribe` and `getSnapshot` so plan D's hooks are one-line `useSyncExternalStore` calls.
+**Architecture:** Pure TypeScript over platform adapters. `Http`, `KeyValueCache`, `BinaryCache`, `Clock`, `Ids`, `Timers`, `NetworkStatus`, and `Foreground` are interfaces that `apps/web` implements with browser APIs (plan D). The API client maps every response to an `ApiResult` union after validating it with plan A's schemas in `@perch/core`. The outbox stores one record per write, decides order with pure functions (`planEnqueue`, `nextToSend`), and runs one sync pass at a time. View functions apply queued writes on top of server state. Stores expose `subscribe` and `getSnapshot` so plan D's hooks are one-line `useSyncExternalStore` calls.
 
 **Tech Stack:** TypeScript 7 (`tsc -b`), Zod 4.6, Bun 1.3.14 test runner, Biome 2. No new dependencies.
 
@@ -113,7 +113,7 @@ Out of scope: React hooks, screens, browser adapter implementations, photo resiz
 
 ```ts
 import { expect, test } from "bun:test";
-import { ClientWriteId } from "@study-spot/core";
+import { ClientWriteId } from "@perch/core";
 import { FakeTimers, MemoryCache, sequentialIds } from "./fakes.ts";
 
 test("cache keys filter by prefix and delete removes", async () => {
@@ -596,7 +596,7 @@ import {
   type VerifyRequest,
   VersionConflict,
   type WriteRequest,
-} from "@study-spot/core";
+} from "@perch/core";
 import { z } from "zod";
 import type { Http, HttpBody, HttpMethod } from "../adapters.ts";
 
@@ -673,7 +673,7 @@ export function interpret<T>(status: number, text: string, schema: z.ZodType<T>)
 
 export type SurveyApiDeps = {
   http: Http;
-  /** API origin without a trailing slash, e.g. https://study-spot.onrender.com */
+  /** API origin without a trailing slash, e.g. https://perch-api.onrender.com */
   baseUrl: string;
   /** The stored bearer token, read on every call. */
   token: () => string | null;
@@ -777,7 +777,7 @@ export function createSurveyApi(deps: SurveyApiDeps) {
 `packages/ui-logic/src/survey/session.ts`:
 
 ```ts
-import { OpaqueToken, SurveyorPublic } from "@study-spot/core";
+import { OpaqueToken, SurveyorPublic } from "@perch/core";
 import { z } from "zod";
 import type { KeyValueStorage } from "../adapters.ts";
 
@@ -868,7 +868,7 @@ git commit -m "feat(ui-logic): add typed survey api client and session store"
 `packages/ui-logic/test/builders.ts`:
 
 ```ts
-import type { IdentitySection, SectionWrite } from "@study-spot/core";
+import type { IdentitySection, SectionWrite } from "@perch/core";
 import { type NewWrite, WriteRecord } from "../src/index.ts";
 import { sequentialIds } from "./fakes.ts";
 
@@ -1115,7 +1115,7 @@ import {
   SectionWrite,
   SurveySpot,
   V0_FIELD,
-} from "@study-spot/core";
+} from "@perch/core";
 import { z } from "zod";
 
 /*
@@ -1510,7 +1510,7 @@ The fake answers like plan A: version checks with 409 and the current spot, 422 
 `packages/ui-logic/test/fakeServer.ts`:
 
 ```ts
-import { IdentitySection, SurveySpot } from "@study-spot/core";
+import { IdentitySection, SurveySpot } from "@perch/core";
 import { z } from "zod";
 import { surveySpotFixture } from "../../core/test/fixtures/survey-spot.ts";
 import type { FetchResponse, Http, HttpRequest } from "../src/index.ts";
@@ -1656,7 +1656,7 @@ export class FakeSurveyServer implements Http {
 
 ```ts
 import { expect, test } from "bun:test";
-import type { SurveySpot } from "@study-spot/core";
+import type { SurveySpot } from "@perch/core";
 import { surveySpotFixture } from "../../core/test/fixtures/survey-spot.ts";
 import {
   BACKOFF_MAX_MS,
@@ -2070,7 +2070,7 @@ Expected: FAIL with an `Export named '...' not found` SyntaxError (the exports t
 `packages/ui-logic/src/survey/outbox.ts`:
 
 ```ts
-import type { IdentitySection, SurveySpot } from "@study-spot/core";
+import type { IdentitySection, SurveySpot } from "@perch/core";
 import type {
   BinaryCache,
   Clock,
@@ -2516,7 +2516,7 @@ git commit -m "feat(ui-logic): add offline outbox engine with ordered sync"
 
 ```ts
 import { expect, test } from "bun:test";
-import type { SpotSummary, SurveyorPublic } from "@study-spot/core";
+import type { SpotSummary, SurveyorPublic } from "@perch/core";
 import { surveySpotFixture } from "../../core/test/fixtures/survey-spot.ts";
 import {
   buildSpotView,
@@ -2760,7 +2760,7 @@ import {
   V0_FIELD_SECTION,
   type V0Field,
   v0InputOf,
-} from "@study-spot/core";
+} from "@perch/core";
 import type { OutboxSnapshot } from "./outbox.ts";
 import { isLocalId, type WriteRecord, type WriteState } from "./writes.ts";
 
@@ -3281,7 +3281,7 @@ import {
   SectionWrite,
   type SurveySection,
   type SurveySpot,
-} from "@study-spot/core";
+} from "@perch/core";
 import type { WriteRecord } from "./writes.ts";
 
 /** A section's payload while being edited: any field may still be empty. */

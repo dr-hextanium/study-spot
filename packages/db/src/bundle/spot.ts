@@ -8,7 +8,7 @@ import {
   TABLE_CONFIG,
   type V0Field,
   type V0Input,
-} from "@study-spot/core";
+} from "@perch/core";
 import type {
   spot,
   spot_amenity,

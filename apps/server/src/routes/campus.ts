@@ -1,5 +1,5 @@
-import { CampusInfo } from "@study-spot/core";
-import { building, campus } from "@study-spot/db";
+import { CampusInfo } from "@perch/core";
+import { building, campus } from "@perch/db";
 import { asc, eq } from "drizzle-orm";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import type { AppDeps } from "../app.ts";

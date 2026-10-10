@@ -6,8 +6,8 @@ import {
   type SeatType,
   TABLE_CONFIG,
   type TableConfig,
-} from "@study-spot/core";
-import { type SpotView, t } from "@study-spot/ui-logic";
+} from "@perch/core";
+import { type SpotView, t } from "@perch/ui-logic";
 import {
   Accessibility,
   AppWindow,

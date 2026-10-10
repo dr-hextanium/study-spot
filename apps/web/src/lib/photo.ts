@@ -1,4 +1,4 @@
-import { PHOTO_MAX_BYTES } from "@study-spot/core";
+import { PHOTO_MAX_BYTES } from "@perch/core";
 
 export const MAX_SIDE = 1600;
 export const QUALITY = 0.8;

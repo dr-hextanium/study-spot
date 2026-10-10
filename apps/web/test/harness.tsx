@@ -1,10 +1,4 @@
-import type {
-  CampusInfo,
-  SpotList,
-  SpotSummary,
-  SurveyorPublic,
-  SurveySpot,
-} from "@study-spot/core";
+import type { CampusInfo, SpotList, SpotSummary, SurveyorPublic, SurveySpot } from "@perch/core";
 import {
   createOutbox,
   createSessionStore,
@@ -12,7 +6,7 @@ import {
   type FetchResponse,
   type Http,
   type HttpRequest,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/react-router";
 import { type RenderResult, render } from "@testing-library/react";
 import type { ReactNode } from "react";

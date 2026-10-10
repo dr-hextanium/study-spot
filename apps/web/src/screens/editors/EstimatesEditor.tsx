@@ -1,5 +1,5 @@
-import { DAY_TYPE, TIME_BLOCK } from "@study-spot/core";
-import { type PlainCopyId, type SpotView, t } from "@study-spot/ui-logic";
+import { DAY_TYPE, TIME_BLOCK } from "@perch/core";
+import { type PlainCopyId, type SpotView, t } from "@perch/ui-logic";
 import { Moon, Sun, Sunrise, Sunset } from "lucide-react";
 import { useState } from "react";
 import { cellKey, cellsOf, type Grid, nextBucket, toGrid } from "../../lib/estimates.ts";

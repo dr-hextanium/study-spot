@@ -1,4 +1,4 @@
-import { type PlainCopyId, t, type WriteRecord } from "@study-spot/ui-logic";
+import { type PlainCopyId, t, type WriteRecord } from "@perch/ui-logic";
 import {
   createContext,
   type ReactNode,

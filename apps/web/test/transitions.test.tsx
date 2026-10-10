@@ -1,4 +1,4 @@
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, test } from "vitest";
 import { identity } from "../../../packages/ui-logic/test/builders.ts";

@@ -1,4 +1,4 @@
-import type { SurveySection } from "@study-spot/core";
+import type { SurveySection } from "@perch/core";
 import { createContext } from "react";
 
 /**

@@ -1,4 +1,4 @@
-import { openDb } from "@study-spot/db";
+import { openDb } from "@perch/db";
 import { z } from "zod";
 import { bootstrapAdminInvite } from "../src/auth/invites.ts";
 

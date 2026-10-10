@@ -1,4 +1,4 @@
-import type { IdentitySection, SectionWrite } from "@study-spot/core";
+import type { IdentitySection, SectionWrite } from "@perch/core";
 import { type NewWrite, WriteRecord } from "../src/index.ts";
 import { sequentialIds } from "./fakes.ts";
 

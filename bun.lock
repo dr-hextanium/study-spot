@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "study-spot",
+      "name": "perch",
       "devDependencies": {
         "@biomejs/biome": "^2.5.15",
         "@types/bun": "^1.4.2",
@@ -13,14 +13,14 @@
       },
     },
     "apps/server": {
-      "name": "@study-spot/server",
+      "name": "@perch/server",
       "version": "0.0.0",
       "dependencies": {
         "@fastify/cors": "^11.3.0",
         "@fastify/multipart": "^10.1.2",
         "@noble/hashes": "^2.4.0",
-        "@study-spot/core": "workspace:*",
-        "@study-spot/db": "workspace:*",
+        "@perch/core": "workspace:*",
+        "@perch/db": "workspace:*",
         "drizzle-orm": "^0.45.3",
         "fastify": "^5.12.5",
         "fastify-type-provider-zod": "^7.0.0",
@@ -28,14 +28,14 @@
       },
     },
     "apps/web": {
-      "name": "@study-spot/web",
+      "name": "@perch/web",
       "version": "0.0.0",
       "dependencies": {
         "@fontsource-variable/chivo-mono": "5.3.0",
         "@fontsource-variable/instrument-sans": "^5.3.0",
         "@fontsource-variable/newsreader": "^5.3.0",
-        "@study-spot/core": "workspace:*",
-        "@study-spot/ui-logic": "workspace:*",
+        "@perch/core": "workspace:*",
+        "@perch/ui-logic": "workspace:*",
         "@tanstack/query-async-storage-persister": "^5.104.1",
         "@tanstack/react-query": "^5.104.1",
         "@tanstack/react-query-persist-client": "^5.104.1",
@@ -64,18 +64,18 @@
       },
     },
     "packages/core": {
-      "name": "@study-spot/core",
+      "name": "@perch/core",
       "version": "0.0.0",
       "dependencies": {
         "zod": "^4.6.5",
       },
     },
     "packages/db": {
-      "name": "@study-spot/db",
+      "name": "@perch/db",
       "version": "0.0.0",
       "dependencies": {
         "@electric-sql/pglite": "^0.5.8",
-        "@study-spot/core": "workspace:*",
+        "@perch/core": "workspace:*",
         "drizzle-orm": "^0.45.3",
         "drizzle-zod": "^0.8.3",
         "postgres": "^3.4.9",
@@ -86,10 +86,10 @@
       },
     },
     "packages/ui-logic": {
-      "name": "@study-spot/ui-logic",
+      "name": "@perch/ui-logic",
       "version": "0.0.0",
       "dependencies": {
-        "@study-spot/core": "workspace:*",
+        "@perch/core": "workspace:*",
         "zod": "^4.6.5",
       },
     },
@@ -523,15 +523,15 @@
 
     "@rollup/rollup-win32-x64-msvc": ["@rollup/rollup-win32-x64-msvc@4.64.0", "", { "os": "win32", "cpu": "x64" }, "sha512-nl+CTWIgOGszQmUz/kanfgrfFZ4qiwxKIfT/ryl3N3Ewk5tqizmYtNXiqb7Bu/fDtNgu1kyxdFiAUJNur3iysg=="],
 
-    "@study-spot/core": ["@study-spot/core@workspace:packages/core"],
+    "@perch/core": ["@perch/core@workspace:packages/core"],
 
-    "@study-spot/db": ["@study-spot/db@workspace:packages/db"],
+    "@perch/db": ["@perch/db@workspace:packages/db"],
 
-    "@study-spot/server": ["@study-spot/server@workspace:apps/server"],
+    "@perch/server": ["@perch/server@workspace:apps/server"],
 
-    "@study-spot/ui-logic": ["@study-spot/ui-logic@workspace:packages/ui-logic"],
+    "@perch/ui-logic": ["@perch/ui-logic@workspace:packages/ui-logic"],
 
-    "@study-spot/web": ["@study-spot/web@workspace:apps/web"],
+    "@perch/web": ["@perch/web@workspace:apps/web"],
 
     "@tanstack/history": ["@tanstack/history@1.162.4", "", {}, "sha512-utTS5L2OkeYUzXGohL1Z8sefu1GLNOJcxe8Hd6iIdc/Xo1K1nDB2JEp4iSFhvYh33xKC9V91TxrS8qfrpoKobQ=="],
 

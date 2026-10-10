@@ -1,5 +1,5 @@
-import type { SurveyPhoto } from "@study-spot/core";
-import { failureView, type PendingPhoto, type SpotView, t } from "@study-spot/ui-logic";
+import type { SurveyPhoto } from "@perch/core";
+import { failureView, type PendingPhoto, type SpotView, t } from "@perch/ui-logic";
 import { Camera, Check, CircleAlert, Images, Smartphone, Star } from "lucide-react";
 import { useRef, useState } from "react";
 import { useDeps } from "../../app/AppProvider.tsx";

@@ -1,4 +1,4 @@
-import { DAY_TYPE, type TermRef, TIME_BLOCK } from "@study-spot/core";
+import { DAY_TYPE, type TermRef, TIME_BLOCK } from "@perch/core";
 import {
   COPY,
   type HomeFact,
@@ -8,7 +8,7 @@ import {
   type SectionStatus,
   type SpotView,
   t,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import { CircleAlert, Eye, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { Pill } from "../ui/Pill.tsx";

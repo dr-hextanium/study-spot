@@ -6,7 +6,7 @@ import {
   SectionWrite,
   SurveySpot,
   V0_FIELD,
-} from "@study-spot/core";
+} from "@perch/core";
 import { z } from "zod";
 
 /*

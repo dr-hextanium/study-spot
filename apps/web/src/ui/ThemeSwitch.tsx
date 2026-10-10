@@ -1,4 +1,4 @@
-import { type ThemePref, t } from "@study-spot/ui-logic";
+import { type ThemePref, t } from "@perch/ui-logic";
 import { Segmented } from "./Segmented.tsx";
 import { useThemePref } from "./themePref.ts";
 

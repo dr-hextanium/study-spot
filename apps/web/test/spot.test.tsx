@@ -1,5 +1,5 @@
-import type { SurveySection, SurveySpot } from "@study-spot/core";
-import { t } from "@study-spot/ui-logic";
+import type { SurveySection, SurveySpot } from "@perch/core";
+import { t } from "@perch/ui-logic";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";

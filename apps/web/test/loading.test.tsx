@@ -1,4 +1,4 @@
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { act, screen, waitFor } from "@testing-library/react";
 import { expect, test } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";

@@ -1,4 +1,4 @@
-import type { SyncHeader } from "@study-spot/ui-logic";
+import type { SyncHeader } from "@perch/ui-logic";
 import { CircleAlert, Cloud, CloudCheck, CloudOff, type LucideIcon, RefreshCw } from "lucide-react";
 import { useId, useState } from "react";
 import { useCalmSyncHeader } from "../hooks/useOutbox.ts";

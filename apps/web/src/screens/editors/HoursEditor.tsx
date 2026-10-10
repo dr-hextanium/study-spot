@@ -1,5 +1,5 @@
-import type { HoursRow } from "@study-spot/core";
-import { type PlainCopyId, type SpotView, t } from "@study-spot/ui-logic";
+import type { HoursRow } from "@perch/core";
+import { type PlainCopyId, type SpotView, t } from "@perch/ui-logic";
 import { ChevronDown, Copy } from "lucide-react";
 import { useId, useState } from "react";
 import {

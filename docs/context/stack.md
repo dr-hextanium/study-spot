@@ -51,7 +51,7 @@ apps/mobile       Expo app. Do not create until the v1 gate in [roadmap.md](road
 - Map: MapLibre GL JS with OSM tiles, wrapped behind a thin `Map` component interface so a later Expo port swaps only the implementation (MapLibre React Native bindings).
 - Push: Web Push (iOS only for installed PWAs; see [product-design.md](product-design.md) caveat).
 - Noise: `getUserMedia` in foreground, compute level on device, send only the bucket, never store or transmit audio.
-- Surveyor mode: same PWA, routes under `/survey`, bearer session in localStorage. Browser adapters in `apps/web/src/adapters` (IndexedDB through `idb` with timeouts, fetch, Web Locks, BroadcastChannel). Unit tests: Vitest with jsdom (`bun run --filter '@study-spot/web' test`, kept out of `bun test` by `bunfig.toml`). Browser tests: Playwright on a phone profile against the real server (`bun run --filter '@study-spot/web' e2e`).
+- Surveyor mode: same PWA, routes under `/survey`, bearer session in localStorage. Browser adapters in `apps/web/src/adapters` (IndexedDB through `idb` with timeouts, fetch, Web Locks, BroadcastChannel). Unit tests: Vitest with jsdom (`bun run --filter '@perch/web' test`, kept out of `bun test` by `bunfig.toml`). Browser tests: Playwright on a phone profile against the real server (`bun run --filter '@perch/web' e2e`).
 - Fonts are self-hosted through `@fontsource-variable` (Newsreader, Instrument Sans). No font CDN.
 - The theme boot script is inline in `apps/web/index.html`, so the theme applies before first paint.
 

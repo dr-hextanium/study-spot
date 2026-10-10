@@ -1,4 +1,4 @@
-import { createSessionStore, SESSION_KEY, t } from "@study-spot/ui-logic";
+import { createSessionStore, SESSION_KEY, t } from "@perch/ui-logic";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import { identity } from "../../../packages/ui-logic/test/builders.ts";

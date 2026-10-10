@@ -7,7 +7,7 @@ import {
   type SurveyEstimate,
   TIME_BLOCK,
   type TimeBlock,
-} from "@study-spot/core";
+} from "@perch/core";
 
 export type CellKey = `${DayType}|${TimeBlock}`;
 export type Grid = Readonly<Record<CellKey, Fullness | null>>;

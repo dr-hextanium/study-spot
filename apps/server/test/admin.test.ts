@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { PendingPhotoList, SurveyorList } from "@study-spot/core";
-import { building, bundle_state, campus, photo_blob, spot, spot_photo } from "@study-spot/db";
+import { PendingPhotoList, SurveyorList } from "@perch/core";
+import { building, bundle_state, campus, photo_blob, spot, spot_photo } from "@perch/db";
 import { body, NOW, setup, signIn } from "./helpers.ts";
 
 test("admins list every surveyor, including revoked ones", async () => {

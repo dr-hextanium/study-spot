@@ -9,7 +9,7 @@ import {
   type StepProgress,
   sectionStatuses,
   stepProgress,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import { useIsRestoring } from "@tanstack/react-query";
 import { useDeps } from "../app/AppProvider.tsx";
 import { useOutboxSnapshot } from "./useOutbox.ts";

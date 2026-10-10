@@ -5,7 +5,7 @@ import {
   type SurveySection,
   type V0Field,
   v0InputOf,
-} from "@study-spot/core";
+} from "@perch/core";
 import {
   initForm,
   type SectionDraft,
@@ -13,7 +13,7 @@ import {
   type SpotView,
   setField,
   submitForm,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import { useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 

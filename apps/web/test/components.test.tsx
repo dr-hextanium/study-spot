@@ -1,4 +1,4 @@
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { expect, test, vi } from "vitest";

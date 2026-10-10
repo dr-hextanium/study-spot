@@ -1,4 +1,4 @@
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { LocateFixed } from "lucide-react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { GOOD_FIX_METERS, type LocationState } from "../lib/location.ts";

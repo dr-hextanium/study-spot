@@ -1,4 +1,4 @@
-import { audit_log, bundle_state, type Db, write_receipt } from "@study-spot/db";
+import { audit_log, bundle_state, type Db, write_receipt } from "@perch/db";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { HttpError } from "../http.ts";

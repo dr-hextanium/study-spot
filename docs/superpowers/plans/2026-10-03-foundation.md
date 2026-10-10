@@ -24,7 +24,7 @@
 - Walk fallback for missing pairs: straight-line meters times 1.3 at 1.3 m/s, rounded up to whole minutes, recorded in `walk.estimated_pairs`.
 - No em-dashes in code, comments, docs, or commit messages.
 - Commits: Conventional Commits, one logical change each, subject 72 characters or fewer, every commit passes `bun run typecheck`, `bun run lint`, `bun test`. No attribution lines.
-- Package scope: `@study-spot/*`.
+- Package scope: `@perch/*`.
 
 ## Review Focus
 
@@ -109,13 +109,13 @@ v1 tables from `docs/context/data-model.md` (`live_report`, `session`, `arrival_
 - Modify: `.gitignore`
 
 **Interfaces:**
-- Produces: root scripts `typecheck`, `lint`, `fix`, `test`, `smoke:node`; package names `@study-spot/core`, `@study-spot/db`, `@study-spot/ui-logic`, each exporting `./src/index.ts`.
+- Produces: root scripts `typecheck`, `lint`, `fix`, `test`, `smoke:node`; package names `@perch/core`, `@perch/db`, `@perch/ui-logic`, each exporting `./src/index.ts`.
 
 - [ ] **Step 1: Write root `package.json`**
 
 ```json
 {
-  "name": "study-spot",
+  "name": "perch",
   "private": true,
   "type": "module",
   "workspaces": ["packages/*", "apps/*"],
@@ -258,7 +258,7 @@ Root `tsconfig.json`:
 
 ```json
 {
-  "name": "@study-spot/core",
+  "name": "@perch/core",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -271,12 +271,12 @@ Root `tsconfig.json`:
 
 ```json
 {
-  "name": "@study-spot/ui-logic",
+  "name": "@perch/ui-logic",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "exports": { ".": "./src/index.ts" },
-  "dependencies": { "@study-spot/core": "workspace:*", "zod": "^4.6.5" }
+  "dependencies": { "@perch/core": "workspace:*", "zod": "^4.6.5" }
 }
 ```
 
@@ -284,14 +284,14 @@ Root `tsconfig.json`:
 
 ```json
 {
-  "name": "@study-spot/db",
+  "name": "@perch/db",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "exports": { ".": "./src/index.ts", "./testing": "./src/testing.ts" },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
-    "@study-spot/core": "workspace:*",
+    "@perch/core": "workspace:*",
     "drizzle-orm": "^0.45.3",
     "drizzle-zod": "^0.8.3",
     "postgres": "^3.4.9",
@@ -365,7 +365,7 @@ Install gitleaks once per machine: `brew install gitleaks`.
 
 - [ ] **Step 7: Licenses, env example, gitignore**
 
-`LICENSE`: the standard MIT license text with `Copyright (c) 2026 study-spot contributors`.
+`LICENSE`: the standard MIT license text with `Copyright (c) 2026 perch contributors`.
 
 `DATA-LICENSE`:
 
@@ -1252,11 +1252,11 @@ git commit -m "feat(core): add versioned campus bundle schema"
 - Test: `packages/db/test/schema.test.ts`
 
 **Interfaces:**
-- Consumes: enum value arrays from `@study-spot/core`.
+- Consumes: enum value arrays from `@perch/core`.
 - Produces:
   - Tables (TS names equal SQL names, snake_case): `campus`, `building`, `term`, `walk_matrix`, `spot`, `spot_seat_type`, `spot_table_config`, `spot_room`, `spot_hours`, `spot_amenity`, `spot_photo`, `spot_verification`, `spot_linked_building`, `surveyor`, `magic_link`, `auth_session`, `audit_log`, `write_receipt`, `route`, `route_spot`, `route_slot`, `headcount`, `noise_sample`, `forecast`, `spot_estimate`, `bundle_state`, `pick_ping`, `pick_daily`.
   - `type Db = PgDatabase<PgQueryResultHKT, typeof schema>`; `createDb(url: string): Db`.
-  - `createTestDb(): Promise<Db>` from `@study-spot/db/testing` (fresh in-memory PGlite with all migrations applied).
+  - `createTestDb(): Promise<Db>` from `@perch/db/testing` (fresh in-memory PGlite with all migrations applied).
   - drizzle-zod schemas: `spotInsertSchema`, `spotSelectSchema`.
 
 - [ ] **Step 1: Write the failing test**
@@ -1369,7 +1369,7 @@ import {
   AMENITY,
   ATTRIBUTE_GROUP,
   VERIFICATION_SOURCE,
-} from "@study-spot/core";
+} from "@perch/core";
 import { pgEnum } from "drizzle-orm/pg-core";
 
 export const eligibility = pgEnum("eligibility", ELIGIBILITY);
@@ -2499,7 +2499,7 @@ test("missing pairs fall back to straight-line time and are flagged", () => {
 
 ```ts
 import { expect, test } from "bun:test";
-import { slotIndex } from "@study-spot/core";
+import { slotIndex } from "@perch/core";
 import { NO_DATA_RATIO, assembleBusyness } from "../src/bundle/busyness.ts";
 
 const SPOT = "8d0f7c1e-2b7a-4c39-9a51-3f6f4f0f2a11";
@@ -2574,7 +2574,7 @@ test("exam profile is filled from regular where exam slots are missing", () => {
 
 ```ts
 import { expect, test } from "bun:test";
-import { BundleSpot } from "@study-spot/core";
+import { BundleSpot } from "@perch/core";
 import { toBundleSpot } from "../src/bundle/spot.ts";
 import type { SpotRow } from "../src/bundle/spot.ts";
 
@@ -2719,7 +2719,7 @@ export function pickTerm(terms: TermRow[], today: string): TermRow | null {
 - [ ] **Step 4: Implement `bundle/walk.ts`**
 
 ```ts
-import { fallbackWalkMinutes } from "@study-spot/core";
+import { fallbackWalkMinutes } from "@perch/core";
 import type { building, walk_matrix } from "../schema/index.ts";
 
 export type BuildingRow = typeof building.$inferSelect;
@@ -2761,7 +2761,7 @@ import {
   blockOfHour,
   dayTypeOf,
   slotIndex,
-} from "@study-spot/core";
+} from "@perch/core";
 import type { forecast, spot_estimate } from "../schema/index.ts";
 
 export type ForecastRow = typeof forecast.$inferSelect;
@@ -2819,7 +2819,7 @@ export function assembleBusyness(forecasts: ForecastRow[], estimates: EstimateRo
 - [ ] **Step 6: Implement `bundle/spot.ts`**
 
 ```ts
-import type { AttributeGroup, BundleSpot } from "@study-spot/core";
+import type { AttributeGroup, BundleSpot } from "@perch/core";
 import type {
   spot,
   spot_amenity,
@@ -2964,7 +2964,7 @@ git commit -m "feat(db): add pure bundle assembly helpers"
 
 ```ts
 import { expect, test } from "bun:test";
-import { parseBundle, slotIndex } from "@study-spot/core";
+import { parseBundle, slotIndex } from "@perch/core";
 import { and, eq } from "drizzle-orm";
 import { NoTermError, buildBundle } from "../src/bundle/buildBundle.ts";
 import { spot, spot_hours, term, walk_matrix } from "../src/index.ts";
@@ -3094,7 +3094,7 @@ import {
   DATA_ATTRIBUTION,
   DATA_LICENSE,
   campusDate,
-} from "@study-spot/core";
+} from "@perch/core";
 import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import type { Db } from "../client.ts";
 import {
@@ -3272,7 +3272,7 @@ Expected: PASS.
 `packages/db/scripts/smoke-bundle.ts`:
 
 ```ts
-import { parseBundle } from "@study-spot/core";
+import { parseBundle } from "@perch/core";
 import { buildBundle } from "../src/bundle/buildBundle.ts";
 import { seed } from "../src/seed/seed.ts";
 import { createTestDb } from "../src/testing.ts";
@@ -3535,7 +3535,7 @@ export interface Fetch {
 - [ ] **Step 5: Implement `bundleClient.ts`**
 
 ```ts
-import { BUNDLE_SCHEMA_MAJOR, type Bundle, BundlePointer, parseBundle } from "@study-spot/core";
+import { BUNDLE_SCHEMA_MAJOR, type Bundle, BundlePointer, parseBundle } from "@perch/core";
 import { z } from "zod";
 import type { Clock, Fetch, KeyValueCache } from "./adapters.ts";
 

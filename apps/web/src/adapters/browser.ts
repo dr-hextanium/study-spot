@@ -8,7 +8,7 @@ import type {
   QueueSignal,
   Share,
   Timers,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 
 export const systemClock: Clock = { now: () => new Date() };
 
@@ -57,6 +57,7 @@ export function createNetworkStatus(win: Window = window): NetworkStatus {
  */
 export function createLocalStorage(win: Window = window): KeyValueStorage {
   try {
+    // Probe key only; keeps the old project name, nothing to migrate.
     const probe = "study-spot:probe";
     win.localStorage.setItem(probe, "1");
     win.localStorage.removeItem(probe);
@@ -75,6 +76,7 @@ export function createLocalStorage(win: Window = window): KeyValueStorage {
   }
 }
 
+// Channel name. Keeps the old project name on purpose: tabs on the old and new build must hear each other.
 export const OUTBOX_CHANNEL = "study-spot:outbox";
 
 /** Wakes other tabs of this origin when the queue changes. A no-op where BroadcastChannel is missing. */

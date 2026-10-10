@@ -7,7 +7,7 @@ import {
   campusDate,
   DATA_ATTRIBUTION,
   DATA_LICENSE,
-} from "@study-spot/core";
+} from "@perch/core";
 import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import type { z } from "zod";
 import type { Db } from "../client.ts";

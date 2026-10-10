@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { CreateInviteResponse, SurveySpot } from "@perch/core";
+import { StoredSession } from "@perch/ui-logic";
 import type { Page } from "@playwright/test";
-import { CreateInviteResponse, SurveySpot } from "@study-spot/core";
-import { StoredSession } from "@study-spot/ui-logic";
 import { API_ORIGIN } from "../playwright.config.ts";
 
 /** The bearer token this page signed in with, from the app's own storage. */

@@ -1,5 +1,5 @@
-import { BUNDLE_SCHEMA_MAJOR, BundlePointer, type PublishStatus } from "@study-spot/core";
-import { buildBundle, building, bundle_state, type Db, spot, spot_photo } from "@study-spot/db";
+import { BUNDLE_SCHEMA_MAJOR, BundlePointer, type PublishStatus } from "@perch/core";
+import { buildBundle, building, bundle_state, type Db, spot, spot_photo } from "@perch/db";
 import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Clock } from "../clock.ts";

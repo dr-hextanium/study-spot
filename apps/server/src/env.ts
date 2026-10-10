@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** An origin such as https://study-spot.pages.dev: scheme, host, port, no path or trailing slash. */
+/** An origin such as https://perch.pages.dev: scheme, host, port, no path or trailing slash. */
 const Origin = z
   .url({ protocol: /^https?$/ })
   .refine((u) => new URL(u).origin === u, "must be an origin with no path");

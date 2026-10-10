@@ -3,7 +3,7 @@ import { z } from "zod";
 import { CF_API, type FetchLike, pagesHash, pagesTarget } from "../src/publish/pagesTarget.ts";
 import type { PublishFile } from "../src/publish/target.ts";
 
-const PROJECT = `${CF_API}/accounts/acc/pages/projects/study-spot-data`;
+const PROJECT = `${CF_API}/accounts/acc/pages/projects/perch-data`;
 
 test("pagesHash matches wrangler's blake3 asset key", () => {
   // Reference values from blake3-wasm, the library wrangler uses.
@@ -73,7 +73,7 @@ test("deploy uploads only missing assets and sends a full manifest", async () =>
   const target = pagesTarget({
     accountId: "acc",
     apiToken: "api-token",
-    project: "study-spot-data",
+    project: "perch-data",
     fetch: cf.fetch,
   });
   const reads = { photo: 0 };
@@ -123,7 +123,7 @@ test("immutable files are hashed once per process", async () => {
   const target = pagesTarget({
     accountId: "acc",
     apiToken: "t",
-    project: "study-spot-data",
+    project: "perch-data",
     fetch: cf.fetch,
   });
   const reads = { photo: 0 };
@@ -145,7 +145,7 @@ test("a Cloudflare error is thrown with its code and message", async () => {
   const target = pagesTarget({
     accountId: "acc",
     apiToken: "t",
-    project: "study-spot-data",
+    project: "perch-data",
     fetch: fail,
   });
   await expect(target.deploy(files({ photo: 0 }))).rejects.toThrow("8000013 bad token");

@@ -6,7 +6,7 @@ import {
   PhotoUploadFields,
   SurveySpot,
   WriteRequest,
-} from "@study-spot/core";
+} from "@perch/core";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { z } from "zod";
 import type { AppDeps } from "../app.ts";

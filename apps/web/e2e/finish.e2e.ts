@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { parseBundle } from "@perch/core";
 import type { Page } from "@playwright/test";
-import { parseBundle } from "@study-spot/core";
 import { completeSpot, getSpot, tokenOf } from "./api.ts";
 import { expect, serverState, signIn, test } from "./fixtures.ts";
 import { bigJpeg } from "./photo.ts";
@@ -12,6 +12,7 @@ function cacheHolds(page: Page, name: string, id: string): Promise<boolean> {
     ({ name, id }) =>
       new Promise<boolean>((resolve) => {
         try {
+          // Same name as DB_NAME, which keeps the old project name on purpose.
           const open = indexedDB.open("study-spot");
           // A fresh database means the app has not stored anything: abort rather than create one.
           open.onupgradeneeded = () => {

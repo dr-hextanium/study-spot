@@ -1,5 +1,5 @@
-import { ClientWriteId } from "@study-spot/core";
-import { SpotRef } from "@study-spot/ui-logic";
+import { ClientWriteId } from "@perch/core";
+import { SpotRef } from "@perch/ui-logic";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { z } from "zod";
 import { Overview } from "../screens/Overview.tsx";

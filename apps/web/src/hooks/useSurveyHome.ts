@@ -1,5 +1,5 @@
-import type { SurveySpot } from "@study-spot/core";
-import { type SurveyHome, surveyHome } from "@study-spot/ui-logic";
+import type { SurveySpot } from "@perch/core";
+import { type SurveyHome, surveyHome } from "@perch/ui-logic";
 import { useIsRestoring, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { keys } from "../app/keys.ts";

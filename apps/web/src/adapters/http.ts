@@ -1,4 +1,4 @@
-import type { FetchResponse, Http, HttpRequest } from "@study-spot/ui-logic";
+import type { FetchResponse, Http, HttpRequest } from "@perch/ui-logic";
 
 /** Render's free tier can take most of a minute to wake, so JSON calls wait longer than that. */
 export const JSON_TIMEOUT_MS = 75_000;

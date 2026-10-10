@@ -1,5 +1,5 @@
 {
-  "name": "@study-spot/server",
+  "name": "@perch/server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,8 +10,8 @@
     "@fastify/cors": "^11.3.0",
     "@fastify/multipart": "^10.1.2",
     "@noble/hashes": "^2.4.0",
-    "@study-spot/core": "workspace:*",
-    "@study-spot/db": "workspace:*",
+    "@perch/core": "workspace:*",
+    "@perch/db": "workspace:*",
     "drizzle-orm": "^0.45.3",
     "fastify": "^5.12.5",
     "fastify-type-provider-zod": "^7.0.0",

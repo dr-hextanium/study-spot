@@ -1,4 +1,4 @@
-import type { OverviewSection, SpotView } from "@study-spot/ui-logic";
+import type { OverviewSection, SpotView } from "@perch/ui-logic";
 import type { ReactElement } from "react";
 import { EstimatesEditor } from "./EstimatesEditor.tsx";
 import { HoursEditor } from "./HoursEditor.tsx";

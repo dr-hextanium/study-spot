@@ -1,5 +1,5 @@
-import type { SurveySpot } from "@study-spot/core";
-import { building, type Db, spot, spot_photo } from "@study-spot/db";
+import type { SurveySpot } from "@perch/core";
+import { building, type Db, spot, spot_photo } from "@perch/db";
 import { and, eq } from "drizzle-orm";
 import { HttpError } from "../http.ts";
 import { type SpotWriteContext, spotOr404 } from "../spots/write.ts";

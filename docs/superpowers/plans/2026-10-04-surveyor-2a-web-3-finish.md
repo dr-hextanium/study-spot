@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-Parts 1 and 2's constraints hold: strict TypeScript (no `any`, no `!`, no enums), `.ts`/`.tsx` extensions, Zod at trust boundaries, copy only through `t()`/`plural()`, CSS only from token variables with 44 px targets and shadows only on sheets, no em-dashes, Conventional Commits under 72 characters with no attribution, and every commit passing `bun run typecheck && bun run lint && bun test && bun run --filter '@study-spot/web' test` after `bun run fix`. Detector ignores are added only with the Impeccable CLI, never by editing config by hand.
+Parts 1 and 2's constraints hold: strict TypeScript (no `any`, no `!`, no enums), `.ts`/`.tsx` extensions, Zod at trust boundaries, copy only through `t()`/`plural()`, CSS only from token variables with 44 px targets and shadows only on sheets, no em-dashes, Conventional Commits under 72 characters with no attribution, and every commit passing `bun run typecheck && bun run lint && bun test && bun run --filter '@perch/web' test` after `bun run fix`. Detector ignores are added only with the Impeccable CLI, never by editing config by hand.
 
 ## Review Focus
 
@@ -147,7 +147,7 @@ and add this method at the end of the class:
 `apps/web/test/admin.test.tsx`:
 
 ```tsx
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { expect, test } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";
@@ -223,7 +223,7 @@ test("offline, admin actions are disabled with the reason", async () => {
 });
 ```
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: FAIL; `/survey/admin` is not a route and Home has no Admin link.
 
 - [ ] **Step 3: Write the screen, its styles, and the route**
@@ -275,8 +275,8 @@ import "./screens/admin.css";
 `apps/web/src/screens/Admin.tsx`:
 
 ```tsx
-import type { SurveyorRole } from "@study-spot/core";
-import { publishWarningText, t } from "@study-spot/ui-logic";
+import type { SurveyorRole } from "@perch/core";
+import { publishWarningText, t } from "@perch/ui-logic";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
@@ -638,7 +638,7 @@ function AdminRoute() {
 Replace `apps/web/src/routes/survey.index.tsx`:
 
 ```tsx
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useSession } from "../hooks/useSession.ts";
@@ -673,15 +673,15 @@ function HomeRoute() {
 
 - [ ] **Step 4: Regenerate the route tree and run the tests**
 
-Run: `VITE_API_BASE_URL=http://127.0.0.1:8787 VITE_DATA_BASE_URL=http://data.localhost:8788 bun run --filter '@study-spot/web' build`
+Run: `VITE_API_BASE_URL=http://127.0.0.1:8787 VITE_DATA_BASE_URL=http://data.localhost:8788 bun run --filter '@perch/web' build`
 Expected: builds; `routeTree.gen.ts` lists `/survey/admin`.
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: PASS (5 admin tests, 77 web tests in all).
 
 - [ ] **Step 5: Typecheck, lint, commit**
 
-Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`
+Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@perch/web' test`
 Expected: all pass.
 
 ```bash
@@ -706,7 +706,7 @@ The automatable remainder of spec section 12 and the review focus: acceptance 2 
 ```ts
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseBundle } from "@study-spot/core";
+import { parseBundle } from "@perch/core";
 import { completeSpot, getSpot, tokenOf } from "./api.ts";
 import { expect, serverState, signIn, test } from "./fixtures.ts";
 import { bigJpeg } from "./photo.ts";
@@ -910,7 +910,7 @@ With both servers running, take an invite URL from `/tmp/perch-e2e.json` and run
 
 Pass conditions: every P0 and P1 finding is fixed; text contrast holds at WCAG AA (7:1 for survey light body text); every target is at least 44 px; focus is visible on the ink band and the sheet; nothing scrolls sideways at 360 px; no screen uses a color, size, or radius outside the token variables. P2 and P3 findings are fixed or listed in the commit body with the reason they wait.
 
-For each fix: write or extend the test that shows it (Vitest for behavior, `shell.e2e.ts` for layout), make the change, run `bun run fix && bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`, and commit it on its own as `fix(web): <what the finding was>`.
+For each fix: write or extend the test that shows it (Vitest for behavior, `shell.e2e.ts` for layout), make the change, run `bun run fix && bun run typecheck && bun run lint && bun run --filter '@perch/web' test`, and commit it on its own as `fix(web): <what the finding was>`.
 
 - [ ] **Step 4: Finish review against the direction contract**
 
@@ -920,7 +920,7 @@ Pass condition: every material fix in the list is made (with a test where behavi
 
 - [ ] **Step 5: Full check and commit the detector config**
 
-Run (servers from Step 2 stopped): `bun run typecheck && bun run lint && bun test && bun run --filter '@study-spot/web' test && (cd apps/web && bun run e2e)`
+Run (servers from Step 2 stopped): `bun run typecheck && bun run lint && bun test && bun run --filter '@perch/web' test && (cd apps/web && bun run e2e)`
 Expected: all pass, 26 Playwright tests (the count after the redesign; it was 12 when this plan was written). Note: the detector ignore for the stamp easing was reverted when the redesign removed the stamp, so no `.impeccable/config.json` change is committed.
 
 ```bash
@@ -960,7 +960,7 @@ apps/web          React 19 + Vite PWA (vite-plugin-pwa, prompt updates), TanStac
 In the `### Frontend` list, replace the `Surveyor mode` bullet with:
 
 ```md
-- Surveyor mode: same PWA, routes under `/survey`, bearer session in localStorage. Browser adapters in `apps/web/src/adapters` (IndexedDB through `idb` with timeouts, fetch, Web Locks, BroadcastChannel). Unit tests: Vitest with jsdom (`bun run --filter '@study-spot/web' test`, kept out of `bun test` by `bunfig.toml`). Browser tests: Playwright on a phone profile against the real server (`bun run --filter '@study-spot/web' e2e`).
+- Surveyor mode: same PWA, routes under `/survey`, bearer session in localStorage. Browser adapters in `apps/web/src/adapters` (IndexedDB through `idb` with timeouts, fetch, Web Locks, BroadcastChannel). Unit tests: Vitest with jsdom (`bun run --filter '@perch/web' test`, kept out of `bun test` by `bunfig.toml`). Browser tests: Playwright on a phone profile against the real server (`bun run --filter '@perch/web' e2e`).
 ```
 
 - [ ] **Step 3: Commit**
@@ -1011,7 +1011,7 @@ with:
 
 - [ ] **Step 3: Full check and commit**
 
-Run: `bun run fix && bun run typecheck && bun run lint && bun test && bun run --filter '@study-spot/web' test`
+Run: `bun run fix && bun run typecheck && bun run lint && bun test && bun run --filter '@perch/web' test`
 Expected: all pass.
 
 ```bash
@@ -1023,9 +1023,9 @@ Put the finish reviewer's verdict (Task 16, Step 4) in the commit body.
 
 ## Done criteria (plan D)
 
-- `bun run typecheck`, `bun run lint`, `bun test`, `bun run --filter '@study-spot/web' test` (77 tests), `bun run --filter '@study-spot/web' build`, and `bun run --filter '@study-spot/web' e2e` (12 tests) pass locally and in CI (`check` and `web-e2e` jobs).
+- `bun run typecheck`, `bun run lint`, `bun test`, `bun run --filter '@perch/web' test` (77 tests), `bun run --filter '@perch/web' build`, and `bun run --filter '@perch/web' e2e` (12 tests) pass locally and in CI (`check` and `web-e2e` jobs).
 - Spec section 12: items 2, 3, and 4 pass end to end; item 1 passes end to end except the real phones and the 5-minute clock, which the deploy plan's acceptance run checks on a real iPhone and Android phone (including the Safari versus installed-app storage split).
 - Owner, on a real phone outdoors in direct sun at full brightness: the 13 px full-caps labels, the stamp chips, and the header postmark are readable on Spots, a spot overview, and one section editor. If they are not, raise `fontSize.label` to 14 in `tokens.ts` and `DESIGN.md` together and rerun the copy and component tests.
 - Decision 18's requirements are met: Web Locks back the `Lock` adapter, the dead-tab tests run (none skipped), the server cache persists and never lowers a version, and toasts settle on writes leaving the queue.
 - The Impeccable detector is clean (one reasoned ignore), the audit's P0 and P1 findings and the finish review's material fixes are made, and `DESIGN.md` exists.
-- `docs/ops.md` section 9 (Pages build for `@study-spot/web`, output `apps/web/dist`, env `VITE_API_BASE_URL` and `VITE_DATA_BASE_URL`) matches this app; the deploy plan's Task for the PWA can run.
+- `docs/ops.md` section 9 (Pages build for `@perch/web`, output `apps/web/dist`, env `VITE_API_BASE_URL` and `VITE_DATA_BASE_URL`) matches this app; the deploy plan's Task for the PWA can run.

@@ -1,4 +1,4 @@
-import type { Ids, Liveness, Lock } from "@study-spot/ui-logic";
+import type { Ids, Liveness, Lock } from "@perch/ui-logic";
 
 /** The part of the Web Locks API the outbox needs; navigator.locks satisfies it. */
 export type LockApi = {
@@ -15,6 +15,7 @@ export function createWebLock(locks: LockApi): Lock {
   };
 }
 
+// Web Lock name. Keeps the old project name on purpose: tabs on the old and new build must see each other.
 export const TAB_LOCK_PREFIX = "study-spot:tab:";
 
 /**

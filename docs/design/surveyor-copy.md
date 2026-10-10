@@ -19,7 +19,7 @@ Rules: no em-dashes (use commas or colons), no exclamation marks, sentence case 
 
 | id | text | max chars | notes |
 |---|---|---|---|
-| app.name | Perch | 10 | working name |
+| app.name | Perch | 10 | name |
 | common.save | Save | 12 | |
 | common.cancel | Cancel | 12 | |
 | common.back | Back | 12 | |

@@ -1,4 +1,4 @@
-import type { KeyValueCache } from "@study-spot/ui-logic";
+import type { KeyValueCache } from "@perch/ui-logic";
 
 /**
  * Storage for the persisted query cache. The copy is a cache: a storage

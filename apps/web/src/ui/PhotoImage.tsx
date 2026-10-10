@@ -1,4 +1,4 @@
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { ImageOff } from "lucide-react";
 import { Icon } from "./Icon.tsx";
 

@@ -1,4 +1,4 @@
-import type { SurveySpot } from "@study-spot/core";
+import type { SurveySpot } from "@perch/core";
 import {
   fieldLabel,
   plural,
@@ -6,7 +6,7 @@ import {
   type SpotView,
   t,
   type WriteRecord,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,

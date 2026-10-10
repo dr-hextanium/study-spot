@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { SectionWrite } from "@study-spot/core";
+import type { SectionWrite } from "@perch/core";
 import { surveySpotFixture } from "../../core/test/fixtures/survey-spot.ts";
 import { conflictDiff, draftOf, initForm, setField, submitForm } from "../src/index.ts";
 import { POWER, rec, SPOT_A, section } from "./builders.ts";

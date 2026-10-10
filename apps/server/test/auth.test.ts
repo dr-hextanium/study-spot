@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { AcceptInviteResponse, CreateInviteResponse } from "@study-spot/core";
-import { auth_session, invite, surveyor } from "@study-spot/db";
+import { AcceptInviteResponse, CreateInviteResponse } from "@perch/core";
+import { auth_session, invite, surveyor } from "@perch/db";
 import { eq } from "drizzle-orm";
 import { bootstrapAdminInvite, createInvite } from "../src/auth/invites.ts";
 import { SESSION_TTL_MS } from "../src/auth/sessions.ts";

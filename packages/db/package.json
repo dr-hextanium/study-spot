@@ -1,5 +1,5 @@
 {
-  "name": "@study-spot/db",
+  "name": "@perch/db",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
-    "@study-spot/core": "workspace:*",
+    "@perch/core": "workspace:*",
     "drizzle-orm": "^0.45.3",
     "drizzle-zod": "^0.8.3",
     "postgres": "^3.4.9",

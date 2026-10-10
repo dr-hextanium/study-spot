@@ -1,4 +1,4 @@
-import { type SpotSummary, V0_FIELD, type V0Field } from "@study-spot/core";
+import { type SpotSummary, V0_FIELD, type V0Field } from "@perch/core";
 import { COPY, type PlainCopyId, t } from "../copy/index.ts";
 import type { WriteError } from "./writes.ts";
 

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { parseBundle, slotIndex } from "@study-spot/core";
+import { parseBundle, slotIndex } from "@perch/core";
 import { and, eq, sql } from "drizzle-orm";
 import { buildBundle, NoTermError } from "../src/bundle/buildBundle.ts";
 import {

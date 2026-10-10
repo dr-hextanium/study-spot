@@ -1,4 +1,4 @@
-import { buildSpotView } from "@study-spot/ui-logic";
+import { buildSpotView } from "@perch/ui-logic";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, expect, test, vi } from "vitest";

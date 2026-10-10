@@ -1,4 +1,4 @@
-import { type OverviewSection, REQUIRED_SECTIONS } from "@study-spot/ui-logic";
+import { type OverviewSection, REQUIRED_SECTIONS } from "@perch/ui-logic";
 import { sectionName } from "../lib/format.ts";
 import { Screen } from "../ui/Screen.tsx";
 import { Loading, Skel, SkelRows, SkelStepBar } from "../ui/Skeleton.tsx";

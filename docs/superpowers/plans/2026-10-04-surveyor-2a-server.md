@@ -23,7 +23,7 @@
 - No em-dashes in code, comments, docs, UI copy, or commit messages. Use commas or colons.
 - Commits: Conventional Commits, subject 72 characters or fewer, imperative, lowercase, no trailing period, no attribution or co-author lines. Breaking changes use `!` and a `BREAKING CHANGE:` footer.
 - Every commit passes `bun run typecheck && bun run lint && bun test`. Run `bun run fix` before committing.
-- Package scope `@study-spot/*`; the server package is `@study-spot/server`.
+- Package scope `@perch/*`; the server package is `@perch/server`.
 
 ## Review Focus
 
@@ -50,7 +50,7 @@ These are resolved here and recorded in `docs/context/overview.md` (decision 16)
 - **The hours payload requires `term_id`.** The server does not default it; the client takes it from `SurveySpot.term` (current or next term by `pickTerm`), which satisfies the spec's default without a hidden server rule. An empty `rows` list clears that term's hours (shown as unconfirmed).
 - **The survey contract schemas are hand-written Zod in `packages/core`,** not composed from drizzle-zod, because `packages/core` cannot import `packages/db` (the client imports core). Server loaders map rows to them explicitly, and the tests parse every response with them.
 - **Photo upload accepts an optional `taken_at`** (offline capture time), clamped to the server clock. The JPEG check reads magic bytes, not the client's content type. `PHOTO_MAX_BYTES` is 1,500,000.
-- **Data site layout:** `bundle-latest.json`, `bundle.<hash>.json`, `photos/<sha256>.jpg`, and `_headers`, all at the root of `study-spot-data`; the client's base URL is `DATA_BASE_URL`. Each Pages deployment lists the current files only. `_headers` sets CORS `*`, `no-cache` on the pointer, and immutable caching on hashed files.
+- **Data site layout:** `bundle-latest.json`, `bundle.<hash>.json`, `photos/<sha256>.jpg`, and `_headers`, all at the root of `perch-data`; the client's base URL is `DATA_BASE_URL`. Each Pages deployment lists the current files only. `_headers` sets CORS `*`, `no-cache` on the pointer, and immutable caching on hashed files.
 - **New env `CAMPUS_ID`** (default `sbu`) names the campus whose bundle is published. `DATA_BASE_URL` must be a dotted host (bundle `httpUrl`), so local dev uses `http://data.localhost:8788`. `WEB_ORIGIN` may be `http://localhost:5173`.
 - **`requireSurveyor` and `requireAdmin` are functions called at the top of each handler**, not Fastify hooks. They return the typed surveyor without request decoration or module augmentation.
 - **`/health` never touches the database**, so Render health checks do not keep Neon awake. The server also starts while the database is unreachable (postgres.js connects lazily, and the publisher's startup check only logs).
@@ -65,7 +65,7 @@ These are resolved here and recorded in `docs/context/overview.md` (decision 16)
 - **drizzle-kit 0.31.11.** Generating a table drop plus a table add in one migration hits the interactive rename prompt and crashes without a TTY. Drops-only and adds-only migrations generate cleanly. `--name` passes through `bun run db:generate`, and the enum add is emitted as `CREATE TYPE`.
 - **PGlite.** `Promise.all` over two `db.transaction` calls with the same receipt id serializes and does not hang, so the Task 5 test passes there but cannot show the race. On real Postgres the claim-first receipt relies on the second `INSERT ... ON CONFLICT DO NOTHING` waiting for the first transaction's row; that is design reasoning, not a probe (pglite-socket cannot host concurrent transactions), and `smoke-publish.ts` checks it against Postgres in CI.
 - **Cloudflare Pages direct upload.** Read wrangler 4.147.0's bundled source for the endpoints and payloads, and the API docs for `branch` (omitted means production). `@noble/hashes` blake3 matches `blake3-wasm` (wrangler's hasher) on a 200 KB file; reference hashes are in Task 8.
-- **Node type stripping through Bun's isolated-linker symlinks.** `node apps/server/src/main.ts` resolves `@study-spot/*` and serves `/health`.
+- **Node type stripping through Bun's isolated-linker symlinks.** `node apps/server/src/main.ts` resolves `@perch/*` and serves `/health`.
 - **The whole plan was replayed** on a fresh export of the current `main`. Every task's code was applied as written here, each "expected FAIL" step failed, and every commit passed `bun run fix`, `typecheck`, `lint`, and `bun test` (187 tests at the end), plus both server smokes.
 
 ---
@@ -154,7 +154,7 @@ Out of scope (phase 2b): pick ping, headcounts, routes and route slots, maintena
 - Produces: `class HttpError extends Error { readonly status: number; readonly body: ErrorBody }`, `type ErrorBody = { error: string } & Record<string, unknown>`.
 - Produces: `type AppConfig = { webOrigin: string; campusId: string }`, `type AppDeps = { db: Db; clock: Clock; config: AppConfig; logger?: boolean }` (later tasks add `publisher` and `photos`), `buildApp(deps: AppDeps): Promise<App>`, `type App`.
 - Produces: root script `smoke:server` (`node apps/server/scripts/smoke-server.ts node|bun`).
-- Consumes: `Db`, `openDb(url): { db: Db; close(): Promise<void> }` from `@study-spot/db`; `createTestDb()` from `@study-spot/db/testing`.
+- Consumes: `Db`, `openDb(url): { db: Db; close(): Promise<void> }` from `@perch/db`; `createTestDb()` from `@perch/db/testing`.
 
 - [ ] **Step 1: Check current versions**
 
@@ -169,7 +169,7 @@ Expected: `5.12.5`, `7.0.0`, `11.3.0`, `10.1.2` (or newer within the same major)
 
 ```json
 {
-  "name": "@study-spot/server",
+  "name": "@perch/server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -179,8 +179,8 @@ Expected: `5.12.5`, `7.0.0`, `11.3.0`, `10.1.2` (or newer within the same major)
   "dependencies": {
     "@fastify/cors": "^11.3.0",
     "@fastify/multipart": "^10.1.2",
-    "@study-spot/core": "workspace:*",
-    "@study-spot/db": "workspace:*",
+    "@perch/core": "workspace:*",
+    "@perch/db": "workspace:*",
     "drizzle-orm": "^0.45.3",
     "fastify": "^5.12.5",
     "fastify-type-provider-zod": "^7.0.0",
@@ -248,8 +248,8 @@ import { parseEnv } from "../src/env.ts";
 
 const fsEnv = {
   DATABASE_URL: "postgres://u:p@localhost:5432/db",
-  WEB_ORIGIN: "https://study-spot.pages.dev",
-  DATA_BASE_URL: "https://study-spot-data.pages.dev/",
+  WEB_ORIGIN: "https://perch.pages.dev",
+  DATA_BASE_URL: "https://perch-data.pages.dev/",
   PUBLISH_TARGET: "fs",
   FS_PUBLISH_DIR: "/tmp/publish",
 };
@@ -259,7 +259,7 @@ test("a valid fs environment parses with defaults", () => {
   if (!r.ok) throw new Error(r.error);
   expect(r.env.PORT).toBe(3000);
   expect(r.env.CAMPUS_ID).toBe("sbu");
-  expect(r.env.DATA_BASE_URL).toBe("https://study-spot-data.pages.dev");
+  expect(r.env.DATA_BASE_URL).toBe("https://perch-data.pages.dev");
 });
 
 test("pages target requires Cloudflare credentials", () => {
@@ -276,7 +276,7 @@ test("a localhost web origin is allowed for development", () => {
 });
 
 test("a web origin with a path or trailing slash is rejected", () => {
-  expect(parseEnv({ ...fsEnv, WEB_ORIGIN: "https://study-spot.pages.dev/" }).ok).toBe(false);
+  expect(parseEnv({ ...fsEnv, WEB_ORIGIN: "https://perch.pages.dev/" }).ok).toBe(false);
   expect(parseEnv({ ...fsEnv, WEB_ORIGIN: "https://x.dev/app" }).ok).toBe(false);
 });
 
@@ -292,10 +292,10 @@ test("empty strings count as missing and bad values are rejected", () => {
 
 ```ts
 import { expect, test } from "bun:test";
-import { createTestDb } from "@study-spot/db/testing";
+import { createTestDb } from "@perch/db/testing";
 import { buildApp } from "../src/app.ts";
 
-const WEB = "https://study-spot.pages.dev";
+const WEB = "https://perch.pages.dev";
 
 async function app() {
   return buildApp({
@@ -356,7 +356,7 @@ Expected: FAIL: `Cannot find module '../src/env.ts'` and `'../src/app.ts'`.
 ```ts
 import { z } from "zod";
 
-/** An origin such as https://study-spot.pages.dev: scheme, host, port, no path or trailing slash. */
+/** An origin such as https://perch.pages.dev: scheme, host, port, no path or trailing slash. */
 const Origin = z
   .url({ protocol: /^https?$/ })
   .refine((u) => new URL(u).origin === u, "must be an origin with no path");
@@ -454,7 +454,7 @@ export const healthRoutes: FastifyPluginAsyncZod = async (app) => {
 
 ```ts
 import cors from "@fastify/cors";
-import type { Db } from "@study-spot/db";
+import type { Db } from "@perch/db";
 import Fastify from "fastify";
 import {
   hasZodFastifySchemaValidationErrors,
@@ -525,7 +525,7 @@ export type App = Awaited<ReturnType<typeof buildApp>>;
 `apps/server/src/main.ts`:
 
 ```ts
-import { openDb } from "@study-spot/db";
+import { openDb } from "@perch/db";
 import { buildApp } from "./app.ts";
 import { systemClock } from "./clock.ts";
 import { parseEnv } from "./env.ts";
@@ -677,7 +677,7 @@ with:
 ```
 
 Run: `bun run smoke:server node && bun run smoke:server bun`
-Expected: `server smoke ok on node` then `server smoke ok on bun` (request logs in between are normal). This also proves Node type stripping resolves `@study-spot/*` through the workspace symlinks.
+Expected: `server smoke ok on node` then `server smoke ok on bun` (request logs in between are normal). This also proves Node type stripping resolves `@perch/*` through the workspace symlinks.
 
 - [ ] **Step 8: Commit**
 
@@ -1610,7 +1610,7 @@ import {
   TABLE_CONFIG,
   type V0Field,
   type V0Input,
-} from "@study-spot/core";
+} from "@perch/core";
 import type {
   spot,
   spot_amenity,
@@ -1785,7 +1785,7 @@ git commit -m "feat(core): add survey api contract and shared missingV0Fields"
 **Interfaces:**
 - Produces tables and columns: `invite(token_hash PK, role, surveyor_id null FK, created_by null FK, created_at, expires_at, used_at null)`; `photo_blob(sha256 PK, bytes bytea, content_type, byte_size, created_at)`; `spot.review_state` (`review_state` enum, default `unreviewed`), `spot.reviewed_by`, `spot.last_edited_by` (FK surveyor, null); `spot_photo.blob_sha256` (FK photo_blob, null); `write_receipt.response_json jsonb`; `bundle_state.write_seq int default 0`, `last_attempt_at`, `last_warnings jsonb`, `last_error`.
 - Changes: `magic_link` dropped; `spot_photo.r2_key` dropped; `spot_photo.url`, `spot.noise_policy`, `surveyor.email` become nullable.
-- Produces: `bytea` custom column type (`Uint8Array`); `review_state` pgEnum; exported `invite`, `photo_blob` tables; `pickTerm(terms, today)` and `TermRow` exported from `@study-spot/db`.
+- Produces: `bytea` custom column type (`Uint8Array`); `review_state` pgEnum; exported `invite`, `photo_blob` tables; `pickTerm(terms, today)` and `TermRow` exported from `@perch/db`.
 - Consumes: `REVIEW_STATE` from Task 2.
 
 - [ ] **Step 1: Write the failing schema tests**
@@ -2021,7 +2021,7 @@ test("write receipts store a json response", async () => {
 
 ```ts
 import { expect, test } from "bun:test";
-import { BundleSpot } from "@study-spot/core";
+import { BundleSpot } from "@perch/core";
 import type { SpotRow, VerificationRow } from "../src/bundle/spot.ts";
 import { toBundleSpot } from "../src/bundle/spot.ts";
 
@@ -2267,7 +2267,7 @@ import {
   TEMPERATURE,
   TIME_BLOCK,
   VERIFICATION_SOURCE,
-} from "@study-spot/core";
+} from "@perch/core";
 import { pgEnum } from "drizzle-orm/pg-core";
 
 export const eligibility = pgEnum("eligibility", ELIGIBILITY);
@@ -2873,16 +2873,16 @@ Every time in auth comes from the injected clock, never from Postgres `now()`, s
 `apps/server/test/helpers.ts`:
 
 ```ts
-import { type Db, surveyor } from "@study-spot/db";
-import { type SeedIds, seed } from "@study-spot/db/seed";
-import { createTestDb } from "@study-spot/db/testing";
+import { type Db, surveyor } from "@perch/db";
+import { type SeedIds, seed } from "@perch/db/seed";
+import { createTestDb } from "@perch/db/testing";
 import type { LightMyRequestResponse } from "fastify";
 import { type App, buildApp } from "../src/app.ts";
 import { createSession } from "../src/auth/sessions.ts";
 import type { Clock } from "../src/clock.ts";
 
 export const NOW = new Date("2026-10-13T18:00:00Z");
-export const WEB_ORIGIN = "https://study-spot.pages.dev";
+export const WEB_ORIGIN = "https://perch.pages.dev";
 
 export type TestClock = Clock & { set(at: Date): void; advance(ms: number): void };
 
@@ -2942,8 +2942,8 @@ export function writeId(): string {
 
 ```ts
 import { expect, test } from "bun:test";
-import { AcceptInviteResponse, CreateInviteResponse } from "@study-spot/core";
-import { auth_session, invite, surveyor } from "@study-spot/db";
+import { AcceptInviteResponse, CreateInviteResponse } from "@perch/core";
+import { auth_session, invite, surveyor } from "@perch/db";
 import { eq } from "drizzle-orm";
 import { bootstrapAdminInvite, createInvite } from "../src/auth/invites.ts";
 import { SESSION_TTL_MS } from "../src/auth/sessions.ts";
@@ -3230,8 +3230,8 @@ export function hashToken(token: string): string {
 `apps/server/src/auth/sessions.ts`:
 
 ```ts
-import { OpaqueToken, type SurveyorPublic } from "@study-spot/core";
-import { auth_session, type Db, surveyor } from "@study-spot/db";
+import { OpaqueToken, type SurveyorPublic } from "@perch/core";
+import { auth_session, type Db, surveyor } from "@perch/db";
 import { eq } from "drizzle-orm";
 import { hashToken, newToken } from "./tokens.ts";
 
@@ -3311,8 +3311,8 @@ Acceptance is one conditional `UPDATE ... WHERE used_at IS NULL AND expires_at >
 `apps/server/src/auth/invites.ts`:
 
 ```ts
-import type { SurveyorPublic, SurveyorRole } from "@study-spot/core";
-import { auth_session, type Db, invite, surveyor } from "@study-spot/db";
+import type { SurveyorPublic, SurveyorRole } from "@perch/core";
+import { auth_session, type Db, invite, surveyor } from "@perch/db";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { HttpError } from "../http.ts";
 import { createSession } from "./sessions.ts";
@@ -3461,7 +3461,7 @@ export async function bootstrapAdminInvite(
 `apps/server/src/auth/guards.ts`:
 
 ```ts
-import type { Db } from "@study-spot/db";
+import type { Db } from "@perch/db";
 import type { FastifyRequest } from "fastify";
 import type { Clock } from "../clock.ts";
 import { HttpError } from "../http.ts";
@@ -3492,7 +3492,7 @@ export async function requireAdmin(deps: AuthDeps, req: FastifyRequest): Promise
 `apps/server/src/routes/auth.ts`:
 
 ```ts
-import { AcceptInviteRequest, AcceptInviteResponse, SurveyorPublic } from "@study-spot/core";
+import { AcceptInviteRequest, AcceptInviteResponse, SurveyorPublic } from "@perch/core";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import type { AppDeps } from "../app.ts";
 import { requireSurveyor } from "../auth/guards.ts";
@@ -3534,7 +3534,7 @@ import {
   CreateInviteResponse,
   IdParams,
   SurveyorPublic,
-} from "@study-spot/core";
+} from "@perch/core";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import type { AppDeps } from "../app.ts";
 import { requireAdmin } from "../auth/guards.ts";
@@ -3610,7 +3610,7 @@ Expected: PASS.
 `apps/server/scripts/admin-invite.ts`:
 
 ```ts
-import { openDb } from "@study-spot/db";
+import { openDb } from "@perch/db";
 import { z } from "zod";
 import { bootstrapAdminInvite } from "../src/auth/invites.ts";
 
@@ -3809,7 +3809,7 @@ These cover the review-focus cases: a crash after a partial write leaves nothing
 
 ```ts
 import { expect, test } from "bun:test";
-import { audit_log, bundle_state, spot, write_receipt } from "@study-spot/db";
+import { audit_log, bundle_state, spot, write_receipt } from "@perch/db";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { HttpError } from "../src/http.ts";
@@ -3980,7 +3980,7 @@ The spec's order (check receipt, run, insert receipt at the end) lets an outbox 
 `apps/server/src/writes/withWrite.ts`:
 
 ```ts
-import { audit_log, bundle_state, type Db, write_receipt } from "@study-spot/db";
+import { audit_log, bundle_state, type Db, write_receipt } from "@perch/db";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { HttpError } from "../http.ts";
@@ -4137,7 +4137,7 @@ git commit -m "feat(server): add idempotent write pipeline with audit and dirty 
 `apps/server/test/fixtures.ts`:
 
 ```ts
-import type { IdentitySection, SectionWrite } from "@study-spot/core";
+import type { IdentitySection, SectionWrite } from "@perch/core";
 
 /** Identity for a new draft in a seed building. */
 export function identity(overrides: Partial<IdentitySection> = {}): IdentitySection {
@@ -4210,7 +4210,7 @@ export const COMPLETING_SECTIONS: SectionWrite[] = [
 
 ```ts
 import { expect, test } from "bun:test";
-import { type SectionWrite, SpotList, SurveySpot, VersionConflict } from "@study-spot/core";
+import { type SectionWrite, SpotList, SurveySpot, VersionConflict } from "@perch/core";
 import {
   audit_log,
   buildBundle,
@@ -4218,7 +4218,7 @@ import {
   spot,
   spot_hours,
   write_receipt,
-} from "@study-spot/db";
+} from "@perch/db";
 import { and, eq } from "drizzle-orm";
 import { COMPLETING_SECTIONS, identity } from "./fixtures.ts";
 import { body, NOW, type SignedIn, setup, signIn, type TestContext, writeId } from "./helpers.ts";
@@ -4718,7 +4718,7 @@ import {
   type SpotList,
   type SurveyEstimate,
   type SurveySpot,
-} from "@study-spot/core";
+} from "@perch/core";
 import {
   building,
   campus,
@@ -4735,7 +4735,7 @@ import {
   surveyor,
   type TermRow,
   term,
-} from "@study-spot/db";
+} from "@perch/db";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 /** The campus's current term, else the next one, else null (pickTerm in campus local time). */
@@ -4966,7 +4966,7 @@ import type {
   SectionWrite,
   SurveyorRole,
   SurveySpot,
-} from "@study-spot/core";
+} from "@perch/core";
 import {
   building,
   type Db,
@@ -4979,7 +4979,7 @@ import {
   spot_verification,
   type TermRow,
   term,
-} from "@study-spot/db";
+} from "@perch/db";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { HttpError } from "../http.ts";
 import type { WriteOutcome } from "../writes/withWrite.ts";
@@ -5306,7 +5306,7 @@ export async function reviewSpot(
 `apps/server/src/writes/spotWrite.ts`:
 
 ```ts
-import { SurveySpot } from "@study-spot/core";
+import { SurveySpot } from "@perch/core";
 import type { AppDeps } from "../app.ts";
 import type { AuthedSurveyor } from "../auth/sessions.ts";
 import { currentTerm } from "../spots/load.ts";
@@ -5361,7 +5361,7 @@ import {
   SurveySpot,
   VerifyRequest,
   WriteRequest,
-} from "@study-spot/core";
+} from "@perch/core";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { z } from "zod";
 import type { AppDeps } from "../app.ts";
@@ -5550,7 +5550,7 @@ The store is created here so the failing tests can run against the real Postgres
 
 ```ts
 import { createHash } from "node:crypto";
-import { type Db, photo_blob } from "@study-spot/db";
+import { type Db, photo_blob } from "@perch/db";
 import { eq } from "drizzle-orm";
 
 export type PhotoBlob = { sha256: string; bytes: Uint8Array; contentType: string };
@@ -5683,8 +5683,8 @@ The upload helper sends the `file` part before the text fields on purpose. Revie
 
 ```ts
 import { expect, test } from "bun:test";
-import { PHOTO_MAX_BYTES, SurveySpot } from "@study-spot/core";
-import { photo_blob, spot_photo } from "@study-spot/db";
+import { PHOTO_MAX_BYTES, SurveySpot } from "@perch/core";
+import { photo_blob, spot_photo } from "@perch/db";
 import { eq } from "drizzle-orm";
 import { sha256Hex } from "../src/photos/store.ts";
 import { body, NOW, type SignedIn, setup, signIn, type TestContext, writeId } from "./helpers.ts";
@@ -5922,8 +5922,8 @@ The multipart plugin is registered inside the photo plugin with `fileSize: PHOTO
 `apps/server/src/photos/write.ts`:
 
 ```ts
-import type { SurveySpot } from "@study-spot/core";
-import { type Db, spot_photo } from "@study-spot/db";
+import type { SurveySpot } from "@perch/core";
+import { type Db, spot_photo } from "@perch/db";
 import { and, eq } from "drizzle-orm";
 import { HttpError } from "../http.ts";
 import { type SpotWriteContext, spotOr404 } from "../spots/write.ts";
@@ -6040,7 +6040,7 @@ import {
   PhotoUploadFields,
   SurveySpot,
   WriteRequest,
-} from "@study-spot/core";
+} from "@perch/core";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { z } from "zod";
 import type { AppDeps } from "../app.ts";
@@ -6363,7 +6363,7 @@ import { z } from "zod";
 import { CF_API, type FetchLike, pagesHash, pagesTarget } from "../src/publish/pagesTarget.ts";
 import type { PublishFile } from "../src/publish/target.ts";
 
-const PROJECT = `${CF_API}/accounts/acc/pages/projects/study-spot-data`;
+const PROJECT = `${CF_API}/accounts/acc/pages/projects/perch-data`;
 
 test("pagesHash matches wrangler's blake3 asset key", () => {
   // Reference values from blake3-wasm, the library wrangler uses.
@@ -6433,7 +6433,7 @@ test("deploy uploads only missing assets and sends a full manifest", async () =>
   const target = pagesTarget({
     accountId: "acc",
     apiToken: "api-token",
-    project: "study-spot-data",
+    project: "perch-data",
     fetch: cf.fetch,
   });
   const reads = { photo: 0 };
@@ -6483,7 +6483,7 @@ test("immutable files are hashed once per process", async () => {
   const target = pagesTarget({
     accountId: "acc",
     apiToken: "t",
-    project: "study-spot-data",
+    project: "perch-data",
     fetch: cf.fetch,
   });
   const reads = { photo: 0 };
@@ -6505,7 +6505,7 @@ test("a Cloudflare error is thrown with its code and message", async () => {
   const target = pagesTarget({
     accountId: "acc",
     apiToken: "t",
-    project: "study-spot-data",
+    project: "perch-data",
     fetch: fail,
   });
   await expect(target.deploy(files({ photo: 0 }))).rejects.toThrow("8000013 bad token");
@@ -6684,9 +6684,9 @@ Expected: PASS (4 tests).
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { type Db, surveyor } from "@study-spot/db";
-import { type SeedIds, seed } from "@study-spot/db/seed";
-import { createTestDb } from "@study-spot/db/testing";
+import { type Db, surveyor } from "@perch/db";
+import { type SeedIds, seed } from "@perch/db/seed";
+import { createTestDb } from "@perch/db/testing";
 import type { LightMyRequestResponse } from "fastify";
 import { type App, buildApp } from "../src/app.ts";
 import { createSession } from "../src/auth/sessions.ts";
@@ -6697,8 +6697,8 @@ import { createPublisher, type Publisher, type Timers } from "../src/publish/pub
 import type { PublishTarget } from "../src/publish/target.ts";
 
 export const NOW = new Date("2026-10-13T18:00:00Z");
-export const WEB_ORIGIN = "https://study-spot.pages.dev";
-export const DATA_BASE_URL = "https://study-spot-data.pages.dev";
+export const WEB_ORIGIN = "https://perch.pages.dev";
+export const DATA_BASE_URL = "https://perch-data.pages.dev";
 
 export type TestClock = Clock & { set(at: Date): void; advance(ms: number): void };
 
@@ -6830,8 +6830,8 @@ export function writeId(): string {
 import { expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { BundlePointer, PublishStatus, parseBundle, SurveySpot } from "@study-spot/core";
-import { bundle_state, spot_photo } from "@study-spot/db";
+import { BundlePointer, PublishStatus, parseBundle, SurveySpot } from "@perch/core";
+import { bundle_state, spot_photo } from "@perch/db";
 import { eq } from "drizzle-orm";
 import { sha256Hex } from "../src/photos/store.ts";
 import { fsTarget } from "../src/publish/fsTarget.ts";
@@ -7133,8 +7133,8 @@ Lost-update guard: the run reads `bundle_state.write_seq` before building and cl
 `apps/server/src/publish/publisher.ts`:
 
 ```ts
-import { BUNDLE_SCHEMA_MAJOR, BundlePointer, type PublishStatus } from "@study-spot/core";
-import { buildBundle, bundle_state, type Db, spot_photo } from "@study-spot/db";
+import { BUNDLE_SCHEMA_MAJOR, BundlePointer, type PublishStatus } from "@perch/core";
+import { buildBundle, bundle_state, type Db, spot_photo } from "@perch/db";
 import { and, eq, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Clock } from "../clock.ts";
@@ -7365,7 +7365,7 @@ export function createPublisher(deps: PublisherDeps): Publisher {
 `apps/server/src/routes/publish.ts`:
 
 ```ts
-import { PublishStatus } from "@study-spot/core";
+import { PublishStatus } from "@perch/core";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import type { AppDeps } from "../app.ts";
 import { requireAdmin } from "../auth/guards.ts";
@@ -7449,7 +7449,7 @@ with:
 `apps/server/src/main.ts`:
 
 ```ts
-import { openDb } from "@study-spot/db";
+import { openDb } from "@perch/db";
 import { buildApp } from "./app.ts";
 import { systemClock } from "./clock.ts";
 import { parseEnv } from "./env.ts";
@@ -7524,8 +7524,8 @@ import { randomUUID } from "node:crypto";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { BundlePointer, parseBundle } from "@study-spot/core";
-import { openDb, spot, spot_photo, surveyor } from "@study-spot/db";
+import { BundlePointer, parseBundle } from "@perch/core";
+import { openDb, spot, spot_photo, surveyor } from "@perch/db";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { postgresPhotoStore, sha256Hex } from "../src/photos/store.ts";
@@ -7672,8 +7672,8 @@ git commit -m "feat(server): add debounced publisher with pages and fs targets"
 
 ```ts
 import { expect, test } from "bun:test";
-import { PendingPhotoList, SurveyorList } from "@study-spot/core";
-import { photo_blob, spot_photo } from "@study-spot/db";
+import { PendingPhotoList, SurveyorList } from "@perch/core";
+import { photo_blob, spot_photo } from "@perch/db";
 import { body, NOW, setup, signIn } from "./helpers.ts";
 
 test("admins list every surveyor, including revoked ones", async () => {
@@ -7757,8 +7757,8 @@ import {
   PendingPhotoList,
   SurveyorList,
   SurveyorPublic,
-} from "@study-spot/core";
-import { spot, spot_photo, surveyor } from "@study-spot/db";
+} from "@perch/core";
+import { spot, spot_photo, surveyor } from "@perch/db";
 import { asc, eq, isNull } from "drizzle-orm";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import type { AppDeps } from "../app.ts";
@@ -7940,4 +7940,4 @@ git commit -m "docs: record surveyor server decisions and tables"
 - 10 commits on the branch, one per task plus the Task 9 docs commit, each passing the gate.
 - CI: the check job runs both server smokes; the Postgres job migrates, seeds, prints a bootstrap invite, starts the server against Postgres, and runs the write and publish smoke (the first real test of concurrent same-id writes).
 - Plan B can start from `packages/core/src/survey/` (Task 2) without waiting for the rest.
-- Deploy (plan E) needs only env vars: `DATABASE_URL`, `WEB_ORIGIN`, `DATA_BASE_URL`, `PUBLISH_TARGET=pages`, `CF_ACCOUNT_ID`, `CF_API_TOKEN` (Pages edit), `CF_DATA_PROJECT=study-spot-data`, optional `CAMPUS_ID`, `PORT`.
+- Deploy (plan E) needs only env vars: `DATABASE_URL`, `WEB_ORIGIN`, `DATA_BASE_URL`, `PUBLISH_TARGET=pages`, `CF_ACCOUNT_ID`, `CF_API_TOKEN` (Pages edit), `CF_DATA_PROJECT=perch-data`, optional `CAMPUS_ID`, `PORT`.

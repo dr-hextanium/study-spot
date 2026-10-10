@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { type Db, photo_blob } from "@study-spot/db";
+import { type Db, photo_blob } from "@perch/db";
 import { eq } from "drizzle-orm";
 
 export type PhotoBlob = { sha256: string; bytes: Uint8Array; contentType: string };

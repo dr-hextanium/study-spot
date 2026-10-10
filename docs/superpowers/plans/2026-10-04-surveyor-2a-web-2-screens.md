@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-Part 1's constraints hold unchanged: strict TypeScript with no `any`, no `!`, no enums; `.ts`/`.tsx` import extensions; Zod at trust boundaries (here: route params and search); copy only through `t()` and `plural()`; CSS only from token variables, 44 px targets, shadows only on sheets; no em-dashes; Conventional Commits under 72 characters with no attribution; every commit passes `bun run typecheck && bun run lint && bun test && bun run --filter '@study-spot/web' test` after `bun run fix`.
+Part 1's constraints hold unchanged: strict TypeScript with no `any`, no `!`, no enums; `.ts`/`.tsx` import extensions; Zod at trust boundaries (here: route params and search); copy only through `t()` and `plural()`; CSS only from token variables, 44 px targets, shadows only on sheets; no em-dashes; Conventional Commits under 72 characters with no attribution; every commit passes `bun run typecheck && bun run lint && bun test && bun run --filter '@perch/web' test` after `bun run fix`.
 
 ## Review Focus
 
@@ -58,8 +58,8 @@ Everything the spot screens compute, tested without a screen: slugs, the hours w
 `apps/web/test/lib.test.ts`:
 
 ```ts
-import { PHOTO_MAX_BYTES } from "@study-spot/core";
-import { t } from "@study-spot/ui-logic";
+import { PHOTO_MAX_BYTES } from "@perch/core";
+import { t } from "@perch/ui-logic";
 import { expect, test } from "vitest";
 import { cellsOf, nextBucket, toGrid } from "../src/lib/estimates.ts";
 import { fieldValueText, valueText } from "../src/lib/fields.ts";
@@ -201,7 +201,7 @@ test("an encode over 1.5 MB retries once at 0.7, then gives up", async () => {
 `apps/web/test/hooks.test.tsx`:
 
 ```tsx
-import { buildSpotView } from "@study-spot/ui-logic";
+import { buildSpotView } from "@perch/ui-logic";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { expect, test } from "vitest";
@@ -288,7 +288,7 @@ test("the section form validates with the shared schema, then queues the write",
 });
 ```
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: FAIL, the `src/lib` modules and the three hooks do not exist.
 
 - [ ] **Step 2: Write the helpers**
@@ -321,7 +321,7 @@ export function spotSlug(officialName: string, buildingId: string): string {
 `apps/web/src/lib/hours.ts`:
 
 ```ts
-import type { HoursRow } from "@study-spot/core";
+import type { HoursRow } from "@perch/core";
 
 /** Monday first, as the hours editor lists days; values are day_of_week (0 is Sunday). */
 export const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
@@ -414,7 +414,7 @@ import {
   type SurveyEstimate,
   TIME_BLOCK,
   type TimeBlock,
-} from "@study-spot/core";
+} from "@perch/core";
 
 export type CellKey = `${DayType}|${TimeBlock}`;
 export type Grid = Readonly<Record<CellKey, Fullness | null>>;
@@ -461,7 +461,7 @@ export function cellsOf(grid: Grid): EstimateCell[] {
 `apps/web/src/lib/photo.ts`:
 
 ```ts
-import { PHOTO_MAX_BYTES } from "@study-spot/core";
+import { PHOTO_MAX_BYTES } from "@perch/core";
 
 export const MAX_SIDE = 1600;
 export const QUALITY = 0.8;
@@ -534,7 +534,7 @@ export async function shrinkPhoto(file: Blob, kit: ImageKit = browserImageKit): 
 `apps/web/src/lib/location.ts`:
 
 ```ts
-import type { LatLngFix } from "@study-spot/ui-logic";
+import type { LatLngFix } from "@perch/ui-logic";
 
 /** Worse than this, the building's own point is the better guess (journey edge 10). */
 export const GOOD_FIX_METERS = 50;
@@ -574,8 +574,8 @@ import {
   type SeatType,
   type TableConfig,
   type Temperature,
-} from "@study-spot/core";
-import { COPY, type PlainCopyId, t } from "@study-spot/ui-logic";
+} from "@perch/core";
+import { COPY, type PlainCopyId, t } from "@perch/ui-logic";
 import type { Option } from "../ui/Segmented.tsx";
 
 // Object.keys widens to string[]; the keys of a Record<V, ...> are V.
@@ -794,7 +794,7 @@ import {
   type SectionStatus,
   type SpotView,
   sectionStatuses,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import { useIsRestoring } from "@tanstack/react-query";
 import { useDeps } from "../app/AppProvider.tsx";
 import { useOutboxSnapshot } from "./useOutbox.ts";
@@ -858,7 +858,7 @@ import {
   type SurveySection,
   type V0Field,
   v0InputOf,
-} from "@study-spot/core";
+} from "@perch/core";
 import {
   initForm,
   type SectionDraft,
@@ -866,7 +866,7 @@ import {
   type SpotView,
   setField,
   submitForm,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import { useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 
@@ -940,8 +940,8 @@ export function useSectionForm<S extends SurveySection>(
 `apps/web/src/hooks/usePhotoUrl.ts`:
 
 ```ts
-import { PHOTO_CONTENT_TYPE } from "@study-spot/core";
-import { photoKey } from "@study-spot/ui-logic";
+import { PHOTO_CONTENT_TYPE } from "@perch/core";
+import { photoKey } from "@perch/ui-logic";
 import { useEffect, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 
@@ -989,12 +989,12 @@ export function usePhotoUrl(
 
 - [ ] **Step 4: Run the tests**
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: PASS (9 in `lib.test.ts`, 4 in `hooks.test.tsx`).
 
 - [ ] **Step 5: Typecheck, lint, commit**
 
-Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`
+Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@perch/web' test`
 Expected: all pass.
 
 ```bash
@@ -1026,8 +1026,8 @@ The rest of the spot job, as screens: `/survey/spots/new` (identity only, saved 
 `apps/web/test/spot.test.tsx`:
 
 ```tsx
-import type { SurveySpot } from "@study-spot/core";
-import { t } from "@study-spot/ui-logic";
+import type { SurveySpot } from "@perch/core";
+import { t } from "@perch/ui-logic";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { expect, test } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";
@@ -1255,7 +1255,7 @@ test("an admin unpublishes a published spot after confirming, online only", asyn
 });
 ```
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: FAIL; the spot routes do not exist, so every test finds neither headings nor fields.
 
 - [ ] **Step 2: Write the spot stylesheet and the choice controls**
@@ -1524,7 +1524,7 @@ import "./screens/spot.css";
 `apps/web/src/ui/Choices.tsx`:
 
 ```tsx
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { type Option, Segmented } from "./Segmented.tsx";
 
 const UNKNOWN = "__unknown";
@@ -1613,8 +1613,8 @@ export function OptionalChoice<V extends string>(p: OptionalProps<V>) {
 `apps/web/src/screens/BuildingPicker.tsx`:
 
 ```tsx
-import type { CampusInfo } from "@study-spot/core";
-import { t } from "@study-spot/ui-logic";
+import type { CampusInfo } from "@perch/core";
+import { t } from "@perch/ui-logic";
 import { useId, useState } from "react";
 
 type Building = CampusInfo["buildings"][number];
@@ -1701,7 +1701,7 @@ export function BuildingPicker({ buildings, value, onChange, error }: Props) {
 `apps/web/src/screens/LocationButton.tsx`:
 
 ```tsx
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { LocateFixed } from "lucide-react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { GOOD_FIX_METERS, type LocationState } from "../lib/location.ts";
@@ -1746,8 +1746,8 @@ export function LocationButton(props: {
 `apps/web/src/screens/NewSpot.tsx`:
 
 ```tsx
-import type { IdentitySection } from "@study-spot/core";
-import { t } from "@study-spot/ui-logic";
+import type { IdentitySection } from "@perch/core";
+import { t } from "@perch/ui-logic";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
@@ -1877,7 +1877,7 @@ export function NewSpot() {
 `apps/web/src/screens/WriteSheets.tsx`:
 
 ```tsx
-import { conflictDiff, failureView, t, type WriteRecord } from "@study-spot/ui-logic";
+import { conflictDiff, failureView, t, type WriteRecord } from "@perch/ui-logic";
 import { useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { useToasts } from "../hooks/useToasts.tsx";
@@ -2019,7 +2019,7 @@ export function FailedSheet(props: { record: WriteRecord; spotName: string; onCl
 `apps/web/src/screens/Overview.tsx`:
 
 ```tsx
-import type { SurveySpot } from "@study-spot/core";
+import type { SurveySpot } from "@perch/core";
 import {
   fieldLabel,
   plural,
@@ -2027,7 +2027,7 @@ import {
   type SpotView,
   t,
   type WriteRecord,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
@@ -2329,8 +2329,8 @@ function Ready(props: {
 `apps/web/src/screens/editors/EditorShell.tsx`:
 
 ```tsx
-import type { SurveySection, V0Field } from "@study-spot/core";
-import { fieldList, type SpotView, t } from "@study-spot/ui-logic";
+import type { SurveySection, V0Field } from "@perch/core";
+import { fieldList, type SpotView, t } from "@perch/ui-logic";
 import { useBlocker, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useRef, useState } from "react";
 import { type SectionFormApi, useSectionForm } from "../../hooks/useSectionForm.ts";
@@ -2468,8 +2468,8 @@ import {
   type SeatType,
   TABLE_CONFIG,
   type TableConfig,
-} from "@study-spot/core";
-import { COPY, type SpotView, t } from "@study-spot/ui-logic";
+} from "@perch/core";
+import { COPY, type SpotView, t } from "@perch/ui-logic";
 import {
   AMENITY_COPY,
   CALLS_OPTIONS,
@@ -2867,7 +2867,7 @@ export function LateNightEditor({ view }: EditorProps) {
 `apps/web/src/screens/editors/IdentityEditor.tsx`:
 
 ```tsx
-import { isLocalId, type SpotView, t } from "@study-spot/ui-logic";
+import { isLocalId, type SpotView, t } from "@perch/ui-logic";
 import { useState } from "react";
 import { useCampus } from "../../hooks/useQueries.ts";
 import { type LocationState, spotPoint } from "../../lib/location.ts";
@@ -2979,8 +2979,8 @@ export function IdentityEditor({ view }: { view: SpotView }) {
 `apps/web/src/screens/editors/HoursEditor.tsx`:
 
 ```tsx
-import type { HoursRow } from "@study-spot/core";
-import { type PlainCopyId, type SpotView, t } from "@study-spot/ui-logic";
+import type { HoursRow } from "@perch/core";
+import { type PlainCopyId, type SpotView, t } from "@perch/ui-logic";
 import { useState } from "react";
 import {
   closesNextDay,
@@ -3160,8 +3160,8 @@ export function HoursEditor({ view }: { view: SpotView }) {
 `apps/web/src/screens/editors/EstimatesEditor.tsx`:
 
 ```tsx
-import { DAY_TYPE, TIME_BLOCK } from "@study-spot/core";
-import { COPY, type PlainCopyId, type SpotView, t } from "@study-spot/ui-logic";
+import { DAY_TYPE, TIME_BLOCK } from "@perch/core";
+import { COPY, type PlainCopyId, type SpotView, t } from "@perch/ui-logic";
 import { useState } from "react";
 import { cellKey, cellsOf, type Grid, nextBucket, toGrid } from "../../lib/estimates.ts";
 import { BUCKET_COPY } from "../../lib/fields.ts";
@@ -3248,8 +3248,8 @@ export function EstimatesEditor({ view }: { view: SpotView }) {
 `apps/web/src/screens/editors/PhotosEditor.tsx`:
 
 ```tsx
-import type { SurveyPhoto } from "@study-spot/core";
-import { type PendingPhoto, type SpotView, t } from "@study-spot/ui-logic";
+import type { SurveyPhoto } from "@perch/core";
+import { type PendingPhoto, type SpotView, t } from "@perch/ui-logic";
 import { Camera, ImagePlus } from "lucide-react";
 import { useRef, useState } from "react";
 import { useDeps } from "../../app/AppProvider.tsx";
@@ -3505,7 +3505,7 @@ export function PhotosEditor({ view }: { view: SpotView }) {
 `apps/web/src/screens/editors/index.tsx`:
 
 ```tsx
-import type { OverviewSection, SpotView } from "@study-spot/ui-logic";
+import type { OverviewSection, SpotView } from "@perch/ui-logic";
 import type { ReactElement } from "react";
 import { EstimatesEditor } from "./EstimatesEditor.tsx";
 import { HoursEditor } from "./HoursEditor.tsx";
@@ -3578,8 +3578,8 @@ function OverviewRoute() {
 `apps/web/src/routes/survey.spots.$id.$section.tsx`:
 
 ```tsx
-import { SURVEY_SECTION } from "@study-spot/core";
-import { t } from "@study-spot/ui-logic";
+import { SURVEY_SECTION } from "@perch/core";
+import { t } from "@perch/ui-logic";
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { z } from "zod";
@@ -3636,7 +3636,7 @@ function SectionRoute() {
 Replace `apps/web/src/routes/survey.index.tsx` (rows link to their spot, New spot is pinned):
 
 ```tsx
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { Home } from "../screens/Home.tsx";
@@ -3660,15 +3660,15 @@ function HomeRoute() {
 
 - [ ] **Step 8: Regenerate the route tree and run the tests**
 
-Run: `VITE_API_BASE_URL=http://127.0.0.1:8787 VITE_DATA_BASE_URL=http://data.localhost:8788 bun run --filter '@study-spot/web' build`
+Run: `VITE_API_BASE_URL=http://127.0.0.1:8787 VITE_DATA_BASE_URL=http://data.localhost:8788 bun run --filter '@perch/web' build`
 Expected: builds; `routeTree.gen.ts` lists the three spot routes.
 
-Run: `bun run --filter '@study-spot/web' test`
+Run: `bun run --filter '@perch/web' test`
 Expected: PASS (13 in `spot.test.tsx`; every earlier web test still passes).
 
 - [ ] **Step 9: Typecheck, lint, commit**
 
-Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`
+Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@perch/web' test`
 Expected: all pass.
 
 ```bash
@@ -3694,8 +3694,8 @@ Spec section 12 items that a browser can check, on the real server: (1) a spot m
 ```ts
 import { randomUUID } from "node:crypto";
 import type { Page } from "@playwright/test";
-import { SurveySpot } from "@study-spot/core";
-import { StoredSession } from "@study-spot/ui-logic";
+import { SurveySpot } from "@perch/core";
+import { StoredSession } from "@perch/ui-logic";
 import { API_ORIGIN } from "../playwright.config.ts";
 
 /** The bearer token this page signed in with, from the app's own storage. */
@@ -4099,7 +4099,7 @@ Expected: 8 passed (part 1's 4 and these 4). If acceptance 4 fails on its second
 
 - [ ] **Step 4: Typecheck, lint, commit**
 
-Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`
+Run: `bun run fix && bun run typecheck && bun run lint && bun run --filter '@perch/web' test`
 Expected: all pass.
 
 ```bash

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { tokens } from "@study-spot/ui-logic";
+import { tokens } from "@perch/ui-logic";
 import { afterEach, expect, test, vi } from "vitest";
 import { applyThemePref, storeThemePref, watchSystemTheme } from "../src/ui/themePref.ts";
 

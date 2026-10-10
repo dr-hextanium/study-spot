@@ -14,7 +14,7 @@ import {
   V0_FIELD_SECTION,
   type V0Field,
   v0InputOf,
-} from "@study-spot/core";
+} from "@perch/core";
 import type { OutboxSnapshot } from "./outbox.ts";
 import { bySeq, isLocalId, type WriteRecord, type WriteState } from "./writes.ts";
 
