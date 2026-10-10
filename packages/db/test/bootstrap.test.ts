@@ -88,3 +88,16 @@ test("leaves spots untouched", async () => {
   await bootstrap(db);
   expect(await db.select().from(spot)).toEqual(before);
 });
+
+test("every bootstrap building has a unique kebab id and a point on the main campus", () => {
+  const ids = BOOTSTRAP_BUILDINGS.map((b) => b.id);
+  expect(new Set(ids).size).toBe(ids.length);
+  for (const b of BOOTSTRAP_BUILDINGS) {
+    expect(b.id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+    expect(b.name.trim()).not.toBe("");
+    expect(b.lat).toBeGreaterThan(40.89);
+    expect(b.lat).toBeLessThan(40.93);
+    expect(b.lng).toBeGreaterThan(-73.14);
+    expect(b.lng).toBeLessThan(-73.1);
+  }
+});
