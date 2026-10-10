@@ -5,6 +5,7 @@ import {
   createGeolocation,
   createLocalStorage,
   createNetworkStatus,
+  createSessionStorage,
   createShare,
 } from "../src/adapters/browser.ts";
 
@@ -44,6 +45,18 @@ test("storage falls back to memory when localStorage throws", () => {
   expect(storage.getItem("k")).toBe("v");
   storage.removeItem("k");
   expect(storage.getItem("k")).toBeNull();
+});
+
+test("session storage falls back to memory when sessionStorage throws", () => {
+  const blocked = {
+    get sessionStorage(): Storage {
+      throw new DOMException("blocked", "SecurityError");
+    },
+  } as unknown as Window;
+  const storage = createSessionStorage(blocked);
+  storage.setItem("k", "v");
+  expect(storage.getItem("k")).toBe("v");
+  expect(createSessionStorage().getItem("never-set")).toBeNull();
 });
 
 test("the broadcast signal reaches another channel of the same name", async () => {

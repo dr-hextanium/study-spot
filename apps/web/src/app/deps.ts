@@ -1,12 +1,15 @@
 import type { SurveySpot } from "@perch/core";
 import {
   type BinaryCache,
+  type BundleStore,
   type Clock,
+  createBundleStore,
   createOutbox,
   createSessionStore,
   createSurveyApi,
   type GeolocationAdapter,
   type KeyValueCache,
+  type KeyValueStorage,
   type NetworkStatus,
   type Outbox,
   type Share,
@@ -24,9 +27,11 @@ import {
   createGeolocation,
   createLocalStorage,
   createNetworkStatus,
+  createSessionStorage,
   createShare,
   systemClock,
 } from "../adapters/browser.ts";
+import { createFetch } from "../adapters/fetch.ts";
 import { createFetchHttp } from "../adapters/http.ts";
 import { openStores } from "../adapters/idb.ts";
 import { createWebLiveness, createWebLock, type LockApi } from "../adapters/locks.ts";
@@ -68,6 +73,14 @@ export type AppDeps = {
   /** API origin, for the photo image route that the typed client does not cover. */
   apiBaseUrl: string;
   dataBaseUrl: string;
+  /** The static campus bundle, cache first then revalidated. Student screens read only this. */
+  bundle: BundleStore;
+  /** Student preferences: localStorage, or memory when it is blocked. */
+  prefs: KeyValueStorage;
+  /** Per-tab student state: sessionStorage, or memory when it is blocked. */
+  tab: KeyValueStorage;
+  /** Random numbers in [0, 1), injected so picks are testable. */
+  rand: () => number;
 };
 
 /** Thirty days, like a session: the persisted copy outlives a long weekend offline. */
@@ -247,5 +260,18 @@ function buildAppDeps(env: { apiBaseUrl: string; dataBaseUrl: string }): AppDeps
     clock: systemClock,
     apiBaseUrl: env.apiBaseUrl,
     dataBaseUrl: env.dataBaseUrl,
+    bundle: createBundleStore(
+      {
+        fetch: createFetch(),
+        cache: stores.cache,
+        clock: systemClock,
+        foreground: createForeground(),
+        network,
+      },
+      env.dataBaseUrl,
+    ),
+    prefs: createLocalStorage(),
+    tab: createSessionStorage(),
+    rand: Math.random,
   };
 }
