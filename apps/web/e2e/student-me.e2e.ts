@@ -1,5 +1,5 @@
 import { t } from "@perch/ui-logic";
-import { expect, signIn, test } from "./fixtures.ts";
+import { expect, signIn, test, waitForServiceWorker } from "./fixtures.ts";
 import { expectRoutesClean } from "./layout.ts";
 
 test("a student phone has no Surveyor tools row", async ({ page }) => {
@@ -27,4 +27,17 @@ test("the dark theme chosen on Me survives a reload", async ({ page }) => {
 test("Me is clean at three widths in both themes", async ({ page }) => {
   await page.goto("/me");
   await expectRoutesClean(page, ["/me"]);
+});
+
+test("the data policy opens from Me, offline too, and is clean", async ({ page, context }) => {
+  await page.goto("/me");
+  await page.getByRole("link", { name: "Data policy" }).click();
+  await expect(page.getByRole("heading", { name: "Data policy", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Never kept", level: 2 })).toBeVisible();
+  await waitForServiceWorker(page);
+  await context.setOffline(true);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Never kept", level: 2 })).toBeVisible();
+  await context.setOffline(false);
+  await expectRoutesClean(page, ["/data-policy"]);
 });
