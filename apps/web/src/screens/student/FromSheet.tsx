@@ -1,14 +1,11 @@
 import type { BundleBuilding } from "@perch/core";
 import { nearestBuilding, t } from "@perch/ui-logic";
-import { Building2, Check, LocateFixed } from "lucide-react";
+import { Building2, LocateFixed } from "lucide-react";
 import { useState } from "react";
 import { useDeps } from "../../app/AppProvider.tsx";
 import { Button } from "../../ui/Button.tsx";
 import { Icon } from "../../ui/Icon.tsx";
-import { Row } from "../../ui/Row.tsx";
-import { Search } from "../../ui/Search.tsx";
-import { Sheet } from "../../ui/Sheet.tsx";
-import { matchBuildings } from "../BuildingPicker.tsx";
+import { BuildingSheet } from "./BuildingSheet.tsx";
 
 const SHOWN = 8;
 
@@ -31,16 +28,8 @@ export function FromSheet(props: {
   onClose: () => void;
 }) {
   const { geolocation } = useDeps();
-  const [query, setQuery] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const sorted = [...props.buildings].sort((a, b) => a.name.localeCompare(b.name));
-  const matches = matchBuildings(sorted, query).slice(0, SHOWN);
-  const chosen = sorted.find((b) => b.id === props.value);
-  // The chosen building stays in view with its check, even past the first eight.
-  const list =
-    query.trim() === "" && chosen !== undefined && !matches.includes(chosen)
-      ? [chosen, ...matches.slice(0, SHOWN - 1)]
-      : matches;
 
   async function locate() {
     setStatus({ kind: "pending" });
@@ -59,13 +48,28 @@ export function FromSheet(props: {
   }
 
   const close = () => {
-    setQuery("");
     setStatus({ kind: "idle" });
     props.onClose();
   };
 
   return (
-    <Sheet open={props.open} title={t("student.home.from.sheet")} onClose={close}>
+    <BuildingSheet
+      open={props.open}
+      title={t("student.home.from.sheet")}
+      buildings={sorted}
+      value={props.value}
+      searchLabel={t("student.home.from.search")}
+      alwaysSearch
+      limit={SHOWN}
+      emptyText={t("student.home.from.none")}
+      icon={Building2}
+      onPick={(id) => {
+        if (id === null) return;
+        props.onChoose(id);
+        close();
+      }}
+      onClose={close}
+    >
       <div className="field">
         <Button
           variant="ghost"
@@ -88,29 +92,6 @@ export function FromSheet(props: {
                 : ""}
         </p>
       </div>
-      <Search label={t("student.home.from.search")} value={query} onChange={setQuery} />
-      {list.length === 0 ? (
-        <p className="empty">{t("student.home.from.none")}</p>
-      ) : (
-        <ul className="row-list picker">
-          {list.map((b) => (
-            <Row
-              key={b.id}
-              compact
-              title={b.name}
-              pressed={b.id === props.value}
-              lead={<Icon icon={Building2} />}
-              end={
-                b.id === props.value ? <Icon icon={Check} className="picker__check" /> : undefined
-              }
-              onClick={() => {
-                props.onChoose(b.id);
-                close();
-              }}
-            />
-          ))}
-        </ul>
-      )}
-    </Sheet>
+    </BuildingSheet>
   );
 }
