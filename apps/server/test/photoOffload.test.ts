@@ -135,6 +135,8 @@ test("a cold-start publish after clearing keeps every approved photo without rea
   for (const path of published) {
     const served = pages.servedBytes(path);
     expect(served === null ? null : `photos/${sha256Hex(served)}.jpg`).toBe(path);
+    // The cold deploy still ships _headers: the PWA reads photos in CORS mode.
+    expect(pages.servedHeaders(`/${path}`)["access-control-allow-origin"]).toBe("*");
   }
 });
 

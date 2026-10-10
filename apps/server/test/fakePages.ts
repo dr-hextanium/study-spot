@@ -16,6 +16,8 @@ export function fakePages() {
   const assets = new Map<string, Uint8Array>();
   let live = new Map<string, Uint8Array>();
   const deployments: Record<string, string>[] = [];
+  // The _headers file each deployment carried: a form part beside the manifest, not in it.
+  const headerFiles: (string | null)[] = [];
   const uploadedKeys: string[] = [];
   const ok = (result: unknown) =>
     new Response(JSON.stringify({ success: true, errors: [], result }), { status: 200 });
@@ -56,6 +58,8 @@ export function fakePages() {
       }
       live = next;
       deployments.push(manifest);
+      const headers = form.get("_headers");
+      headerFiles.push(headers instanceof Blob ? await headers.text() : null);
       return ok({ id: `dep-${deployments.length}` });
     }
     throw new Error(`unexpected ${url}`);
@@ -74,6 +78,8 @@ export function fakePages() {
     deployments,
     uploadedKeys,
     lastManifest: () => deployments.at(-1) ?? {},
+    /** The headers the live site sends on `path`, from the last deployment's _headers. */
+    servedHeaders: (path: string) => pagesHeadersFor(headerFiles.at(-1) ?? "", path),
     servedBytes: (path: string) => live.get(path) ?? null,
     forgetAsset: (hash: string) => assets.delete(hash),
     dropFromSite: (path: string) => live.delete(path),
@@ -90,4 +96,33 @@ export function target(pages: Pages) {
     project: "perch-data",
     fetch: pages.fetch,
   });
+}
+
+/**
+ * Cloudflare Pages' _headers rules as the site applies them: every rule whose path
+ * pattern matches (a `*` matches anything) adds its headers, and a header set by two
+ * rules is joined with a comma. Header names are lowercased.
+ */
+export function pagesHeadersFor(file: string, path: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  let matches = false;
+  for (const line of file.split("\n")) {
+    if (line.trim() === "") continue;
+    if (!/^\s/.test(line)) {
+      const pattern = new RegExp(
+        `^${line
+          .trim()
+          .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+          .replace(/\*/g, ".*")}$`,
+      );
+      matches = pattern.test(path);
+      continue;
+    }
+    if (!matches) continue;
+    const at = line.indexOf(":");
+    const name = line.slice(0, at).trim().toLowerCase();
+    const value = line.slice(at + 1).trim();
+    out[name] = out[name] === undefined ? value : `${out[name]}, ${value}`;
+  }
+  return out;
 }

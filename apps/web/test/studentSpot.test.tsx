@@ -171,6 +171,8 @@ test("a photo that fails to load shows the unavailable frame, never a broken ima
   const { container } = renderRoute(app({ bundle: readyBundle(bundle) }), `/spot/${first.slug}`);
   const img = await waitForImg(container);
   expect(img.getAttribute("src")).toBe("https://data.example/photos/a.jpg");
+  // CORS mode, so the service worker caches a readable 200, not an opaque response.
+  expect(img.getAttribute("crossorigin")).toBe("anonymous");
   fireEvent.error(img);
   expect(await screen.findByText("Image unavailable")).toBeTruthy();
   expect(container.querySelector("img.photo__img")).toBeNull();

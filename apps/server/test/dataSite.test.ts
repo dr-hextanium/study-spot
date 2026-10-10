@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fsDataSite, httpDataSite } from "../src/publish/dataSite.ts";
 import type { FetchLike } from "../src/publish/pagesTarget.ts";
+import { DATA_HEADERS, MUTABLE_PATHS } from "../src/publish/target.ts";
+import { pagesHeadersFor } from "./fakePages.ts";
 
 test("httpDataSite reads 200s and turns everything else into null", async () => {
   const urls: string[] = [];
@@ -67,4 +69,13 @@ test("httpDataSite stops reading a body that grows past the limit", async () => 
     { maxBytes: 4096 },
   );
   expect((await small.get("photos/ok.jpg"))?.byteLength).toBe(4096);
+});
+
+test("the data site's _headers give photos exactly one CORS origin and a long cache", () => {
+  const photo = pagesHeadersFor(DATA_HEADERS, "/photos/0123abcd.jpg");
+  // One value, not "*, *": a second rule for /photos/* would make Pages join them.
+  expect(photo["access-control-allow-origin"]).toBe("*");
+  expect(photo["cache-control"]).toBe("public, max-age=31536000, immutable");
+  expect(pagesHeadersFor(DATA_HEADERS, "/bundle-latest.json")["cache-control"]).toBe("no-cache");
+  expect(MUTABLE_PATHS.has("_headers")).toBe(true);
 });

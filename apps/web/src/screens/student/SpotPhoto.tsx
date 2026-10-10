@@ -17,6 +17,8 @@ export function SpotPhoto(props: { photo: { url: string } | null; alt: string })
         className="photo__img"
         src={url}
         alt={props.alt}
+        // CORS mode: the data site allows it, and the service worker then caches a 200.
+        crossOrigin="anonymous"
         loading="lazy"
         decoding="async"
         onError={() => setFailed(url)}
