@@ -6,9 +6,10 @@ Perch helps Stony Brook students pick a study spot. It is made by students, it i
 
 These live in your browser's storage on this phone. They are never sent to us.
 
-- Your Home choices: the building you start from, how long, what for, group size and extra filters. The building is saved as a building name, never as coordinates.
+- Your Home choices: the building you start from, how long, what for, group size and extra filters. The building is saved as which building it is, never as coordinates.
 - Your access settings: where you live, your quad, and whether you are a grad student. Nobody checks them. They only decide which spots you see as open to you.
-- Your custom presets, your Browse choices, the theme, and whether you said no to the install note.
+- Your custom presets, your Browse choices and the theme.
+- For the install note: how many visits picked a spot, and whether you said no.
 - The last few picks shown in this tab, so Something else and Surprise me do not repeat. They go when the tab closes.
 - A copy of the spot list and photos, so Perch works offline.
 
@@ -18,12 +19,12 @@ To delete all of it, clear this site's data in your browser settings.
 
 - Pick counts. When you tap Directions, or open a spot from your pick, the app sends that spot's id and nothing else. The server adds one to a count for that spot and hour, in memory, and saves the counts as one total per spot per day. Each tab counts a spot once. A count says how often a spot was picked, never by whom.
 - The spot directory: seats, outlets, noise rules, hours, photos and busyness estimates, entered by surveyors.
-- For surveyors only: the display name they chose, their role, the edits they made, and hashed sign-in tokens. Students have no account.
+- For surveyors only: the display name they chose, an email if they gave one, their role, the edits they made, and hashed sign-in tokens. Students have no account.
 
 ## Never kept
 
 - Your location. Use my location asks your phone once, picks the nearest building on the phone, and drops the coordinates. They never leave the phone, and there is no location history.
-- Your IP address. The pick count route uses it in memory, only to limit how fast one address can send, and does not log it or save it.
+- Your IP address. The pick count route uses it in memory, only to limit how fast one address can send. The server logs requests without addresses, and never saves one.
 - An account, a device id, a tracking cookie, analytics or ads. Perch has none of these for students.
 - Audio. Perch never records sound.
 
@@ -31,17 +32,18 @@ To delete all of it, clear this site's data in your browser settings.
 
 - The app and the spot files are static files served by Cloudflare. The pick count route runs on Render. Like any web host, they may keep standard request logs, which include addresses. We do not use them to follow anyone.
 - The map in Browse loads map tiles from OpenFreeMap, only when you open the map. The list works without it.
+- Directions opens Apple Maps or Google Maps with the spot's position as the destination. Your own position is not in the link. What the maps app does next is up to its maker.
 
 ## What Perch shows
 
 - Busyness is a typical level for that hour, or a surveyor's estimate, and it says which. It is never live.
-- Perch shows busyness as words, not head counts, and never shows a count under 5.
+- Perch shows busyness as words, not head counts, and never shows a head count under 5.
 - Every spot shows the date it was last checked.
 
 ## Where the data comes from
 
 - Student surveyors visit each spot and record what is there, take photos with no people in them, and count how full it is at set times. Busyness forecasts come from those counts, or from surveyor estimates where there are no counts yet.
-- Building names and positions come from OpenStreetMap, checked against the campus map. Term and exam dates come from the Stony Brook Registrar's public calendars.
+- Building names and positions come from OpenStreetMap. Term and exam dates come from the Stony Brook Registrar's public calendars.
 - Nothing comes from logins, university systems behind a login, Wi-Fi, or Bluetooth.
 
 ## Licenses
