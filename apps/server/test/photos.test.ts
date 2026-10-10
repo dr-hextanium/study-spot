@@ -279,6 +279,20 @@ test("rejecting a duplicate of a published photo keeps the shared photo", async 
   expect(deployed.at(-1)).toContain(`photos/${sha}.jpg`);
 });
 
+test("an approved photo cannot be rejected, so its only copy is never deleted", async () => {
+  const ctx = await setup();
+  const admin = await signIn(ctx, "admin", "Admin");
+  const id = await uploaded(ctx, admin, 14);
+  expect((await photoAction(ctx, admin, id, "approve")).statusCode).toBe(200);
+  const outcome = await ctx.publisher.runNow();
+  const sha = sha256Hex(jpeg(64, 14));
+  expect(outcome.ok && outcome.offloaded.includes(sha)).toBe(true);
+
+  expect((await photoAction(ctx, admin, id, "reject")).statusCode).toBe(409);
+  expect(await ctx.db.select().from(spot_photo).where(eq(spot_photo.id, id))).toHaveLength(1);
+  expect(await ctx.db.select().from(photo_blob).where(eq(photo_blob.sha256, sha))).toHaveLength(1);
+});
+
 test("the image route serves exact bytes to signed-in surveyors only", async () => {
   const ctx = await setup();
   const me = await signIn(ctx);

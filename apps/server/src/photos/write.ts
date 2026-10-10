@@ -1,6 +1,6 @@
 import type { SurveySpot } from "@perch/core";
 import { building, type Db, photo_blob, spot, spot_photo } from "@perch/db";
-import { and, eq, notExists } from "drizzle-orm";
+import { and, eq, isNull, notExists } from "drizzle-orm";
 import { HttpError } from "../http.ts";
 import { type SpotWriteContext, spotOr404 } from "../spots/write.ts";
 import type { WriteOutcome } from "../writes/withWrite.ts";
@@ -92,9 +92,10 @@ export async function approvePhoto(
 }
 
 /**
- * Admin only. Deletes the photo row and, when no other photo row uses the same
- * bytes (blobs are content-addressed and shared), the blob with its bytes. A
- * cleared blob that goes this way leaves the data site with the next deploy.
+ * Admin only, pending photos only (the admin screen offers Reject in the pending
+ * queue alone). An approved photo may have no copy but the data site, so it is a
+ * 409. Deletes the photo row and, when no other photo row uses the same bytes
+ * (blobs are content-addressed and shared), the blob with its bytes.
  */
 export async function rejectPhoto(
   db: Db,
@@ -104,7 +105,17 @@ export async function rejectPhoto(
   if (ctx.role !== "admin") throw new HttpError(403, { error: "forbidden" });
   const photo = await photoOr404(db, photoId, ctx.campusId);
   const before = await spotOr404(db, photo.spot_id, ctx.campusId, ctx.term);
-  await db.delete(spot_photo).where(eq(spot_photo.id, photoId));
+  // Re-checked in the DELETE, in case an approval landed after the read above.
+  const deleted = await db
+    .delete(spot_photo)
+    .where(and(eq(spot_photo.id, photoId), isNull(spot_photo.approved_at)))
+    .returning({ id: spot_photo.id });
+  if (deleted.length === 0) {
+    throw new HttpError(409, {
+      error: "invalid_request",
+      message: "Approved photos cannot be rejected.",
+    });
+  }
   if (photo.blob_sha256 !== null) {
     await db
       .delete(photo_blob)
@@ -125,6 +136,7 @@ export async function rejectPhoto(
     status: 200,
     body: after,
     audit: { entity: "spot_photo", entity_id: photoId, action: "reject", before, after },
-    dirty: after.status === "published" && photo.approved_at !== null,
+    // A pending photo was never in the bundle.
+    dirty: false,
   };
 }
