@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { checkDbHost } from "../src/deploy/dbHost.ts";
+import { checkDbHost, checkLocalDb } from "../src/deploy/dbHost.ts";
 
 const HOST = "ep-cool-dew-123456.us-east-2.aws.neon.tech";
 const url = (host: string, query = "?sslmode=require") => `postgres://u:secret@${host}/db${query}`;
@@ -103,4 +103,25 @@ test("requireDirect rejects the pooled host and keeps the direct one", () => {
   }
   expect(checkDbHost(url(pooled.toUpperCase()), HOST, { requireDirect: true }).ok).toBe(false);
   expect(checkDbHost(url(HOST), HOST, { requireDirect: true })).toEqual({ ok: true, host: HOST });
+});
+
+test("checkLocalDb accepts only a loopback host", () => {
+  for (const ok of [
+    "postgres://perch:perch@localhost:5432/perch",
+    "postgresql://u:p@127.0.0.1/db",
+    "postgres://u:p@[::1]:5432/db",
+  ]) {
+    expect(checkLocalDb(ok).ok).toBe(true);
+  }
+  for (const bad of [
+    "postgres://u:p@ep-x.us-east-2.aws.neon.tech/db?sslmode=require",
+    "postgres://u:p@localhost.evil.example/db",
+    "postgres://u:p@localhost/db?host=ep-x.neon.tech",
+    "mysql://u:p@localhost/db",
+    "not a url",
+  ]) {
+    const r = checkLocalDb(bad);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).not.toContain("u:p");
+  }
 });

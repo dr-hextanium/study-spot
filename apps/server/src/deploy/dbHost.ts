@@ -73,3 +73,30 @@ export function checkDbHost(
   }
   return { ok: true, host: actual };
 }
+
+const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/**
+ * For scripts that write test rows (smoke-publish): only a database on this machine
+ * or the CI service container. No query keys, so nothing can point the driver at
+ * another host. Never puts the URL in an error.
+ */
+export function checkLocalDb(databaseUrl: string): HostCheck {
+  let parsed: URL;
+  try {
+    parsed = new URL(databaseUrl);
+  } catch {
+    return { ok: false, error: "DATABASE_URL is not a valid URL" };
+  }
+  if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
+    return { ok: false, error: "DATABASE_URL is not a postgres:// URL" };
+  }
+  const host = parsed.hostname.toLowerCase();
+  if (!LOOPBACK.has(host)) {
+    return { ok: false, error: "DATABASE_URL must point at localhost for this script" };
+  }
+  if ([...parsed.searchParams.keys()].length > 0) {
+    return { ok: false, error: "DATABASE_URL for a local database takes no query parameters" };
+  }
+  return { ok: true, host };
+}

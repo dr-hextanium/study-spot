@@ -6,6 +6,7 @@ import { BundlePointer, parseBundle } from "@perch/core";
 import { openDb, spot, spot_photo, surveyor } from "@perch/db";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { checkLocalDb } from "../src/deploy/dbHost.ts";
 import { postgresPhotoStore, sha256Hex } from "../src/photos/store.ts";
 import { fsDataSite } from "../src/publish/dataSite.ts";
 import { fsTarget } from "../src/publish/fsTarget.ts";
@@ -18,11 +19,17 @@ import { type Tx, type WriteOutcome, withWrite } from "../src/writes/withWrite.t
  *    serializes transactions, so only real Postgres exercises the receipt lock.
  * 2. A publish with one approved photo to a temp directory, checking the files,
  *    proves bytea and the publisher on the production driver.
+ * It writes rows and clears photo bytes, so it refuses any database not on localhost.
  * Usage: node apps/server/scripts/smoke-publish.ts
  */
 const url = process.env.DATABASE_URL;
 if (!url) {
   console.error("DATABASE_URL is not set");
+  process.exit(1);
+}
+const local = checkLocalDb(url);
+if (!local.ok) {
+  console.error(`refusing to run: ${local.error}`);
   process.exit(1);
 }
 const { db, close } = openDb(url);
