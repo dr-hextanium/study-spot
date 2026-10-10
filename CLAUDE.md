@@ -43,6 +43,13 @@ When a decision changes, update the relevant context file and append to the deci
 
 - Preplan your tool calls, and group independent ones into one batch where it makes sense. Wait for the whole batch to return before reading any result. Every turn re-reads the full context, so fewer turns means fewer tokens.
 
+## Change tiers (pick the lightest that fits)
+
+- **Tweak** (CSS, spacing, color, copy, icon, markup that changes no behavior): the main session edits it directly, no subagent and no review. The owner sees it through the live preview within a minute or two. Check: `bun run typecheck && bun run lint`, `cd apps/web && bunx vitest run`, and one look at the changed screen at 375 px. Commit, then move on.
+- **Feature** (new UI behavior, no data or sync logic): one sonnet implementer, test-first. Unit tests and the visual check for the touched routes; no separate review unless something looks risky.
+- **Logic** (outbox, sync, saving, auth, server, database, honesty rules): the full loop. Test-first implementer, then review, then fixes, then re-review. Use opus only here or when a change is genuinely tricky.
+- The full Playwright suite runs once per branch before merge, not after every fix. Run single specs only for the area you touched.
+
 ## Visual Verification
 
 Run after a batch of UI changes, not after every edit. `/verify-ui` runs the loop; the `visual-reviewer` agent reads the screenshots so images stay out of the main session.
