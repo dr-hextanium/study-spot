@@ -1,17 +1,29 @@
 import { createHash } from "node:crypto";
 import { type Db, photo_blob } from "@perch/db";
 import { eq } from "drizzle-orm";
+import type { DataSite } from "../publish/dataSite.ts";
+import { pagesHash } from "../publish/pagesTarget.ts";
 
 export type PhotoBlob = { sha256: string; bytes: Uint8Array; contentType: string };
 
-/** Content-addressed photo bytes. Postgres today; R2 can replace it behind this interface. */
+/** Where a photo is published on the data site. */
+export function photoPath(sha256: string): string {
+  return `photos/${sha256}.jpg`;
+}
+
+/**
+ * Content-addressed photo bytes. Pending and not yet confirmed photos are in
+ * Postgres; a photo the publisher confirmed on the data site keeps only its
+ * row and hash there, and its bytes are read back from the data site.
+ */
 export type PhotoStore = {
   /** Idempotent: storing the same bytes twice keeps one copy. */
   put(blob: PhotoBlob): Promise<void>;
+  /** Postgres bytes, or an offloaded photo's data-site copy if its sha256 matches; else null. */
   get(sha256: string): Promise<Uint8Array | null>;
 };
 
-export function postgresPhotoStore(db: Db): PhotoStore {
+export function postgresPhotoStore(db: Db, dataSite: DataSite): PhotoStore {
   return {
     async put(blob) {
       await db
@@ -21,6 +33,7 @@ export function postgresPhotoStore(db: Db): PhotoStore {
           bytes: blob.bytes,
           content_type: blob.contentType,
           byte_size: blob.bytes.byteLength,
+          pages_hash: pagesHash(blob.bytes, photoPath(blob.sha256)),
         })
         .onConflictDoNothing();
     },
@@ -29,7 +42,10 @@ export function postgresPhotoStore(db: Db): PhotoStore {
         .select({ bytes: photo_blob.bytes })
         .from(photo_blob)
         .where(eq(photo_blob.sha256, sha256));
-      return row ? row.bytes : null;
+      if (!row) return null;
+      if (row.bytes !== null) return row.bytes;
+      const published = await dataSite.get(photoPath(sha256));
+      return published !== null && sha256Hex(published) === sha256 ? published : null;
     },
   };
 }

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { BundlePointer, PublishStatus, parseBundle, SurveySpot } from "@perch/core";
 import { building, bundle_state, campus, spot, spot_photo } from "@perch/db";
 import { eq } from "drizzle-orm";
-import { postgresPhotoStore, sha256Hex } from "../src/photos/store.ts";
+import { sha256Hex } from "../src/photos/store.ts";
 import { fsTarget } from "../src/publish/fsTarget.ts";
 import type { PublishFile, PublishTarget } from "../src/publish/target.ts";
 import {
@@ -345,7 +345,7 @@ test("the photo url rewrite touches only the publishing campus", async () => {
   const ctx = await setup();
   const mine = new Uint8Array([0xff, 0xd8, 0xff, 0x11, 0xff, 0xd9]);
   const theirs = new Uint8Array([0xff, 0xd8, 0xff, 0x22, 0xff, 0xd9]);
-  const store = postgresPhotoStore(ctx.db);
+  const store = ctx.photos;
   for (const bytes of [mine, theirs]) {
     await store.put({ sha256: sha256Hex(bytes), bytes, contentType: "image/jpeg" });
   }

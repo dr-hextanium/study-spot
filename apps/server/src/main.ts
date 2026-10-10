@@ -3,6 +3,7 @@ import { buildApp } from "./app.ts";
 import { systemClock } from "./clock.ts";
 import { parseEnv } from "./env.ts";
 import { postgresPhotoStore } from "./photos/store.ts";
+import { fsDataSite, httpDataSite } from "./publish/dataSite.ts";
 import { fsTarget } from "./publish/fsTarget.ts";
 import { pagesTarget } from "./publish/pagesTarget.ts";
 import { createPublisher } from "./publish/publisher.ts";
@@ -16,7 +17,11 @@ const env = parsed.env;
 
 // postgres.js connects lazily, so the server starts even while the database sleeps.
 const { db, close } = openDb(env.DATABASE_URL);
-const photos = postgresPhotoStore(db);
+// Where published files are read back: to confirm a photo before its bytes leave
+// Postgres, and to serve a photo whose bytes did.
+const dataSite =
+  env.PUBLISH_TARGET === "pages" ? httpDataSite(env.DATA_BASE_URL) : fsDataSite(env.FS_PUBLISH_DIR);
+const photos = postgresPhotoStore(db, dataSite);
 const target =
   env.PUBLISH_TARGET === "pages"
     ? pagesTarget({
@@ -30,6 +35,7 @@ const publisher = createPublisher({
   campusId: env.CAMPUS_ID,
   target,
   photos,
+  dataSite,
   dataBaseUrl: env.DATA_BASE_URL,
   clock: systemClock,
   log: (message, error) => console.error(message, error),

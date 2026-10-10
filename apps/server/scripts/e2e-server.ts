@@ -8,6 +8,7 @@ import { buildApp } from "../src/app.ts";
 import { bootstrapAdminInvite } from "../src/auth/invites.ts";
 import type { Clock } from "../src/clock.ts";
 import { postgresPhotoStore } from "../src/photos/store.ts";
+import { fsDataSite } from "../src/publish/dataSite.ts";
 import { fsTarget } from "../src/publish/fsTarget.ts";
 import { createPublisher } from "../src/publish/publisher.ts";
 
@@ -33,12 +34,14 @@ const clock: Clock = {
 const db = await createTestDb();
 await seed(db);
 const publishDir = mkdtempSync(join(tmpdir(), "perch-e2e-publish-"));
-const photos = postgresPhotoStore(db);
+const dataSite = fsDataSite(publishDir);
+const photos = postgresPhotoStore(db, dataSite);
 const publisher = createPublisher({
   db,
   campusId: "sbu",
   target: fsTarget(publishDir),
   photos,
+  dataSite,
   dataBaseUrl: "http://data.localhost:8788",
   clock,
   log: (message, error) => console.error(message, error),

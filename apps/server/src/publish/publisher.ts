@@ -1,10 +1,20 @@
 import { BUNDLE_SCHEMA_MAJOR, BundlePointer, type PublishStatus } from "@perch/core";
-import { buildBundle, building, bundle_state, type Db, spot, spot_photo } from "@perch/db";
-import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import {
+  buildBundle,
+  building,
+  bundle_state,
+  type Db,
+  photo_blob,
+  spot,
+  spot_photo,
+} from "@perch/db";
+import { and, asc, eq, exists, inArray, isNotNull, isNull, not, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Clock } from "../clock.ts";
-import { type PhotoStore, sha256Hex } from "../photos/store.ts";
+import { type PhotoStore, photoPath, sha256Hex } from "../photos/store.ts";
 import type { PublishQueue } from "../writes/withWrite.ts";
+import type { DataSite } from "./dataSite.ts";
+import { pagesHash } from "./pagesTarget.ts";
 import { DATA_HEADERS, type PublishFile, type PublishTarget } from "./target.ts";
 
 export const PUBLISH_DEBOUNCE_MS = 30_000;
@@ -29,6 +39,8 @@ export type PublisherDeps = {
   campusId: string;
   target: PublishTarget;
   photos: PhotoStore;
+  /** Reads the published site back, to confirm a photo before its Postgres bytes are cleared. */
+  dataSite: DataSite;
   /** Absolute data-site base URL without a trailing slash. */
   dataBaseUrl: string;
   clock: Clock;
@@ -40,7 +52,14 @@ export type PublisherDeps = {
 };
 
 export type PublishOutcome =
-  | { ok: true; hash: string; warnings: string[]; uploaded: string[] }
+  | {
+      ok: true;
+      hash: string;
+      warnings: string[];
+      uploaded: string[];
+      /** sha256 of photos whose bytes left Postgres after this deploy was confirmed. */
+      offloaded: string[];
+    }
   | { ok: false; error: string };
 
 export type Publisher = PublishQueue & {
@@ -84,6 +103,114 @@ export function createPublisher(deps: PublisherDeps): Publisher {
     return row ?? null;
   }
 
+  /** Spots of this campus. Other campuses share the database but have their own data site. */
+  function campusSpots() {
+    return deps.db
+      .select({ id: spot.id })
+      .from(spot)
+      .innerJoin(building, eq(spot.building_id, building.id))
+      .where(eq(building.campus_id, deps.campusId));
+  }
+
+  /**
+   * Every photo file this deploy must contain: the bundle's photos, plus every photo
+   * whose bytes already left Postgres and that a photo row of this campus still uses
+   * (its spot may be unpublished now). A Pages deploy drops any file not listed, and
+   * a cleared photo has no other copy, so leaving one out would lose it for good.
+   * A cleared photo is listed by its stored Pages hash; its bytes are fetched back
+   * from the data site only if Cloudflare reports that hash missing.
+   */
+  async function photoFileSet(
+    bundleShas: ReadonlySet<string>,
+  ): Promise<{ sha: string; cleared: boolean; file: PublishFile }[]> {
+    const wanted = [...bundleShas];
+    const rows = await deps.db
+      .selectDistinct({
+        sha: photo_blob.sha256,
+        pagesHash: photo_blob.pages_hash,
+        cleared: sql<boolean>`${photo_blob.bytes} is null`,
+      })
+      .from(photo_blob)
+      .innerJoin(spot_photo, eq(spot_photo.blob_sha256, photo_blob.sha256))
+      .where(
+        and(
+          inArray(spot_photo.spot_id, campusSpots()),
+          wanted.length === 0
+            ? isNull(photo_blob.bytes)
+            : or(isNull(photo_blob.bytes), inArray(photo_blob.sha256, wanted)),
+        ),
+      )
+      .orderBy(asc(photo_blob.sha256));
+    const found = new Set(rows.map((r) => r.sha));
+    for (const sha of bundleShas) {
+      if (!found.has(sha)) throw new Error(`photo blob ${sha} is missing`);
+    }
+    return rows.map((r) => ({
+      sha: r.sha,
+      cleared: r.cleared,
+      file: {
+        path: photoPath(r.sha),
+        contentType: "image/jpeg",
+        ...(r.pagesHash === null ? {} : { pagesHash: r.pagesHash }),
+        bytes: async () => {
+          const bytes = await deps.photos.get(r.sha);
+          if (bytes === null) {
+            throw new Error(`photo ${r.sha} has no bytes in the database or on the data site`);
+          }
+          return bytes;
+        },
+      },
+    }));
+  }
+
+  /**
+   * After a deploy, clears the Postgres bytes of each listed photo that the data site
+   * now serves with a matching sha256. Only photos used by approved rows of this
+   * campus and by no row of another campus qualify. A photo that cannot be confirmed
+   * keeps its bytes and is tried again after the next deploy. Never fails the publish.
+   */
+  async function offloadConfirmed(shas: readonly string[], at: Date): Promise<string[]> {
+    const done: string[] = [];
+    for (const sha of shas) {
+      try {
+        const path = photoPath(sha);
+        const published = await deps.dataSite.get(path, { fresh: true });
+        if (published === null || sha256Hex(published) !== sha) continue;
+        const used = (approved: boolean) =>
+          deps.db
+            .select({ one: sql`1` })
+            .from(spot_photo)
+            .where(
+              and(
+                eq(spot_photo.blob_sha256, photo_blob.sha256),
+                approved
+                  ? and(
+                      isNotNull(spot_photo.approved_at),
+                      inArray(spot_photo.spot_id, campusSpots()),
+                    )
+                  : not(inArray(spot_photo.spot_id, campusSpots())),
+              ),
+            );
+        const cleared = await deps.db
+          .update(photo_blob)
+          .set({ bytes: null, pages_hash: pagesHash(published, path), offloaded_at: at })
+          .where(
+            and(
+              eq(photo_blob.sha256, sha),
+              isNotNull(photo_blob.bytes),
+              exists(used(true)),
+              not(exists(used(false))),
+            ),
+          )
+          .returning({ sha: photo_blob.sha256 });
+        if (cleared.length > 0) done.push(sha);
+      } catch (err) {
+        log(`could not offload photo ${sha}`, err);
+      }
+    }
+    return done;
+  }
+
   async function runOnce(): Promise<PublishOutcome> {
     const startedAt = deps.clock.now();
     let seq = 0;
@@ -106,14 +233,7 @@ export function createPublisher(deps: PublisherDeps): Publisher {
             isNotNull(spot_photo.blob_sha256),
             isNotNull(spot_photo.approved_at),
             sql`${spot_photo.url} is distinct from ${target}`,
-            inArray(
-              spot_photo.spot_id,
-              deps.db
-                .select({ id: spot.id })
-                .from(spot)
-                .innerJoin(building, eq(spot.building_id, building.id))
-                .where(eq(building.campus_id, deps.campusId)),
-            ),
+            inArray(spot_photo.spot_id, campusSpots()),
           ),
         );
 
@@ -128,26 +248,19 @@ export function createPublisher(deps: PublisherDeps): Publisher {
         generated_at: bundle.generated_at,
       });
 
-      const photoFiles = new Map<string, PublishFile>();
+      const bundleShas = new Set<string>();
       for (const s of bundle.spots) {
         for (const p of s.photos) {
-          if (!p.url.startsWith(photoPrefix)) continue;
-          const sha = p.url.slice(photoPrefix.length, -".jpg".length);
-          photoFiles.set(sha, {
-            path: `photos/${sha}.jpg`,
-            contentType: "image/jpeg",
-            bytes: async () => {
-              const bytes = await deps.photos.get(sha);
-              if (bytes === null) throw new Error(`photo blob ${sha} is missing`);
-              return bytes;
-            },
-          });
+          if (p.url.startsWith(photoPrefix)) {
+            bundleShas.add(p.url.slice(photoPrefix.length, -".jpg".length));
+          }
         }
       }
+      const photoFiles = await photoFileSet(bundleShas);
 
       // Photos and the hashed bundle first, the pointer last.
       const files: PublishFile[] = [
-        ...photoFiles.values(),
+        ...photoFiles.map((p) => p.file),
         { path: bundlePath, contentType: "application/json", bytes: async () => utf8(json) },
         { path: "_headers", contentType: "text/plain", bytes: async () => utf8(DATA_HEADERS) },
         {
@@ -157,6 +270,10 @@ export function createPublisher(deps: PublisherDeps): Publisher {
         },
       ];
       const { uploaded } = await deps.target.deploy(files);
+      const offloaded = await offloadConfirmed(
+        photoFiles.filter((p) => !p.cleared).map((p) => p.sha),
+        startedAt,
+      );
 
       // Clear dirty only if no write landed while this run was building.
       const [after] = await deps.db
@@ -184,7 +301,7 @@ export function createPublisher(deps: PublisherDeps): Publisher {
         publisher.schedule();
       }
       failures = 0;
-      return { ok: true, hash, warnings, uploaded };
+      return { ok: true, hash, warnings, uploaded, offloaded };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       log("publish failed", err);

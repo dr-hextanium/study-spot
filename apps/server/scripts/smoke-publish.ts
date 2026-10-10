@@ -7,6 +7,7 @@ import { openDb, spot, spot_photo, surveyor } from "@perch/db";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { postgresPhotoStore, sha256Hex } from "../src/photos/store.ts";
+import { fsDataSite } from "../src/publish/dataSite.ts";
 import { fsTarget } from "../src/publish/fsTarget.ts";
 import { createPublisher } from "../src/publish/publisher.ts";
 import { type Tx, type WriteOutcome, withWrite } from "../src/writes/withWrite.ts";
@@ -60,7 +61,8 @@ try {
   }
   const bytes = new Uint8Array([0xff, 0xd8, 0xff, 0x00, 0x01, 0x80, 0xff, 0xd9]);
   const sha = sha256Hex(bytes);
-  const photos = postgresPhotoStore(db);
+  const dataSite = fsDataSite(dir);
+  const photos = postgresPhotoStore(db, dataSite);
   await photos.put({ sha256: sha, bytes, contentType: "image/jpeg" });
   await db.insert(spot_photo).values({
     spot_id: sac.id,
@@ -74,6 +76,7 @@ try {
     campusId: "sbu",
     target: fsTarget(dir),
     photos,
+    dataSite,
     dataBaseUrl: base,
     clock: { now: () => new Date("2026-10-13T18:00:00Z") },
   });

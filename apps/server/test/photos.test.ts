@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { PHOTO_MAX_BYTES, SurveySpot } from "@perch/core";
 import { building, bundle_state, campus, photo_blob, spot, spot_photo } from "@perch/db";
 import { eq } from "drizzle-orm";
@@ -237,6 +239,28 @@ test("the image route serves exact bytes to signed-in surveyors only", async () 
   expect(
     (await ctx.app.inject({ method: "GET", url: `/survey/photos/${id}/image` })).statusCode,
   ).toBe(401);
+});
+
+test("an offloaded photo is served from the data site, and a bad copy is a 404", async () => {
+  const ctx = await setup();
+  const admin = await signIn(ctx, "admin", "Admin");
+  const id = await uploaded(ctx, admin, 4);
+  expect((await photoAction(ctx, admin, id, "approve")).statusCode).toBe(200);
+  const outcome = await ctx.publisher.runNow();
+  const sha = sha256Hex(jpeg(64, 4));
+  expect(outcome.ok && outcome.offloaded.includes(sha)).toBe(true);
+  const [row] = await ctx.db.select().from(photo_blob).where(eq(photo_blob.sha256, sha));
+  expect(row?.bytes).toBeNull();
+
+  const image = () =>
+    ctx.app.inject({ method: "GET", url: `/survey/photos/${id}/image`, headers: admin.headers });
+  const res = await image();
+  expect(res.statusCode).toBe(200);
+  expect(Array.from(res.rawPayload)).toEqual(Array.from(jpeg(64, 4)));
+
+  // A data-site copy whose sha256 does not match is never served.
+  writeFileSync(join(ctx.publishDir, `photos/${sha}.jpg`), jpeg(64, 5));
+  expect((await image()).statusCode).toBe(404);
 });
 
 test("a photo or spot in another campus is a 404 and stores nothing", async () => {

@@ -8,7 +8,8 @@ import type { LightMyRequestResponse } from "fastify";
 import { type App, buildApp } from "../src/app.ts";
 import { createSession } from "../src/auth/sessions.ts";
 import type { Clock } from "../src/clock.ts";
-import { postgresPhotoStore } from "../src/photos/store.ts";
+import { type PhotoStore, postgresPhotoStore } from "../src/photos/store.ts";
+import { type DataSite, fsDataSite } from "../src/publish/dataSite.ts";
 import { fsTarget } from "../src/publish/fsTarget.ts";
 import { createPublisher, type Publisher, type Timers } from "../src/publish/publisher.ts";
 import type { PublishTarget } from "../src/publish/target.ts";
@@ -107,24 +108,30 @@ export type TestContext = {
   timers: ManualTimers;
   publisher: CountingPublisher;
   publishDir: string;
+  photos: PhotoStore;
 };
 
-/** Seeded PGlite database, an FsTarget in a temp dir, manual timers, a controllable clock. */
+/**
+ * Seeded PGlite database, an FsTarget in a temp dir read back as the data site,
+ * manual timers, a controllable clock.
+ */
 export async function setup(
-  opts: { target?: PublishTarget; commit?: string } = {},
+  opts: { target?: PublishTarget; dataSite?: DataSite; commit?: string } = {},
 ): Promise<TestContext> {
   const db = await createTestDb();
   const ids = await seed(db);
   const clock = testClock();
   const timers = manualTimers();
   const publishDir = mkdtempSync(join(tmpdir(), "publish-test-"));
-  const photos = postgresPhotoStore(db);
+  const dataSite = opts.dataSite ?? fsDataSite(publishDir);
+  const photos = postgresPhotoStore(db, dataSite);
   const publisher = counting(
     createPublisher({
       db,
       campusId: "sbu",
       target: opts.target ?? fsTarget(publishDir),
       photos,
+      dataSite,
       dataBaseUrl: DATA_BASE_URL,
       clock,
       timers,
@@ -137,7 +144,7 @@ export async function setup(
     publisher,
     photos,
   });
-  return { app, db, ids, clock, timers, publisher, publishDir };
+  return { app, db, ids, clock, timers, publisher, publishDir, photos };
 }
 
 export type SignedIn = { id: string; token: string; headers: { authorization: string } };
