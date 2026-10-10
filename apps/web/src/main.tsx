@@ -10,6 +10,7 @@ import { StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { AppProvider } from "./app/AppProvider.tsx";
 import { createAppDeps } from "./app/deps.ts";
+import { captureInstallPrompt } from "./app/installPrompt.ts";
 import { scrollKey } from "./app/scrollKey.ts";
 import { defaultViewTransition } from "./app/transitions.ts";
 import { parseWebEnv } from "./env.ts";
@@ -32,6 +33,7 @@ declare module "@tanstack/react-router" {
 }
 
 watchSystemTheme();
+captureInstallPrompt(window);
 lockZoomWhenInstalled();
 const root = document.getElementById("root");
 if (root === null) throw new Error("missing #root");

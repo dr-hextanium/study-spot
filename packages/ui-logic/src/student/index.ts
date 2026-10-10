@@ -3,6 +3,7 @@ export * from "./browseFilters.ts";
 export * from "./directions.ts";
 export * from "./filters.ts";
 export * from "./format.ts";
+export * from "./me.ts";
 export * from "./nearest.ts";
 export * from "./ping.ts";
 export * from "./prefs.ts";

@@ -948,6 +948,42 @@ Every Home string, including the presenters Home shares with the spot page and B
 | student.map.open | Open spot | 12 | selected card link |
 | student.map.label | Map of study spots | 24 | map region name |
 
+## Student: Me
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.me.access_heading | Access | 10 | |
+| student.me.residence.label | Where you live | 16 | |
+| student.me.residence.none | Off campus | 12 | |
+| student.me.quad.label | Quad | 6 | |
+| student.me.quad.none | None | 6 | |
+| student.me.grad.label | Grad student | 14 | |
+| student.me.access_helper | Unlocks spots for residents and grad students. Nobody checks this. | 72 | |
+| student.me.presets_heading | Presets | 10 | |
+| student.me.preset.builtin | Built in | 10 | |
+| student.me.preset.new | New preset | 14 | |
+| student.me.preset.name | Name | 8 | |
+| student.me.preset.save | Save preset | 14 | |
+| student.me.preset.delete | Delete preset | 14 | |
+| student.me.preset.delete_title | Delete {name}? | 34 | |
+| student.me.preset.delete_body | It goes away on this phone only. | 40 | |
+| student.me.preset.name_required | Give it a name. | 20 | |
+| student.me.preset.filters_required | Pick at least one filter. | 28 | |
+| student.me.preset.full | You can keep up to 10 presets. | 34 | |
+| student.me.look_heading | Look | 6 | |
+| student.me.privacy_heading | Privacy | 10 | |
+| student.me.privacy | Nothing about you is stored on our servers. Settings live on this phone. | 80 | spec wording |
+| student.me.data_policy | Data policy | 14 | |
+| student.me.source | Source code | 14 | |
+| student.me.licenses | Licenses | 12 | link to the license file |
+| student.me.licenses_body | Code is MIT. Spot data and photos are CC BY-SA 4.0. Map data is OpenStreetMap. | 90 | |
+| student.me.surveyor | Surveyor tools | 16 | only with a surveyor session |
+| student.me.reset_note | Your settings couldn't be read, so they were reset. | 56 | |
+| student.install.note | Add Perch to your home screen to open it faster. | 52 | |
+| student.install.add | Add | 6 | |
+| student.install.dismiss | No thanks | 10 | |
+| student.install.ios | In Safari, tap Share, then Add to Home Screen. | 52 | |
+
 ## Pending questions
 
 - Floor naming at Stony Brook (e.g. "Lower level" vs "B") should come from the first survey walk; the floor field is free text for now.

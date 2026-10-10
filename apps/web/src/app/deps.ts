@@ -9,6 +9,7 @@ import {
   createSessionStore,
   createSurveyApi,
   type GeolocationAdapter,
+  type Ids,
   type KeyValueCache,
   type KeyValueStorage,
   type NetworkStatus,
@@ -85,6 +86,8 @@ export type AppDeps = {
   prefs: KeyValueStorage;
   /** Per-tab student state: sessionStorage, or memory when it is blocked. */
   tab: KeyValueStorage;
+  /** Random ids for custom presets. */
+  ids: Ids;
   /** Random numbers in [0, 1), injected so picks are testable. */
   rand: () => number;
   /** Reports a chosen spot to the anonymous pick counter. A no-op unless VITE_PICK_PING=1. */
@@ -283,6 +286,7 @@ function buildAppDeps(env: AppEnv): AppDeps {
     ),
     prefs: createLocalStorage(),
     tab: createSessionStorage(),
+    ids: browserIds,
     rand: Math.random,
     pickPing: createPickPing(
       { send: sendPickPing, tab: createSessionStorage(), enabled: env.pickPing },
