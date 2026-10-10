@@ -1,9 +1,10 @@
 import type { SyncHeader } from "@study-spot/ui-logic";
 import { CircleAlert, Cloud, CloudCheck, CloudOff, type LucideIcon, RefreshCw } from "lucide-react";
 import { useId, useState } from "react";
-import { useSyncHeader } from "../hooks/useOutbox.ts";
+import { useCalmSyncHeader } from "../hooks/useOutbox.ts";
 import { headerLong, headerText } from "../lib/format.ts";
 import { IconButton } from "../ui/Button.tsx";
+import { Crossfade } from "../ui/Crossfade.tsx";
 import { Icon } from "../ui/Icon.tsx";
 import { SyncSheet } from "./SyncSheet.tsx";
 
@@ -30,7 +31,8 @@ function iconFor(h: SyncHeader): LucideIcon {
  * accessible name is always the long text; tapping opens the sheet of changes.
  */
 export function SyncStatus(props: { variant: "icon" | "bar" }) {
-  const header = useSyncHeader();
+  // Display only: smoothed so short passes do not flicker; never All synced while writes wait.
+  const header = useCalmSyncHeader();
   const descId = useId();
   const [open, setOpen] = useState(false);
   const icon = iconFor(header);
@@ -54,8 +56,10 @@ export function SyncStatus(props: { variant: "icon" | "bar" }) {
           aria-haspopup="dialog"
           onClick={() => setOpen(true)}
         >
-          <Icon icon={icon} />
-          <span className="btn__label">{headerText(header)}</span>
+          <Crossfade id={headerText(header)}>
+            <Icon icon={icon} />
+            <span className="btn__label">{headerText(header)}</span>
+          </Crossfade>
         </button>
       )}
       {props.variant === "bar" ? (

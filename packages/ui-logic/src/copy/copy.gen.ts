@@ -53,8 +53,7 @@ export const COPY = {
   "invite.invalid": "This link doesn't work. Check it was copied in full, or ask for a new one.",
   "invite.name.required": "Add a name so others know who edited what.",
   "auth.expired.title": "Sign in again",
-  "auth.expired.body":
-    "Your sign-in on this phone ended. Ask an admin for a new link. Your unsynced changes are kept.",
+  "auth.expired.body": "Your sign-in on this phone ended. Ask an admin for a new link.",
   "nav.back_to_spots": "Back to spots",
   "nav.not_found.body": "Page not found.",
   "home.title": "Spots",

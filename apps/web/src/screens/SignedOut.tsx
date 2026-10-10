@@ -5,8 +5,10 @@ import { Screen } from "../ui/Screen.tsx";
 export function SignedOut() {
   return (
     <Screen title={t("auth.expired.title")}>
-      <p>{t("auth.expired.body")}</p>
-      <p className="lede">{t("sync.sheet.other_phone_warning")}</p>
+      <div className="signed-out">
+        <p>{t("auth.expired.body")}</p>
+        <p className="lede">{t("sync.sheet.other_phone_warning")}</p>
+      </div>
     </Screen>
   );
 }

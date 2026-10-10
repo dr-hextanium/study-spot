@@ -1,11 +1,12 @@
 import { t } from "@study-spot/ui-logic";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { expect, test, vi } from "vitest";
 import { dateTime, shortDate } from "../src/lib/format.ts";
 import { Banner } from "../src/ui/Banner.tsx";
 import { Button } from "../src/ui/Button.tsx";
 import { Check } from "../src/ui/Check.tsx";
+import { CROSSFADE_MS, Crossfade } from "../src/ui/Crossfade.tsx";
 import { TextField } from "../src/ui/Field.tsx";
 import { Segmented } from "../src/ui/Segmented.tsx";
 import { ConfirmSheet } from "../src/ui/Sheet.tsx";
@@ -244,4 +245,31 @@ test("a pointerup after a pointercancel commits nothing", () => {
   fireEvent.pointerCancel(window, { pointerId: 5 });
   fireEvent.pointerUp(labelOf("B"), { isPrimary: true, button: 0, pointerId: 5 });
   expect(commit).not.toHaveBeenCalled();
+});
+
+test("Crossfade keeps the old content, hidden from assistive tech, until the fade ends", () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  try {
+    const view = render(
+      <button type="button">
+        <Crossfade id="a">Syncing 1</Crossfade>
+      </button>,
+    );
+    expect(screen.getByRole("button").textContent).toBe("Syncing 1");
+    expect(document.querySelector(".xfade__layer--in")).toBeNull();
+    view.rerender(
+      <button type="button">
+        <Crossfade id="b">All synced</Crossfade>
+      </button>,
+    );
+    expect(screen.getByRole("button", { name: "All synced" })).toBeTruthy();
+    const out = document.querySelector(".xfade__layer--out");
+    expect(out?.textContent).toBe("Syncing 1");
+    expect(out?.getAttribute("aria-hidden")).toBe("true");
+    act(() => vi.advanceTimersByTime(CROSSFADE_MS));
+    expect(document.querySelector(".xfade__layer--out")).toBeNull();
+    expect(screen.getByRole("button").textContent).toBe("All synced");
+  } finally {
+    vi.useRealTimers();
+  }
 });

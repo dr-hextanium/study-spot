@@ -80,8 +80,13 @@ typography:
     fontFamily: '"Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif'
     fontSize: "12px"
     fontWeight: 600
+  value:
+    fontFamily: '"Chivo Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace'
+    fontSize: "22px"
+    fontWeight: 500
+    fontFeature: '"tnum"'
   mono:
-    fontFamily: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace'
+    fontFamily: '"Chivo Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace'
     fontSize: "13px"
     fontWeight: 500
 rounded:
@@ -95,9 +100,13 @@ spacing:
   xs: "8px"
   sm: "12px"
   md: "16px"
-  gutter: "20px"
   lg: "24px"
   xl: "32px"
+  gutter: "24px"
+  group: "32px"
+  heading: "8px"
+  field: "20px"
+  sheet: "20px"
 components:
   button-primary:
     backgroundColor: "{colors.red}"
@@ -143,12 +152,18 @@ components:
     backgroundColor: "{colors.hover}"
     textColor: "{colors.ink}"
   button-danger:
-    backgroundColor: "{colors.mist}"
-    textColor: "{colors.red}"
+    backgroundColor: "{colors.red}"
+    textColor: "{colors.onRed}"
     typography: "{typography.body-strong}"
     rounded: "{rounded.m}"
     padding: "0 18px"
     height: "46px"
+  button-danger-hover:
+    backgroundColor: "{colors.redHover}"
+    textColor: "{colors.onRed}"
+  button-danger-active:
+    backgroundColor: "{colors.redPress}"
+    textColor: "{colors.onRed}"
   icon-button:
     backgroundColor: "transparent"
     textColor: "{colors.ink}"
@@ -190,7 +205,7 @@ components:
     size: "40px"
   stepper-value:
     textColor: "{colors.ink}"
-    typography: "{typography.figure}"
+    typography: "{typography.value}"
     width: "64px"
     height: "44px"
   tag:
@@ -221,13 +236,13 @@ components:
     typography: "{typography.body-strong}"
     rounded: "{rounded.m}"
     padding: "8px 10px"
-    height: "52px"
+    height: "56px"
   row-hover:
     backgroundColor: "{colors.hover}"
   row-active:
     backgroundColor: "{colors.mist}"
   row-compact:
-    height: "46px"
+    height: "48px"
   row-thumb:
     backgroundColor: "{colors.mist}"
     rounded: "{rounded.s}"
@@ -266,7 +281,7 @@ components:
     height: "52px"
   action-bar:
     backgroundColor: "{colors.paper}"
-    padding: "10px 12px 14px"
+    padding: "12px 16px 16px"
   filter-chip:
     backgroundColor: "transparent"
     textColor: "{colors.ink}"
@@ -277,6 +292,10 @@ components:
   filter-chip-selected:
     backgroundColor: "{colors.ink}"
     textColor: "{colors.paper}"
+  filter-chip-count:
+    typography: "{typography.caption}"
+    rounded: "{rounded.pill}"
+    height: "24px"
   keep-going:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
@@ -293,6 +312,7 @@ components:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
     rounded: "{rounded.sheet}"
+    padding: "12px 20px 20px"
   sheet-dialog:
     backgroundColor: "{colors.paper}"
     rounded: "{rounded.l}"
@@ -321,7 +341,7 @@ components:
     textColor: "{colors.ink}"
     typography: "{typography.body-strong}"
     rounded: "{rounded.m}"
-    height: "52px"
+    height: "56px"
   estimates-cell:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
@@ -347,8 +367,8 @@ The app icon is a red Newsreader P on paper (`apps/web/public/icons/icon.svg`, p
 
 **Key Characteristics:**
 - Four colors plus oklab mixes; red is the only accent and it always means something.
-- Newsreader for large titles, group headings, bar titles and figures; Instrument Sans for everything else.
-- Lists of 52 px rows: lead icon or thumbnail, name, and the fact or a pill on the right.
+- Newsreader for large titles, group headings, bar titles and figures; Chivo Mono for the stepper value and invite links; Instrument Sans for everything else.
+- Lists of 56 px rows (48 px compact): lead icon or thumbnail, name, and the fact or a pill on the right.
 - One centered 680 px column on every width; phone first, no second pane.
 - Lucide icons at a 1.75 stroke, 20 px by default, 16 px beside labels.
 - Light by default, with a per-device light, dark or system switch applied before first paint.
@@ -358,7 +378,7 @@ The app icon is a red Newsreader P on paper (`apps/web/public/icons/icon.svg`, p
 A warm off-white paper, a warm near-black ink, one deep university red, and a pale mist for fills; every other value is a mix of those four.
 
 ### Primary
-- **Seawolf Red** (`red`; `red-dark` in dark mode): the one filled primary button per screen (New spot, Publish, Keep mine, Take photo), the current segment of the step bar, the Missing and Conflict pills, the "Didn't save" pill, the banner and reason icons, field error text and borders, danger button text, the trouble state of the sync status, and every keyboard focus ring. It is also the text caret, the native accent color, and (as `redTint`) the text selection. In dark mode it lifts to a coral so it holds contrast on near-black, and the text on it flips to paper-dark (`onRed-dark`).
+- **Seawolf Red** (`red`; `red-dark` in dark mode): the one filled primary button per screen (New spot, Publish, Keep mine, Take photo), the danger button (Discard, Remove access, Reject, Unpublish), the current segment of the step bar, the Missing and Conflict pills, the "Didn't save" pill, the banner and reason icons, field error text and borders, the trouble state of the sync status, and every keyboard focus ring. It is also the text caret, the native accent color, and (as `redTint`) the text selection. In dark mode it lifts to a coral so it holds contrast on near-black, and the text on it flips to paper-dark (`onRed-dark`).
 - **On Red** (`onRed`): the label color on a red fill, white in light mode and paper-dark in dark mode.
 - **Red Tint** (`redTint`, 12 percent red into paper): the background of red pills, of the "Can't publish yet" reason box, and of selected text.
 - **Red Hover / Red Press** (`redHover`, `redPress`): red mixed toward ink for the hover and pressed states of the primary button. Never used at rest.
@@ -366,7 +386,7 @@ A warm off-white paper, a warm near-black ink, one deep university red, and a pa
 ### Neutral
 - **Paper** (`paper`): the page, the sheet, the action bar, the input field, the segmented thumb and stepper buttons. Warm, not pure white, so a sunlit screen does not glare.
 - **Ink** (`ink`): all body text, the ink button, selected tags and filter chips, the done segments of the step bar, the toast and the update card. Ink on paper clears 7:1 for sunlight.
-- **Mist** (`mist`): every quiet fill: the quiet and danger buttons, the segmented track, the stepper tray, the search field, banners, note cards, mist pills, counts, the todo step, empty photo frames and thumbnail placeholders.
+- **Mist** (`mist`): every quiet fill: the quiet button, the segmented track, the stepper tray, the search field, banners, note cards, mist pills, counts, the todo step, empty photo frames and thumbnail placeholders.
 - **Muted** (`muted`, 62 percent ink): secondary text, row subtitles and facts, helpers, placeholder text, unselected segmented labels, label icons.
 - **Line** (`line`, 10 percent ink): every hairline: under fields, between days and list options, the scrolled top bar edge, the action bar edge, the sheet actions divider, the outline of the Keep going card and filter chips, the sheet grab handle.
 - **Edge** (`edge`, 45 percent ink): the stronger stroke on inputs, unselected tags, radio rings and estimates cells; also the scrollbar thumb.
@@ -379,7 +399,7 @@ Each light token has a `-dark` twin. The dark set is the same recipe on the dark
 
 **The Four Colors Rule.** Paper, ink, red and mist, and oklab mixes of them. Nothing else enters the palette: no green for done, no amber for waiting, no blue for links. Scrims and shadows are ink mixed into transparent and are not tokens.
 
-**The Red Means You Rule.** Red appears where the surveyor has to act or look: the one primary action, the current step, a missing required section, a conflict, a failed save, an error, the focus ring. It is never decoration and never a heading color. The one primary button is the only large red fill; every other red surface is a pill, a reason box or a 6 px step.
+**The Red Means You Rule.** Red appears where the surveyor has to act or look: the one primary action, the current step, a missing required section, a conflict, a failed save, an error, the focus ring. It is never decoration and never a heading color. The large red fills are the one primary button and the danger button; a danger button never sits beside a red primary, so a red fill next to you always means one thing. Every other red surface is a pill, a reason box or a 6 px step.
 
 **The Icon Plus Red Rule.** Status is carried by an icon and, when it needs the surveyor, by red. A state is never shown by color alone: the current step is also taller, trouble pills carry an icon, a danger banner always carries its icon.
 
@@ -387,13 +407,14 @@ Each light token has a `-dark` twin. The dark set is the same recipe on the dark
 
 **Display Font:** Newsreader Variable (with ui-serif, Georgia, serif), self-hosted
 **Body Font:** Instrument Sans Variable (with ui-sans-serif, system-ui, sans-serif), self-hosted
-**Mono Font:** the system mono stack, only for one-time invite links
+**Mono Font:** Chivo Mono Variable (with the system mono stack), self-hosted in latin and latin-ext and precached for offline use, as `--font-mono`: the stepper value and one-time invite links
 
 **Character:** a bookish, slightly condensed serif for names and numbers set against a neutral, sturdy grotesque for every control. The serif makes a spot feel like a place; the sans keeps the tool plain.
 
 ### Hierarchy
 - **Large** (Newsreader 500, 34 px, 1.08, tracking -0.015em): the large title, the one h1 per screen (the spot name, "Spots", the section name). Balanced wrapping; long names wrap anywhere rather than overflow.
-- **Figure** (Newsreader 400, 22 px): numbers that are the answer: the stepper value, admin counts. Tabular figures.
+- **Figure** (Newsreader 400, 22 px): numbers that are the answer: admin counts. Tabular figures.
+- **Value** (Chivo Mono 500, 22 px, tabular figures): a number being entered, the stepper value between minus and plus. A smooth mono so the digits read as data and do not jump as they change; headline counts stay in Newsreader.
 - **Group** (Newsreader 500, 20 px, 1.25): group headings over lists ("Needed to publish", "Extras", "Needs you"), sheet titles, the hours term heading (set at 600 there).
 - **Bar title** (Newsreader 500, 18 px): the small bar title that fades in when the large title scrolls away.
 - **Input** (Instrument Sans 400, 16 px): text inside inputs and search, at 16 so phones do not zoom.
@@ -404,15 +425,15 @@ Each light token has a `-dark` twin. The dark set is the same recipe on the dark
 
 ### Named Rules
 
-**The Serif Is For Names And Numbers Rule.** Newsreader sets titles, group headings, bar titles and figures. It never sets a control, a label, a helper or a button.
+**The Serif Is For Names And Numbers Rule.** Newsreader sets titles, group headings, bar titles and figures. A number being typed or stepped is not a figure: the stepper value is Chivo Mono. It never sets a control, a label, a helper or a button.
 
 **The No Small Caps Rule.** Labels are sentence case at normal tracking. No uppercase labels, no tracked-out small text, and no label lines set above a heading to introduce it.
 
 ## Layout
 
-One column, phone first. Content sits in a centered column of 680 px maximum with 20 px side gutters on every width; laptops get the same column centered on paper, not a second pane. The document scrolls; the top bar is sticky and the action bar is pinned to the bottom, so a screen with actions reserves 88 px plus the safe area beneath its content (the action bar's reserved space, not its drawn height).
+One column, phone first. Content sits in a centered column of 680 px maximum with 24 px side gutters on every width; laptops get the same column centered on paper, not a second pane. The document scrolls; the top bar is sticky and the action bar is pinned to the bottom, so a screen with actions reserves 92 px plus the safe area beneath its content (the action bar's reserved space, not its drawn height).
 
-The rhythm is a 4 px base: 4, 8, 12, 16, 20, 24, 32. Group headings sit 24 px above their list and 6 px over it. Rows are 52 px with 12 px between lead, text and end; compact rows are 46 px. Fields are separated by 16 px of padding and a hairline rather than by boxes. Spot overview, Home and every editor follow the same order: top bar, large title, meta line, then (on spot screens) the step bar and its progress line, then groups of rows or fields.
+The rhythm is a 4 px base: 4, 8, 12, 16, 20, 24, 32, with named roles in tokens.ts: `gutter` 24, `group` 32, `heading` 8, `field` 20, `sheet` 20. Group headings sit 32 px below what comes before them and 8 px over their list. Rows are 56 px with 12 px between lead, text and end; compact rows are 48 px. Fields are separated by 20 px of padding above and below and a hairline rather than by boxes. The large title has 8 px above and 12 px below it; on spot screens the step bar sits 16 px under the meta line and the progress line 12 px under the step bar. Banners keep 16 px above and below. Sheets pad their head, body and actions 20 px at the sides, with 12 px between stacked actions. Spot overview, Home and every editor follow the same order: top bar, large title, meta line, then (on spot screens) the step bar and its progress line, then groups of rows or fields.
 
 From 768 px three things change and nothing else: sheets become centered dialogs (520 px wide), the action bar lifts off the bottom edge into a floating rounded tray inside the column, and the photo grid goes from two columns to three. Filter chips scroll horizontally edge to edge, bleeding through the gutter.
 
@@ -442,12 +463,12 @@ Strokes are 1 px: `line` for structure, `edge` for things you can type into or t
 ## Components
 
 ### Buttons
-Plain, firm, 46 px tall, 12 px corners, Instrument Sans 600 at 15 px, an optional 20 px leading icon.
+Plain, firm, 46 px tall, 12 px corners, Instrument Sans 600 at 15 px on the snug 1.25 line height (the height comes from min-height, so descenders are never clipped), an optional 20 px leading icon. Every one-line control (buttons, chips, tags, pills, segmented options) uses the snug line height, and a truncating label keeps 2 px of room for descenders inside its clip.
 - **Primary (red):** the one action the screen exists for. One per screen, in the action bar or a sheet's actions. Hover mixes toward ink; press darker still.
 - **Ink:** the strong secondary ("Next: Seating", "Keep theirs").
 - **Quiet (mist):** ordinary secondary actions ("Looks right", Cancel).
 - **Ghost:** muted text on nothing, a hover wash; used for the sync status in the action bar.
-- **Danger:** red text on mist, never a red fill, so a destructive action does not compete with the primary.
+- **Danger:** a red fill with on-red text, hover and press like the primary, for removals (Discard, Remove access, Reject, Unpublish and every destructive confirm). It never shares a sheet or a group with a red primary: beside it the safe choice is ink (Try again) or quiet (Cancel). The admin screen therefore has no red primary; Create invite link and Approve are ink.
 - **Pressed:** moves down 1 px and scales to 0.99. **Disabled:** 45 percent opacity. A blocked Publish stays visible and is `aria-disabled` with its reason linked, and pressing it opens the "Can't publish yet" sheet.
 - **Icon button:** a 40 px transparent circle (44 px hit area), mist on hover and press, scale 0.97 on press. Back, close, sync, actions.
 
@@ -458,7 +479,7 @@ A label line in Instrument Sans 600 with an optional 16 px muted icon before it 
 A mist track (4 px inset, 12 px corners) with a paper thumb (8 px corners, the thumb shadow) under the chosen option; labels are muted 14 px 600, the chosen one ink. **Instant:** the new choice shows on pointerdown and the thumb glides there (transform, 180 ms, standard easing); the value commits on release over the same option, and a scroll or a release elsewhere drops it. Native radios sit underneath, so arrows and screen readers work. Unpressed options scale to 0.97 while held. With no value the thumb is hidden. Long options switch to the **list** layout: stacked 48 px radio rows with hairlines between, a 20 px ring on the left, no thumb. Yes/No, Yes/No/Not sure and optional choices are all this control.
 
 ### Stepper
-A mist tray holding a 40 px paper minus button, the number in Newsreader 22 px (a transparent 64 px keypad field that takes paper and a red stroke on focus), an optional muted unit, and a 40 px paper plus button. Buttons scale to 0.97 and darken to mistHover on press; at a limit they go muted at reduced opacity.
+A mist tray holding a 40 px paper minus button, the number in Chivo Mono 500 at 22 px with tabular figures (a transparent 64 px keypad field that takes paper and a red stroke on focus), an optional muted unit, and a 40 px paper plus button. Buttons scale to 0.97 and darken to mistHover on press; at a limit they go muted at reduced opacity.
 
 ### Tag toggle with icon
 A 36 px pill in a wrapping group under one field label: paper with an edge stroke, ink 14 px 600 text, and a 16 px icon before the text. Selected fills ink with paper text. A tag without its own icon shows a check only when selected. Press scales to 0.97.
@@ -467,7 +488,7 @@ A 36 px pill in a wrapping group under one field label: paper with an edge strok
 A 48 px full-width line: label (with optional icon) and helper on the left, a 44 by 26 switch on the right, hairline below. The switch is a mist track with an ink knob; on, the track turns ink and the knob paper and slides 18 px.
 
 ### Row
-The unit of every list. 52 px minimum, 12 px corners, bleeding 10 px past the column so the hover wash lines up with the text. Lead (a 20 px section icon or a 40 px cover thumbnail), a 600 title with an optional muted 13 px subtitle, and an end slot holding one fact in muted 13 px or a pill. Hover washes `hover`; press washes mist and scales to 0.985. **Compact** rows are 46 px. **With cover thumb:** a 40 px, 8 px-corner image that fades in when loaded; until then the slot takes no width.
+The unit of every list. 56 px minimum, 12 px corners, bleeding 10 px past the column so the hover wash lines up with the text. Lead (a 20 px section icon or a 40 px cover thumbnail), a 600 title with an optional muted 13 px subtitle, and an end slot holding one fact in muted 13 px or a pill. Hover washes `hover`; press washes mist and scales to 0.985. **Compact** rows are 48 px. **With cover thumb:** a 40 px, 8 px-corner image that fades in when loaded; until then the slot takes no width.
 
 On the spot overview, a required section with nothing in it ends in a red **Missing** pill; an empty extra section ends in muted "None" or "Not set" instead, never red. Sync trouble beats missing, and missing beats the fact. On Home, each row carries exactly one fact: a red Conflict or Didn't save pill, a mist Unreviewed pill with an eye icon, a mist Draft pill, a progress count, or the check date.
 
@@ -481,10 +502,10 @@ One segment per required section, 6 px apart, full pills. Done is ink, todo is m
 A sticky 52 px bar (plus safe area) of translucent blurred paper: back icon button, a small Newsreader 18 px title, trailing icon buttons (sync, actions). The page's real h1 is the 34 px large title below it. When the large title scrolls out, the bar gains its hairline and the small title fades and rises 6 px into place (220 ms); the small title is hidden from assistive tech.
 
 ### Action bar
-Pinned to the bottom, at most one red button, everything within thumb reach. On phones: full-width paper with a top hairline, 10 px by 12 px padding plus safe area, buttons in a row with the main one growing. From 768 px: a floating 20 px-corner tray with a hairline and the floating tray shadow, 16 px above the bottom. **Stacked** variant puts a wide primary over a quiet one. Spot overview: "Next: Seating" (ink), Publish (red), Actions. Home: sync status, New spot (red), more.
+Pinned to the bottom, at most one red button, everything within thumb reach. On phones: full-width paper with a top hairline, 12 px above, 16 px at the sides and below plus the safe area, buttons in a row with the main one growing. From 768 px: a floating 20 px-corner tray with a hairline and the floating tray shadow, 16 px above the bottom. **Stacked** variant puts a wide primary over a quiet one. Spot overview: "Next: Seating" (ink), Publish (red), Actions. Home: sync status, New spot (red), more.
 
 ### Filter chips
-A horizontally scrolling row of 32 px pills (44 px hit area) with a line stroke, a label and a count. One is pressed: ink fill, paper text, the count tinted from the text color. Home filters: All, Needs you, Drafts, Due. A Newsreader group heading below the chips names the current filter.
+A horizontally scrolling row of 32 px pills (44 px hit area) with a line stroke, a label and a count. The count is a 24 px circle concentric with the chip's right end cap: it is inset 4 px from the top, bottom and right edge (the chip's right padding is 3 px plus its 1 px stroke), so the circle's center is the end cap's center; a two-digit count stretches it into a pill with the same caps. One is pressed: ink fill, paper text, the count tinted from the text color. Home filters: All, Needs you, Drafts, Due. A Newsreader group heading below the chips names the current filter.
 
 ### Keep going card
 The top of Home when a draft is in progress: a 20 px-corner card outlined with a hairline, holding an optional 56 px cover, the spot name in Newsreader, the draft's step bar, and one status line that folds the caption in ("Keep going · Next: Seating · 2 left", or "Keep going · Ready to publish"). Hover darkens the outline; press washes `hover` and scales to 0.99.
@@ -493,7 +514,7 @@ The top of Home when a draft is in progress: a 20 px-corner card outlined with a
 A 44 px mist field with a muted 18 px search icon and a 16 px input; the label doubles as placeholder and accessible name.
 
 ### Sheet and confirm sheet
-A native modal dialog: focus moves in and is trapped, Escape and the close button dismiss, the page behind is inert. On phones it is a bottom sheet (22 px top corners, up to 85 percent of the viewport, a 36 by 4 px grab handle) that slides up in 320 ms; from 768 px it is a centered 520 px dialog with 20 px corners that scales in from 0.98 and fades. A Newsreader 20 px title and a close icon head it; the body scrolls; actions are pinned below a hairline. The **confirm sheet** asks once before something that cannot be undone: a wide primary (or a wide danger when destructive) over a wide quiet Cancel.
+A native modal dialog: focus moves in and is trapped, Escape and the close button dismiss, the page behind is inert. On phones it is a bottom sheet (22 px top corners, up to 85 percent of the viewport, a 36 by 4 px grab handle) that slides up in 320 ms; from 768 px it is a centered 520 px dialog with 20 px corners that scales in from 0.98 and fades. A Newsreader 20 px title and a close icon head it; the body scrolls; actions are pinned below a hairline. The **confirm sheet** asks once before something that cannot be undone: a wide primary (or a wide red danger when destructive, the one red thing in the sheet) over a wide quiet Cancel.
 
 ### Banner
 A 44 px minimum mist box with 12 px corners and 600 text, with an optional action on the right. **Danger** always carries a red alert icon and interrupts (alert role). **Note** has no icon by default and waits to be read (status role), for offline notices and waiting changes. The related **reason** box (red tint, red icon) explains why Publish is blocked.
@@ -505,10 +526,16 @@ One short confirmation at a time: an ink box, 44 px minimum with 12 px corners, 
 An icon in the top bar or an icon with short text as a ghost button in the action bar; either opens the "Changes on this phone" sheet, and the accessible name is always the long sentence. Cloud with a check for all synced, a slashed cloud for offline, a turning arrow while changes wait or send, a red alert for failed, unreadable or signed out. Short texts: "All synced", "Offline", "3 waiting", "2 not saved", "Signed out".
 
 ### Hours day row
-Each day is a 52 px row (day name, a muted right-aligned summary, a chevron that turns over when open) closed by a hairline. Opening it reveals a three-way segmented control (Hours, Closed, All day); in Hours mode, Opens and Closes times sit side by side, with a muted note when closing runs into the next day.
+Each day is a 56 px row (day name, a muted right-aligned summary, a chevron that turns over when open) closed by a hairline. Opening it reveals a three-way segmented control (Hours, Closed, All day); in Hours mode, Opens and Closes times sit side by side, with a muted note when closing runs into the next day.
 
 ### Estimates cell
 The busyness grid has time blocks as rows and weekdays and weekends as columns. Each cell is a 56 px, 12 px-corner paper button with an edge stroke and its bucket label at the bottom left; a fill rises from the bottom with the guess (10, 35, 60, 85 or 100 percent). An unset cell has a dashed stroke and muted text. Each tap moves the cell one bucket up; press scales to 0.97.
+
+### Skeleton
+What a screen shows while its data is on the way, so a tap always lands on the next screen at once. It keeps the real screen's layout (top bar, the large title or its shape, meta line, step bar, group headings, rows or fields, the action bar) in plain mist blocks: 8 px corners on lines, full pills for pills and chips, 12 px for controls and the title. Text blocks are exactly one line box of the type they stand for (1lh, the mist drawn inside clear borders), headings are 20 px at the snug line height, and the step bar keeps the real one's 6 px, so nothing moves when the data lands; the overview skeleton has the real section counts per group. The blocks pulse softly (opacity to 50 percent over 1.6 s); reduced motion stops the pulse. A skeleton never pretends to be data: the blocks are aria-hidden, their region is aria-busy, and a polite status says "Loading" from the copy deck. A known title (a section name, Spots, Admin) stays real text; an unknown one (the spot's name) is a mist block, with the app's name as the hidden h1. Used for a spot overview or editor whose spot is not on this phone yet, Home before its first list (offline it says so instead), and the admin lists. The skeleton shows only while a read is actually in flight (or the saved copy is being read back), never for a read that is paused offline.
+
+### Route transitions
+A change of screen cross-fades through the View Transitions API, started by the router: the old screen fades out in 120 ms (`fast`) and the new one fades in over 220 ms (`base`) while rising 6 px. Only path changes are typed `route` and animate; a change of search only (a sheet opening from a link) and browsers without view transition types swap at once. Reduced motion: an 80 ms fade, no movement.
 
 ### Theme switch
 A three-option segmented control (Light, Dark, System), stored on this device only and applied before first paint. System follows the phone.
@@ -517,7 +544,7 @@ A three-option segmented control (Light, Dark, System), stored on this device on
 
 ### Do:
 - **Do** build every color from paper, ink, red and mist, and the oklab mixes named in the frontmatter.
-- **Do** give each screen exactly one red-filled button, the action the screen exists for; use ink, quiet, ghost or danger for everything else.
+- **Do** give each screen at most one red-filled primary, the action the screen exists for; use ink, quiet or ghost for everything else. Removals are red-filled danger buttons, never beside a red primary.
 - **Do** keep red for things that need the surveyor (missing required sections, conflicts, failed saves, errors, the current step) and for focus rings.
 - **Do** pair every status with an icon, and change shape or size as well as color where state matters (the current step is taller).
 - **Do** give every control a hit area of at least 44 px, extending an invisible area when the drawing is smaller.
@@ -530,7 +557,7 @@ A three-option segmented control (Light, Dark, System), stored on this device on
 ### Don't:
 - **Don't** add a status hue: no green for done, no amber for waiting, no blue for info. Done is ink, todo is mist, attention is red.
 - **Don't** use red as decoration, for headings, or as a large background.
-- **Don't** put a second red-filled button on a screen, and don't fill a destructive button red; danger is red text on mist.
+- **Don't** put a second red primary on a screen, or a danger button next to a red primary; demote the neighbor to ink.
 - **Don't** shadow anything that sits in the page flow; shadows are for sheets, the floating action bar and the segmented thumb.
 - **Don't** decorate: hairlines separate items, but nothing imitates a printed form (no lines to write on, no faux-printed seals or date rings), and there are no colored status chips or tracked uppercase labels.
 - **Don't** show a write as saved or synced before the server accepts it, and never show a forecast as live.

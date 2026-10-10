@@ -12,7 +12,7 @@
   --color-mistHover: color-mix(in oklab, var(--color-mist) 82%, var(--color-ink));
   --font-display: "Newsreader Variable", ui-serif, Georgia, serif;
   --font-body: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-mono: "Chivo Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --fontSize-caption: 12px;
   --fontSize-small: 13px;
   --fontSize-label: 14px;
@@ -29,9 +29,13 @@
   --space-xs: 8px;
   --space-sm: 12px;
   --space-md: 16px;
-  --space-gutter: 20px;
   --space-lg: 24px;
   --space-xl: 32px;
+  --space-gutter: 24px;
+  --space-group: 32px;
+  --space-heading: 8px;
+  --space-field: 20px;
+  --space-sheet: 20px;
   --radius-s: 8px;
   --radius-m: 12px;
   --radius-l: 20px;
@@ -39,9 +43,10 @@
   --radius-pill: 999px;
   --size-tapTarget: 44px;
   --size-bar: 52px;
-  --size-actionBar: 88px;
+  --size-actionBar: 92px;
   --size-updateCard: 72px;
-  --size-row: 52px;
+  --size-row: 56px;
+  --size-rowCompact: 48px;
   --size-control: 46px;
   --size-thumb: 40px;
   --size-tag: 36px;

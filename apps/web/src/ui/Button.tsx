@@ -16,7 +16,7 @@ type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className"> & {
   children: ReactNode;
 };
 
-/** Red primary (one per screen), ink, mist quiet, text ghost, and red-on-mist danger. */
+/** Red primary (one per screen), ink, mist quiet, text ghost, and red-filled danger for removals. */
 export function Button({
   variant = "ink",
   wide = false,

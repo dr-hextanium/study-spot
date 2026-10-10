@@ -1,7 +1,7 @@
 import type { Browser, Page } from "@playwright/test";
 import { completeSpot, draftSpot, surveyorInvite, tokenOf } from "./api.ts";
 import { expect, signIn, test } from "./fixtures.ts";
-import { expectRoutesClean } from "./layout.ts";
+import { expectRoutesClean, layoutProblems } from "./layout.ts";
 
 // One test per group of routes, each inside the default timeout: three widths, two themes, axe each.
 
@@ -37,6 +37,32 @@ test("home, light and dark: clean with a long-named spot", async ({ page }) => {
   await longDraft(page);
   await publishedSpot(page);
   await expectRoutesClean(page, ["/survey"]);
+  // Each chip's count sits concentric with the chip's right end cap: the same center, inset 4 px.
+  for (const width of [375, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/survey");
+    const chips = page.locator(".chip");
+    await expect(chips.first()).toBeVisible();
+    for (const chip of await chips.all()) {
+      const g = await chip.evaluate((el) => {
+        const c = el.getBoundingClientRect();
+        const n = el.querySelector(".count")?.getBoundingClientRect();
+        if (n === undefined) return null;
+        return {
+          capX: c.right - c.height / 2,
+          capY: c.top + c.height / 2,
+          countX: n.right - n.height / 2,
+          countY: n.top + n.height / 2,
+          inset: (c.height - n.height) / 2,
+        };
+      });
+      expect(g, `chip count @${width}`).not.toBeNull();
+      if (g === null) continue;
+      expect(Math.abs(g.capX - g.countX), `cap x @${width}`).toBeLessThanOrEqual(0.5);
+      expect(Math.abs(g.capY - g.countY), `cap y @${width}`).toBeLessThanOrEqual(0.5);
+      expect(g.inset, `inset @${width}`).toBeCloseTo(4, 0);
+    }
+  }
 });
 
 test("admin: clean, and the admin badge keeps its whole text on one line", async ({
@@ -65,6 +91,24 @@ test("admin: clean, and the admin badge keeps its whole text on one line", async
       .locator('section[aria-labelledby="admin-invite"] > .field')
       .evaluate((el) => getComputedStyle(el).borderBottomWidth);
     expect(rule, `role switch hairline @${width}`).toBe("0px");
+  }
+});
+
+test("the narrowest phone, 360 px: home, a long draft, an editor and admin keep every label whole", async ({
+  page,
+}) => {
+  await signIn(page);
+  const long = await longDraft(page);
+  await page.setViewportSize({ width: 360, height: 780 });
+  for (const route of [
+    "/survey",
+    `/survey/spots/${long.id}`,
+    `/survey/spots/${long.id}/power`,
+    "/survey/admin",
+  ]) {
+    await page.goto(route);
+    await page.waitForLoadState("networkidle");
+    expect(await layoutProblems(page), `${route} @360`).toEqual([]);
   }
 });
 

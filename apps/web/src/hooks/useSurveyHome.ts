@@ -1,6 +1,6 @@
 import type { SurveySpot } from "@study-spot/core";
 import { type SurveyHome, surveyHome } from "@study-spot/ui-logic";
-import { useQueryClient } from "@tanstack/react-query";
+import { useIsRestoring, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { keys } from "../app/keys.ts";
 import { useOutboxSnapshot } from "./useOutbox.ts";
@@ -11,6 +11,8 @@ export type HomeState = {
   home: SurveyHome | null;
   /** True before any list has been loaded or restored (first run offline). */
   noList: boolean;
+  /** No list yet, and one is on its way (the saved copy is being read, or the server asked). */
+  loading: boolean;
   refreshing: boolean;
 };
 
@@ -19,6 +21,7 @@ export function useSurveyHome(): HomeState {
   const list = useSpotList();
   const snapshot = useOutboxSnapshot();
   const qc = useQueryClient();
+  const restoring = useIsRestoring();
   // Detail reads below are not query subscriptions, so re-render when any cached spot changes.
   const [, setTick] = useState(0);
   useEffect(
@@ -32,7 +35,7 @@ export function useSurveyHome(): HomeState {
       }),
     [qc],
   );
-  if (me === null) return { home: null, noList: true, refreshing: false };
+  if (me === null) return { home: null, noList: true, loading: false, refreshing: false };
   const details = new Map<string, SurveySpot>();
   for (const [key, data] of qc.getQueriesData<SurveySpot>({ queryKey: keys.spotPrefix })) {
     const id = key[2];
@@ -41,6 +44,7 @@ export function useSurveyHome(): HomeState {
   return {
     home: surveyHome(list.data ?? null, snapshot.records, me, details, snapshot.unreadable),
     noList: list.data === undefined,
+    loading: list.data === undefined && (restoring || list.fetchStatus === "fetching"),
     refreshing: list.isFetching,
   };
 }

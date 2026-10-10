@@ -209,13 +209,15 @@ export function HoursEditor({ view }: { view: SpotView }) {
               <p className="hours-term">{t("hours.term", { term: term.name })}</p>
             )}
             <p className="lede">{t("hours.helper")}</p>
-            <Button
-              variant="quiet"
-              icon={<Icon icon={Copy} />}
-              onClick={() => commit(copyMonday(regular), exam, withExam)}
-            >
-              {t("hours.copy_weekdays")}
-            </Button>
+            <div className="inline-action">
+              <Button
+                variant="quiet"
+                icon={<Icon icon={Copy} />}
+                onClick={() => commit(copyMonday(regular), exam, withExam)}
+              >
+                {t("hours.copy_weekdays")}
+              </Button>
+            </div>
             <Week
               week={regular}
               showErrors={showErrors}
