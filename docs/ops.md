@@ -150,6 +150,8 @@ Actions > migrate starts, waits for a reviewer, then: host guard, `db:migrate`, 
 
 Never use Render's manual "Deploy latest commit": it skips migrations. Deploy the API only through the migrate workflow.
 
+Do not roll the API back to a tag older than the photo offload (migration 0004, decision 22) once a publish has run on it. Older servers need every published photo's bytes in Postgres. Every publish would then fail with "photo blob ... is missing", and surveyors would see "Image unavailable" for published photos. Nothing is lost, because the photos are still on the data site, but publishing stays stuck until you release a newer tag again. Roll forward with a fix instead.
+
 ## 9. PWA on Cloudflare Workers (static assets)
 
 Cloudflare now creates Git-connected apps as Workers projects. The PWA is static assets only (`wrangler.jsonc` at the repo root: assets from `apps/web/dist`, every unknown path serves `index.html`). No Worker script, so asset requests are free and unlimited.
