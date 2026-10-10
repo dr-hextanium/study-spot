@@ -239,9 +239,10 @@ test("with every notice on, the pick still comes first and the notes follow it",
   after("These spots are 5 days old. Hours and busyness may have changed.");
   after("A newer Perch reads newer spots. Reload to update.");
   after("Starting from Melville Library");
-  // The offline word stays on the one meta line under the title, next to the age.
+  after("Offline. Using spots saved on this phone.");
+  // The offline word shares the one meta line under the title with the age.
   const meta = screen.getByText("Spots updated 5 days ago").closest(".meta");
-  expect(meta?.textContent).toContain("Offline. Using spots saved on this phone.");
+  expect(meta?.textContent).toBe("Spots updated 5 days ago · Offline");
   expect(document.querySelectorAll("main .meta")).toHaveLength(1);
 });
 

@@ -11,8 +11,9 @@ import { GroupHeading } from "../../ui/Screen.tsx";
 const DOT = " · ";
 
 /**
- * The one place to go: name, place, walk, seats and closing time, the typical busyness on
- * its own line (never cut short), why it fits, when it was checked, and what to do next.
+ * The one place to go: name, place, the typical busyness on its own line (never cut short),
+ * then Directions, so all of that clears the tab bar on a small phone even with People
+ * showing. Walk, seats and closing time, why it fits, and when it was checked follow.
  */
 export function PickCard(props: {
   view: PickCardView;
@@ -37,18 +38,7 @@ export function PickCard(props: {
           {view.name}
         </Link>
         <span className="keep__next">{view.place}</span>
-        <p className="pick-card__facts">{[view.walk, view.seat, view.closes].join(DOT)}</p>
         <p className="pick-card__busy">{view.busy}</p>
-        {view.reasons.length === 0 ? null : (
-          <ul className="pick-card__reasons">
-            {view.reasons.map((r) => (
-              <li key={r}>
-                <Pill>{r}</Pill>
-              </li>
-            ))}
-          </ul>
-        )}
-        <span className="keep__next">{view.checked}</span>
         <a
           className="btn btn--primary btn--wide pick-card__go"
           href={props.directions}
@@ -59,6 +49,17 @@ export function PickCard(props: {
           <Icon icon={Navigation} />
           <span className="btn__label">{t("student.pick.directions")}</span>
         </a>
+        <p className="pick-card__facts">{[view.walk, view.seat, view.closes].join(DOT)}</p>
+        {view.reasons.length === 0 ? null : (
+          <ul className="pick-card__reasons">
+            {view.reasons.map((r) => (
+              <li key={r}>
+                <Pill>{r}</Pill>
+              </li>
+            ))}
+          </ul>
+        )}
+        <span className="keep__next">{view.checked}</span>
       </article>
       {/* Changing the pick sits under the card: Directions belongs to this spot, these do not. */}
       <div className="pick-card__more">

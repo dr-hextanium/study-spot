@@ -85,12 +85,12 @@
 }
 
 .pick-card__facts {
-  margin: var(--space-xs) 0 0;
+  margin: 0;
 }
 
 /* Required and never cut short: it says whether the busyness is typical or an estimate. */
 .pick-card__busy {
-  margin: 0;
+  margin: var(--space-xs) 0 0;
   font-weight: 600;
 }
 
@@ -104,7 +104,7 @@
 }
 
 .pick-card__go {
-  margin-top: var(--space-sm);
+  margin: var(--space-sm) 0 var(--space-xxs);
 }
 
 /* Two quiet buttons side by side; on a very narrow phone they wrap to full width. */

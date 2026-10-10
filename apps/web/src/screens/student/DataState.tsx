@@ -7,8 +7,8 @@ import { Meta } from "../../ui/Screen.tsx";
 import { Loading, Skel } from "../../ui/Skeleton.tsx";
 
 /**
- * How old the spots are, under the title: one line with the age, and the offline word when
- * the last check failed. While loading, the query's shape in mist; with no spots at all,
+ * How old the spots are, under the title: one line with the age, and "Offline" when the
+ * last check failed. While loading, the query's shape in mist; with no spots at all,
  * the one sentence that explains. The longer notes are DataNotes, under the pick.
  */
 export function DataState(props: { state: BundleState }) {
@@ -64,7 +64,7 @@ export function DataState(props: { state: BundleState }) {
       {age.offline ? (
         <>
           {" · "}
-          <span>{t("student.data.offline")}</span>
+          <span>{t("student.data.offline_short")}</span>
         </>
       ) : null}
     </Meta>
@@ -72,7 +72,8 @@ export function DataState(props: { state: BundleState }) {
 }
 
 /**
- * The longer notes about the spots: over three days old, or a newer Perch to reload for.
+ * The longer notes about the spots: where they come from offline, over three days old, or
+ * a newer Perch to reload for.
  * Home puts them under the pick, so the pick and Directions stay above the tab bar.
  */
 export function DataNotes(props: { state: BundleState }) {
@@ -81,6 +82,7 @@ export function DataNotes(props: { state: BundleState }) {
   const age = dataAgeView(state.load.ageDays, state.checkFailed);
   return (
     <>
+      {age.offline ? <p className="lede">{t("student.data.offline")}</p> : null}
       {age.prominent === null ? null : <Banner tone="note">{age.prominent}</Banner>}
       {state.load.updateAvailable ? (
         <Banner

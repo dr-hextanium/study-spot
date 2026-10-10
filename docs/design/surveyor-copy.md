@@ -682,7 +682,8 @@ Every Home string, including the presenters Home shares with the spot page and B
 | student.data.yesterday | Spots updated yesterday | 28 | |
 | student.data.days | Spots updated {days} days ago | 32 | |
 | student.data.old | These spots are {days} days old. Hours and busyness may have changed. | 80 | note banner over 3 days |
-| student.data.offline | Offline. Using spots saved on this phone. | 48 | |
+| student.data.offline | Offline. Using spots saved on this phone. | 48 | note under the pick |
+| student.data.offline_short | Offline | 8 | after the age on the meta line |
 | student.data.unavailable | Can't load spots offline yet. Open once with signal. | 60 | spec wording |
 | student.data.update_required | Update Perch to load spots. | 32 | spec wording |
 | student.data.update_available | A newer Perch reads newer spots. Reload to update. | 60 | |
