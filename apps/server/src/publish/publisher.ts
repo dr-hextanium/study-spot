@@ -196,6 +196,16 @@ export function createPublisher(deps: PublisherDeps): Publisher {
     }
   }
 
+  /** Runs again after the first retry delay, without counting a failure. */
+  function retryLater(): void {
+    if (closed) return;
+    clearRetry();
+    cancelRetry = timers.after(retryMs[0] ?? PUBLISH_MAX_WAIT_MS, () => {
+      cancelRetry = null;
+      void publisher.runNow();
+    });
+  }
+
   /** Spots of this campus. Other campuses share the database but have their own data site. */
   function campusSpots() {
     return deps.db
@@ -345,13 +355,7 @@ export function createPublisher(deps: PublisherDeps): Publisher {
       if (!leased) {
         // Not a failure: the run holding the lease publishes. Try again later in case
         // this process's writes landed after that run read write_seq.
-        if (!closed) {
-          clearRetry();
-          cancelRetry = timers.after(retryMs[0] ?? PUBLISH_MAX_WAIT_MS, () => {
-            cancelRetry = null;
-            void publisher.runNow();
-          });
-        }
+        retryLater();
         return { ok: false, error: PUBLISH_BUSY };
       }
       seq = (await readState())?.write_seq ?? 0;
@@ -418,7 +422,9 @@ export function createPublisher(deps: PublisherDeps): Publisher {
         owner,
       );
 
-      // Clear dirty only if no write landed while this run was building.
+      // Clear dirty only if no write landed while this run was building, and only while
+      // this run still holds the lease: a run that lost it must not report its deploy
+      // as the latest or mark newer writes published.
       const [after] = await deps.db
         .update(bundle_state)
         .set({
@@ -429,18 +435,14 @@ export function createPublisher(deps: PublisherDeps): Publisher {
           last_warnings: warnings,
           last_error: null,
         })
-        .where(eq(bundle_state.campus_id, deps.campusId))
+        .where(leaseHeldBy(owner))
         .returning({ dirty: bundle_state.dirty });
       if (!after) {
-        await deps.db.insert(bundle_state).values({
-          campus_id: deps.campusId,
-          dirty: false,
-          last_published_at: startedAt,
-          last_hash: hash,
-          last_attempt_at: startedAt,
-          last_warnings: warnings,
-        });
-      } else if (after.dirty) {
+        log("publish lease lost after the deploy; state left to the run that holds it");
+        retryLater();
+        return { ok: false, error: "publish lease lost after the deploy" };
+      }
+      if (after.dirty) {
         publisher.schedule();
       }
       failures = 0;
@@ -449,18 +451,27 @@ export function createPublisher(deps: PublisherDeps): Publisher {
       const message = err instanceof Error ? err.message : String(err);
       log("publish failed", err);
       try {
-        await deps.db
-          .insert(bundle_state)
-          .values({
-            campus_id: deps.campusId,
-            dirty: true,
-            last_attempt_at: startedAt,
-            last_error: message,
-          })
-          .onConflictDoUpdate({
-            target: bundle_state.campus_id,
-            set: { last_attempt_at: startedAt, last_error: message },
-          });
+        if (leased) {
+          // Recorded only while this run holds the lease, like a success.
+          await deps.db
+            .update(bundle_state)
+            .set({ last_attempt_at: startedAt, last_error: message })
+            .where(leaseHeldBy(owner));
+        } else {
+          // The claim itself failed (the database is unreachable, say).
+          await deps.db
+            .insert(bundle_state)
+            .values({
+              campus_id: deps.campusId,
+              dirty: true,
+              last_attempt_at: startedAt,
+              last_error: message,
+            })
+            .onConflictDoUpdate({
+              target: bundle_state.campus_id,
+              set: { last_attempt_at: startedAt, last_error: message },
+            });
+        }
       } catch (stateErr) {
         log("could not record publish failure", stateErr);
       }

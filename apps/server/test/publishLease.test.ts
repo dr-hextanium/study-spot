@@ -302,3 +302,43 @@ test("the offload loop renews between photos and stops once the lease is gone", 
   expect(cleared.length).toBeLessThanOrEqual(1);
   expect(confirms).toBe(2);
 });
+
+test("a run that lost its lease after deploying writes no publish state", async () => {
+  const pages = fakePages();
+  const ctx = await setup({ target: target(pages), dataSite: pages.site });
+  await approvedPhoto(ctx, 41);
+  await ctx.db
+    .insert(bundle_state)
+    .values({ campus_id: "sbu", dirty: true, write_seq: 3 })
+    .onConflictDoUpdate({ target: bundle_state.campus_id, set: { dirty: true, write_seq: 3 } });
+  const site: DataSite = {
+    async get(path, opts) {
+      if (opts?.fresh) {
+        await ctx.db
+          .update(bundle_state)
+          .set({ publishing_owner: "thief" })
+          .where(eq(bundle_state.campus_id, "sbu"));
+      }
+      return pages.site.get(path, opts);
+    },
+  };
+  const p = createPublisher({
+    db: ctx.db,
+    campusId: "sbu",
+    target: target(pages),
+    photos: postgresPhotoStore(ctx.db, site),
+    dataSite: site,
+    dataBaseUrl: DATA_BASE_URL,
+    clock: ctx.clock,
+    timers: manualTimers(),
+  });
+  const outcome = await p.runNow();
+  p.close();
+  expect(outcome.ok).toBe(false);
+  const row = await leaseRow(ctx);
+  expect(row?.last_hash).toBeNull();
+  expect(row?.last_published_at).toBeNull();
+  expect(row?.dirty).toBe(true);
+  expect(row?.last_error).toBeNull();
+  expect(row?.publishing_owner).toBe("thief");
+});
