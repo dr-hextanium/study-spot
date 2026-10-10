@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test";
-import { DEFAULT_ACCESS, FULLNESS, presetById, rankSpots, type SlotConfidence } from "@perch/core";
+import {
+  DEFAULT_ACCESS,
+  FULLNESS,
+  presetById,
+  rankSpots,
+  type SeatWord,
+  type SlotConfidence,
+} from "@perch/core";
 import { makeScoringBundle } from "../../core/test/fixtures/scoring-bundle.ts";
 import {
   busyLine,
@@ -12,6 +19,7 @@ import {
   lockText,
   pickCardView,
   rowBusy,
+  seatText,
   slotWhen,
 } from "../src/index.ts";
 
@@ -34,6 +42,21 @@ test("every busyness string names its basis and never claims to be live", () => 
     }
   }
   expect(FULLNESS).toHaveLength(5);
+});
+
+test("seat words are a forecast too: never live or now", () => {
+  const words: SeatWord[] = ["likely", "tight", "unlikely"];
+  for (const w of words) {
+    const text = seatText(w);
+    expect(text).not.toMatch(/\blive\b|\bnow\b|right now/i);
+  }
+});
+
+test("no student string claims to know what is happening right now", () => {
+  for (const [id, text] of Object.entries(COPY)) {
+    if (!id.startsWith("student.")) continue;
+    expect({ id, text: /right now/i.test(text) }).toEqual({ id, text: false });
+  }
 });
 
 test("measured lines carry the slot; estimates and no data do not", () => {

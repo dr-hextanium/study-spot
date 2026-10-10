@@ -639,7 +639,7 @@ export const COPY = {
   "student.pick.directions": "Directions",
   "student.pick.something_else": "Something else",
   "student.pick.surprise": "Surprise me",
-  "student.pick.only_one": "That's the only good match right now.",
+  "student.pick.only_one": "That's the only good match.",
   "student.pick.none_left": "Nothing else is open for that long.",
   "student.empty.title": "No spot fits those choices.",
   "student.empty.closest": "Closest open spot: {spot}, {minutes} min away.",

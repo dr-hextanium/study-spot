@@ -76,7 +76,7 @@ test("nothing on screen claims to be live", async () => {
 test("Something else with one good match says so", async () => {
   await home();
   await click(t("student.pick.something_else"));
-  expect(toast()).toBe("That's the only good match right now.");
+  expect(toast()).toBe(t("student.pick.only_one"));
   expect(pickName()).toBe("Quiet Carrels");
 });
 

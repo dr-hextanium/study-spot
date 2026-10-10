@@ -784,7 +784,7 @@ Every Home string, including the presenters Home shares with the spot page and B
 | student.pick.directions | Directions | 12 | primary, opens maps |
 | student.pick.something_else | Something else | 16 | reroll inside the filters |
 | student.pick.surprise | Surprise me | 14 | ignores the preset, keeps the hard rules |
-| student.pick.only_one | That's the only good match right now. | 44 | toast |
+| student.pick.only_one | That's the only good match. | 44 | toast |
 | student.pick.none_left | Nothing else is open for that long. | 40 | toast |
 | student.empty.title | No spot fits those choices. | 28 | |
 | student.empty.closest | Closest open spot: {spot}, {minutes} min away. | 60 | |
