@@ -15,6 +15,8 @@ html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-padding-top: var(--size-bar);
+  /* No double-tap zoom: taps act at once, like an app. */
+  touch-action: manipulation;
 }
 
 body {
