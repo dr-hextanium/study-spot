@@ -153,14 +153,19 @@ export function createPublisher(deps: PublisherDeps): Publisher {
     return rows.length > 0;
   }
 
-  /** Extends the lease if this run still holds it; throws if another run took it. */
-  async function renewLease(owner: string): Promise<void> {
+  /** Extends the lease if this run still holds it. */
+  async function tryRenewLease(owner: string): Promise<boolean> {
     const rows = await deps.db
       .update(bundle_state)
       .set({ publishing_until: leaseUntil() })
       .where(leaseHeldBy(owner))
       .returning({ id: bundle_state.campus_id });
-    if (rows.length === 0) throw new Error("publish lease lost before the deploy");
+    return rows.length > 0;
+  }
+
+  /** Extends the lease; throws if another run took it. */
+  async function renewLease(owner: string): Promise<void> {
+    if (!(await tryRenewLease(owner))) throw new Error("publish lease lost before the deploy");
   }
 
   function leaseHeldBy(owner: string) {
@@ -265,6 +270,14 @@ export function createPublisher(deps: PublisherDeps): Publisher {
   ): Promise<string[]> {
     const done: string[] = [];
     for (const sha of shas) {
+      // Each read-back can take seconds, so the lease is renewed per photo; once it is
+      // gone, another run owns the site and this one stops clearing.
+      try {
+        if (!(await tryRenewLease(owner))) break;
+      } catch (err) {
+        log("could not renew the publish lease", err);
+        break;
+      }
       try {
         const path = photoPath(sha);
         const published = await deps.dataSite.get(path, { fresh: true });
@@ -295,7 +308,15 @@ export function createPublisher(deps: PublisherDeps): Publisher {
               not(exists(used(false))),
               // Only while this run still holds the lease: a run that lost it may race
               // a newer deploy whose manifest was built before these bytes were cleared.
-              exists(deps.db.select({ one: sql`1` }).from(bundle_state).where(leaseHeldBy(owner))),
+              // FOR SHARE locks the lease row until this clear commits, so a claim by
+              // another process waits for it (or this clear sees the new owner and skips).
+              exists(
+                deps.db
+                  .select({ one: sql`1` })
+                  .from(bundle_state)
+                  .where(leaseHeldBy(owner))
+                  .for("share"),
+              ),
             ),
           )
           .returning({ sha: photo_blob.sha256 });

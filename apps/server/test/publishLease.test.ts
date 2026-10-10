@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { bundle_state, photo_blob, spot, spot_photo } from "@perch/db";
 import { eq, sql } from "drizzle-orm";
 import { photoPath, postgresPhotoStore, sha256Hex } from "../src/photos/store.ts";
+import type { DataSite } from "../src/publish/dataSite.ts";
 import { type FetchLike, pagesTarget } from "../src/publish/pagesTarget.ts";
 import { createPublisher, type Publisher } from "../src/publish/publisher.ts";
 import type { DeployOptions, PublishFile, PublishTarget } from "../src/publish/target.ts";
@@ -257,4 +258,47 @@ test("after a deployment POST that did not answer, the lease is held a while lon
   // Another process waits it out.
   expect((await ctx.publisher.runNow()).ok).toBe(false);
   p.close();
+});
+
+test("the offload loop renews between photos and stops once the lease is gone", async () => {
+  const pages = fakePages();
+  const ctx = await setup({ target: target(pages), dataSite: pages.site });
+  const shas = [
+    await approvedPhoto(ctx, 31),
+    await approvedPhoto(ctx, 32),
+    await approvedPhoto(ctx, 33),
+  ];
+  let confirms = 0;
+  const site: DataSite = {
+    async get(path, opts) {
+      if (opts?.fresh) {
+        confirms += 1;
+        // Another process takes the lease while the second photo is being checked.
+        if (confirms === 2) {
+          await ctx.db
+            .update(bundle_state)
+            .set({ publishing_owner: "thief" })
+            .where(eq(bundle_state.campus_id, "sbu"));
+        }
+      }
+      return pages.site.get(path, opts);
+    },
+  };
+  const p = createPublisher({
+    db: ctx.db,
+    campusId: "sbu",
+    target: target(pages),
+    photos: postgresPhotoStore(ctx.db, site),
+    dataSite: site,
+    dataBaseUrl: DATA_BASE_URL,
+    clock: ctx.clock,
+    timers: manualTimers(),
+  });
+  await p.runNow();
+  p.close();
+  // The seed's cover photo is published too; count only clears among ours.
+  const rows = await ctx.db.select().from(photo_blob);
+  const cleared = rows.filter((r) => shas.includes(r.sha256) && r.bytes === null);
+  expect(cleared.length).toBeLessThanOrEqual(1);
+  expect(confirms).toBe(2);
 });
