@@ -118,6 +118,9 @@ test("one presenter and one copy id for the check date", () => {
   const ids: readonly string[] = Object.keys(COPY);
   expect(ids).toContain("student.spot.checked");
   expect(ids).not.toContain("student.pick.checked");
+  // One id per string: Directions and the Filters title each had a twin.
+  expect(ids).not.toContain("student.spot.directions");
+  expect(ids).not.toContain("student.browse.filters.title");
   const spot = makeScoringBundle().spots[0];
   if (spot === undefined) throw new Error("no spot");
   expect(checkedView(spot, NY).latest).toBe(checkedText(spot, NY));

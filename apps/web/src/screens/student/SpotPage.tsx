@@ -149,7 +149,7 @@ function SpotBody(props: { bundle: Bundle; spot: BundleSpot; via: "pick" | undef
           }}
         >
           <Icon icon={Navigation} />
-          <span className="btn__label">{t("student.spot.directions")}</span>
+          <span className="btn__label">{t("student.pick.directions")}</span>
         </a>
         <Button variant="quiet" icon={<Icon icon={Share2} />} onClick={() => void share()}>
           {t("student.spot.share")}

@@ -782,7 +782,7 @@ Every Home string, including the presenters Home shares with the spot page and B
 | student.pick.heading | Your pick | 12 | |
 | student.pick.surprise_heading | Surprise pick | 16 | |
 | student.pick.alternates | Or try | 10 | |
-| student.pick.directions | Directions | 12 | primary, opens maps |
+| student.pick.directions | Directions | 12 | primary, opens maps: pick card and spot page |
 | student.pick.something_else | Something else | 16 | reroll inside the filters |
 | student.pick.surprise | Surprise me | 14 | ignores the preset, keeps the hard rules |
 | student.pick.only_one | That's the only good match. | 44 | toast |
@@ -809,7 +809,6 @@ Every Home string, including the presenters Home shares with the spot page and B
 |---|---|---|---|
 | student.spot.checked | Checked {date} | 20 | newest verified date: pick, alternates, Browse, map, spot page |
 | student.spot.last_checked | Last checked | 16 | group heading |
-| student.spot.directions | Directions | 12 | primary |
 | student.spot.share | Share | 8 | |
 | student.spot.shared | Link copied | 14 | toast |
 | student.spot.share_failed | Couldn't share. Copy the address bar instead. | 50 | toast |
@@ -861,9 +860,8 @@ Every Home string, including the presenters Home shares with the spot page and B
 | student.browse.arrive.2 | In 2 hr | 8 | |
 | student.browse.arrive.4 | In 4 hr | 8 | |
 | student.browse.arrive.tonight | Tonight 9 PM | 14 | |
-| student.browse.filters | Filters | 10 | |
+| student.browse.filters | Filters | 10 | button and sheet title |
 | student.browse.filters_count | Filters, {count} on | 20 | |
-| student.browse.filters.title | Filters | 10 | sheet title |
 | student.browse.open_only | Open when I get there | 24 | sheet switch |
 | student.browse.show_locked | Show spots I can't use | 28 | sheet switch |
 | student.browse.caption | Busyness is typical for {when}, not live. | 52 | above the list |

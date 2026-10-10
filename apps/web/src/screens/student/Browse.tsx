@@ -155,7 +155,7 @@ export function Browse() {
 
       <FiltersSheet
         open={sheet}
-        title={t("student.browse.filters.title")}
+        title={t("student.browse.filters")}
         groups={BROWSE_FILTER_GROUP}
         filters={BROWSE_FILTERS}
         extra={b.prefs.extra}

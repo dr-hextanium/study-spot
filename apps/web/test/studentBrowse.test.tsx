@@ -17,7 +17,7 @@ const stored = (app: TestApp) => JSON.parse(app.deps.prefs.getItem("student:brow
 
 async function openSheet() {
   fireEvent.click(screen.getByRole("button", { name: /^Filters/ }));
-  return await screen.findByRole("dialog", { name: t("student.browse.filters.title") });
+  return await screen.findByRole("dialog", { name: t("student.browse.filters") });
 }
 
 test("rows are sorted by walk, with busyness, status and the check date", async () => {
