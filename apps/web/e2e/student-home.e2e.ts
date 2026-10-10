@@ -1,12 +1,15 @@
-import type { Page } from "@playwright/test";
+import type { BrowserContext } from "@playwright/test";
 import { API_ORIGIN, DATA_ORIGIN } from "../playwright.config.ts";
 import { expect, pinClock, test, waitForServiceWorker } from "./fixtures.ts";
 import { expectRoutesClean } from "./layout.ts";
 
-/** Every request this page makes to the API origin. Student Home must make none. */
-function apiRequests(page: Page): string[] {
+/**
+ * Every request to the API origin, from the page or its service worker (the context sees
+ * both). Student Home must make none.
+ */
+function apiRequests(context: BrowserContext): string[] {
   const calls: string[] = [];
-  page.on("request", (r) => {
+  context.on("request", (r) => {
     if (r.url().startsWith(API_ORIGIN)) calls.push(r.url());
   });
   return calls;
@@ -16,7 +19,7 @@ test("quick pick from the seed bundle, offline after one visit, no API traffic",
   page,
   context,
 }) => {
-  const apiCalls = apiRequests(page);
+  const apiCalls = apiRequests(context);
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Find a spot", level: 1 })).toBeVisible();
   await expect(page.getByRole("link", { name: "Directions" })).toBeVisible();
