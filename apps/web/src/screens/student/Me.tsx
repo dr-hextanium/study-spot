@@ -25,7 +25,6 @@ import { BuildingSheet } from "./BuildingSheet.tsx";
 import { PresetSheet } from "./PresetSheet.tsx";
 
 const REPO = "https://github.com/dr-hextanium/perch";
-const DATA_POLICY = `${REPO}/blob/main/docs/data-policy.md`;
 const LICENSES = `${REPO}/blob/main/LICENSE`;
 
 /** Names a built-in preset from the copy deck (built-ins carry no name). */
@@ -139,11 +138,7 @@ export function Me() {
         <GroupHeading id="me-privacy">{t("student.me.privacy_heading")}</GroupHeading>
         <p className="lede">{t("student.me.privacy")}</p>
         <ul className="row-list">
-          <Row
-            title={t("student.me.data_policy")}
-            href={DATA_POLICY}
-            end={<Icon icon={ExternalLink} size={16} />}
-          />
+          <Row title={t("student.me.data_policy")} link={{ to: "/data-policy" }} />
           <Row
             title={t("student.me.source")}
             href={REPO}

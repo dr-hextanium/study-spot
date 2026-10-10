@@ -122,3 +122,28 @@
   overflow: visible;
   text-overflow: clip;
 }
+
+/* The data policy: the docs file as reading text. */
+.policy__p,
+.policy__list {
+  margin: 0 0 var(--space-sm);
+}
+
+.policy__list {
+  display: grid;
+  gap: var(--space-xs);
+  padding-left: var(--space-md);
+}
+
+.policy a {
+  position: relative;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+
+/* An inline link is one line of text; the ::before makes it 44 px to hit. */
+.policy a::before {
+  content: "";
+  position: absolute;
+  inset: -12px 0;
+}

@@ -37,12 +37,26 @@ test("the privacy sentence is shown verbatim with the links", async () => {
   ).toBeTruthy();
   const href = (name: string): string | null =>
     screen.getByRole("link", { name }).getAttribute("href");
-  expect(href(t("student.me.data_policy"))).toBe(
-    "https://github.com/dr-hextanium/perch/blob/main/docs/data-policy.md",
-  );
+  // The policy ships inside the app, so it opens offline too.
+  expect(href(t("student.me.data_policy"))).toBe("/data-policy");
   expect(href(t("student.me.source"))).toBe("https://github.com/dr-hextanium/perch");
   expect(href(t("student.me.licenses"))).toContain("github.com/dr-hextanium/perch");
   expect(screen.getByText(t("student.me.licenses_body"))).toBeTruthy();
+});
+
+test("the data policy page renders the policy from the docs", async () => {
+  const view = renderRoute(testApp({ me: null }), "/data-policy");
+  await act(async () => {
+    await view.router.load();
+  });
+  expect(await screen.findByRole("heading", { level: 1, name: "Data policy" })).toBeTruthy();
+  for (const h of ["Kept on your phone only", "Kept on our server", "Never kept", "Licenses"]) {
+    expect(screen.getByRole("heading", { level: 2, name: h })).toBeTruthy();
+  }
+  expect(screen.getByText(/Your IP address\./)).toBeTruthy();
+  const repo = screen.getByRole("link", { name: "https://github.com/dr-hextanium/perch" });
+  expect(repo.getAttribute("href")).toBe("https://github.com/dr-hextanium/perch");
+  expect(document.body.textContent ?? "").not.toMatch(/\*\*|^#/m);
 });
 
 test("the theme switch is here", async () => {
