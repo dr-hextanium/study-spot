@@ -95,6 +95,8 @@ Run after a batch of UI changes, not after every edit. `/verify-ui` runs the loo
 
 Commit automatically while working. Do not wait to be asked.
 
+- **Branches:** day-to-day work lives on `dev` (or short feature branches merged into `dev`). Push `dev` freely; it never builds on Cloudflare. `main` is what is live: merge `dev` into `main` only to ship, at most 10 pushes to `main` a day (the pre-push guard enforces it), and only after the full Playwright suite passes on `dev`. Never commit directly on `main`.
+
 - Follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/): `type(scope): description`.
   - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
   - Scopes match workspaces where useful: `core`, `db`, `server`, `web`, `scripts`, `docs`.
