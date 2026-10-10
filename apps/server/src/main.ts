@@ -3,6 +3,7 @@ import { buildApp } from "./app.ts";
 import { systemClock } from "./clock.ts";
 import { parseEnv } from "./env.ts";
 import { postgresPhotoStore } from "./photos/store.ts";
+import { dbKnownSpots } from "./ping/knownSpots.ts";
 import { fsDataSite, httpDataSite } from "./publish/dataSite.ts";
 import { fsTarget } from "./publish/fsTarget.ts";
 import { pagesTarget } from "./publish/pagesTarget.ts";
@@ -30,6 +31,8 @@ const target =
         project: env.CF_DATA_PROJECT,
       })
     : fsTarget(env.FS_PUBLISH_DIR);
+// Shared, so a publish makes new spots count for pick pings right away.
+const knownSpots = dbKnownSpots(db, env.CAMPUS_ID, systemClock);
 const publisher = createPublisher({
   db,
   campusId: env.CAMPUS_ID,
@@ -39,6 +42,7 @@ const publisher = createPublisher({
   dataBaseUrl: env.DATA_BASE_URL,
   clock: systemClock,
   log: (message, error) => console.error(message, error),
+  knownSpots,
 });
 const app = await buildApp({
   db,
@@ -51,6 +55,7 @@ const app = await buildApp({
   },
   publisher,
   photos,
+  knownSpots,
   logger: true,
 });
 

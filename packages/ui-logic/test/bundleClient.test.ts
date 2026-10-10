@@ -205,11 +205,13 @@ test("networkFailed is true only when the network failed", async () => {
   await loadBundle({ fetch, cache, clock }, BASE); // seed the cache
   fetch.offline = true;
   const offline = await loadBundle({ fetch, cache, clock }, BASE);
+  expect(offline.status).toBe("cached");
   if (offline.status !== "unavailable") expect(offline.networkFailed).toBe(true);
   const http503 = new FakeFetch(
     new Map([[`${BASE}/bundle-latest.json`, { status: 503, text: "" }]]),
   );
   const failed = await loadBundle({ fetch: http503, cache, clock }, BASE);
+  expect(failed.status).toBe("cached");
   if (failed.status !== "unavailable") expect(failed.networkFailed).toBe(true);
   const newerFetch = new FakeFetch(
     new Map([[`${BASE}/bundle-latest.json`, ok(pointer(2, "ffffffffffffffff"))]]),
@@ -221,6 +223,7 @@ test("networkFailed is true only when the network failed", async () => {
     expect(newer.networkFailed).toBe(false);
   }
   const fresh = await loadBundle({ fetch: new FakeFetch(goodRoutes()), cache, clock }, BASE);
+  expect(fresh.status).toBe("fresh");
   if (fresh.status !== "unavailable") expect(fresh.networkFailed).toBe(false);
 });
 

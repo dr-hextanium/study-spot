@@ -591,6 +591,20 @@ Strings the built screens needed beyond the sections above: short header forms f
 | spot.fact.photos_one | 1 photo | 10 | |
 | spot.fact.photos | {count} photos | 12 | |
 
+## Student: shell
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.nav.label | Sections | 12 | tab bar landmark name |
+| student.nav.home | Home | 8 | tab |
+| student.nav.browse | Browse | 8 | tab |
+| student.nav.me | Me | 8 | tab |
+| student.notfound.back | Back to Home | 16 | student not-found link |
+| student.home.title | Find a spot | 20 | Home large title |
+| student.browse.title | Browse | 10 | large title |
+| student.me.title | Me | 6 | large title |
+| student.data.loading | Loading spots | 20 | skeleton status |
+
 ## Pending questions
 
 - Floor naming at Stony Brook (e.g. "Lower level" vs "B") should come from the first survey walk; the floor field is free text for now.

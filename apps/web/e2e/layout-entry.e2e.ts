@@ -21,6 +21,6 @@ test("signed out and not found: light and dark, three widths, clean", async ({ p
   await expect(page.getByRole("heading", { name: "Sign in again", level: 1 })).toBeVisible();
   await expectRoutesClean(page, ["/survey", "/survey/spots/new", "/nope"]);
   await page.goto("/nope");
-  await page.getByRole("link", { name: "Back to spots" }).click();
-  await expect(page).toHaveURL(/\/survey$/);
+  await page.getByRole("link", { name: "Back to Home" }).click();
+  await expect(page).toHaveURL(/\/$/);
 });

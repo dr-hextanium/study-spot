@@ -1,4 +1,4 @@
-import type { Bundle } from "@perch/core";
+import { type Bundle, correctedNow } from "@perch/core";
 import type { Foreground, NetworkStatus } from "./adapters.ts";
 import {
   type BundleClientDeps,
@@ -6,7 +6,6 @@ import {
   loadBundle,
   readLastGood,
 } from "./bundleClient.ts";
-import { correctedNow } from "./clockSkew.ts";
 
 export type ReadyLoad = Extract<BundleLoad, { bundle: Bundle }>;
 export type BundleState =

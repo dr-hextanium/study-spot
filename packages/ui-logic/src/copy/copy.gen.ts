@@ -479,6 +479,15 @@ export const COPY = {
   "spot.fact.blocks": "{count} of {total} blocks",
   "spot.fact.photos_one": "1 photo",
   "spot.fact.photos": "{count} photos",
+  "student.nav.label": "Sections",
+  "student.nav.home": "Home",
+  "student.nav.browse": "Browse",
+  "student.nav.me": "Me",
+  "student.notfound.back": "Back to Home",
+  "student.home.title": "Find a spot",
+  "student.browse.title": "Browse",
+  "student.me.title": "Me",
+  "student.data.loading": "Loading spots",
 } as const;
 
 export const COPY_MAX = {
@@ -941,4 +950,13 @@ export const COPY_MAX = {
   "spot.fact.blocks": 20,
   "spot.fact.photos_one": 10,
   "spot.fact.photos": 12,
+  "student.nav.label": 12,
+  "student.nav.home": 8,
+  "student.nav.browse": 8,
+  "student.nav.me": 8,
+  "student.notfound.back": 16,
+  "student.home.title": 20,
+  "student.browse.title": 10,
+  "student.me.title": 6,
+  "student.data.loading": 20,
 } as const satisfies Record<keyof typeof COPY, number>;

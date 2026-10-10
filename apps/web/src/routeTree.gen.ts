@@ -9,24 +9,42 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as StudentRouteImport } from './routes/_student'
 import { Route as SurveyRouteImport } from './routes/survey'
+import { Route as StudentIndexRouteImport } from './routes/_student.index'
+import { Route as StudentBrowseRouteImport } from './routes/_student.browse'
+import { Route as StudentMeRouteImport } from './routes/_student.me'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as SurveyIndexRouteImport } from './routes/survey.index'
 import { Route as SurveyAdminRouteImport } from './routes/survey.admin'
+import { Route as StudentSpotSlugRouteImport } from './routes/_student.spot.$slug'
 import { Route as SurveySpotsNewRouteImport } from './routes/survey.spots.new'
 import { Route as SurveySpotsIdIndexRouteImport } from './routes/survey.spots.$id.index'
 import { Route as SurveySpotsIdSectionRouteImport } from './routes/survey.spots.$id.$section'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const StudentRoute = StudentRouteImport.update({
+  id: '/_student',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SurveyRoute = SurveyRouteImport.update({
   id: '/survey',
   path: '/survey',
   getParentRoute: () => rootRouteImport,
+} as any)
+const StudentIndexRoute = StudentIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentBrowseRoute = StudentBrowseRouteImport.update({
+  id: '/browse',
+  path: '/browse',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentMeRoute = StudentMeRouteImport.update({
+  id: '/me',
+  path: '/me',
+  getParentRoute: () => StudentRoute,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
@@ -42,6 +60,11 @@ const SurveyAdminRoute = SurveyAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => SurveyRoute,
+} as any)
+const StudentSpotSlugRoute = StudentSpotSlugRouteImport.update({
+  id: '/spot/$slug',
+  path: '/spot/$slug',
+  getParentRoute: () => StudentRoute,
 } as any)
 const SurveySpotsNewRoute = SurveySpotsNewRouteImport.update({
   id: '/spots/new',
@@ -60,31 +83,41 @@ const SurveySpotsIdSectionRoute = SurveySpotsIdSectionRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof StudentIndexRoute
   '/survey': typeof SurveyRouteWithChildren
+  '/browse': typeof StudentBrowseRoute
+  '/me': typeof StudentMeRoute
   '/invite/$token': typeof InviteTokenRoute
   '/survey/admin': typeof SurveyAdminRoute
   '/survey/': typeof SurveyIndexRoute
+  '/spot/$slug': typeof StudentSpotSlugRoute
   '/survey/spots/new': typeof SurveySpotsNewRoute
   '/survey/spots/$id/$section': typeof SurveySpotsIdSectionRoute
   '/survey/spots/$id/': typeof SurveySpotsIdIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/browse': typeof StudentBrowseRoute
+  '/me': typeof StudentMeRoute
   '/invite/$token': typeof InviteTokenRoute
   '/survey/admin': typeof SurveyAdminRoute
+  '/': typeof StudentIndexRoute
   '/survey': typeof SurveyIndexRoute
+  '/spot/$slug': typeof StudentSpotSlugRoute
   '/survey/spots/new': typeof SurveySpotsNewRoute
   '/survey/spots/$id/$section': typeof SurveySpotsIdSectionRoute
   '/survey/spots/$id': typeof SurveySpotsIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_student': typeof StudentRouteWithChildren
   '/survey': typeof SurveyRouteWithChildren
+  '/_student/browse': typeof StudentBrowseRoute
+  '/_student/me': typeof StudentMeRoute
   '/invite/$token': typeof InviteTokenRoute
   '/survey/admin': typeof SurveyAdminRoute
+  '/_student/': typeof StudentIndexRoute
   '/survey/': typeof SurveyIndexRoute
+  '/_student/spot/$slug': typeof StudentSpotSlugRoute
   '/survey/spots/new': typeof SurveySpotsNewRoute
   '/survey/spots/$id/$section': typeof SurveySpotsIdSectionRoute
   '/survey/spots/$id/': typeof SurveySpotsIdIndexRoute
@@ -94,46 +127,56 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/survey'
+    | '/browse'
+    | '/me'
     | '/invite/$token'
     | '/survey/admin'
     | '/survey/'
+    | '/spot/$slug'
     | '/survey/spots/new'
     | '/survey/spots/$id/$section'
     | '/survey/spots/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
+    | '/browse'
+    | '/me'
     | '/invite/$token'
     | '/survey/admin'
+    | '/'
     | '/survey'
+    | '/spot/$slug'
     | '/survey/spots/new'
     | '/survey/spots/$id/$section'
     | '/survey/spots/$id'
   id:
     | '__root__'
-    | '/'
+    | '/_student'
     | '/survey'
+    | '/_student/browse'
+    | '/_student/me'
     | '/invite/$token'
     | '/survey/admin'
+    | '/_student/'
     | '/survey/'
+    | '/_student/spot/$slug'
     | '/survey/spots/new'
     | '/survey/spots/$id/$section'
     | '/survey/spots/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  StudentRoute: typeof StudentRouteWithChildren
   SurveyRoute: typeof SurveyRouteWithChildren
   InviteTokenRoute: typeof InviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
+    '/_student': {
+      id: '/_student'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof StudentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/survey': {
@@ -142,6 +185,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/survey'
       preLoaderRoute: typeof SurveyRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_student/': {
+      id: '/_student/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof StudentIndexRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/_student/browse': {
+      id: '/_student/browse'
+      path: '/browse'
+      fullPath: '/browse'
+      preLoaderRoute: typeof StudentBrowseRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/_student/me': {
+      id: '/_student/me'
+      path: '/me'
+      fullPath: '/me'
+      preLoaderRoute: typeof StudentMeRouteImport
+      parentRoute: typeof StudentRoute
     }
     '/invite/$token': {
       id: '/invite/$token'
@@ -163,6 +227,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/survey/admin'
       preLoaderRoute: typeof SurveyAdminRouteImport
       parentRoute: typeof SurveyRoute
+    }
+    '/_student/spot/$slug': {
+      id: '/_student/spot/$slug'
+      path: '/spot/$slug'
+      fullPath: '/spot/$slug'
+      preLoaderRoute: typeof StudentSpotSlugRouteImport
+      parentRoute: typeof StudentRoute
     }
     '/survey/spots/new': {
       id: '/survey/spots/new'
@@ -188,6 +259,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface StudentRouteChildren {
+  StudentBrowseRoute: typeof StudentBrowseRoute
+  StudentMeRoute: typeof StudentMeRoute
+  StudentIndexRoute: typeof StudentIndexRoute
+  StudentSpotSlugRoute: typeof StudentSpotSlugRoute
+}
+
+const StudentRouteChildren: StudentRouteChildren = {
+  StudentBrowseRoute: StudentBrowseRoute,
+  StudentMeRoute: StudentMeRoute,
+  StudentIndexRoute: StudentIndexRoute,
+  StudentSpotSlugRoute: StudentSpotSlugRoute,
+}
+
+const StudentRouteWithChildren =
+  StudentRoute._addFileChildren(StudentRouteChildren)
+
 interface SurveyRouteChildren {
   SurveyAdminRoute: typeof SurveyAdminRoute
   SurveyIndexRoute: typeof SurveyIndexRoute
@@ -208,7 +296,7 @@ const SurveyRouteWithChildren =
   SurveyRoute._addFileChildren(SurveyRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  StudentRoute: StudentRouteWithChildren,
   SurveyRoute: SurveyRouteWithChildren,
   InviteTokenRoute: InviteTokenRoute,
 }

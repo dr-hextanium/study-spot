@@ -1,7 +1,7 @@
-/** A row of toggle chips with counts; one is pressed. 32 px drawn, 44 px to hit. */
+/** A row of toggle chips, each with an optional count; one is pressed. 32 px drawn, 44 px to hit. */
 export function FilterChips<V extends string>(props: {
   label: string;
-  options: { value: V; label: string; count: number }[];
+  options: { value: V; label: string; count?: number }[];
   value: V;
   onChange: (v: V) => void;
 }) {
@@ -16,7 +16,13 @@ export function FilterChips<V extends string>(props: {
           aria-pressed={o.value === props.value}
           onClick={() => props.onChange(o.value)}
         >
-          {o.label} <span className="count">{o.count}</span>
+          {o.label}
+          {o.count === undefined ? null : (
+            <>
+              {" "}
+              <span className="count">{o.count}</span>
+            </>
+          )}
         </button>
       ))}
     </fieldset>

@@ -10,6 +10,7 @@ import { buildApp } from "../src/app.ts";
 import { bootstrapAdminInvite } from "../src/auth/invites.ts";
 import type { Clock } from "../src/clock.ts";
 import { postgresPhotoStore } from "../src/photos/store.ts";
+import { dbKnownSpots } from "../src/ping/knownSpots.ts";
 import { fsDataSite } from "../src/publish/dataSite.ts";
 import { fsTarget } from "../src/publish/fsTarget.ts";
 import { createPublisher } from "../src/publish/publisher.ts";
@@ -43,6 +44,7 @@ await seed(db);
 const publishDir = mkdtempSync(join(tmpdir(), "perch-e2e-publish-"));
 const dataSite = fsDataSite(publishDir);
 const photos = postgresPhotoStore(db, dataSite);
+const knownSpots = dbKnownSpots(db, "sbu", clock);
 const publisher = createPublisher({
   db,
   campusId: "sbu",
@@ -52,6 +54,7 @@ const publisher = createPublisher({
   dataBaseUrl: `http://data.localhost:${env.E2E_DATA_PORT}`,
   clock,
   log: (message, error) => console.error(message, error),
+  knownSpots,
 });
 
 const TYPES: Readonly<Record<string, string>> = {
@@ -84,7 +87,11 @@ const serveData = async (req: IncomingMessage, res: ServerResponse): Promise<voi
 };
 const dataServers = ["127.0.0.1", "::1"].map((host) => {
   const server = createServer((req, res) => void serveData(req, res));
-  server.on("error", (e) => console.error(`data server on ${host}:`, e.message));
+  server.on("error", (e: NodeJS.ErrnoException) => {
+    console.error(`data server on ${host}:`, e.message);
+    // A port held by another process would serve the wrong data silently.
+    if (e.code === "EADDRINUSE") process.exit(1);
+  });
   server.listen(env.E2E_DATA_PORT, host);
   return server;
 });
@@ -99,6 +106,7 @@ const app = await buildApp({
   config: { webOrigin: env.E2E_WEB_ORIGIN, campusId: "sbu", commit: null },
   publisher,
   photos,
+  knownSpots,
 });
 const invites: string[] = [];
 for (let i = 1; i <= env.E2E_INVITES; i += 1) {
