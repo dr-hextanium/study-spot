@@ -4,6 +4,12 @@ export type PublishFile = {
   path: string;
   contentType: string;
   bytes: () => Promise<Uint8Array>;
+  /**
+   * The Cloudflare Pages asset key of these bytes at this path, when already known.
+   * A Pages deploy lists it in the manifest without reading the bytes, and reads
+   * them only if Cloudflare reports the hash missing.
+   */
+  pagesHash?: string;
 };
 
 export type DeployResult = { uploaded: string[]; skipped: string[] };

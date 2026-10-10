@@ -150,3 +150,101 @@ test("a Cloudflare error is thrown with its code and message", async () => {
   });
   await expect(target.deploy(files({ photo: 0 }))).rejects.toThrow("8000013 bad token");
 });
+
+const PHOTO = new Uint8Array([0xff, 0xd8, 0xff, 0x00]);
+const PHOTO_HASH = "6b7f62ff0a112b83df345ec6ed64f020";
+
+function manifestOf(call: Call | undefined): Record<string, string> {
+  const form = call?.body;
+  if (!(form instanceof FormData)) throw new Error("deployment body is not FormData");
+  return z.record(z.string(), z.string()).parse(JSON.parse(String(form.get("manifest"))));
+}
+
+test("a precomputed asset hash goes into the manifest without reading the bytes", async () => {
+  const cf = fakeCloudflare((hashes) => hashes.filter((h) => h !== PHOTO_HASH));
+  const target = pagesTarget({
+    accountId: "acc",
+    apiToken: "t",
+    project: "perch-data",
+    fetch: cf.fetch,
+  });
+  const result = await target.deploy([
+    {
+      path: "photos/abc.jpg",
+      contentType: "image/jpeg",
+      pagesHash: PHOTO_HASH,
+      bytes: async () => {
+        throw new Error("bytes must not be read");
+      },
+    },
+    { path: "bundle-latest.json", contentType: "application/json", bytes: async () => PHOTO },
+  ]);
+  expect(result.skipped).toEqual(["photos/abc.jpg"]);
+  expect(manifestOf(cf.calls.at(-1))["/photos/abc.jpg"]).toBe(PHOTO_HASH);
+});
+
+test("a precomputed hash that Cloudflare lacks is uploaded from the bytes", async () => {
+  const cf = fakeCloudflare((hashes) => hashes);
+  const target = pagesTarget({
+    accountId: "acc",
+    apiToken: "t",
+    project: "perch-data",
+    fetch: cf.fetch,
+  });
+  const result = await target.deploy([
+    {
+      path: "photos/abc.jpg",
+      contentType: "image/jpeg",
+      pagesHash: PHOTO_HASH,
+      bytes: async () => PHOTO,
+    },
+  ]);
+  expect(result.uploaded).toEqual(["photos/abc.jpg"]);
+  const upload = cf.calls.find((c) => c.url === `${CF_API}/pages/assets/upload`);
+  const keys = z.array(z.object({ key: z.string() })).parse(JSON.parse(String(upload?.body)));
+  expect(keys.map((k) => k.key)).toEqual([PHOTO_HASH]);
+});
+
+test("bytes that do not match the precomputed hash fail before any deployment", async () => {
+  const cf = fakeCloudflare((hashes) => hashes);
+  const target = pagesTarget({
+    accountId: "acc",
+    apiToken: "t",
+    project: "perch-data",
+    fetch: cf.fetch,
+  });
+  await expect(
+    target.deploy([
+      {
+        path: "photos/abc.jpg",
+        contentType: "image/jpeg",
+        pagesHash: PHOTO_HASH,
+        bytes: async () => new Uint8Array([1, 2, 3]),
+      },
+    ]),
+  ).rejects.toThrow("do not match");
+  expect(cf.calls.some((c) => c.url === `${PROJECT}/deployments`)).toBe(false);
+});
+
+test("a file whose bytes cannot be read when needed fails before any deployment", async () => {
+  const cf = fakeCloudflare((hashes) => hashes);
+  const target = pagesTarget({
+    accountId: "acc",
+    apiToken: "t",
+    project: "perch-data",
+    fetch: cf.fetch,
+  });
+  await expect(
+    target.deploy([
+      {
+        path: "photos/abc.jpg",
+        contentType: "image/jpeg",
+        pagesHash: PHOTO_HASH,
+        bytes: async () => {
+          throw new Error("photo abc is gone");
+        },
+      },
+    ]),
+  ).rejects.toThrow("photo abc is gone");
+  expect(cf.calls.some((c) => c.url === `${PROJECT}/deployments`)).toBe(false);
+});

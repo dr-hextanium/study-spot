@@ -90,7 +90,7 @@ export function pagesTarget(opts: PagesTargetOptions): PublishTarget {
           headersFile = new TextDecoder().decode(await file.bytes());
           continue;
         }
-        const cached = hashCache.get(file.path);
+        const cached = file.pagesHash ?? hashCache.get(file.path);
         const hash = cached ?? pagesHash(await file.bytes(), file.path);
         if (!MUTABLE_PATHS.has(file.path)) hashCache.set(file.path, hash);
         assets.push({ file, hash });
@@ -123,7 +123,13 @@ export function pagesTarget(opts: PagesTargetOptions): PublishTarget {
           continue;
         }
         queued.add(hash);
-        const value = Buffer.from(await file.bytes()).toString("base64");
+        const bytes = await file.bytes();
+        // A stored or cached hash is trusted for the manifest; bytes that disagree with it
+        // would publish a different file under that key, so the deploy stops here.
+        if (pagesHash(bytes, file.path) !== hash) {
+          throw new Error(`${file.path}: bytes do not match its asset hash ${hash}`);
+        }
+        const value = Buffer.from(bytes).toString("base64");
         if (batchBytes + value.length > MAX_BATCH_BYTES || batch.length >= MAX_BATCH_FILES) {
           await flush();
         }
