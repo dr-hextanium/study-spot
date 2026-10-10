@@ -10,12 +10,16 @@ import {
 import type { Clock } from "./clock.ts";
 import { HttpError } from "./http.ts";
 import type { PhotoStore } from "./photos/store.ts";
-import type { Publisher } from "./publish/publisher.ts";
+import { createPingCounter, type PingCounter } from "./ping/counter.ts";
+import { flushPicks } from "./ping/flush.ts";
+import { createRateLimiter } from "./ping/rateLimit.ts";
+import { type Publisher, realTimers } from "./publish/publisher.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { authRoutes } from "./routes/auth.ts";
 import { campusRoutes } from "./routes/campus.ts";
 import { healthRoutes } from "./routes/health.ts";
 import { photoRoutes } from "./routes/photos.ts";
+import { pingRoutes } from "./routes/ping.ts";
 import { publishRoutes } from "./routes/publish.ts";
 import { spotRoutes } from "./routes/spots.ts";
 
@@ -33,7 +37,9 @@ export type AppDeps = {
   config: AppConfig;
   publisher: Publisher;
   photos: PhotoStore;
-  logger?: boolean;
+  /** In-memory pick counter; built from the database when omitted. */
+  pings?: PingCounter;
+  logger?: boolean | { stream: { write(message: string): void } };
 };
 
 /** Status carried by Fastify and plugin errors (400 bad JSON, 413 too large, 415 type), else 500. */
@@ -46,7 +52,13 @@ function statusOf(err: unknown): number {
 }
 
 export async function buildApp(deps: AppDeps) {
-  const app = Fastify({ logger: deps.logger ?? false }).withTypeProvider<ZodTypeProvider>();
+  const app = Fastify({
+    logger: deps.logger ?? false,
+    // Render terminates TLS at one proxy hop: trust that peer and take the address it
+    // appended (the rightmost x-forwarded-for entry), so a client-sent header cannot spoof
+    // it. Fastify 5 fails closed on the number 1, so this is the same rule as a function.
+    trustProxy: (_addr, hop) => hop < 1,
+  }).withTypeProvider<ZodTypeProvider>();
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
@@ -79,6 +91,23 @@ export async function buildApp(deps: AppDeps) {
   await app.register(spotRoutes(deps));
   await app.register(photoRoutes(deps));
   await app.register(publishRoutes(deps));
+
+  const pings =
+    deps.pings ??
+    createPingCounter({
+      clock: deps.clock,
+      timers: realTimers,
+      flush: (rows) => flushPicks(deps.db, deps.config.campusId, rows),
+      log: (message) => app.log.warn(message),
+    });
+  const limiter = createRateLimiter({
+    clock: deps.clock,
+    limit: 30,
+    windowMs: 3_600_000,
+    maxKeys: 5000,
+  });
+  await app.register(pingRoutes({ pings, limiter }));
+  app.addHook("onClose", () => pings.close());
   return app;
 }
 
