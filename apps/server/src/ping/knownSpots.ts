@@ -2,7 +2,8 @@ import { building, type Db, spot } from "@perch/db";
 import { and, eq } from "drizzle-orm";
 import type { Clock } from "../clock.ts";
 
-export const KNOWN_SPOTS_TTL_MS = 600_000;
+/** An hour: a ping must not wake the database often, and a publish invalidates the set anyway. */
+export const KNOWN_SPOTS_TTL_MS = 3_600_000;
 
 export type KnownSpots = {
   has(spotId: string): Promise<boolean>;

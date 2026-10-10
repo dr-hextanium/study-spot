@@ -322,7 +322,7 @@ test("an unknown or draft spot id answers 204 and is not counted", async () => {
   expect(pings.pending()).toBe(0);
 });
 
-test("known spots load lazily, are cached for 10 minutes, and keep the old set on failure", async () => {
+test("known spots load lazily, are cached for an hour, and keep the old set on failure", async () => {
   const clock = testClock();
   let loads = 0;
   let fail = false;
@@ -338,7 +338,8 @@ test("known spots load lazily, are cached for 10 minutes, and keep the old set o
   expect(await known.has(SPOT_A)).toBe(true);
   expect(await known.has(SPOT_B)).toBe(false);
   expect(loads).toBe(1);
-  clock.advance(9 * MIN);
+  // An hour, so steady pings wake the database at most hourly; a publish invalidates sooner.
+  clock.advance(59 * MIN);
   await known.has(SPOT_A);
   expect(loads).toBe(1);
   clock.advance(2 * MIN);
