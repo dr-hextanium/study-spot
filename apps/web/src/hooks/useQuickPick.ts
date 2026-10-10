@@ -1,0 +1,183 @@
+import {
+  AccessProfile,
+  BUILTIN_PRESETS,
+  type Bundle,
+  type Candidate,
+  DEFAULT_ACCESS,
+  DEFAULT_FROM,
+  draw,
+  type EmptyHelp,
+  explainEmpty,
+  type Preset,
+  presetById,
+  pushRecent,
+  type RankResult,
+  rankSpots,
+  type SpotPick,
+  surpriseRank,
+  TimeChoice,
+  topPick,
+} from "@perch/core";
+import {
+  type BundleState,
+  DEFAULT_PICK_PREFS,
+  PICK_PREFS_KEY,
+  PickPrefs,
+  type RECENT_KEY,
+  readJson,
+  readRecent,
+  writeJson,
+  writeRecent,
+} from "@perch/ui-logic";
+import { useEffect, useMemo, useState } from "react";
+import { useDeps } from "../app/AppProvider.tsx";
+import { useBundle } from "./useBundle.ts";
+import { useCampusNow } from "./useCampusNow.ts";
+
+/** Written by Me (the access profile); Home only reads it. */
+export const ACCESS_KEY = "student:access";
+const ALTERNATES = 2;
+
+export type PickMode = "top" | "reroll" | "surprise";
+export type DrawResult = "new" | "same" | "none";
+
+export type QuickPick = {
+  state: "loading" | "unavailable" | "ready";
+  unavailable: "offline_no_cache" | "update_required" | null;
+  /** The store's state, for the data age line and notes. */
+  load: BundleState;
+  bundle: Bundle | null;
+  now: Date;
+  prefs: PickPrefs;
+  /** The building walks are measured from, or null when the bundle has none. */
+  from: string | null;
+  /** The saved building is not in the bundle, so `from` replaced it. */
+  fromFallback: boolean;
+  access: AccessProfile;
+  presets: readonly Preset[];
+  preset: Preset;
+  mode: PickMode;
+  pick: SpotPick | null;
+  empty: EmptyHelp | null;
+  set(next: Partial<PickPrefs>): void;
+  somethingElse(): DrawResult;
+  surprise(): DrawResult;
+  showTop(): void;
+};
+
+type Shown = { mode: Exclude<PickMode, "top">; spotId: string };
+type Kind = keyof typeof RECENT_KEY;
+
+function withAlternates(primary: Candidate, ranked: readonly Candidate[]): SpotPick {
+  return {
+    primary,
+    alternates: ranked.filter((c) => c.spot.id !== primary.spot.id).slice(0, ALTERNATES),
+  };
+}
+
+/**
+ * Home's query and its answer. Ranking is pure core scoring over the cached bundle; nothing
+ * here touches the network. The spot on screen is looked up again in each new ranking, so a
+ * pick that stops qualifying (the clock moved, an input changed) falls back to the top pick.
+ */
+export function useQuickPick(custom: readonly Preset[]): QuickPick {
+  const deps = useDeps();
+  const load = useBundle();
+  const now = useCampusNow();
+  const [prefs, setPrefs] = useState<PickPrefs>(
+    () => readJson(deps.prefs, PICK_PREFS_KEY, PickPrefs, DEFAULT_PICK_PREFS).value,
+  );
+  const [access] = useState<AccessProfile>(
+    () => readJson(deps.prefs, ACCESS_KEY, AccessProfile, DEFAULT_ACCESS).value,
+  );
+  const [shown, setShown] = useState<Shown | null>(null);
+  const bundle = load.phase === "ready" ? load.load.bundle : null;
+  const preset = presetById(prefs.presetId, custom);
+  const presets = useMemo(() => [...BUILTIN_PRESETS, ...custom], [custom]);
+
+  const ranks = useMemo((): { quick: RankResult; surprise: RankResult } | null => {
+    if (bundle === null) return null;
+    const input = {
+      bundle,
+      now,
+      // The saved id as is: core resolves it and flags one that is gone from the bundle.
+      from: prefs.from ?? DEFAULT_FROM,
+      time: prefs.time,
+      preset,
+      extra: prefs.extra,
+      group: prefs.group,
+      access,
+    };
+    return {
+      quick: rankSpots(input),
+      // Surprise me ignores the preset, its group size included: the People stepper's
+      // value when it is on screen, else one person.
+      surprise: surpriseRank({ ...input, group: preset.groupDefault === null ? 1 : prefs.group }),
+    };
+  }, [bundle, now, prefs, preset, access]);
+
+  let mode: PickMode = "top";
+  let pick: SpotPick | null = null;
+  if (ranks !== null) {
+    if (shown !== null) {
+      const list = shown.mode === "surprise" ? ranks.surprise.ranked : ranks.quick.ranked;
+      const primary = list.find((c) => c.spot.id === shown.spotId);
+      if (primary !== undefined) {
+        pick = withAlternates(primary, list);
+        mode = shown.mode;
+      }
+    }
+    pick ??= topPick(ranks.quick.ranked);
+  }
+  const primaryId = pick?.primary.spot.id ?? null;
+
+  // Every primary shown goes into its own last-5 history, so the next draw avoids it.
+  useEffect(() => {
+    if (primaryId === null) return;
+    const kind: Kind = mode === "surprise" ? "surprise" : "pick";
+    writeRecent(deps.tab, kind, pushRecent(readRecent(deps.tab, kind), primaryId));
+  }, [deps.tab, mode, primaryId]);
+
+  const set = (next: Partial<PickPrefs>): void => {
+    const merged: PickPrefs = { ...prefs, ...next };
+    if (next.presetId !== undefined) {
+      const chosen = presetById(next.presetId, custom);
+      if (chosen.minutes !== null) merged.time = TimeChoice.parse(String(chosen.minutes));
+    }
+    writeJson(deps.prefs, PICK_PREFS_KEY, merged);
+    setPrefs(merged);
+    // A new question gets the top answer; dismissing a note is not a new question.
+    if (Object.keys(next).some((k) => k !== "accessNoteDismissed")) setShown(null);
+  };
+
+  const drawFrom = (ranked: readonly Candidate[] | undefined, kind: Kind): DrawResult => {
+    if (ranked === undefined || ranked.length === 0) return "none";
+    const next = draw(ranked, readRecent(deps.tab, kind), deps.rand, primaryId);
+    if (next === null) return "none";
+    if (next.primary.spot.id === primaryId) return "same";
+    setShown({ mode: kind === "surprise" ? "surprise" : "reroll", spotId: next.primary.spot.id });
+    return "new";
+  };
+
+  return {
+    state: load.phase,
+    unavailable: load.phase === "unavailable" ? load.reason : null,
+    load,
+    bundle,
+    now,
+    prefs,
+    from: ranks?.quick.from ?? null,
+    fromFallback: ranks?.quick.fromFallback ?? false,
+    access,
+    presets,
+    preset,
+    mode,
+    pick,
+    empty:
+      ranks !== null && ranks.quick.ranked.length === 0 ? explainEmpty(ranks.quick, access) : null,
+    set,
+    somethingElse: () => drawFrom(ranks?.quick.ranked, "pick"),
+    surprise: () => drawFrom(ranks?.surprise.ranked, "surprise"),
+    showTop: () => setShown(null),
+  };
+}

@@ -3,6 +3,7 @@ import "./ui/fonts.css";
 import "./ui/styles.css";
 import "./screens/spot.css";
 import "./screens/admin.css";
+import "./screens/student/student.css";
 import { t } from "@perch/ui-logic";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";

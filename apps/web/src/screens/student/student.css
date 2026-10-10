@@ -1,0 +1,5 @@
+/* Student Home: layout glue only. Spacing comes from the tokens; no new colors, radii or shadows. */
+
+.query__more {
+  padding: var(--space-field) 0 0;
+}

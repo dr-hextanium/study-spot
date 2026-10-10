@@ -714,6 +714,39 @@ Every Home string, including the presenters Home shares with the spot page and B
 | student.filter.printer | Printer nearby | 16 | |
 | student.filter.coffee | Coffee nearby | 16 | |
 
+### Home inputs
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.home.from.label | From | 8 | row title |
+| student.home.from.sheet | Where are you? | 20 | sheet title |
+| student.home.from.locate | Use my location | 20 | |
+| student.home.from.locating | Finding you | 16 | |
+| student.home.from.denied | Location is off. Pick a building instead. | 48 | |
+| student.home.from.imprecise | Location too rough. Pick a building instead. | 48 | |
+| student.home.from.located | Nearest building: {building} | 48 | |
+| student.home.from.privacy | Used once to find the nearest building. Never saved or sent. | 64 | |
+| student.home.from.search | Search buildings | 20 | |
+| student.home.from.none | No building by that name. | 28 | search found nothing |
+| student.home.from.fallback | Starting from {building} | 44 | saved building is gone from the spots |
+| student.home.time.label | How long | 12 | |
+| student.home.time.30 | 30 min | 8 | |
+| student.home.time.60 | 1 hr | 6 | |
+| student.home.time.120 | 2 hr | 6 | |
+| student.home.time.close | Till close | 12 | |
+| student.home.preset.label | What for | 12 | |
+| student.preset.silent_solo | Silent solo | 14 | |
+| student.preset.group | Group | 10 | |
+| student.preset.calls | Calls | 10 | |
+| student.preset.late_night | Late night | 12 | |
+| student.preset.quick_30 | Quick 30 | 10 | |
+| student.home.group.label | People | 10 | |
+| student.home.filters.button | More filters | 16 | |
+| student.home.filters.button_count | More filters, {count} on | 26 | |
+| student.home.filters.title | More filters | 16 | |
+| student.home.filters.clear | Clear | 8 | |
+| student.home.filters.done | Done | 8 | |
+
 ## Pending questions
 
 - Floor naming at Stony Brook (e.g. "Lower level" vs "B") should come from the first survey walk; the floor field is free text for now.
