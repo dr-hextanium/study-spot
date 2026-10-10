@@ -1,10 +1,13 @@
 import { expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PHOTO_MAX_BYTES, SurveySpot } from "@perch/core";
 import { building, bundle_state, campus, photo_blob, spot, spot_photo } from "@perch/db";
 import { eq } from "drizzle-orm";
 import { sha256Hex } from "../src/photos/store.ts";
+import { fsDataSite } from "../src/publish/dataSite.ts";
+import { fsTarget } from "../src/publish/fsTarget.ts";
 import { body, NOW, type SignedIn, setup, signIn, type TestContext, writeId } from "./helpers.ts";
 
 /** A byte string that passes the JPEG magic check; `seed` varies the content. */
@@ -222,6 +225,58 @@ test("reject is admin only and deletes the photo row", async () => {
   expect(SurveySpot.parse(body(res)).photos.some((p) => p.id === id)).toBe(false);
   expect(await ctx.db.select().from(spot_photo).where(eq(spot_photo.id, id))).toEqual([]);
   expect((await photoAction(ctx, admin, id, "reject")).statusCode).toBe(404);
+});
+
+test("rejecting a photo deletes its bytes when no other photo uses them", async () => {
+  const ctx = await setup();
+  const admin = await signIn(ctx, "admin", "Admin");
+  const id = await uploaded(ctx, admin, 6);
+  expect((await photoAction(ctx, admin, id, "reject")).statusCode).toBe(200);
+  const sha = sha256Hex(jpeg(64, 6));
+  expect(await ctx.db.select().from(photo_blob).where(eq(photo_blob.sha256, sha))).toEqual([]);
+});
+
+test("rejecting a duplicate of a published photo keeps the shared photo", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "reject-shared-"));
+  const deployed: string[][] = [];
+  const inner = fsTarget(dir);
+  const ctx = await setup({
+    target: {
+      deploy: (files) => {
+        deployed.push(files.map((f) => f.path));
+        return inner.deploy(files);
+      },
+    },
+    dataSite: fsDataSite(dir),
+  });
+  const admin = await signIn(ctx, "admin", "Admin");
+  const kept = await uploaded(ctx, admin, 8);
+  expect((await photoAction(ctx, admin, kept, "approve")).statusCode).toBe(200);
+  const sha = sha256Hex(jpeg(64, 8));
+  const first = await ctx.publisher.runNow();
+  expect(first.ok && first.offloaded.includes(sha)).toBe(true);
+
+  // The same bytes again: a second photo row on the same blob, still pending.
+  const res = await upload(
+    ctx,
+    admin,
+    { spot_id: ctx.ids.spotIds["sac-lounge"], client_write_id: writeId() },
+    jpeg(64, 8),
+  );
+  expect(res.statusCode).toBe(201);
+  const dup = SurveySpot.parse(body(res)).photos.find((p) => p.id !== kept && !p.approved);
+  if (!dup) throw new Error("duplicate photo missing");
+  expect((await photoAction(ctx, admin, dup.id, "reject")).statusCode).toBe(200);
+
+  expect(await ctx.db.select().from(photo_blob).where(eq(photo_blob.sha256, sha))).toHaveLength(1);
+  const image = await ctx.app.inject({
+    method: "GET",
+    url: `/survey/photos/${kept}/image`,
+    headers: admin.headers,
+  });
+  expect(Array.from(image.rawPayload)).toEqual(Array.from(jpeg(64, 8)));
+  expect((await ctx.publisher.runNow()).ok).toBe(true);
+  expect(deployed.at(-1)).toContain(`photos/${sha}.jpg`);
 });
 
 test("the image route serves exact bytes to signed-in surveyors only", async () => {

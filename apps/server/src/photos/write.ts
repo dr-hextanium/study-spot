@@ -1,6 +1,6 @@
 import type { SurveySpot } from "@perch/core";
-import { building, type Db, spot, spot_photo } from "@perch/db";
-import { and, eq } from "drizzle-orm";
+import { building, type Db, photo_blob, spot, spot_photo } from "@perch/db";
+import { and, eq, notExists } from "drizzle-orm";
 import { HttpError } from "../http.ts";
 import { type SpotWriteContext, spotOr404 } from "../spots/write.ts";
 import type { WriteOutcome } from "../writes/withWrite.ts";
@@ -91,7 +91,11 @@ export async function approvePhoto(
   };
 }
 
-/** Admin only. Deletes the photo row; the maintenance job (2b) removes unreferenced blobs. */
+/**
+ * Admin only. Deletes the photo row and, when no other photo row uses the same
+ * bytes (blobs are content-addressed and shared), the blob with its bytes. A
+ * cleared blob that goes this way leaves the data site with the next deploy.
+ */
 export async function rejectPhoto(
   db: Db,
   ctx: SpotWriteContext,
@@ -101,6 +105,21 @@ export async function rejectPhoto(
   const photo = await photoOr404(db, photoId, ctx.campusId);
   const before = await spotOr404(db, photo.spot_id, ctx.campusId, ctx.term);
   await db.delete(spot_photo).where(eq(spot_photo.id, photoId));
+  if (photo.blob_sha256 !== null) {
+    await db
+      .delete(photo_blob)
+      .where(
+        and(
+          eq(photo_blob.sha256, photo.blob_sha256),
+          notExists(
+            db
+              .select({ id: spot_photo.id })
+              .from(spot_photo)
+              .where(eq(spot_photo.blob_sha256, photo_blob.sha256)),
+          ),
+        ),
+      );
+  }
   const after = await spotOr404(db, photo.spot_id, ctx.campusId, ctx.term);
   return {
     status: 200,
