@@ -150,20 +150,20 @@ Actions > migrate starts, waits for a reviewer, then: host guard, `db:migrate`, 
 
 Never use Render's manual "Deploy latest commit": it skips migrations. Deploy the API only through the migrate workflow.
 
-## 9. PWA on Cloudflare Pages (once the web app exists)
+## 9. PWA on Cloudflare Workers (static assets)
 
-Create `perch` from Git, never direct upload:
+Cloudflare now creates Git-connected apps as Workers projects. The PWA is static assets only (`wrangler.jsonc` at the repo root: assets from `apps/web/dist`, every unknown path serves `index.html`). No Worker script, so asset requests are free and unlimited.
 
-1. Workers & Pages > Create application > Pages > Import an existing Git repository (labels may differ) > pick the repo, production branch `main`.
+1. Workers & Pages > Create > Connect to Git (labels may differ) > pick the repo, project name `perch`, production branch `main`.
 2. Build settings:
-   - Framework preset: None.
+   - Build command (the two public addresses go inline, because build variables set in the dashboard were not picked up): `bun install --frozen-lockfile && VITE_API_BASE_URL=<API_BASE_URL> VITE_DATA_BASE_URL=<DATA_BASE_URL> bun run --filter '@perch/web' build`
+   - Deploy command: `npx wrangler deploy` (reads `wrangler.jsonc`).
    - Root directory: leave empty (repo root, so Bun workspaces resolve `packages/*`).
-   - Build command: `bun install --frozen-lockfile && bun run --filter '@perch/web' build`
-   - Build output directory: `apps/web/dist`
-3. Settings > Variables and secrets, for Production and Preview: `BUN_VERSION=1.3.14`, `NODE_VERSION=24`, `VITE_API_BASE_URL=<API_BASE_URL>`, `VITE_DATA_BASE_URL=<DATA_BASE_URL>`. The Pages v3 image ships Bun 1.2.15 by default, so pinning is required.
-4. After the first build, copy the production origin into `WEB_ORIGIN` on Render (Environment tab, use the save option that does not deploy; labels may differ) and in the repo variable `WEB_ORIGIN`. Then re-run Actions > migrate on the current `v*` tag (Run workflow, pick the tag): it runs the host guard, migrations, a deploy of that commit, and the smoke, including CORS for the new `WEB_ORIGIN`. That run is what deploys the new value.
-5. Preview deployments (other branches) run on different origins. The API's CORS rejects them by design, so previews can render but cannot sync. Set Settings > Builds > Branch control to production only if that is confusing.
-6. Free plan limits: 500 builds a month, 25 MiB per file, 20,000 files per site. Direct-upload deployments of the data site do not use builds but share the file limit: each approved photo is one file, so plan for cleanup before about 15,000 photos. A Pages deploy of the data site drops older hashed bundles and photos; clients keep using their cached bundle until they refetch the pointer.
+3. Settings > Build > Branch control: build the production branch (`main`) only. Otherwise every `dev` push spends build minutes.
+4. The production origin is `https://perch.<account-subdomain>.workers.dev` (live: `https://perch.try-perch-app.workers.dev`). Put it in `WEB_ORIGIN` on Render (Environment tab, save without deploying) and in the repo variable `WEB_ORIGIN`, then run a release (section 8) so the server picks it up.
+5. Check a build worked: the built `assets/index-*.js` must contain the API and data addresses. A build without them shows "This build has no server address".
+6. The release smoke also reads `bundle-latest.json` from the data site, so it fails until the first publish. After the first admin signs in, run Publish now, then re-run Actions > migrate on the current `v*` tag.
+7. Free limits (Workers Free): 3,000 build minutes a month, 1 build at a time, 20-minute timeout; 20,000 files per version, 25 MiB per file. The data site (`perch-data`, Pages direct upload) has 20,000 files and 25 MiB per file: each approved photo is one file, so plan cleanup before about 15,000 photos. A deploy of the data site drops older hashed bundles and photos; clients keep their cached bundle until they refetch the pointer.
 
 ## 10. Backups and restore
 
