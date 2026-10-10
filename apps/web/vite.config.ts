@@ -37,6 +37,19 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,svg,png,woff2,webmanifest}"],
         navigateFallback: "/index.html",
         cleanupOutdatedCaches: true,
+        runtimeCaching: [
+          {
+            // Approved spot photos on the data site: visited spot pages keep their pictures offline.
+            urlPattern: ({ url }) =>
+              url.origin !== self.location.origin && url.pathname.startsWith("/photos/"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "perch-photos",
+              expiration: { maxEntries: 80, maxAgeSeconds: 30 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],

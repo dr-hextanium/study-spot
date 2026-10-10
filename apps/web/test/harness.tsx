@@ -262,6 +262,8 @@ export type TestApp = {
   storage: MemoryStorage;
   /** Spot ids the app reported through `deps.pickPing`, in order. */
   pings: string[];
+  /** Shares the student spot page asked for, in order. */
+  shares: { title: string; url: string }[];
 };
 
 /** App dependencies on fakes: in-memory storage, the fake server, manual timers. */
@@ -274,6 +276,8 @@ export function testApp(
     bundle?: BundleState;
     /** Random source for picks. Default: seeded, so picks repeat. */
     rand?: () => number;
+    /** What `deps.webShare` reports. Default: "copied". */
+    webShare?: "shared" | "copied" | "failed";
   } = {},
 ): TestApp {
   const server = new TestServer(opts.spots ?? []);
@@ -284,6 +288,7 @@ export function testApp(
   const clock = mutableClock(opts.now ?? "2026-10-13T18:00:00Z");
   const storage = new MemoryStorage();
   const pings: string[] = [];
+  const shares: { title: string; url: string }[] = [];
   const session = createSessionState(createSessionStore(storage));
   const me = opts.me === undefined ? ME : opts.me;
   if (me !== null) session.save({ token: TOKEN, surveyor: me });
@@ -321,6 +326,12 @@ export function testApp(
     geolocation: { current: async () => null },
     imageKit: browserImageKit,
     share: { share: async () => "copied" },
+    webShare: {
+      share: async (data) => {
+        shares.push(data);
+        return opts.webShare ?? "copied";
+      },
+    },
     clock,
     apiBaseUrl: API,
     dataBaseUrl: "https://data.example",
@@ -332,7 +343,7 @@ export function testApp(
       pings.push(spotId);
     },
   };
-  return { deps, server, network, timers, clock, cache, storage, pings };
+  return { deps, server, network, timers, clock, cache, storage, pings, shares };
 }
 
 /** A ready bundle state around `bundle` (default: the scoring fixture), fresh and age 0. */

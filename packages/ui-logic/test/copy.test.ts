@@ -16,18 +16,22 @@ const deck = parseCopyDeck(
  * display name; the deck's max chars assume names up to about 20 characters.
  */
 const SAMPLE: Readonly<Record<string, string>> = {
+  attribution: "Perch surveyors",
   block: "Afternoon",
   building: "Melville Library",
   bucket: "Nearly full",
+  busy: "Usually some seats, typical Tue 2 PM",
   closes: "12:00 AM",
   count: "12",
   date: "Oct 15",
   day: "Weekdays",
   days: "4",
   done: "4",
+  entry: "11:30 PM",
   field: "outlet coverage",
   fields: "directions, seat count",
   floor: "2",
+  license: "CC BY-SA 4.0",
   meters: "120",
   minutes: "15",
   name: "Jordan Rivera",
@@ -41,6 +45,7 @@ const SAMPLE: Readonly<Record<string, string>> = {
   term: "Fall 2026",
   time: "Oct 15, 3:40 PM",
   total: "6",
+  weekday: "Wednesday",
   what: "Power and signal for SAC Lounge",
   when: "Tue 2 PM",
 };

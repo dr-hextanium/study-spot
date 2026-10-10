@@ -772,6 +772,50 @@ Every Home string, including the presenters Home shares with the spot page and B
 | student.home.access.dismiss | Not now | 10 | |
 | student.data.reload | Reload | 8 | |
 
+## Student: Spot
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.spot.checked | Checked {date} | 20 | meta line, newest verified date |
+| student.spot.last_checked | Last checked | 16 | group heading |
+| student.spot.directions | Directions | 12 | primary |
+| student.spot.share | Share | 8 | |
+| student.spot.shared | Link copied | 14 | toast |
+| student.spot.share_failed | Couldn't share. Copy the address bar instead. | 50 | toast |
+| student.spot.getting_there | Getting there | 16 | heading |
+| student.spot.busy_heading | Busyness | 12 | heading |
+| student.spot.busy_caption | Typical {weekday}, not live. | 34 | |
+| student.spot.busy_caption_exam | Typical {weekday} in finals, not live. | 44 | |
+| student.spot.this_hour | This hour | 10 | over the current bar; never "Now" |
+| student.spot.legend.measured | Counted | 10 | |
+| student.spot.legend.estimate | Estimate | 10 | hatched |
+| student.spot.legend.none | No data | 10 | outlined |
+| student.spot.no_data | No data yet | 14 | whole day without data |
+| student.spot.hours_heading | This week | 12 | |
+| student.spot.hours_exam_heading | Finals hours | 14 | |
+| student.spot.hours_unconfirmed | Hours not confirmed | 22 | |
+| student.spot.closed_day | Closed | 8 | |
+| student.spot.open_all_day | Open 24 hours | 16 | |
+| student.spot.hours_span | {opens} to {closes} | 24 | |
+| student.spot.hours_span_entry | {opens} to {closes}, last entry {entry} | 48 | |
+| student.spot.today | Today | 8 | hours row sub |
+| student.spot.details | Details | 10 | heading |
+| student.spot.photo_none | No photo yet | 14 | |
+| student.spot.photo_unavailable | Image unavailable | 18 | |
+| student.spot.license | Spot data {license}, {attribution}. | 48 | |
+| student.spot.not_found | That spot isn't in Perch. | 30 | |
+| student.spot.back_to_browse | Browse spots | 14 | |
+| student.group.identity | Name and place | 16 | |
+| student.group.access | Access | 10 | |
+| student.group.hours | Hours | 8 | |
+| student.group.seating | Seating | 10 | |
+| student.group.power | Power and signal | 18 | |
+| student.group.environment | Noise and feel | 16 | |
+| student.group.use_fit | House rules | 14 | |
+| student.group.amenities | Nearby | 10 | |
+| student.group.accessibility | Accessibility | 14 | |
+| student.group.late_night | Late night | 12 | |
+
 ## Pending questions
 
 - Floor naming at Stony Brook (e.g. "Lower level" vs "B") should come from the first survey walk; the floor field is free text for now.
