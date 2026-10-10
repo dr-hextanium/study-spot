@@ -35,6 +35,10 @@ preset(id, user_id, name, filters_json)
 device(id, user_id, reputation)
 ```
 
+## Pick ping (`pick_daily`)
+
+Pings are counted in memory and upserted straight into `pick_daily` (spot, campus day, count). Only ids of published spots of the campus are counted; that set is held in memory, loaded on first use and reloaded at most every 10 minutes. A flush runs 10 minutes after the last ping, at most 60 minutes after the first unflushed one, at 500 keys, and on shutdown. After a failed flush the counts are kept (at most 2,000 keys, oldest dropped) and retried when the idle timer fires. Neon cost: under steady traffic a flush wakes the database about once an hour (the 60-minute cap). Sparse pings can wake it once per idle gap, because each gap ends in a flush after 10 minutes, and the first ping after a restart or after 10 minutes also reloads the spot set. No raw ping rows, no device id, no address.
+
 ## Surveyor tooling tables (migrations 0002 and 0003)
 
 ```
