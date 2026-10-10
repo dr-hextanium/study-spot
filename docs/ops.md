@@ -150,7 +150,7 @@ Actions > migrate starts, waits for a reviewer, then: host guard, `db:migrate`, 
 
 Never use Render's manual "Deploy latest commit": it skips migrations. Deploy the API only through the migrate workflow.
 
-Do not roll the API back to a tag older than the photo offload (migration 0004, decision 22) once a publish has run on it. Older servers need every published photo's bytes in Postgres. Every publish would then fail with "photo blob ... is missing", and surveyors would see "Image unavailable" for published photos. Nothing is lost, because the photos are still on the data site, but publishing stays stuck until you release a newer tag again. Roll forward with a fix instead.
+Hard rule: never roll the API back past migration 0004 (the photo offload, decision 22). Older servers do not know that photo bytes can live only on the data site, and they build each deploy from the bundle alone. A publish on an old server fails if a cleared photo is in the bundle. If none is, the publish succeeds and silently drops every cleared photo of an unpublished spot, which has no copy in Postgres or in the backups. Getting such a photo back then depends on an older Pages deployment (`<id>.perch-data.pages.dev`) that still serves it: download it, check its sha256, and upload it again as a new photo. Old servers also answer "Image unavailable" for every cleared photo. Roll forward with a fix instead.
 
 ## 9. PWA on Cloudflare Workers (static assets)
 
