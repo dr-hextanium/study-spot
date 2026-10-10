@@ -2,6 +2,7 @@ import type { AttributeGroup, Eligibility, FoodPolicy, NoisePolicy } from "../en
 
 /** Fields a published spot must have, in the order they are reported. */
 export const V0_FIELD = [
+  "floor",
   "directions",
   "eligibility",
   "seat_count",
@@ -15,6 +16,7 @@ export type V0Field = (typeof V0_FIELD)[number];
 
 /** The section that fills each field, so a "Missing: x" row can link to its editor. */
 export const V0_FIELD_SECTION: Readonly<Record<V0Field, AttributeGroup | null>> = {
+  floor: "identity",
   directions: "identity",
   eligibility: "access",
   seat_count: "seating",
@@ -28,6 +30,8 @@ export const V0_FIELD_SECTION: Readonly<Record<V0Field, AttributeGroup | null>> 
 
 /** The structural slice of a spot that completeness depends on. DB rows and API spots both fit. */
 export type V0Input = {
+  /** Blank on a bootstrap draft until a surveyor saves identity. */
+  floor: string;
   directions: string | null;
   eligibility: Eligibility | null;
   seat_count: number | null;
@@ -46,6 +50,7 @@ export type V0Input = {
  */
 export function missingV0Fields(spot: V0Input): V0Field[] {
   const missing: V0Field[] = [];
+  if (spot.floor.trim() === "") missing.push("floor");
   if (spot.directions === null) missing.push("directions");
   if (spot.eligibility === null) missing.push("eligibility");
   if (spot.seat_count === null) missing.push("seat_count");

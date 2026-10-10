@@ -38,6 +38,7 @@ export type SpotAssemblyInput = {
 /** The completeness-relevant columns of a spot row. */
 export function pickV0(r: SpotRow): Omit<V0Input, "has_verification"> {
   return {
+    floor: r.floor,
     directions: r.directions,
     eligibility: r.eligibility,
     seat_count: r.seat_count,

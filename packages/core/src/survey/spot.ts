@@ -140,6 +140,7 @@ export type SurveySpot = z.infer<typeof SurveySpot>;
 /** The missingV0Fields input for a spot as the API returns it. */
 export function v0InputOf(spot: SurveySpot): V0Input {
   return {
+    floor: spot.floor,
     directions: spot.directions,
     eligibility: spot.eligibility,
     seat_count: spot.seat_count,

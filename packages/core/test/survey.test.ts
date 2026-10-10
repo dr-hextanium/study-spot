@@ -17,6 +17,7 @@ import {
 import { surveySpotFixture } from "./fixtures/survey-spot.ts";
 
 const complete = {
+  floor: "3",
   directions: "Floor 3.",
   eligibility: "all_students",
   seat_count: 10,
@@ -33,6 +34,7 @@ test("a complete spot is missing nothing", () => {
 
 test("missing fields are reported in V0_FIELD order", () => {
   const nothing = {
+    floor: " ",
     directions: null,
     eligibility: null,
     seat_count: null,
@@ -47,6 +49,10 @@ test("missing fields are reported in V0_FIELD order", () => {
     "seat_count",
     "last_verified",
   ]);
+});
+
+test("a blank floor is missing, so a bootstrap draft cannot publish before identity is saved", () => {
+  expect(missingV0Fields({ ...complete, floor: "" })).toEqual(["floor"]);
 });
 
 test("false and zero are present values, not missing", () => {

@@ -13,6 +13,7 @@ import {
   spot_verification,
   write_receipt,
 } from "@perch/db";
+import { bootstrap } from "@perch/db/bootstrap";
 import { and, eq, sql } from "drizzle-orm";
 import { HttpError } from "../src/http.ts";
 import { currentTerm } from "../src/spots/load.ts";
@@ -767,4 +768,56 @@ test("verify with hours and access stamps both when current-term hours exist", a
   });
   expect(res.statusCode).toBe(200);
   expect(await stamps(ctx, draft.id)).toEqual(["access", "hours", "identity"]);
+});
+
+test("a bootstrap community center draft reads, cannot publish, and takes an identity save", async () => {
+  const ctx = await setup();
+  await bootstrap(ctx.db);
+  const me = await signIn(ctx);
+
+  const listRes = await ctx.app.inject({
+    method: "GET",
+    url: "/survey/spots",
+    headers: me.headers,
+  });
+  expect(listRes.statusCode).toBe(200);
+  const stub = SpotList.parse(body(listRes)).spots.find((s) => s.slug === "roth-community-center");
+  expect(stub).toMatchObject({ status: "draft", oldest_verified_at: null });
+  if (!stub) throw new Error("stub missing");
+
+  const getRes = await ctx.app.inject({
+    method: "GET",
+    url: `/survey/spots/${stub.id}`,
+    headers: me.headers,
+  });
+  expect(getRes.statusCode).toBe(200);
+  const draft = SurveySpot.parse(body(getRes));
+  expect(draft.floor).toBe("");
+  expect(draft.missing[0]).toBe("floor");
+  expect(draft.verified).toEqual({});
+
+  const blocked = await post(ctx, me, `/survey/spots/${draft.id}/publish`, {
+    client_write_id: writeId(),
+  });
+  expect(blocked.statusCode).toBe(422);
+  expect(body(blocked)).toEqual({ error: "incomplete", missing: draft.missing });
+
+  const saved = await put(ctx, me, draft.id, draft.version, {
+    section: "identity",
+    data: identity({
+      slug: draft.slug,
+      official_name: draft.official_name,
+      building_id: draft.building_id,
+      floor: "1",
+      lat: draft.lat,
+      lng: draft.lng,
+      directions: null,
+    }),
+  });
+  expect(saved.statusCode).toBe(200);
+  const after = SurveySpot.parse(body(saved));
+  expect(after.version).toBe(draft.version + 1);
+  expect(after.floor).toBe("1");
+  expect(after.missing).not.toContain("floor");
+  expect(after.verified.identity).toBeDefined();
 });

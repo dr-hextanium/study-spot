@@ -481,7 +481,8 @@ Strings the built screens needed beyond the sections above: short header forms f
 | spot.publish.queued_chip | Publish queued | 16 | chip while the publish waits to sync |
 | spot.review.queued | Review queued | 16 | chip; "Marked reviewed" only after it lands |
 | spot.not_found | This spot isn't on this phone. Go online to load it. | 60 | spot never cached and offline |
-| field.directions | How to get there | 20 | names for Missing: {field} and Still missing: {fields} |
+| field.floor | Floor | 10 | names for Missing: {field} and Still missing: {fields} |
+| field.directions | How to get there | 20 | |
 | field.eligibility | Who can use it | 18 | |
 | field.seat_count | Seats | 10 | |
 | field.outlet_coverage_pct | Seats near an outlet | 22 | |

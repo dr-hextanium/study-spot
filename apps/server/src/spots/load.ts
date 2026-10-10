@@ -180,6 +180,7 @@ export async function loadSurveySpot(
       approved_at: p.approved_at ? p.approved_at.toISOString() : null,
     })),
     missing: missingV0Fields({
+      floor: row.floor,
       directions: row.directions,
       eligibility: row.eligibility,
       seat_count: row.seat_count,

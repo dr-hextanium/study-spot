@@ -18,9 +18,13 @@ import {
 import type { OutboxSnapshot } from "./outbox.ts";
 import { bySeq, isLocalId, type WriteRecord, type WriteState } from "./writes.ts";
 
-/** Fields that count toward "{count} of 7 required parts": every v0 field filled by a section. */
+/**
+ * Fields that count toward "{count} of 7 required parts": every v0 field filled by a section.
+ * Floor is left out: the new-spot form always sets it, and only a bootstrap draft starts
+ * blank, where publish still reports it as missing.
+ */
 export const REQUIRED_PARTS: readonly V0Field[] = V0_FIELD.filter(
-  (f) => V0_FIELD_SECTION[f] !== null,
+  (f) => V0_FIELD_SECTION[f] !== null && f !== "floor",
 );
 
 export type PendingPhoto = { client_write_id: string; taken_at: string; state: WriteState };

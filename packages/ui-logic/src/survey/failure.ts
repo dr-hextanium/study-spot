@@ -3,6 +3,7 @@ import { COPY, type PlainCopyId, t } from "../copy/index.ts";
 import type { WriteError } from "./writes.ts";
 
 const FIELD_COPY = {
+  floor: "field.floor",
   directions: "field.directions",
   eligibility: "field.eligibility",
   seat_count: "field.seat_count",
