@@ -92,6 +92,9 @@ Date: 2026-10-10. Status: draft for owner review. Extends `docs/superpowers/spec
 6. Directions open Google Maps walking directions to the spot's point, or Apple Maps on iOS. Only the spot's coordinates go into the link.
 7. Student sharing uses the share sheet first and copies the link as a fallback. This is the reverse of the surveyor `createShare`, so a new `createWebShare` adapter is added.
 8. Pick ping (Phase G) never stores raw rows. The server counts in memory and upserts straight into `pick_daily (spot_id, day, count)` when pings have been idle for 10 minutes, after 60 minutes at most, and on shutdown. The nightly rollup and the `pick_ping` table go unused, because no new scheduled workflows are allowed. The client call is built but off by default (`VITE_PICK_PING=1` turns it on), because each flush wakes Neon.
+9a. Exam-day hours: inside the exam window, each weekday uses the spot's exam rows for that weekday if it has any, otherwise that weekday's regular rows. One exam row never closes the other weekdays.
+9b. Unknown "From" building: ranking falls back to the default building (Melville Library) and flags it; Home says "Starting from Melville Library" while the flag is set.
+9c. Surprise me ignores the preset entirely, including its default group size; it uses the group size set on Home, or 1.
 9. The bundle has about 30 spots, so the scoring loop runs over every spot on every input change, with no memoization beyond `useMemo`.
 
 ## 4. Questions for the owner (none block tonight's work)
