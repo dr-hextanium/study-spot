@@ -40,3 +40,31 @@ test("data sites refuse paths that leave the site", async () => {
   expect(calls).toBe(0);
   expect(Array.from((await fsDataSite(dir).get("a.jpg")) ?? [])).toEqual([0x78]);
 });
+
+test("httpDataSite stops reading a body that grows past the limit", async () => {
+  let pulled = 0;
+  let cancelled = false;
+  const endless = () =>
+    new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += 1;
+        controller.enqueue(new Uint8Array(1024));
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+  const site = httpDataSite("https://data.example", async () => new Response(endless()), {
+    maxBytes: 4096,
+  });
+  expect(await site.get("photos/big.jpg")).toBeNull();
+  expect(cancelled).toBe(true);
+  expect(pulled).toBeLessThan(10);
+
+  const small = httpDataSite(
+    "https://data.example",
+    async () => new Response(new Uint8Array(4096)),
+    { maxBytes: 4096 },
+  );
+  expect((await small.get("photos/ok.jpg"))?.byteLength).toBe(4096);
+});

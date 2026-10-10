@@ -23,8 +23,41 @@ export type DataSite = {
   get(path: string, opts?: { fresh?: boolean }): Promise<Uint8Array | null>;
 };
 
+/**
+ * Reads a body chunk by chunk and gives up as soon as it passes `max` bytes, so a
+ * wrong or hostile response cannot fill memory. Null when too large.
+ */
+async function readCapped(res: Response, max: number): Promise<Uint8Array | null> {
+  if (res.body === null) return new Uint8Array(0);
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > max) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let at = 0;
+  for (const c of chunks) {
+    out.set(c, at);
+    at += c.byteLength;
+  }
+  return out;
+}
+
 /** The live data site over HTTP, e.g. https://perch-data.pages.dev. */
-export function httpDataSite(baseUrl: string, fetchImpl?: FetchLike): DataSite {
+export function httpDataSite(
+  baseUrl: string,
+  fetchImpl?: FetchLike,
+  opts: { maxBytes?: number } = {},
+): DataSite {
+  const maxBytes = opts.maxBytes ?? DATA_SITE_MAX_BYTES;
   const doFetch: FetchLike = fetchImpl ?? ((url, init) => fetch(url, init));
   const base = baseUrl.replace(/\/+$/, "");
   return {
@@ -37,11 +70,16 @@ export function httpDataSite(baseUrl: string, fetchImpl?: FetchLike): DataSite {
           cache: "no-store",
           signal: AbortSignal.timeout(TIMEOUT_MS),
         });
-        if (res.status !== 200) return null;
+        if (res.status !== 200) {
+          await res.body?.cancel();
+          return null;
+        }
         const length = Number(res.headers.get("content-length") ?? "0");
-        if (length > DATA_SITE_MAX_BYTES) return null;
-        const bytes = new Uint8Array(await res.arrayBuffer());
-        return bytes.byteLength > DATA_SITE_MAX_BYTES ? null : bytes;
+        if (length > maxBytes) {
+          await res.body?.cancel();
+          return null;
+        }
+        return await readCapped(res, maxBytes);
       } catch {
         return null;
       }
