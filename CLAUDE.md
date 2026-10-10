@@ -1,6 +1,6 @@
-# Perch (working name): Study Spot App
+# Perch: Study Spot App
 
-A PWA that helps Stony Brook University students pick a study spot: a ranked "go here now" pick, backed by a surveyed directory, busyness forecasts, and sparse live reports. A campus utility, not a business: cheap, open source, handed off to a student club. Repo and package scope use the neutral name `study-spot` until a name is chosen.
+A PWA that helps Stony Brook University students pick a study spot: a ranked "go here now" pick, backed by a surveyed directory, busyness forecasts, and sparse live reports. A campus utility, not a business: cheap, open source, handed off to a student club. The app, repo and packages are named Perch (`perch`, `@perch/*`).
 
 Product truth for design work lives in `PRODUCT.md`. The approved v0 design lives in `docs/superpowers/specs/2026-10-03-perch-v0-design.md`.
 

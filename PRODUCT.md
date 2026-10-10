@@ -37,10 +37,10 @@ It ranks by the probability that the right kind of seat is free when you get the
 - No hardware, no Wi-Fi/BLE sniffing, no scraping behind login, no university SSO. Surveyors sign in with admin-generated invite links; students have no accounts in v0.
 - Eligibility is self-declared and modeled per spot. Ineligible spots are hidden or shown locked.
 - Terminology: spot, building, floor, preset, quick pick, alternates, live vs forecast, last verified, session, tip (not review).
-- Undecided: final name (Perch is the working name pending trademark and store checks; fallback OpenSeat).
+- Name: Perch (chosen by the owner 2026-10-10; trademark and store checks still to do before launch).
 
 ## Brand Commitments
-- Working name: **Perch** (not final). No "Seawolf", "SBU", or "Stony Brook" in the name.
+- Name: **Perch**. No "Seawolf", "SBU", or "Stony Brook" in the name.
 - Voice: dry and student-made. Short and literal, with a light peer tone that makes it clear students built it, not the university. No hype.
 - Never use em-dashes in UI copy, docs, or comments. Use commas or colons.
 - No star ratings. Tips are short and factual, expire, and can be flagged.

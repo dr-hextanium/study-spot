@@ -34,8 +34,8 @@
 | ui-logic tests | `bun test packages/ui-logic --timeout 60000` |
 | core tests | `bun test packages/core --timeout 60000` |
 | server tests | `bun test apps/server --timeout 60000` |
-| web unit tests | `bun run --filter '@study-spot/web' test` (one file: `cd apps/web && bunx vitest run test/<file>`) |
-| web e2e | `bun run --filter '@study-spot/web' e2e` (one file: `cd apps/web && bunx playwright test e2e/<file>`). It uses ports 8787 and 4173, which belong to the e2e suite. |
+| web unit tests | `bun run --filter '@perch/web' test` (one file: `cd apps/web && bunx vitest run test/<file>`) |
+| web e2e | `bun run --filter '@perch/web' e2e` (one file: `cd apps/web && bunx playwright test e2e/<file>`). It uses ports 8787 and 4173, which belong to the e2e suite. |
 | copy | `bun run copy:gen` |
 | tokens | `bun run tokens:gen` (added in Task 1) |
 
@@ -560,7 +560,7 @@ Replace `apps/web/test/theme.test.ts` with:
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { tokens } from "@study-spot/ui-logic";
+import { tokens } from "@perch/ui-logic";
 import { expect, test } from "vitest";
 import { themeCss } from "../src/ui/theme.ts";
 
@@ -600,7 +600,7 @@ test("every var() without a fallback is defined in some stylesheet", () => {
 Replace `apps/web/src/ui/theme.ts` with:
 
 ```ts
-import { paletteVariables, sharedVariables, type Tokens } from "@study-spot/ui-logic";
+import { paletteVariables, sharedVariables, type Tokens } from "@perch/ui-logic";
 
 function block(selector: string, vars: Record<string, string>, indent = ""): string {
   const lines = Object.entries(vars).map(([name, value]) => `${indent}  ${name}: ${value};`);
@@ -627,7 +627,7 @@ Create `apps/web/scripts/gen-tokens.ts`:
 
 ```ts
 import { writeFileSync } from "node:fs";
-import { tokens } from "@study-spot/ui-logic";
+import { tokens } from "@perch/ui-logic";
 import { themeCss } from "../src/ui/theme.ts";
 
 /** Writes apps/web/src/ui/tokens.css. A Vitest test fails when it is out of date. */
@@ -767,7 +767,7 @@ Rewrite the top of `apps/web/src/ui/styles.css` (the reset, `html` and `body`, h
 
 - [ ] **Step 7: Run the web tests, then commit tokens, fonts and base styles**
 
-Run: `bun run typecheck && bun run lint && bun test packages/ui-logic --timeout 60000 && bun run --filter '@study-spot/web' test`
+Run: `bun run typecheck && bun run lint && bun test packages/ui-logic --timeout 60000 && bun run --filter '@perch/web' test`
 Expected: PASS. If `components.test.tsx` fails on CSS it reads (filled stamps, the syncmark width), restore those rules; they leave in Task 12.
 
 One commit: the ui-logic token change alone would break `apps/web` typecheck, which the pre-commit hook runs.
@@ -784,7 +784,7 @@ Create `apps/web/test/themeBoot.test.ts`:
 ```ts
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { tokens } from "@study-spot/ui-logic";
+import { tokens } from "@perch/ui-logic";
 import { afterEach, expect, test, vi } from "vitest";
 import { applyThemePref, storeThemePref } from "../src/ui/themePref.ts";
 
@@ -893,7 +893,7 @@ import {
   THEME_STORAGE_KEY,
   type ThemePref,
   tokens,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import { useEffect, useSyncExternalStore } from "react";
 
 const DARK = "(prefers-color-scheme: dark)";
@@ -974,7 +974,7 @@ Run `bun run copy:gen`.
 Create `apps/web/src/ui/ThemeSwitch.tsx`:
 
 ```tsx
-import { t, type ThemePref } from "@study-spot/ui-logic";
+import { t, type ThemePref } from "@perch/ui-logic";
 import { useThemePref } from "./themePref.ts";
 import { Segmented } from "./Segmented.tsx";
 
@@ -1033,7 +1033,7 @@ Expected: 2 passed.
 
 Run Procedure V on routes `/survey /survey/admin`. Expected: PASS lines. The screens still look like the postcard layout, now in Seawolf colors and fonts; that is expected.
 
-Run: `bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`
+Run: `bun run typecheck && bun run lint && bun run --filter '@perch/web' test`
 Expected: PASS.
 
 ```bash
@@ -1095,7 +1095,7 @@ Create `apps/web/e2e/nav.e2e.ts` as given in Step 4 below. On the legacy overvie
 Run: `cd apps/web && bunx vitest run test/scrollKey.test.ts && bunx playwright test e2e/nav.e2e.ts`
 Expected: FAIL (no `scrollKey.ts`; the e2e test sees scrollY 48 in the editor).
 
-Implement `scrollKey.ts`, the `main.tsx` router option and the `__root.tsx` focus change exactly as in Step 2 below. Run the same two commands. Expected: PASS. Then run `bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`, and commit with only these files modified:
+Implement `scrollKey.ts`, the `main.tsx` router option and the `__root.tsx` focus change exactly as in Step 2 below. Run the same two commands. Expected: PASS. Then run `bun run typecheck && bun run lint && bun run --filter '@perch/web' test`, and commit with only these files modified:
 
 ```bash
 git add apps/web/src/app/scrollKey.ts apps/web/src/main.tsx apps/web/src/routes/__root.tsx apps/web/test/scrollKey.test.ts apps/web/e2e/nav.e2e.ts
@@ -1240,7 +1240,7 @@ Expected: PASS.
 `apps/web/src/lib/icons.ts`:
 
 ```ts
-import type { OverviewSection } from "@study-spot/ui-logic";
+import type { OverviewSection } from "@perch/ui-logic";
 import {
   Accessibility,
   Armchair,
@@ -1435,7 +1435,7 @@ Expected: PASS.
 
 Procedure V on `/survey` and a spot route. Expected: PASS. Legacy screens are unchanged except for the sheet and toast motion.
 
-Run: `bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test && bun run --filter '@study-spot/web' e2e`
+Run: `bun run typecheck && bun run lint && bun run --filter '@perch/web' test && bun run --filter '@perch/web' e2e`
 Expected: PASS (15 e2e tests plus the 2 new: 17).
 
 ```bash
@@ -1858,7 +1858,7 @@ Expected: FAIL.
 - State: `filter` and `query` come from `useHomeState()`, kept in `sessionStorage["perch.home"]`. Home's scroll is restored by path (Task 2), so the list must come back the same: with plain `useState`, Back would restore the Due list's scroll offset over the All list. `apps/web/src/lib/homeState.ts`:
 
 ```ts
-import { HOME_FILTER } from "@study-spot/ui-logic";
+import { HOME_FILTER } from "@perch/ui-logic";
 import { useState } from "react";
 import { z } from "zod";
 
@@ -1961,14 +1961,14 @@ test("back from a spot returns Home to the same filter and scroll", async ({ pag
 });
 ```
 
-Run: `bun run --filter '@study-spot/web' e2e`
+Run: `bun run --filter '@perch/web' e2e`
 Expected: all pass.
 
 - [ ] **Step 7: Procedure V and commit**
 
 Procedure V on `/survey` (light screenshots; dark is covered by the layout e2e). Check against `dir-d.png`, left phone: the Keep going card without an icon, the search, the chips with counts, compact rows with facts on the right, and the action bar. At 1440 px it should be one centered 680 px column with a floating action bar.
 
-Run: `bun run typecheck && bun run lint && bun test packages/ui-logic --timeout 60000 && bun run --filter '@study-spot/web' test`
+Run: `bun run typecheck && bun run lint && bun test packages/ui-logic --timeout 60000 && bun run --filter '@perch/web' test`
 Expected: PASS.
 
 One commit: removing `DraftRow.requiredDone` in ui-logic breaks the old `Home.tsx`, so the two halves only compile together.
@@ -2047,7 +2047,7 @@ The core change makes `cover_photo_id` part of the `SpotSummary` output type, so
 - `summary()` in `apps/web/test/harness.tsx`: the same expression;
 - the local `summary()` helper in `packages/ui-logic/test/view.test.ts`: `cover_photo_id: null` in its defaults.
 
-Run: `bun run typecheck && bun run lint && bun test apps/server/test/spots.test.ts packages/core packages/ui-logic --timeout 60000 && bun run --filter '@study-spot/web' test`
+Run: `bun run typecheck && bun run lint && bun test apps/server/test/spots.test.ts packages/core packages/ui-logic --timeout 60000 && bun run --filter '@perch/web' test`
 Expected: PASS. Commit with only these files modified:
 
 ```bash
@@ -2163,7 +2163,7 @@ Expected: PASS.
 
 Procedure V on `/survey`. The e2e seed may have no covers; visually confirm through a quick manual cover in the e2e flow, or accept text-only rows and say so in the report.
 
-Run: `bun run typecheck && bun run lint && bun test packages apps/server --timeout 60000 && bun run --filter '@study-spot/web' test`
+Run: `bun run typecheck && bun run lint && bun test packages apps/server --timeout 60000 && bun run --filter '@perch/web' test`
 Expected: PASS.
 
 ```bash
@@ -2308,7 +2308,7 @@ CSS, rewriting the old segmented block, from the mock's `.seg`:
 - Focus: `input:focus-visible + span { outline: 2px solid var(--color-red); outline-offset: -2px; border-radius: 9px }`.
 - The list layout (long options): rows of 48 px with a 20 px radio circle drawn by `::before` (ink ring; checked is an ink fill with a paper center), a hairline between rows, and no thumb.
 
-Run: `cd apps/web && bunx vitest run test/components.test.tsx && cd ../.. && bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`
+Run: `cd apps/web && bunx vitest run test/components.test.tsx && cd ../.. && bun run typecheck && bun run lint && bun run --filter '@perch/web' test`
 Expected: PASS. Commit now, with only these three files modified:
 
 ```bash
@@ -2340,7 +2340,7 @@ Delete the component tests that assert the old segmented markup only (the ink-bl
 
 Procedure V on `/survey/admin` and `/survey/spots/<id>/seating`. In a Playwright probe (not committed), measure pointerdown to checked on the admin role switch: the radio must be checked before pointerup. Report the numbers next to the measured 155 ms delay from the spec.
 
-Run: `bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test && bun run --filter '@study-spot/web' e2e`
+Run: `bun run typecheck && bun run lint && bun run --filter '@perch/web' test && bun run --filter '@perch/web' e2e`
 Expected: PASS. If e2e radio clicks changed behavior, they should not have: a Playwright `click` sends pointerdown, pointerup and click on the same option.
 
 ```bash
@@ -2535,7 +2535,7 @@ Add `/survey/spots/<seeded published id>` and a long-named draft overview to `RO
 
 Procedure V on a draft overview and a published overview (dark is covered by the layout e2e). Compare with `dir-d.png`, middle phone.
 
-Run: `bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`
+Run: `bun run typecheck && bun run lint && bun run --filter '@perch/web' test`
 Expected: PASS.
 
 ```bash
@@ -2664,7 +2664,7 @@ In `e2e/spots.e2e.ts` and `e2e/finish.e2e.ts`, replace `getByRole("button", { na
 
 Procedure V on `/survey/spots/<id>/seating`, `identity`, `access` and `late_night`. Compare with `d3.png`.
 
-Run: `bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test`
+Run: `bun run typecheck && bun run lint && bun run --filter '@perch/web' test`
 Expected: PASS.
 
 ```bash
@@ -2716,7 +2716,7 @@ Adapt the busyness assertion to the control the editor uses today: if it has no 
 
 - [ ] **Step 3: Tests, layout, Procedure V, commit**
 
-Add the three editor routes to `ROUTES`. Run: `bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test && bun run --filter '@study-spot/web' e2e`. Expected: PASS. Procedure V on `hours`, `estimates` and `photos` for a draft.
+Add the three editor routes to `ROUTES`. Run: `bun run typecheck && bun run lint && bun run --filter '@perch/web' test && bun run --filter '@perch/web' e2e`. Expected: PASS. Procedure V on `hours`, `estimates` and `photos` for a draft.
 
 ```bash
 git add apps/web/src apps/web/test apps/web/e2e/layout.e2e.ts
@@ -2768,7 +2768,7 @@ Use the deck's existing conflict copy for the region names (`grep "^| conflict\.
 
 - [ ] **Step 3: Tests, Procedure V, commit**
 
-Run: `bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test && bun run --filter '@study-spot/web' e2e`. Expected: PASS. Procedure V: open the sync sheet on `/survey`, then capture a conflict and a failed sheet through the e2e helpers or by hand. Wait until `.sheet[open]` has finished its transition (`await page.waitForFunction(() => getAnimations ... )`, or capture with `animations: "disabled"`).
+Run: `bun run typecheck && bun run lint && bun run --filter '@perch/web' test && bun run --filter '@perch/web' e2e`. Expected: PASS. Procedure V: open the sync sheet on `/survey`, then capture a conflict and a failed sheet through the e2e helpers or by hand. Wait until `.sheet[open]` has finished its transition (`await page.waitForFunction(() => getAnimations ... )`, or capture with `animations: "disabled"`).
 
 ```bash
 git add apps/web/src apps/web/test
@@ -2819,7 +2819,7 @@ Delete the `.entry*` and `.created-link*` rules that no longer have users.
 
 - [ ] **Step 4: Tests, layout, Procedure V, commit**
 
-Add `/survey/admin` to `ROUTES`. In that test, create a surveyor with a long display name first (through `e2e/api.ts` `surveyorInvite` and its accept flow, or a helper that accepts an invite with `display_name`). Run: `bun run typecheck && bun run lint && bun run --filter '@study-spot/web' test && bun run --filter '@study-spot/web' e2e`. Expected: PASS, and the layout check reports no clipped `Admin` pill at 375. Procedure V on `/survey/admin`.
+Add `/survey/admin` to `ROUTES`. In that test, create a surveyor with a long display name first (through `e2e/api.ts` `surveyorInvite` and its accept flow, or a helper that accepts an invite with `display_name`). Run: `bun run typecheck && bun run lint && bun run --filter '@perch/web' test && bun run --filter '@perch/web' e2e`. Expected: PASS, and the layout check reports no clipped `Admin` pill at 375. Procedure V on `/survey/admin`.
 
 ```bash
 git add apps/web/src apps/web/test/admin.test.tsx apps/web/e2e docs/design/surveyor-copy.md packages/ui-logic/src/copy/copy.gen.ts
@@ -2893,8 +2893,8 @@ Run, in order, and record the counts:
 ```bash
 bun run typecheck && bun run lint
 bun test --timeout 60000
-bun run --filter '@study-spot/web' test
-bun run --filter '@study-spot/web' e2e
+bun run --filter '@perch/web' test
+bun run --filter '@perch/web' e2e
 bun run smoke:node
 ```
 

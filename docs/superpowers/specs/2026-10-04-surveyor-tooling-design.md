@@ -23,7 +23,7 @@ Parent spec: `docs/superpowers/specs/2026-10-03-perch-v0-design.md` (section 6 a
 | S3 | Visual design | Choose the postcard direction now, before building surveyor screens (chosen: "The Divided Back", contract in `apps/web/.impeccable/surfaces/apps-web.md`; tokens in `packages/ui-logic/src/tokens.ts`). `DESIGN.md` is written from the built screens at the end of the web UI plan. Survey mode is a plain, high-contrast variant of the same system. |
 | S4 | Web libraries | TanStack Router, TanStack Query, form logic as hooks in `packages/ui-logic` validated by Zod, `idb` for IndexedDB. |
 | S5 | Photo storage | Card-free: photo bytes in Postgres (`photo_blob`), published as hashed static files next to the bundle. Behind a `PhotoStore` interface so R2 can replace it. Overrides the parent spec's R2. |
-| S6 | Publishing target | Cloudflare Pages direct upload to a dedicated data project (`study-spot-data`). The PWA is a separate Pages project (`study-spot`). |
+| S6 | Publishing target | Cloudflare Pages direct upload to a dedicated data project (`perch-data`). The PWA is a separate Pages project (`perch`). |
 | S7 | Who publishes | Any surveyor publishes; the spot is flagged `unreviewed` until a different surveyor or any admin marks it reviewed. Photos still need approval before publishing. |
 | S8 | Phasing | 2a survey-ready, 2b sprint-ready, one implementation plan each. |
 
@@ -199,7 +199,7 @@ UI work that does not depend on visuals (routes, outbox, form hooks, API client)
 
 - Render web service from GitHub; start command `node apps/server/src/main.ts`; health check `/health`.
 - Neon production database; migrations applied by a GitHub Actions workflow (`workflow_dispatch` and on tags), never on server start.
-- Cloudflare Pages: `study-spot` builds `apps/web` from GitHub; `study-spot-data` is created empty and filled by the publisher. `*.pages.dev` URLs until a domain exists.
+- Cloudflare Pages: `perch` builds `apps/web` from GitHub; `perch-data` is created empty and filled by the publisher. `*.pages.dev` URLs until a domain exists.
 - `docs/ops.md`: card-free sign-up steps for Render, Neon, Cloudflare (ideally under a club email); env var reference; API token creation and rotation; `admin:invite`; migrations; backups; VPS fallback.
 - Owner's one-time manual steps (about 30 minutes): create the three accounts, create a Cloudflare API token with Pages edit permission, set Render env vars and GitHub secrets.
 

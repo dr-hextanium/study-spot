@@ -4,7 +4,7 @@
 
 **Goal:** Take the phase 2a stack live on card-free free tiers (Render for the API, Neon for Postgres, Cloudflare Pages for the PWA and the data site), with deploy config as code, a guarded migration workflow, encrypted weekly backups, a post-deploy smoke check, an ops runbook someone with no context can follow, and the real-device acceptance runbook.
 
-**Architecture:** `render.yaml` describes the API service; the Render blueprint does not auto-deploy. A GitHub Actions workflow (`migrate.yml`, environment `production`, reviewer approval) checks that `DATABASE_URL_DIRECT` points at the expected Neon host, runs `bun run db:migrate`, then calls the Render deploy hook, so schema always lands before code. `smoke-deploy` (pure `checkDeploy` in `apps/server/src/deploy/`, thin script, workflow) retries `/health` through a cold start, checks CORS from `WEB_ORIGIN`, then validates the data site pointer and bundle with core `BundlePointer` and `parseBundle`. `backup.yml` runs `pg_dump`, encrypts with `age`, and stores a 90-day artifact. The PWA project `study-spot` builds from GitHub on Pages (after plan D); `study-spot-data` is created empty with wrangler and filled only by the publisher.
+**Architecture:** `render.yaml` describes the API service; the Render blueprint does not auto-deploy. A GitHub Actions workflow (`migrate.yml`, environment `production`, reviewer approval) checks that `DATABASE_URL_DIRECT` points at the expected Neon host, runs `bun run db:migrate`, then calls the Render deploy hook, so schema always lands before code. `smoke-deploy` (pure `checkDeploy` in `apps/server/src/deploy/`, thin script, workflow) retries `/health` through a cold start, checks CORS from `WEB_ORIGIN`, then validates the data site pointer and bundle with core `BundlePointer` and `parseBundle`. `backup.yml` runs `pg_dump`, encrypts with `age`, and stores a 90-day artifact. The PWA project `perch` builds from GitHub on Pages (after plan D); `perch-data` is created empty with wrangler and filled only by the publisher.
 
 **Tech Stack:** Render blueprint (`render.yaml`), Neon Postgres (pooled and direct URLs), Cloudflare Pages (Git build and direct upload), GitHub Actions (`actions/checkout@v7`, `oven-sh/setup-bun@v2` with Bun 1.3.14, `actions/setup-node@v7` with Node 24, as in `ci.yml`), `age`, `pg_dump`, Zod 4.6, Bun test runner, Node 24 type stripping.
 
@@ -108,7 +108,7 @@ Card-free stack for the Perch survey tooling: Render (API), Neon (Postgres), Clo
 ### 2.2 Neon (Postgres)
 
 1. Go to https://console.neon.com and sign up with the club email. Neon's pricing page says the Free plan needs no credit card.
-2. Create project: name `study-spot`, Postgres 17, a US East AWS region (closest to Render's Virginia region). Free plan: 1 GB per project, 100 compute-hours a month, compute suspends after 5 idle minutes (cannot be turned off), 6 hours of point-in-time restore.
+2. Create project: name `perch`, Postgres 17, a US East AWS region (closest to Render's Virginia region). Free plan: 1 GB per project, 100 compute-hours a month, compute suspends after 5 idle minutes (cannot be turned off), 6 hours of point-in-time restore.
 3. Dashboard > Connect (labels may differ). Copy two strings and store them in the password manager:
    - pooled (host contains `-pooler`): becomes Render `DATABASE_URL`.
    - direct (no `-pooler`): becomes GitHub secret `DATABASE_URL_DIRECT` and `BACKUP_DATABASE_URL`.
@@ -118,7 +118,7 @@ Card-free stack for the Perch survey tooling: Render (API), Neon (Postgres), Clo
 
 ### 2.3 Render (API)
 
-1. Go to https://dashboard.render.com, sign up with the club email, connect GitHub (install the Render app on the `study-spot` repo only).
+1. Go to https://dashboard.render.com, sign up with the club email, connect GitHub (install the Render app on the `perch` repo only).
 2. Free web service terms: spins down after 15 minutes with no inbound traffic, about one minute to wake, 750 free instance hours per workspace per month. Render's free Postgres expires after 30 days; do not use it, the database is Neon.
 3. Dashboard > New > Blueprint > pick the repo. Render reads `render.yaml` and prompts once for every `sync: false` variable. Enter them from section 4. `NODE_VERSION=24` is already in the file (Node 24 is needed for type stripping).
 4. After the first deploy, open the service page and copy the real URL from the header (it may carry a suffix if the name was taken). That value is `API_BASE_URL`.
@@ -134,19 +134,19 @@ Card-free stack for the Perch survey tooling: Render (API), Neon (Postgres), Clo
    ```bash
    export CLOUDFLARE_ACCOUNT_ID=<your account id>
    export CLOUDFLARE_API_TOKEN=<token from section 5>
-   npx wrangler pages project create study-spot-data --production-branch main
+   npx wrangler pages project create perch-data --production-branch main
    ```
 
-   Copy the project's real `*.pages.dev` hostname from Workers & Pages > study-spot-data. That origin is `DATA_BASE_URL`.
-4. The PWA project `study-spot` is created later, after plan D, from Git (section 9). Never create it with direct upload.
+   Copy the project's real `*.pages.dev` hostname from Workers & Pages > perch-data. That origin is `DATA_BASE_URL`.
+4. The PWA project `perch` is created later, after plan D, from Git (section 9). Never create it with direct upload.
 
 ## 3. Values to record
 
 | Name | Where it comes from | Secret |
 |---|---|---|
 | `API_BASE_URL` | Render service page header | no |
-| `WEB_ORIGIN` | `study-spot` project's `*.pages.dev` origin, no path, no trailing slash | no |
-| `DATA_BASE_URL` | `study-spot-data` project's `*.pages.dev` origin, no trailing slash | no |
+| `WEB_ORIGIN` | `perch` project's `*.pages.dev` origin, no path, no trailing slash | no |
+| `DATA_BASE_URL` | `perch-data` project's `*.pages.dev` origin, no trailing slash | no |
 | `EXPECTED_DB_HOST` | Neon direct host | no |
 | `CF_ACCOUNT_ID` | Cloudflare dashboard URL | no |
 | `DATABASE_URL`, `DATABASE_URL_DIRECT` | Neon Connect dialog | yes |
@@ -167,7 +167,7 @@ Set on Render (from `render.yaml`; secrets are prompted once, then edited under 
 | `PUBLISH_TARGET` | `pages` | `fs` is for local dev and the VPS fallback |
 | `CF_ACCOUNT_ID` | account id | |
 | `CF_API_TOKEN` | Pages edit token | secret |
-| `CF_DATA_PROJECT` | `study-spot-data` | |
+| `CF_DATA_PROJECT` | `perch-data` | |
 | `CAMPUS_ID` | `sbu` | default if unset |
 | `PORT` | set by Render | do not set |
 | `NODE_VERSION` | `24` | Render build setting, not read by the app |
@@ -181,7 +181,7 @@ GitHub, environment `production` secrets: `DATABASE_URL_DIRECT`, `RENDER_DEPLOY_
 Create (owner):
 
 1. Dashboard > Manage Account > API Tokens > Create Token (or My Profile > API Tokens). Under Custom token choose Get started.
-2. Token name `study-spot-publisher`. Permissions: one row, Account > Cloudflare Pages > Edit. Account Resources: Include > the club account only. Optionally set a TTL (for example 12 months) and put a reminder in the club calendar.
+2. Token name `perch-publisher`. Permissions: one row, Account > Cloudflare Pages > Edit. Account Resources: Include > the club account only. Optionally set a TTL (for example 12 months) and put a reminder in the club calendar.
 3. Continue to summary > Create Token. The secret is shown once: put it in the password manager, then in Render as `CF_API_TOKEN`.
 4. Check it: `curl -s -H "Authorization: Bearer $CF_API_TOKEN" https://api.cloudflare.com/client/v4/user/tokens/verify` should print `"status":"active"`. (If an account-owned token is used, verify with `.../accounts/$CF_ACCOUNT_ID/tokens/verify`.)
 
@@ -231,13 +231,13 @@ Actions > migrate starts, waits for a reviewer, then: host guard, `db:migrate`, 
 
 ## 9. PWA on Cloudflare Pages (after plan D)
 
-Create `study-spot` from Git, never direct upload:
+Create `perch` from Git, never direct upload:
 
 1. Workers & Pages > Create application > Pages > Import an existing Git repository (labels may differ) > pick the repo, production branch `main`.
 2. Build settings:
    - Framework preset: None.
    - Root directory: leave empty (repo root, so Bun workspaces resolve `packages/*`).
-   - Build command: `bun install --frozen-lockfile && bun run --filter '@study-spot/web' build`
+   - Build command: `bun install --frozen-lockfile && bun run --filter '@perch/web' build`
    - Build output directory: `apps/web/dist`
 3. Settings > Variables and secrets, for Production and Preview: `BUN_VERSION=1.3.14`, `NODE_VERSION=24`, `VITE_API_BASE_URL=<API_BASE_URL>`, `VITE_DATA_BASE_URL=<DATA_BASE_URL>`. The Pages v3 image ships Bun 1.2.15 by default, so pinning is required.
 4. After the first build, copy the production origin into `WEB_ORIGIN` on Render (Environment tab) and in the repo variable `WEB_ORIGIN`, then redeploy the API with the deploy hook.
@@ -337,7 +337,7 @@ git commit -m "docs: add ops runbook for deploy, backup, and recovery"
 **Files:** none in the repo. Output: the values in `docs/ops.md` section 3 stored in the password manager, plus GitHub variables and environments.
 
 **Interfaces:**
-- Produces: accounts, Neon project, Cloudflare token and empty `study-spot-data` project, GitHub environments `production` and `backup`, variables `EXPECTED_DB_HOST`, `PG_MAJOR`, `BACKUP_AGE_RECIPIENT`, secrets `DATABASE_URL_DIRECT`, `BACKUP_DATABASE_URL`. Render service and `RENDER_DEPLOY_HOOK_URL` come in Task 7 (they need `render.yaml`).
+- Produces: accounts, Neon project, Cloudflare token and empty `perch-data` project, GitHub environments `production` and `backup`, variables `EXPECTED_DB_HOST`, `PG_MAJOR`, `BACKUP_AGE_RECIPIENT`, secrets `DATABASE_URL_DIRECT`, `BACKUP_DATABASE_URL`. Render service and `RENDER_DEPLOY_HOOK_URL` come in Task 7 (they need `render.yaml`).
 - Consumes: `docs/ops.md` (Task 1).
 
 This is manual work, about 30 minutes plus Cloudflare's possible 48 hour wait. Start it as soon as plan A merges, or earlier: nothing here needs code. An agent cannot do these steps.
@@ -347,7 +347,7 @@ This is manual work, about 30 minutes plus Cloudflare's possible 48 hour wait. S
 - [ ] **Step 3: OWNER, Neon.** Follow section 2.2 steps 1 to 6. Record `EXPECTED_DB_HOST`.
 - [ ] **Step 4: OWNER, Render account only.** Sign up and connect GitHub (section 2.3 steps 1 and 2). Do not create the service yet.
 - [ ] **Step 5: OWNER, GitHub.** Section 2.1 steps 1 to 3. Then Settings > Secrets and variables > Actions > Variables > New repository variable: `EXPECTED_DB_HOST`, `PG_MAJOR=17`. Environment `production` > Add environment secret: `DATABASE_URL_DIRECT`. Environment `backup` > Add environment secret: `BACKUP_DATABASE_URL`.
-- [ ] **Step 6: OWNER, Cloudflare token and data project.** Section 5 create steps 1 to 4, then section 2.4 step 3. Expected last line of wrangler: `Successfully created the 'study-spot-data' project.` Record `DATA_BASE_URL` (the real `*.pages.dev` origin) as a repo variable.
+- [ ] **Step 6: OWNER, Cloudflare token and data project.** Section 5 create steps 1 to 4, then section 2.4 step 3. Expected last line of wrangler: `Successfully created the 'perch-data' project.` Record `DATA_BASE_URL` (the real `*.pages.dev` origin) as a repo variable.
 - [ ] **Step 7: OWNER, backup key.** Section 10 one-time setup, then set repo variable `BACKUP_AGE_RECIPIENT`.
 - [ ] **Step 8: OWNER, second admins.** Invite them on all four services. Record any service that paywalls a seat in `docs/ops.md` section 11.
 - [ ] **Step 9: Verify.** Check each item and tick it: both environments exist and show the `main` and `v*` rules; the variables list shows `EXPECTED_DB_HOST`, `PG_MAJOR`, `BACKUP_AGE_RECIPIENT`, `DATA_BASE_URL`; `curl` token verify prints `"status":"active"`. No commit.
@@ -360,7 +360,7 @@ This is manual work, about 30 minutes plus Cloudflare's possible 48 hour wait. S
 - Create: `render.yaml`, `apps/server/test/deploy.test.ts`
 
 **Interfaces:**
-- Produces: blueprint service `study-spot-api`; a test that keeps the blueprint's env keys equal to `apps/server/src/env.ts` and the secrets flagged `sync: false`.
+- Produces: blueprint service `perch-api`; a test that keeps the blueprint's env keys equal to `apps/server/src/env.ts` and the secrets flagged `sync: false`.
 - Consumes: `Env` (plan A Task 1).
 
 - [ ] **Step 1: Write the failing test**
@@ -436,7 +436,7 @@ Schema checked against https://render.com/docs/blueprint-spec: `autoDeployTrigge
 ```yaml
 services:
   - type: web
-    name: study-spot-api
+    name: perch-api
     runtime: node
     plan: free
     region: virginia
@@ -463,7 +463,7 @@ services:
       - key: CF_API_TOKEN
         sync: false
       - key: CF_DATA_PROJECT
-        value: "study-spot-data"
+        value: "perch-data"
       - key: CAMPUS_ID
         value: "sbu"
 ```
@@ -501,14 +501,14 @@ git commit -m "build: add render blueprint for the api service"
 
 ```ts
 import { expect, test } from "bun:test";
-import { buildBundle } from "@study-spot/db";
-import { seed } from "@study-spot/db/seed";
-import { createTestDb } from "@study-spot/db/testing";
+import { buildBundle } from "@perch/db";
+import { seed } from "@perch/db/seed";
+import { createTestDb } from "@perch/db/testing";
 import { type CheckResult, checkDeploy, type FetchLike } from "../src/deploy/check.ts";
 
-const API = "https://study-spot-api.onrender.com";
-const WEB = "https://study-spot.pages.dev";
-const DATA = "https://study-spot-data.pages.dev";
+const API = "https://perch-api.onrender.com";
+const WEB = "https://perch.pages.dev";
+const DATA = "https://perch-data.pages.dev";
 const HASH = "0123456789abcdef";
 
 const db = await createTestDb();
@@ -658,7 +658,7 @@ Expected: FAIL: `Cannot find module '../src/deploy/check.ts'`.
 `apps/server/src/deploy/check.ts`:
 
 ```ts
-import { BundlePointer, parseBundle } from "@study-spot/core";
+import { BundlePointer, parseBundle } from "@perch/core";
 import { z } from "zod";
 
 export type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
@@ -1212,7 +1212,7 @@ git commit -m "ci: add weekly encrypted database backup"
 **Files:** none new. Pushes the merged work from Tasks 1 to 6 and wires the secrets.
 
 **Interfaces:**
-- Produces: a running `study-spot-api` on Render, a migrated Neon database, a first admin, a first data site deployment, a green smoke.
+- Produces: a running `perch-api` on Render, a migrated Neon database, a first admin, a first data site deployment, a green smoke.
 - Consumes: Tasks 1 to 6 merged to `main`; Task 2 values.
 
 - [ ] **Step 1: Push and confirm CI.** Run: `git push origin main`. Expected: the `ci` workflow passes (the existing jobs plus `deploy.test.ts`, `check.test.ts`, `dbHost.test.ts` in `bun test`).
@@ -1240,12 +1240,12 @@ Expected: `access-control-allow-origin: <WEB_ORIGIN>` once `WEB_ORIGIN` is corre
 **Files:** none new (docs already in `docs/ops.md` section 9). If plan D named the web package or env vars differently, edit `docs/ops.md` section 9 and this task to match and commit as `docs: align pages build settings with the web app`.
 
 **Interfaces:**
-- Consumes: `apps/web` from plan D with package name `@study-spot/web`, output `apps/web/dist`, and env vars `VITE_API_BASE_URL`, `VITE_DATA_BASE_URL` read from `import.meta.env`.
-- Produces: the `study-spot` Pages project and a real `WEB_ORIGIN`.
+- Consumes: `apps/web` from plan D with package name `@perch/web`, output `apps/web/dist`, and env vars `VITE_API_BASE_URL`, `VITE_DATA_BASE_URL` read from `import.meta.env`.
+- Produces: the `perch` Pages project and a real `WEB_ORIGIN`.
 
-- [ ] **Step 1: Verify the build locally from the repo root.** Run: `VITE_API_BASE_URL=https://example.invalid VITE_DATA_BASE_URL=https://example.invalid bun install --frozen-lockfile && bun run --filter '@study-spot/web' build && ls apps/web/dist/index.html`. Expected: the build succeeds and the file exists. If the filter name differs, use the package name from `apps/web/package.json`.
+- [ ] **Step 1: Verify the build locally from the repo root.** Run: `VITE_API_BASE_URL=https://example.invalid VITE_DATA_BASE_URL=https://example.invalid bun install --frozen-lockfile && bun run --filter '@perch/web' build && ls apps/web/dist/index.html`. Expected: the build succeeds and the file exists. If the filter name differs, use the package name from `apps/web/package.json`.
 - [ ] **Step 2: Check the app reads the agreed names.** Run: `grep -rn "VITE_API_BASE_URL\|VITE_DATA_BASE_URL" apps/web/src | head`. Expected: both names appear. If not, stop and fix in plan D's code (this plan fixes the contract names).
-- [ ] **Step 3: OWNER, create `study-spot` from Git.** `docs/ops.md` section 9 steps 1 to 3. Expected: first build log shows Bun 1.3.14 and `apps/web/dist` deployed.
+- [ ] **Step 3: OWNER, create `perch` from Git.** `docs/ops.md` section 9 steps 1 to 3. Expected: first build log shows Bun 1.3.14 and `apps/web/dist` deployed.
 - [ ] **Step 4: OWNER, fix `WEB_ORIGIN` everywhere.** Copy the production `*.pages.dev` origin. Update Render env `WEB_ORIGIN`, the repo variable `WEB_ORIGIN`, and the Render service via the deploy hook: `curl -fsS -X POST "<RENDER_DEPLOY_HOOK_URL>"`. Expected: HTTP 200 or 202 and a new deploy on the Events tab.
 - [ ] **Step 5: Run the smoke.** Actions > smoke-deploy > Run workflow. Expected: `deploy smoke ok: <n> spots, bundle <hash>, health after <k> attempt(s)`. A `pointer` failure means nothing is published yet: sign in as admin, publish (`POST /admin/publish` via the admin screen), and rerun.
 - [ ] **Step 6: Check the installed PWA's invite route works on the Pages origin.** Open `<WEB_ORIGIN>/invite/test` in a browser. Expected: the app shell loads (not a Pages 404), meaning plan D's SPA fallback is deployed. If it 404s, plan D must add a `public/_redirects` file with `/* /index.html 200`; fix there.
@@ -1360,7 +1360,7 @@ git commit -m "docs: add real-device acceptance runbook for phase 2a"
 - [ ] **Step 1: Append decision 19.** In `docs/context/overview.md`, directly after the line starting `18. Outbox requirements`, add:
 
 ```markdown
-19. Deploy and ops (2026-10-04), detail in `docs/superpowers/plans/2026-10-04-surveyor-2a-deploy.md` and `docs/ops.md`: Render blueprint with `autoDeployTrigger: "off"`; releases are tag pushes handled by `migrate.yml` (host guard, `db:migrate`, deploy hook, smoke) so schema lands before code and migrations must be additive; Render uses the Neon pooled URL, migrations and dumps use the direct URL (`DATABASE_URL_DIRECT`), both with `sslmode=require`; backups are weekly `pg_dump` encrypted with `age` and stored as a 90-day GitHub Actions artifact (public repo, so encryption is mandatory; chosen over a dump in a private repo for no extra repo, no history growth, and automatic expiry; R2 stays rejected for needing a card); web env vars are `VITE_API_BASE_URL` and `VITE_DATA_BASE_URL`; `study-spot-data` is a direct-upload project created with wrangler, `study-spot` is Git-connected; no keep-alive pinger in v0; card and second-seat requirements are checked at sign-up and recorded in `docs/ops.md`.
+19. Deploy and ops (2026-10-04), detail in `docs/superpowers/plans/2026-10-04-surveyor-2a-deploy.md` and `docs/ops.md`: Render blueprint with `autoDeployTrigger: "off"`; releases are tag pushes handled by `migrate.yml` (host guard, `db:migrate`, deploy hook, smoke) so schema lands before code and migrations must be additive; Render uses the Neon pooled URL, migrations and dumps use the direct URL (`DATABASE_URL_DIRECT`), both with `sslmode=require`; backups are weekly `pg_dump` encrypted with `age` and stored as a 90-day GitHub Actions artifact (public repo, so encryption is mandatory; chosen over a dump in a private repo for no extra repo, no history growth, and automatic expiry; R2 stays rejected for needing a card); web env vars are `VITE_API_BASE_URL` and `VITE_DATA_BASE_URL`; `perch-data` is a direct-upload project created with wrangler, `perch` is Git-connected; no keep-alive pinger in v0; card and second-seat requirements are checked at sign-up and recorded in `docs/ops.md`.
 ```
 
 - [ ] **Step 2: Check the roadmap.** Run: `grep -n -i "deploy\|ops.md\|render" docs/context/roadmap.md`. If a line lists deploy or ops as open for 2a, mark it done in the same style as its neighbours.
@@ -1379,6 +1379,6 @@ git commit -m "docs: record deploy and ops decisions"
 
 - `docs/ops.md` lets someone with no context redeploy the stack (acceptance criterion 6, proven in Task 9 step 7).
 - `render.yaml`, `migrate.yml`, `smoke-deploy.yml`, `backup.yml` exist; the 20 new tests pass in `bun test` and in CI.
-- Production has a migrated Neon database, a healthy Render service, an `age`-encrypted backup artifact that has been restored once, and `study-spot-data` filled by the publisher.
+- Production has a migrated Neon database, a healthy Render service, an `age`-encrypted backup artifact that has been restored once, and `perch-data` filled by the publisher.
 - Actions > smoke-deploy is green, and the Task 9 results table has a row per phone.
 - Commits: 6 for tasks 1, 3, 4, 5, 6, 10 and one for task 9, plus the optional fixes named in tasks 7 and 8, each passing the gate. Tasks 2 and 7 are owner and ops work with no commit.
