@@ -5,7 +5,7 @@
  *
  * Unlike seed/data.ts (SAMPLE data), these are meant to be real. Terms come
  * from the SBU Registrar calendars, coordinates from OpenStreetMap via
- * Nominatim. Two buildings are UNCONFIRMED, see the comments below.
+ * Nominatim. Several entries are UNCONFIRMED, see the comments below.
  */
 export const BOOTSTRAP_CAMPUS = {
   id: "sbu",
@@ -186,4 +186,47 @@ export const BOOTSTRAP_BUILDINGS = [
     lat: 40.9073085,
     lng: -73.1092909,
   },
+  // Residence quad community centers. "RCC" is not an SBU term; names below are from Campus Residences.
+  {
+    id: "roosevelt-rcc",
+    campus_id: "sbu",
+    name: "Alan S. deVries Center",
+    lat: 40.9121593,
+    lng: -73.1299618,
+  },
+  // UNCONFIRMED: name is official; point is OSM's Tabler Center for Arts, Culture, and Humanities, not verified to be the same building
+  {
+    id: "tabler-rcc",
+    campus_id: "sbu",
+    name: "Tabler Community Center",
+    lat: 40.9098669,
+    lng: -73.127097,
+  },
+  // UNCONFIRMED: name is official; no OSM match, point is the Roth Quad centre
+  {
+    id: "roth-rcc",
+    campus_id: "sbu",
+    name: "Roth Community Center",
+    lat: 40.911359,
+    lng: -73.123898,
+  },
+  // UNCONFIRMED: name is official; point is OSM's Benedict College (H Quad), not verified to hold the center
+  {
+    id: "h-rcc",
+    campus_id: "sbu",
+    name: "Benedict Community Center",
+    lat: 40.9195968,
+    lng: -73.1186016,
+  },
+  // UNCONFIRMED: SBU says it is in Gray Hall; no OSM match, point is Gray College
+  {
+    id: "mendelsohn-rcc",
+    campus_id: "sbu",
+    name: "Mendelsohn Center",
+    lat: 40.9177462,
+    lng: -73.1212657,
+  },
+  // UNCONFIRMED: SBU names it (attached to Building E, area office); no OSM match, point is the West Apartments centre
+  { id: "west-rcc", campus_id: "sbu", name: "West E Commons", lat: 40.9124569, lng: -73.1346847 },
+  { id: "chapin-rcc", campus_id: "sbu", name: "Chapin Commons", lat: 40.9080987, lng: -73.1102916 },
 ];
