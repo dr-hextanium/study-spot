@@ -112,7 +112,7 @@ export function Browse() {
       </div>
       <p className="field__helper browse__caption">{b.view.caption}</p>
 
-      {b.prefs.view === "map" ? (
+      {shown.rows.length > 0 && b.prefs.view === "map" ? (
         <BrowseMap view={shown} from={building} />
       ) : shown.rows.length === 0 ? (
         <div className="browse__empty">
