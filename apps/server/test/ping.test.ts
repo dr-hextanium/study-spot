@@ -452,3 +452,77 @@ test("privacy: a request logged by the server carries no address or forwarded he
   expect(out).not.toContain("203.0.113.51");
   expect(out).not.toContain("remoteAddress");
 });
+
+/** One ping a minute for `minutes`, moving the clock and the timers together. */
+async function steadyPings(
+  h: ReturnType<typeof harness>,
+  minutes: number,
+  onMinute?: (m: number) => void,
+) {
+  for (let m = 1; m <= minutes; m += 1) {
+    h.counter.add(SPOT_A);
+    h.clock.advance(MIN);
+    h.timers.advance(MIN);
+    await tick();
+    onMinute?.(m);
+  }
+}
+
+test("continuous pings never starve the flush, even across a failed one", async () => {
+  const h = harness({ fail: true });
+  let failedAt = 0;
+  let okAt = 0;
+  await steadyPings(h, 90, (m) => {
+    if (h.logs.length > 0 && failedAt === 0) {
+      failedAt = m;
+      h.state.fail = false;
+    }
+    if (h.batches.length > 0 && okAt === 0) okAt = m;
+  });
+  // The 60-minute cap fires despite a ping every minute, and fails.
+  expect(failedAt).toBe(60);
+  // Backing off does not push the idle timer back: the retry lands 10 minutes later.
+  expect(okAt).toBe(70);
+});
+
+test("after a failed flush, steady pings do not push the retry back", async () => {
+  const h = harness();
+  h.state.fail = true;
+  h.counter.add(SPOT_A);
+  await h.counter.flushNow();
+  expect(h.logs).toEqual(["pick flush failed"]);
+  h.state.fail = false;
+  await steadyPings(h, 9);
+  expect(h.batches).toHaveLength(0);
+  await steadyPings(h, 1);
+  expect(h.batches).toHaveLength(1);
+});
+
+test("the retained-key cap drops the oldest hour, not the first inserted", async () => {
+  const clock = testClock();
+  const batches: PingRow[][] = [];
+  let down = true;
+  const counter = createPingCounter({
+    clock,
+    timers: manualTimers(),
+    maxRetainedKeys: 2,
+    maxKeys: 1000,
+    flush: async (rows) => {
+      if (down) throw new Error("down");
+      batches.push(rows);
+    },
+  });
+  clock.advance(2 * 60 * MIN);
+  counter.add(SPOT_A); // newest hour, inserted first
+  clock.advance(-2 * 60 * MIN);
+  counter.add(SPOT_A); // oldest hour
+  clock.advance(60 * MIN);
+  counter.add(SPOT_A); // middle hour
+  await counter.flushNow();
+  down = false;
+  await counter.flushNow();
+  expect((batches[0] ?? []).map((r) => r.at).sort()).toEqual([
+    "2026-10-13T19:00:00.000Z",
+    "2026-10-13T20:00:00.000Z",
+  ]);
+});

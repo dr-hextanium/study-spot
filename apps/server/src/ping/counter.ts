@@ -69,12 +69,19 @@ export function createPingCounter(deps: PingCounterDeps): PingCounter {
     else counts.set(key, { spot_id: spotId, at, count });
   }
 
+  /** Over the cap, drops the keys of the oldest hours first (ties: first inserted). */
   function trim(): void {
-    while (counts.size > maxRetained) {
-      const oldest = counts.keys().next();
-      if (oldest.done) break;
-      counts.delete(oldest.value);
-    }
+    const extra = counts.size - maxRetained;
+    if (extra <= 0) return;
+    const oldestFirst = [...counts.entries()].sort(([, a], [, b]) =>
+      a.at < b.at ? -1 : a.at > b.at ? 1 : 0,
+    );
+    for (const [key] of oldestFirst.slice(0, extra)) counts.delete(key);
+  }
+
+  function armMaxAge(): void {
+    cancelMaxAge?.();
+    cancelMaxAge = deps.timers.after(maxAgeMs, () => void flushNow());
   }
 
   async function flushNow(): Promise<void> {
@@ -86,8 +93,8 @@ export function createPingCounter(deps: PingCounterDeps): PingCounter {
       await deps.flush(rows);
       backingOff = false;
     } catch {
-      // Keep the counts, oldest first, and try again when the idle timer fires. The error
-      // body is never logged.
+      // Keep the counts and retry when the idle timer fires, with the 60-minute cap re-armed
+      // so steady pings cannot starve the retry. The error body is never logged.
       const newer = counts;
       counts = new Map();
       for (const r of rows) merge(r.spot_id, r.at, r.count);
@@ -95,6 +102,7 @@ export function createPingCounter(deps: PingCounterDeps): PingCounter {
       trim();
       backingOff = true;
       armIdle();
+      armMaxAge();
       log("pick flush failed");
     }
   }
@@ -102,17 +110,16 @@ export function createPingCounter(deps: PingCounterDeps): PingCounter {
   return {
     add(spotId) {
       const hour = Math.floor(deps.clock.now().getTime() / HOUR_MS) * HOUR_MS;
-      const wasEmpty = counts.size === 0;
       merge(spotId, new Date(hour).toISOString(), 1);
       if (backingOff) trim();
       else if (counts.size >= maxKeys) {
         void flushNow();
         return;
       }
-      if (wasEmpty && cancelMaxAge === null) {
-        cancelMaxAge = deps.timers.after(maxAgeMs, () => void flushNow());
-      }
-      armIdle();
+      // The cap runs from the first unflushed ping and is never pushed back. While backing
+      // off the idle timer is not pushed back either, or steady pings would starve it.
+      if (cancelMaxAge === null) armMaxAge();
+      if (!backingOff) armIdle();
     },
     flushNow,
     pending: () => [...counts.values()].reduce((n, r) => n + r.count, 0),

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { parseEnv } from "../src/env.ts";
+import { Env, parseEnv } from "../src/env.ts";
 
 const fsEnv = {
   DATABASE_URL: "postgres://u:p@localhost:5432/db",
@@ -61,4 +61,11 @@ test("TRUST_PROXY_HOPS defaults to 1, allows 0, and rejects junk", () => {
   expect(parseEnv({ ...fsEnv, TRUST_PROXY_HOPS: "-1" }).ok).toBe(false);
   expect(parseEnv({ ...fsEnv, TRUST_PROXY_HOPS: "1.5" }).ok).toBe(false);
   expect(parseEnv({ ...fsEnv, TRUST_PROXY_HOPS: "many" }).ok).toBe(false);
+});
+
+test("an empty TRUST_PROXY_HOPS means the default of 1, not 0", () => {
+  const r = parseEnv({ ...fsEnv, TRUST_PROXY_HOPS: "" });
+  if (!r.ok) throw new Error(r.error);
+  expect(r.env.TRUST_PROXY_HOPS).toBe(1);
+  expect(Env.parse({ ...fsEnv, TRUST_PROXY_HOPS: "" }).TRUST_PROXY_HOPS).toBe(1);
 });
