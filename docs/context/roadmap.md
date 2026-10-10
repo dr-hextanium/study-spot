@@ -45,6 +45,11 @@ Distribution: Honors College channels, RAs and residence hall boards, Undergradu
 - Whether Stony Brook already licenses an occupancy product.
 - Posting rules for QR flyers in the library and academic buildings.
 
+## Next tasks (owner, 2026-10-10)
+
+- **Photo bytes off Neon.** Neon Free is 1 GB per project and every photo (up to 1.5 MB) sits in Postgres, so about 600 to 1,000 photos fill it. Plan: keep pending photos in Postgres only until they are reviewed; once a photo is approved and published to the `perch-data` Pages site, clear its stored bytes in Postgres and keep only the hash, with the image route serving published photos from the data site URL; delete the bytes of rejected photos. R2 stays rejected (it needs a card). Must keep: the authenticated image route for pending photos, honest "Image unavailable", backups (published photos live on the data site, not in the dump), and the Pages limit of 20,000 files per site (plan cleanup before about 15,000 photos). Logic tier (full review).
+- **Campus reference data for production.** The live database has no campus, terms, or buildings. Write a one-time, idempotent bootstrap with campus `sbu` (America/New_York), the real Fall 2026 and Spring 2027 terms with exam weeks from the SBU academic calendar, and real buildings with coordinates from the public campus map. The owner trims the building list before it runs.
+
 ## Risks
 
 - Survey labor recurs every semester and is the single point of failure. Surveyor mode must make it fast.
