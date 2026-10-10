@@ -605,6 +605,84 @@ Strings the built screens needed beyond the sections above: short header forms f
 | student.me.title | Me | 6 | large title |
 | student.data.loading | Loading spots | 20 | skeleton status |
 
+## Student: busyness (honesty: every line says typical, estimate, or no data)
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.busy.typical.empty | Usually empty, typical {when} | 40 | measured slot |
+| student.busy.typical.some | Usually some seats, typical {when} | 44 | |
+| student.busy.typical.filling | Usually filling up, typical {when} | 44 | |
+| student.busy.typical.nearly_full | Usually nearly full, typical {when} | 44 | |
+| student.busy.typical.full | Usually full, typical {when} | 40 | |
+| student.busy.estimate.empty | Empty, estimate | 24 | surveyor estimate |
+| student.busy.estimate.some | Some seats, estimate | 24 | |
+| student.busy.estimate.filling | Filling up, estimate | 24 | |
+| student.busy.estimate.nearly_full | Nearly full, estimate | 24 | |
+| student.busy.estimate.full | Full, estimate | 24 | |
+| student.busy.none | No busyness data yet | 24 | |
+| student.busy.row.empty | Usually empty | 20 | Browse row end; list caption carries "typical" |
+| student.busy.row.some | Usually some seats | 20 | |
+| student.busy.row.filling | Usually filling up | 20 | |
+| student.busy.row.nearly_full | Usually nearly full | 20 | |
+| student.busy.row.full | Usually full | 20 | |
+| student.busy.row_estimate.empty | Empty, est. | 16 | |
+| student.busy.row_estimate.some | Some seats, est. | 16 | |
+| student.busy.row_estimate.filling | Filling up, est. | 16 | |
+| student.busy.row_estimate.nearly_full | Nearly full, est. | 18 | |
+| student.busy.row_estimate.full | Full, est. | 16 | |
+| student.busy.row_none | No data yet | 12 | |
+| student.seat.likely | Likely seats | 16 | P(seat) >= 0.7 |
+| student.seat.tight | Might be tight | 16 | >= 0.4 |
+| student.seat.unlikely | Probably full | 16 | below 0.4 |
+
+## Student: pick card and data age
+
+| id | text | max chars | notes |
+|---|---|---|---|
+| student.pick.place | {building} · Floor {floor} | 44 | |
+| student.pick.walk | {minutes} min walk | 14 | |
+| student.pick.walk_here | In this building | 18 | walk 0 |
+| student.pick.closes_in | Closes in {minutes} min | 22 | under an hour |
+| student.pick.open_till | Open till {closes} | 20 | |
+| student.pick.open_all_day | Open all day | 14 | 20 h or more left |
+| student.reason.silent | Silent | 14 | |
+| student.reason.quiet | Quiet | 14 | |
+| student.reason.talking | Talking is fine | 18 | |
+| student.reason.outlets | Outlets at most seats | 22 | |
+| student.reason.carrels | Carrels | 14 | |
+| student.reason.small_tables | Small tables | 14 | |
+| student.reason.whiteboard | Whiteboard | 14 | |
+| student.reason.calls | Calls OK | 12 | |
+| student.reason.signal | Good signal | 14 | |
+| student.reason.open_late | Open past midnight | 20 | |
+| student.reason.staffed_late | Staffed late | 14 | |
+| student.reason.lit_route | Lit walk home | 14 | |
+| student.reason.late_food | Late food nearby | 18 | |
+| student.reason.group_ok | Group work OK | 16 | |
+| student.reason.natural_light | Natural light | 14 | |
+| student.reason.step_free | Step-free | 12 | |
+| student.reason.elevator | Elevator | 10 | |
+| student.reason.food_ok | Food OK | 10 | |
+| student.reason.drinks_ok | Drinks OK | 10 | |
+| student.reason.big_room | 50+ seats | 10 | |
+| student.reason.printer | Printer nearby | 16 | |
+| student.reason.coffee | Coffee nearby | 16 | |
+| student.lock.building | Residents of {scope} only | 40 | |
+| student.lock.quad | Residents of {scope} only | 40 | |
+| student.lock.grad | Grad students only | 20 | |
+| student.lock.department | {scope} only | 36 | |
+| student.lock.department_unknown | One department only | 20 | |
+| student.lock.residents_unknown | Residents only | 16 | scope missing |
+| student.lock.unverified | Access not confirmed yet | 26 | |
+| student.data.today | Spots updated today | 24 | meta line |
+| student.data.yesterday | Spots updated yesterday | 28 | |
+| student.data.days | Spots updated {days} days ago | 32 | |
+| student.data.old | These spots are {days} days old. Hours and busyness may have changed. | 80 | note banner over 3 days |
+| student.data.offline | Offline. Using spots saved on this phone. | 48 | |
+| student.data.unavailable | Can't load spots offline yet. Open once with signal. | 60 | spec wording |
+| student.data.update_required | Update Perch to load spots. | 32 | spec wording |
+| student.data.update_available | A newer Perch reads newer spots. Reload to update. | 60 | |
+
 ## Pending questions
 
 - Floor naming at Stony Brook (e.g. "Lower level" vs "B") should come from the first survey walk; the floor field is free text for now.
