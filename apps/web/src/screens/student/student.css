@@ -47,15 +47,20 @@
   list-style: none;
 }
 
-.pick-card__actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-xs);
+.pick-card__go {
   margin-top: var(--space-sm);
 }
 
-.pick-card__actions > .btn--primary {
-  grid-column: 1 / -1;
+/* Two quiet buttons side by side; on a very narrow phone they wrap to full width. */
+.pick-card__more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+.pick-card__more > .btn {
+  flex: 1 1 auto;
 }
 
 /* An alternate's sub line carries the busyness basis ("typical", "estimate"): wrap, never cut. */

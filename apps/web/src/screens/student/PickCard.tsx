@@ -49,25 +49,26 @@ export function PickCard(props: {
           </ul>
         )}
         {view.checked === null ? null : <span className="keep__next">{view.checked}</span>}
-        <div className="pick-card__actions">
-          <a
-            className="btn btn--primary btn--wide"
-            href={props.directions}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={props.onDirections}
-          >
-            <Icon icon={Navigation} />
-            <span className="btn__label">{t("student.pick.directions")}</span>
-          </a>
-          <Button variant="quiet" icon={<Icon icon={Shuffle} />} onClick={props.onSomethingElse}>
-            {t("student.pick.something_else")}
-          </Button>
-          <Button variant="quiet" icon={<Icon icon={Sparkles} />} onClick={props.onSurprise}>
-            {t("student.pick.surprise")}
-          </Button>
-        </div>
+        <a
+          className="btn btn--primary btn--wide pick-card__go"
+          href={props.directions}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={props.onDirections}
+        >
+          <Icon icon={Navigation} />
+          <span className="btn__label">{t("student.pick.directions")}</span>
+        </a>
       </article>
+      {/* Changing the pick sits under the card: Directions belongs to this spot, these do not. */}
+      <div className="pick-card__more">
+        <Button variant="quiet" icon={<Icon icon={Shuffle} />} onClick={props.onSomethingElse}>
+          {t("student.pick.something_else")}
+        </Button>
+        <Button variant="quiet" icon={<Icon icon={Sparkles} />} onClick={props.onSurprise}>
+          {t("student.pick.surprise")}
+        </Button>
+      </div>
     </section>
   );
 }
