@@ -5,6 +5,7 @@ import {
   type Clock,
   createBundleStore,
   createOutbox,
+  createPickPing,
   createSessionStore,
   createSurveyApi,
   type GeolocationAdapter,
@@ -12,6 +13,7 @@ import {
   type KeyValueStorage,
   type NetworkStatus,
   type Outbox,
+  type PickPing,
   type Share,
   type SurveyApi,
 } from "@perch/ui-logic";
@@ -29,6 +31,7 @@ import {
   createNetworkStatus,
   createSessionStorage,
   createShare,
+  sendPickPing,
   systemClock,
 } from "../adapters/browser.ts";
 import { createFetch } from "../adapters/fetch.ts";
@@ -81,6 +84,8 @@ export type AppDeps = {
   tab: KeyValueStorage;
   /** Random numbers in [0, 1), injected so picks are testable. */
   rand: () => number;
+  /** Reports a chosen spot to the anonymous pick counter. A no-op unless VITE_PICK_PING=1. */
+  pickPing: PickPing;
 };
 
 /** Thirty days, like a session: the persisted copy outlives a long weekend offline. */
@@ -200,14 +205,16 @@ export function createSurveyPersister(cache: KeyValueCache): Persister {
 const slot: { deps?: AppDeps } = import.meta.hot?.data ?? {};
 
 /** Wires every browser adapter into the shared logic. Safe to call twice: it builds once. */
-export function createAppDeps(env: { apiBaseUrl: string; dataBaseUrl: string }): AppDeps {
+export type AppEnv = { apiBaseUrl: string; dataBaseUrl: string; pickPing: boolean };
+
+export function createAppDeps(env: AppEnv): AppDeps {
   if (slot.deps !== undefined) return slot.deps;
   const deps = buildAppDeps(env);
   slot.deps = deps;
   return deps;
 }
 
-function buildAppDeps(env: { apiBaseUrl: string; dataBaseUrl: string }): AppDeps {
+function buildAppDeps(env: AppEnv): AppDeps {
   const stores = openStores();
   const session = createSessionState(createSessionStore(createLocalStorage()));
   const auth = createAuthState();
@@ -273,5 +280,9 @@ function buildAppDeps(env: { apiBaseUrl: string; dataBaseUrl: string }): AppDeps
     prefs: createLocalStorage(),
     tab: createSessionStorage(),
     rand: Math.random,
+    pickPing: createPickPing(
+      { send: sendPickPing, tab: createSessionStorage(), enabled: env.pickPing },
+      env.apiBaseUrl,
+    ),
   };
 }

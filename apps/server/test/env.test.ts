@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { parseEnv } from "../src/env.ts";
+import { Env, parseEnv } from "../src/env.ts";
 
 const fsEnv = {
   DATABASE_URL: "postgres://u:p@localhost:5432/db",
@@ -49,4 +49,23 @@ test("RENDER_GIT_COMMIT is optional and passed through", () => {
   const set = parseEnv({ ...fsEnv, RENDER_GIT_COMMIT: "abc1234" });
   if (!set.ok) throw new Error(set.error);
   expect(set.env.RENDER_GIT_COMMIT).toBe("abc1234");
+});
+
+test("TRUST_PROXY_HOPS defaults to 1, allows 0, and rejects junk", () => {
+  const ok = parseEnv(fsEnv);
+  if (!ok.ok) throw new Error(ok.error);
+  expect(ok.env.TRUST_PROXY_HOPS).toBe(1);
+  const zero = parseEnv({ ...fsEnv, TRUST_PROXY_HOPS: "0" });
+  if (!zero.ok) throw new Error(zero.error);
+  expect(zero.env.TRUST_PROXY_HOPS).toBe(0);
+  expect(parseEnv({ ...fsEnv, TRUST_PROXY_HOPS: "-1" }).ok).toBe(false);
+  expect(parseEnv({ ...fsEnv, TRUST_PROXY_HOPS: "1.5" }).ok).toBe(false);
+  expect(parseEnv({ ...fsEnv, TRUST_PROXY_HOPS: "many" }).ok).toBe(false);
+});
+
+test("an empty TRUST_PROXY_HOPS means the default of 1, not 0", () => {
+  const r = parseEnv({ ...fsEnv, TRUST_PROXY_HOPS: "" });
+  if (!r.ok) throw new Error(r.error);
+  expect(r.env.TRUST_PROXY_HOPS).toBe(1);
+  expect(Env.parse({ ...fsEnv, TRUST_PROXY_HOPS: "" }).TRUST_PROXY_HOPS).toBe(1);
 });

@@ -43,6 +43,7 @@ if (!parsed.ok) {
 const deps = createAppDeps({
   apiBaseUrl: parsed.env.VITE_API_BASE_URL,
   dataBaseUrl: parsed.env.VITE_DATA_BASE_URL,
+  pickPing: parsed.env.VITE_PICK_PING === "1",
 });
 // A hot reload re-runs this module; reuse the first React root rather than mounting twice.
 const hot: { root?: Root } = import.meta.hot?.data ?? {};

@@ -91,6 +91,9 @@ Set on Render (from `render.yaml`; secrets are prompted once, then edited under 
 | `RENDER_GIT_COMMIT` | set by Render | do not set; reported on `/health` and required by the release smoke. Absent on a VPS, so run the smoke there without `EXPECTED_COMMIT` |
 | `NODE_VERSION` | `24` | Render build setting, not read by the app |
 | `FS_PUBLISH_DIR` | directory | only with `PUBLISH_TARGET=fs` |
+| `TRUST_PROXY_HOPS` | `1` | proxy hops in front of the API whose `x-forwarded-for` entries are trusted; integer 0 to 5, default 1 (Render). Use `0` on the VPS fallback when nothing sits in front, or the number of proxies you run. See the note below |
+
+`TRUST_PROXY_HOPS` decides which address counts as the client, which the pick ping's rate limit (30 per hour per address, in memory only) depends on. The client is the `x-forwarded-for` entry just past the trusted hops, so an entry the client sends itself cannot spoof it. Set too low, every phone shares one bucket (the proxy's address). Set too high, a client can choose its own address. Addresses are never stored or logged: request logs carry only method and url. **Verify on the first deploy** that the rightmost `x-forwarded-for` entry is the client: send two pings a few seconds apart from two different networks, such as home Wi-Fi and a phone on mobile data, and confirm both are counted (more than 30 from one network in an hour should stop counting, while the other network still counts). If Render shows a second proxy in the chain (for example an edge in front), raise the value to 2.
 
 GitHub, repository variables (Settings > Secrets and variables > Actions > Variables): `API_BASE_URL`, `WEB_ORIGIN`, `DATA_BASE_URL`, `EXPECTED_DB_HOST`, `PG_MAJOR` (the Neon Postgres major, `17`), `BACKUP_AGE_RECIPIENT`.
 GitHub, environment `production` secrets: `DATABASE_URL_DIRECT`, `RENDER_DEPLOY_HOOK_URL`. Environment `backup` secret: `BACKUP_DATABASE_URL`.

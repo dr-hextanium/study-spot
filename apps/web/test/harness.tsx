@@ -256,6 +256,8 @@ export type TestApp = {
   cache: MemoryCache;
   /** The session's storage, shared with a second store to act as another tab. */
   storage: MemoryStorage;
+  /** Spot ids the app reported through `deps.pickPing`, in order. */
+  pings: string[];
 };
 
 /** App dependencies on fakes: in-memory storage, the fake server, manual timers. */
@@ -277,6 +279,7 @@ export function testApp(
   const timers = new FakeTimers();
   const clock = mutableClock(opts.now ?? "2026-10-13T18:00:00Z");
   const storage = new MemoryStorage();
+  const pings: string[] = [];
   const session = createSessionState(createSessionStore(storage));
   const me = opts.me === undefined ? ME : opts.me;
   if (me !== null) session.save({ token: TOKEN, surveyor: me });
@@ -321,8 +324,11 @@ export function testApp(
     prefs: new MemoryStorage(),
     tab: new MemoryStorage(),
     rand: opts.rand ?? seededRand(1),
+    pickPing: (spotId) => {
+      pings.push(spotId);
+    },
   };
-  return { deps, server, network, timers, clock, cache, storage };
+  return { deps, server, network, timers, clock, cache, storage, pings };
 }
 
 /**

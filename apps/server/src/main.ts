@@ -47,6 +47,7 @@ const app = await buildApp({
     webOrigin: env.WEB_ORIGIN,
     campusId: env.CAMPUS_ID,
     commit: env.RENDER_GIT_COMMIT ?? null,
+    trustProxyHops: env.TRUST_PROXY_HOPS,
   },
   publisher,
   photos,

@@ -154,3 +154,17 @@ export function createShare(nav: Navigator = navigator): Share {
     },
   };
 }
+
+/**
+ * Sends the pick ping. Fire and forget: no cookies, no preflight (text/plain), survives the
+ * page closing, and a failure is dropped.
+ */
+export function sendPickPing(url: string, body: string): void {
+  void fetch(url, {
+    method: "POST",
+    body,
+    keepalive: true,
+    credentials: "omit",
+    headers: { "content-type": "text/plain" },
+  }).catch(() => {});
+}

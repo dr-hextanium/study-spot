@@ -2,10 +2,14 @@ import { z } from "zod";
 
 const Origin = z.url({ protocol: /^https?$/ }).transform((u) => u.replace(/\/+$/, ""));
 
-/** The build-time contract with the deploy plan: exactly these two names. */
+/**
+ * The build-time contract with the deploy plan. The two origins are required.
+ * VITE_PICK_PING turns the anonymous pick ping on; it is off unless set to "1".
+ */
 export const WebEnv = z.object({
   VITE_API_BASE_URL: Origin,
   VITE_DATA_BASE_URL: Origin,
+  VITE_PICK_PING: z.enum(["0", "1"]).default("0"),
 });
 export type WebEnv = z.infer<typeof WebEnv>;
 

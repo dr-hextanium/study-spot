@@ -15,6 +15,15 @@ const Base = z.object({
   DATA_BASE_URL: z.httpUrl().transform((u) => u.replace(/\/+$/, "")),
   PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
   CAMPUS_ID: z.string().min(1).default("sbu"),
+  /**
+   * Proxy hops in front of the server whose x-forwarded-for entries are trusted. 1 for
+   * Render, 0 for a VPS with no proxy. The client address is the entry just past them.
+   */
+  TRUST_PROXY_HOPS: z.preprocess(
+    // An empty value means unset (the default 1), never 0.
+    (v) => (v === "" ? undefined : v),
+    z.coerce.number().int().min(0).max(5).default(1),
+  ),
   /** Set by Render at build and run time; reported on /health. */
   RENDER_GIT_COMMIT: z.string().min(1).optional(),
 });
