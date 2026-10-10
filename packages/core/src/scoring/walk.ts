@@ -6,7 +6,10 @@ export const STAFFED_DESK_MINUTES = 2;
 /** Extra minutes for stairs or elevators: 1 per floor away from ground. */
 export function floorPenalty(floor: string): number {
   const f = floor.trim().toLowerCase();
-  if (/^(b\b|b\d|basement|ll\b|lower)/.test(f)) return 1;
+  // "B2" is two floors down; a bare "B" or "B0" is one.
+  const below = /^b(\d+)/.exec(f);
+  if (below?.[1] !== undefined) return Math.max(1, Number.parseInt(below[1], 10));
+  if (/^(b\b|basement|ll\b|lower)/.test(f)) return 1;
   if (/^(g\b|ground|main|lobby)/.test(f)) return 0;
   const n = Number.parseInt(f, 10);
   if (Number.isNaN(n)) return 0;

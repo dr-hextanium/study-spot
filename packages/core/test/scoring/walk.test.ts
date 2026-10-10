@@ -9,6 +9,10 @@ test("floor penalty: 1 per floor above ground, basements 1, labels and junk 0", 
   expect(floorPenalty("0")).toBe(0);
   expect(floorPenalty("-1")).toBe(1);
   expect(floorPenalty("B")).toBe(1);
+  expect(floorPenalty("B1")).toBe(1);
+  expect(floorPenalty("B2")).toBe(2);
+  expect(floorPenalty("b3")).toBe(3);
+  expect(floorPenalty("B0")).toBe(1);
   expect(floorPenalty("Basement")).toBe(1);
   expect(floorPenalty("LL")).toBe(1);
   expect(floorPenalty("G")).toBe(0);
