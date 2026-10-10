@@ -138,7 +138,12 @@ test("a saved building missing from the spots says where it starts instead", asy
     PICK_PREFS_KEY,
     JSON.stringify({ ...DEFAULT_PICK_PREFS, from: "torn-down-hall" }),
   );
-  await home(app);
+  const { view } = await home(app);
   expect(screen.getByText("Starting from Melville Library")).toBeTruthy();
   expect(fromRow().textContent).toContain("Melville Library");
+  // The stand-in is saved once, so the note does not come back on the next visit.
+  expect(JSON.parse(app.deps.prefs.getItem(PICK_PREFS_KEY) ?? "{}").from).toBe("melville-library");
+  view.unmount();
+  await home(app);
+  expect(screen.queryByText(/^Starting from/)).toBeNull();
 });

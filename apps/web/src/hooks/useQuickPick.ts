@@ -99,6 +99,8 @@ export function useQuickPick(custom: readonly Preset[]): QuickPick {
   // Written by Me; Home only reads it.
   const [access] = useState<AccessProfile>(() => readAccess(deps.prefs).value);
   const [shown, setShown] = useState<Shown | null>(null);
+  // Set when this visit replaced a saved building that is gone: the note says so once.
+  const [fromNote, setFromNote] = useState(false);
   const bundle = load.phase === "ready" ? load.load.bundle : null;
   const preset = presetById(prefs.presetId, custom);
   const presets = useMemo(() => [...BUILTIN_PRESETS, ...custom], [custom]);
@@ -143,6 +145,19 @@ export function useQuickPick(custom: readonly Preset[]): QuickPick {
     pick ??= topPick(ranks.quick.ranked);
   }
   const primaryId = pick?.primary.spot.id ?? null;
+
+  // A saved building gone from the spots: save the stand-in once, so the next visit starts
+  // there without the note. The note stays for this visit.
+  const standIn = ranks?.quick.fromFallback === true ? ranks.quick.from : null;
+  useEffect(() => {
+    if (standIn === null) return;
+    setFromNote(true);
+    setPrefs((p) => {
+      const fixed = { ...p, from: standIn };
+      writeJson(deps.prefs, PICK_PREFS_KEY, fixed);
+      return fixed;
+    });
+  }, [deps.prefs, standIn]);
   // Each way out is checked by ranking again, so this only runs for an empty pick.
   const empty = useMemo(
     () => (ranks !== null && pick === null ? explainEmpty(ranks.input, ranks.quick) : null),
@@ -164,6 +179,7 @@ export function useQuickPick(custom: readonly Preset[]): QuickPick {
     }
     writeJson(deps.prefs, PICK_PREFS_KEY, merged);
     setPrefs(merged);
+    if (next.from !== undefined) setFromNote(false);
     // A new question gets the top answer; dismissing a note is not a new question.
     if (Object.keys(next).some((k) => k !== "accessNoteDismissed")) setShown(null);
   };
@@ -190,7 +206,7 @@ export function useQuickPick(custom: readonly Preset[]): QuickPick {
     now,
     prefs,
     from: ranks?.quick.from ?? null,
-    fromFallback: ranks?.quick.fromFallback ?? false,
+    fromFallback: fromNote || (ranks?.quick.fromFallback ?? false),
     access,
     presets,
     preset,
