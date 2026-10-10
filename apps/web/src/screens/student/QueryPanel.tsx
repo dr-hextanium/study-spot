@@ -87,9 +87,6 @@ export function QueryPanel(props: { q: QuickPick }) {
           onClick={() => setFromOpen(true)}
         />
       </ul>
-      {q.fromFallback ? (
-        <p className="lede">{t("student.home.from.fallback", { building: fromName })}</p>
-      ) : null}
       <Line icon={Clock} label={t("student.home.time.label")}>
         <FilterChips
           label={t("student.home.time.label")}

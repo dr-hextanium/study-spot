@@ -214,6 +214,37 @@ test("a newer Perch is offered with a reload", async () => {
   expect(screen.getByRole("button", { name: t("student.data.reload") })).toBeTruthy();
 });
 
+test("with every notice on, the pick still comes first and the notes follow it", async () => {
+  const ready = readyBundle();
+  if (ready.phase !== "ready") throw new Error("not ready");
+  const app = testApp({
+    me: null,
+    bundle: {
+      ...ready,
+      load: { ...ready.load, ageDays: 5, updateAvailable: true },
+      checkFailed: true,
+    },
+  });
+  app.deps.prefs.setItem(
+    PICK_PREFS_KEY,
+    JSON.stringify({ ...DEFAULT_PICK_PREFS, from: "torn-down-hall" }),
+  );
+  await home(app);
+  const go = screen.getByRole("link", { name: t("student.pick.directions") });
+  const after = (text: string | RegExp) => {
+    const el = screen.getByText(text);
+    // DOCUMENT_POSITION_FOLLOWING: the note comes after Directions.
+    expect(go.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  };
+  after("These spots are 5 days old. Hours and busyness may have changed.");
+  after("A newer Perch reads newer spots. Reload to update.");
+  after("Starting from Melville Library");
+  // The offline word stays on the one meta line under the title, next to the age.
+  const meta = screen.getByText("Spots updated 5 days ago").closest(".meta");
+  expect(meta?.textContent).toContain("Offline. Using spots saved on this phone.");
+  expect(document.querySelectorAll("main .meta")).toHaveLength(1);
+});
+
 test("no cached spots offline says so, with no pick", async () => {
   await home(testApp({ me: null, bundle: { phase: "unavailable", reason: "offline_no_cache" } }));
   expect(screen.getByText("Can't load spots offline yet. Open once with signal.")).toBeTruthy();

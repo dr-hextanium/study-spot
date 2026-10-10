@@ -10,7 +10,7 @@ import { isIos } from "../../lib/platform.ts";
 import { Banner } from "../../ui/Banner.tsx";
 import { IconButton } from "../../ui/Button.tsx";
 import { Screen } from "../../ui/Screen.tsx";
-import { DataState } from "./DataState.tsx";
+import { DataNotes, DataState } from "./DataState.tsx";
 import { EmptyPick } from "./EmptyPick.tsx";
 import { InstallNote } from "./InstallNote.tsx";
 import { AltRows, PickCard } from "./PickCard.tsx";
@@ -29,6 +29,16 @@ export function Home() {
     if (r === "none") toasts.show(t("student.pick.none_left"));
   };
   const bundle = q.bundle;
+  const fromName = bundle?.buildings.find((b) => b.id === q.from)?.name ?? "";
+  // Under the pick, never above it: on a small phone the pick and Directions come first.
+  const notes = (
+    <>
+      {q.fromFallback ? (
+        <p className="lede">{t("student.home.from.fallback", { building: fromName })}</p>
+      ) : null}
+      <DataNotes state={q.load} />
+    </>
+  );
   const accessIsDefault =
     q.access.residence === DEFAULT_ACCESS.residence &&
     q.access.quad === DEFAULT_ACCESS.quad &&
@@ -56,6 +66,7 @@ export function Home() {
                 onSomethingElse={() => say(q.somethingElse())}
                 onSurprise={() => say(q.surprise())}
               />
+              {notes}
               <AltRows views={q.pick.alternates.map((c) => pickCardView(c, bundle, q.now))} />
               <InstallNote />
             </>
@@ -67,6 +78,7 @@ export function Home() {
               onApply={(next) => q.set(next)}
             />
           ) : null}
+          {q.pick === null ? notes : null}
           {!q.prefs.accessNoteDismissed && accessIsDefault ? (
             <Banner
               tone="note"
