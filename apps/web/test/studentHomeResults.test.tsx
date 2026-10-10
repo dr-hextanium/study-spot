@@ -118,7 +118,11 @@ test("changing the question returns to the top pick", async () => {
   await home();
   await click(t("student.pick.surprise"));
   expect(screen.getByRole("heading", { name: t("student.pick.surprise_heading") })).toBeTruthy();
-  fireEvent.click(screen.getByRole("radio", { name: "2 hr" }));
+  fireEvent.click(
+    within(screen.getByRole("group", { name: t("student.home.time.label") })).getByRole("button", {
+      name: "2 hr",
+    }),
+  );
   expect(screen.getByRole("heading", { name: t("student.pick.heading") })).toBeTruthy();
 });
 
@@ -194,7 +198,7 @@ test("no cached spots offline says so, with no pick", async () => {
   await home(testApp({ me: null, bundle: { phase: "unavailable", reason: "offline_no_cache" } }));
   expect(screen.getByText("Can't load spots offline yet. Open once with signal.")).toBeTruthy();
   expect(document.querySelector(".pick-card")).toBeNull();
-  expect(screen.queryByRole("radio", { name: "1 hr" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "1 hr" })).toBeNull();
 });
 
 test("a bundle too new for this app asks for an update", async () => {

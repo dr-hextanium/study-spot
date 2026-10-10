@@ -15,6 +15,8 @@ type Props = {
   helper?: string | undefined;
   error?: string | undefined;
   icon?: LucideIcon | undefined;
+  /** Keeps the label for screen readers when the screen shows it beside the control. */
+  hideLabel?: boolean;
 };
 
 /** A number with Less and More buttons, and a keypad field for typing it outright. */
@@ -29,6 +31,7 @@ export function Stepper({
   helper,
   error,
   icon,
+  hideLabel = false,
 }: Props) {
   const inputId = useId();
   const labelId = useId();
@@ -61,7 +64,7 @@ export function Stepper({
   };
   return (
     <fieldset className={`field stepper${error === undefined ? "" : " field--error"}`}>
-      <legend className="field__label" id={labelId}>
+      <legend className={`field__label${hideLabel ? " visually-hidden" : ""}`} id={labelId}>
         {icon === undefined ? null : <Icon icon={icon} size={16} />}
         {label}
       </legend>

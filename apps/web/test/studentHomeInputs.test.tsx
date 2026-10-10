@@ -28,11 +28,14 @@ function everything(app: TestApp): string {
 
 const fromRow = () => screen.getByRole("button", { name: /^From/ });
 const presets = () => screen.getByRole("group", { name: t("student.home.preset.label") });
+const times = () => screen.getByRole("group", { name: t("student.home.time.label") });
+const pressed = (group: HTMLElement, name: string) =>
+  within(group).getByRole("button", { name }).getAttribute("aria-pressed");
 
 test("defaults: From Melville Library, 1 hr, Silent solo, no People stepper", async () => {
   await home();
   expect(fromRow().textContent).toContain("Melville Library");
-  expect(screen.getByRole("radio", { name: "1 hr" })).toHaveProperty("checked", true);
+  expect(pressed(times(), "1 hr")).toBe("true");
   expect(
     within(presets()).getByRole("button", { name: "Silent solo" }).getAttribute("aria-pressed"),
   ).toBe("true");
@@ -46,13 +49,13 @@ test("Group shows People at 3; Quick 30 sets 30 min", async () => {
   const people = screen.getByRole("group", { name: t("student.home.group.label") });
   expect(within(people).getByRole("textbox")).toHaveProperty("value", "3");
   fireEvent.click(within(presets()).getByRole("button", { name: "Quick 30" }));
-  expect(screen.getByRole("radio", { name: "30 min" })).toHaveProperty("checked", true);
+  expect(pressed(times(), "30 min")).toBe("true");
   expect(screen.queryByRole("group", { name: t("student.home.group.label") })).toBeNull();
 });
 
 test("choosing 2 hr is saved on this phone", async () => {
   const { app } = await home();
-  fireEvent.click(screen.getByRole("radio", { name: "2 hr" }));
+  fireEvent.click(within(times()).getByRole("button", { name: "2 hr" }));
   expect(stored(app)).toMatchObject({ time: "120" });
 });
 
@@ -125,7 +128,7 @@ test("corrupt saved inputs fall back to the defaults", async () => {
   const app = testApp({ me: null });
   app.deps.prefs.setItem(PICK_PREFS_KEY, '{"time":"forever"');
   await home(app);
-  expect(screen.getByRole("radio", { name: "1 hr" })).toHaveProperty("checked", true);
+  expect(pressed(times(), "1 hr")).toBe("true");
   expect(fromRow().textContent).toContain("Melville Library");
 });
 

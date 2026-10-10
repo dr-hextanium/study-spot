@@ -1,13 +1,19 @@
 import type { BuiltinPresetId, Preset, TimeChoice } from "@perch/core";
 import { type PlainCopyId, t } from "@perch/ui-logic";
-import { BookOpen, ChevronRight, Clock, MapPin, SlidersHorizontal, Users } from "lucide-react";
-import { useState } from "react";
+import {
+  BookOpen,
+  ChevronRight,
+  Clock,
+  type LucideIcon,
+  MapPin,
+  SlidersHorizontal,
+  Users,
+} from "lucide-react";
+import { type ReactNode, useState } from "react";
 import type { QuickPick } from "../../hooks/useQuickPick.ts";
-import { Button } from "../../ui/Button.tsx";
 import { FilterChips } from "../../ui/FilterChips.tsx";
 import { Icon } from "../../ui/Icon.tsx";
 import { Row } from "../../ui/Row.tsx";
-import { Segmented } from "../../ui/Segmented.tsx";
 import { Stepper } from "../../ui/Stepper.tsx";
 import { FiltersSheet } from "./FiltersSheet.tsx";
 import { FromSheet } from "./FromSheet.tsx";
@@ -38,7 +44,27 @@ export function presetLabel(p: Preset): string {
   return isBuiltin(p.id) ? t(PRESET_LABEL[p.id]) : (p.name ?? p.id);
 }
 
-/** Home's question, top to bottom: from where, for how long, what for, how many, and more. */
+/**
+ * One line of the question: the label on the left, its control on the right. The control's
+ * own legend names it for assistive tech, so this visible label is hidden from them.
+ */
+function Line(props: { icon: LucideIcon; label: string; children: ReactNode }) {
+  return (
+    <div className="query__line">
+      <span className="query__label" aria-hidden="true">
+        <Icon icon={props.icon} />
+        {props.label}
+      </span>
+      <div className="query__control">{props.children}</div>
+    </div>
+  );
+}
+
+/**
+ * Home's question, one compact line each: from where, for how long, what for, how many
+ * (group presets only), and more filters. Short enough that the pick shows on a phone
+ * without scrolling.
+ */
 export function QueryPanel(props: { q: QuickPick }) {
   const { q } = props;
   const [fromOpen, setFromOpen] = useState(false);
@@ -64,49 +90,48 @@ export function QueryPanel(props: { q: QuickPick }) {
       {q.fromFallback ? (
         <p className="lede">{t("student.home.from.fallback", { building: fromName })}</p>
       ) : null}
-      <Segmented
-        label={t("student.home.time.label")}
-        icon={Clock}
-        options={TIME_OPTIONS}
-        value={q.prefs.time}
-        onChange={(time) => q.set({ time })}
-      />
-      <div className="field">
-        {/* The chips' fieldset names the group for assistive tech; this is its visible label. */}
-        <p className="field__label" aria-hidden="true">
-          <Icon icon={BookOpen} size={16} />
-          {t("student.home.preset.label")}
-        </p>
+      <Line icon={Clock} label={t("student.home.time.label")}>
+        <FilterChips
+          label={t("student.home.time.label")}
+          options={TIME_OPTIONS}
+          value={q.prefs.time}
+          onChange={(time) => q.set({ time })}
+        />
+      </Line>
+      <Line icon={BookOpen} label={t("student.home.preset.label")}>
         <FilterChips
           label={t("student.home.preset.label")}
           options={q.presets.map((p) => ({ value: p.id, label: presetLabel(p) }))}
           value={q.preset.id}
           onChange={(presetId) => q.set({ presetId })}
         />
-      </div>
+      </Line>
       {q.preset.groupDefault === null ? null : (
-        <Stepper
-          label={t("student.home.group.label")}
-          icon={Users}
-          min={2}
-          max={12}
-          value={q.prefs.group}
-          onChange={(group) => {
-            if (group !== null) q.set({ group });
-          }}
-        />
+        <Line icon={Users} label={t("student.home.group.label")}>
+          <Stepper
+            label={t("student.home.group.label")}
+            hideLabel
+            min={2}
+            max={12}
+            value={q.prefs.group}
+            onChange={(group) => {
+              if (group !== null) q.set({ group });
+            }}
+          />
+        </Line>
       )}
-      <div className="query__more">
-        <Button
-          variant="quiet"
-          icon={<Icon icon={SlidersHorizontal} />}
+      <ul className="row-list">
+        <Row
+          title={
+            extraCount > 0
+              ? t("student.home.filters.button_count", { count: extraCount })
+              : t("student.home.filters.button")
+          }
+          lead={<Icon icon={SlidersHorizontal} />}
+          end={<Icon icon={ChevronRight} />}
           onClick={() => setFiltersOpen(true)}
-        >
-          {extraCount > 0
-            ? t("student.home.filters.button_count", { count: extraCount })
-            : t("student.home.filters.button")}
-        </Button>
-      </div>
+        />
+      </ul>
       <FromSheet
         open={fromOpen}
         buildings={buildings}

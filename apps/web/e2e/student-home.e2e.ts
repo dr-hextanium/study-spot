@@ -53,3 +53,39 @@ test("first open offline with nothing cached says so", async ({ browser }) => {
   ).toBeVisible();
   await context.close();
 });
+
+test("on a 375 by 667 phone the pick's name and busyness show without scrolling", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto("/");
+  const busy = page.locator(".pick-card__busy");
+  // Fresh storage: the access note and the data age line are both on screen.
+  await expect(page.getByText("In campus housing or a grad student? Set your access.")).toHaveCount(
+    1,
+  );
+  const aboveTabBar = async () => {
+    await expect(busy).toBeVisible();
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      window.scrollTo(0, 0);
+    });
+    const box = await page.evaluate(() => {
+      const name = document.querySelector(".pick-card__name")?.getBoundingClientRect();
+      const line = document.querySelector(".pick-card__busy")?.getBoundingClientRect();
+      const bar = document.querySelector(".tabbar")?.getBoundingClientRect();
+      return { name: name?.top ?? -1, busy: line?.bottom ?? -1, bar: bar?.top ?? -1 };
+    });
+    expect(box.name).toBeGreaterThan(0);
+    expect(box.bar).toBeGreaterThan(0);
+    expect(box.busy).toBeLessThanOrEqual(box.bar);
+  };
+  await aboveTabBar();
+  // A group preset adds People, and the card still starts above the fold.
+  await page
+    .getByRole("group", { name: "What for" })
+    .getByRole("button", { name: "Group" })
+    .click();
+  await expect(page.getByRole("group", { name: "People" })).toBeVisible();
+  await aboveTabBar();
+});

@@ -1,7 +1,51 @@
 /* Student Home: layout glue only. Spacing comes from the tokens; no new colors, radii or shadows. */
 
-.query__more {
-  padding: var(--space-field) 0 0;
+/* The question: each input is one line, its label on the left like a row title. The label
+   column is as wide as the longest label, so the controls line up. */
+.query {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: var(--space-sm);
+}
+
+.query > * {
+  grid-column: 1 / -1;
+}
+
+.query__line {
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: center;
+  min-height: var(--size-rowCompact);
+}
+
+.query__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: 600;
+}
+
+.query__control {
+  min-width: 0;
+}
+
+/* The chips run out past the gutter, so a row that does not fit shows it can scroll. On the
+   left they stop at the label column, with room for the focus ring. */
+.query__control > .chips {
+  margin-inline: calc(var(--space-xs) * -1) calc(var(--space-gutter) * -1);
+  padding-inline: var(--space-xs) var(--space-gutter);
+}
+
+/* The screen's own gap already parts the pick from the question. */
+.query + section > .group-heading {
+  margin-top: 0;
+}
+
+/* The stepper sits in the line: no field padding or hairline of its own. */
+.query__control > .field {
+  padding: 0;
+  border-bottom: 0;
 }
 
 /* The pick reuses the Keep going card, stacked, and is not itself pressable: its name and
