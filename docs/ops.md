@@ -22,7 +22,7 @@ Card-free stack for the Perch survey tooling: Render (API), Neon (Postgres), Clo
 ### 2.2 Neon (Postgres)
 
 1. Go to https://console.neon.com and sign up with the club email. Neon's pricing page says the Free plan needs no credit card.
-2. Create project: name `study-spot`, Postgres 17, a US East AWS region (closest to Render's Virginia region). Free plan: 1 GB per project, 100 compute-hours a month, compute suspends after 5 idle minutes (cannot be turned off), 6 hours of point-in-time restore.
+2. Create project: name `perch`, Postgres 17, a US East AWS region (closest to Render's Virginia region). Free plan: 1 GB per project, 100 compute-hours a month, compute suspends after 5 idle minutes (cannot be turned off), 6 hours of point-in-time restore.
 3. Dashboard > Connect (labels may differ). Copy two strings and store them in the password manager:
    - pooled (host contains `-pooler`): becomes Render `DATABASE_URL`.
    - direct (no `-pooler`): becomes GitHub secret `DATABASE_URL_DIRECT` and `BACKUP_DATABASE_URL`.
@@ -32,7 +32,7 @@ Card-free stack for the Perch survey tooling: Render (API), Neon (Postgres), Clo
 
 ### 2.3 Render (API)
 
-1. Go to https://dashboard.render.com, sign up with the club email, connect GitHub (install the Render app on the `study-spot` repo only).
+1. Go to https://dashboard.render.com, sign up with the club email, connect GitHub (install the Render app on the `perch` repo only).
 2. Free web service terms: spins down after 15 minutes with no inbound traffic, about one minute to wake, 750 free instance hours per workspace per month. Render's free Postgres expires after 30 days; do not use it, the database is Neon.
 3. Dashboard > New > Blueprint > pick the repo. Render reads `render.yaml` and prompts once for every `sync: false` variable. Enter them from section 4. `NODE_VERSION=24` is already in the file (Node 24 is needed for type stripping).
 4. After the first deploy, open the service page and copy the real URL from the header (it may carry a suffix if the name was taken). That value is `API_BASE_URL`.
@@ -48,20 +48,20 @@ Card-free stack for the Perch survey tooling: Render (API), Neon (Postgres), Clo
    ```bash
    export CLOUDFLARE_ACCOUNT_ID=<your account id>
    read -rs CLOUDFLARE_API_TOKEN && export CLOUDFLARE_API_TOKEN
-   npx wrangler pages project create study-spot-data --production-branch main
+   npx wrangler pages project create perch-data --production-branch main
    unset CLOUDFLARE_API_TOKEN
    ```
 
-   Copy the project's real `*.pages.dev` hostname from Workers & Pages > study-spot-data. That origin is `DATA_BASE_URL`.
-4. The PWA project `study-spot` is created later, once the web app exists, from Git (section 9). Never create it with direct upload.
+   Copy the project's real `*.pages.dev` hostname from Workers & Pages > perch-data. That origin is `DATA_BASE_URL`.
+4. The PWA project `perch` is created later, once the web app exists, from Git (section 9). Never create it with direct upload.
 
 ## 3. Values to record
 
 | Name | Where it comes from | Secret |
 |---|---|---|
 | `API_BASE_URL` | Render service page header | no |
-| `WEB_ORIGIN` | `study-spot` project's `*.pages.dev` origin, no path, no trailing slash | no |
-| `DATA_BASE_URL` | `study-spot-data` project's `*.pages.dev` origin, no trailing slash | no |
+| `WEB_ORIGIN` | `perch` project's `*.pages.dev` origin, no path, no trailing slash | no |
+| `DATA_BASE_URL` | `perch-data` project's `*.pages.dev` origin, no trailing slash | no |
 | `EXPECTED_DB_HOST` | Neon direct host | no |
 | `CF_ACCOUNT_ID` | Cloudflare dashboard URL | no |
 | `DATABASE_URL`, `DATABASE_URL_DIRECT` | Neon Connect dialog | yes |
@@ -85,7 +85,7 @@ Set on Render (from `render.yaml`; secrets are prompted once, then edited under 
 | `PUBLISH_TARGET` | `pages` | `fs` is for local dev and the VPS fallback |
 | `CF_ACCOUNT_ID` | account id | |
 | `CF_API_TOKEN` | Pages edit token | secret |
-| `CF_DATA_PROJECT` | `study-spot-data` | |
+| `CF_DATA_PROJECT` | `perch-data` | |
 | `CAMPUS_ID` | `sbu` | default if unset |
 | `PORT` | set by Render | do not set |
 | `RENDER_GIT_COMMIT` | set by Render | do not set; reported on `/health` and required by the release smoke. Absent on a VPS, so run the smoke there without `EXPECTED_COMMIT` |
@@ -100,7 +100,7 @@ GitHub, environment `production` secrets: `DATABASE_URL_DIRECT`, `RENDER_DEPLOY_
 Create (owner):
 
 1. Dashboard > Manage Account > API Tokens > Create Token (or My Profile > API Tokens). Under Custom token choose Get started.
-2. Token name `study-spot-publisher`. Permissions: one row, Account > Cloudflare Pages > Edit. Account Resources: Include > the club account only. Optionally set a TTL (for example 12 months) and put a reminder in the club calendar.
+2. Token name `perch-publisher`. Permissions: one row, Account > Cloudflare Pages > Edit. Account Resources: Include > the club account only. Optionally set a TTL (for example 12 months) and put a reminder in the club calendar.
 3. Continue to summary > Create Token. The secret is shown once: put it in the password manager, then in Render as `CF_API_TOKEN`.
 4. Check it: `read -rs CLOUDFLARE_API_TOKEN && export CLOUDFLARE_API_TOKEN`, then `curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" https://api.cloudflare.com/client/v4/user/tokens/verify` should print `"status":"active"`. (If an account-owned token is used, verify with `.../accounts/$CF_ACCOUNT_ID/tokens/verify`.) Then `unset CLOUDFLARE_API_TOKEN`. Reading it with `read -rs` keeps it out of shell history.
 
@@ -152,13 +152,13 @@ Never use Render's manual "Deploy latest commit": it skips migrations. Deploy th
 
 ## 9. PWA on Cloudflare Pages (once the web app exists)
 
-Create `study-spot` from Git, never direct upload:
+Create `perch` from Git, never direct upload:
 
 1. Workers & Pages > Create application > Pages > Import an existing Git repository (labels may differ) > pick the repo, production branch `main`.
 2. Build settings:
    - Framework preset: None.
    - Root directory: leave empty (repo root, so Bun workspaces resolve `packages/*`).
-   - Build command: `bun install --frozen-lockfile && bun run --filter '@study-spot/web' build`
+   - Build command: `bun install --frozen-lockfile && bun run --filter '@perch/web' build`
    - Build output directory: `apps/web/dist`
 3. Settings > Variables and secrets, for Production and Preview: `BUN_VERSION=1.3.14`, `NODE_VERSION=24`, `VITE_API_BASE_URL=<API_BASE_URL>`, `VITE_DATA_BASE_URL=<DATA_BASE_URL>`. The Pages v3 image ships Bun 1.2.15 by default, so pinning is required.
 4. After the first build, copy the production origin into `WEB_ORIGIN` on Render (Environment tab, use the save option that does not deploy; labels may differ) and in the repo variable `WEB_ORIGIN`. Then re-run Actions > migrate on the current `v*` tag (Run workflow, pick the tag): it runs the host guard, migrations, a deploy of that commit, and the smoke, including CORS for the new `WEB_ORIGIN`. That run is what deploys the new value.

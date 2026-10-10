@@ -3,8 +3,8 @@ import { parseEnv } from "../src/env.ts";
 
 const fsEnv = {
   DATABASE_URL: "postgres://u:p@localhost:5432/db",
-  WEB_ORIGIN: "https://study-spot.pages.dev",
-  DATA_BASE_URL: "https://study-spot-data.pages.dev/",
+  WEB_ORIGIN: "https://perch.pages.dev",
+  DATA_BASE_URL: "https://perch-data.pages.dev/",
   PUBLISH_TARGET: "fs",
   FS_PUBLISH_DIR: "/tmp/publish",
 };
@@ -14,7 +14,7 @@ test("a valid fs environment parses with defaults", () => {
   if (!r.ok) throw new Error(r.error);
   expect(r.env.PORT).toBe(3000);
   expect(r.env.CAMPUS_ID).toBe("sbu");
-  expect(r.env.DATA_BASE_URL).toBe("https://study-spot-data.pages.dev");
+  expect(r.env.DATA_BASE_URL).toBe("https://perch-data.pages.dev");
 });
 
 test("pages target requires Cloudflare credentials", () => {
@@ -31,7 +31,7 @@ test("a localhost web origin is allowed for development", () => {
 });
 
 test("a web origin with a path or trailing slash is rejected", () => {
-  expect(parseEnv({ ...fsEnv, WEB_ORIGIN: "https://study-spot.pages.dev/" }).ok).toBe(false);
+  expect(parseEnv({ ...fsEnv, WEB_ORIGIN: "https://perch.pages.dev/" }).ok).toBe(false);
   expect(parseEnv({ ...fsEnv, WEB_ORIGIN: "https://x.dev/app" }).ok).toBe(false);
 });
 

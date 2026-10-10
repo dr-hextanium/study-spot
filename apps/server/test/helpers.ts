@@ -14,8 +14,8 @@ import { createPublisher, type Publisher, type Timers } from "../src/publish/pub
 import type { PublishTarget } from "../src/publish/target.ts";
 
 export const NOW = new Date("2026-10-13T18:00:00Z");
-export const WEB_ORIGIN = "https://study-spot.pages.dev";
-export const DATA_BASE_URL = "https://study-spot-data.pages.dev";
+export const WEB_ORIGIN = "https://perch.pages.dev";
+export const DATA_BASE_URL = "https://perch-data.pages.dev";
 
 export type TestClock = Clock & { set(at: Date): void; advance(ms: number): void };
 

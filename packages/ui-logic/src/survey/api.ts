@@ -101,7 +101,7 @@ export function interpret<T>(status: number, text: string, schema: z.ZodType<T>)
 
 export type SurveyApiDeps = {
   http: Http;
-  /** API origin without a trailing slash, e.g. https://study-spot.onrender.com */
+  /** API origin without a trailing slash, e.g. https://perch-api.onrender.com */
   baseUrl: string;
   /** The stored bearer token, read on every call. */
   token: () => string | null;
