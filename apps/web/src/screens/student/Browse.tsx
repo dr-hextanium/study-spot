@@ -116,7 +116,7 @@ export function Browse() {
       <p className="field__helper browse__caption">{b.view.caption}</p>
 
       {shown.rows.length > 0 && b.prefs.view === "map" ? (
-        <BrowseMap view={shown} from={building} />
+        <BrowseMap view={shown} from={building} buildings={b.bundle.buildings} />
       ) : shown.rows.length === 0 ? (
         <div className="browse__empty">
           <p className="empty">{t("student.browse.empty")}</p>

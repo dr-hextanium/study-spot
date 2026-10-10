@@ -4,21 +4,33 @@ import { beforeEach, expect, test, vi } from "vitest";
 import type { Pin } from "../src/map/pin.ts";
 import { renderRoute, type TestApp, testApp } from "./harness.tsx";
 
-const stub = vi.hoisted(() => ({ renders: 0, fail: false, themes: [] as string[] }));
+const stub = vi.hoisted(() => ({
+  renders: 0,
+  fail: false,
+  loadFails: false,
+  themes: [] as string[],
+  pins: [] as unknown[],
+  centers: [] as string[],
+}));
 
 // The real map needs WebGL; the stub draws what the screen hands it.
 vi.mock("../src/map/MapView.tsx", async () => {
   const { useEffect } = await import("react");
   return {
     default: (props: {
-      pins: Pin[];
+      pins: readonly Pin[];
+      centerLat: number;
+      centerLng: number;
       selected: string | null;
       onSelect(id: string): void;
       onError(): void;
       theme: string;
     }) => {
+      if (stub.loadFails) throw new Error("chunk failed");
       stub.renders += 1;
       stub.themes.push(props.theme);
+      stub.pins.push(props.pins);
+      stub.centers.push(`${props.centerLat},${props.centerLng}`);
       useEffect(() => {
         if (stub.fail) props.onError();
       }, [props.onError]);
@@ -43,7 +55,10 @@ vi.mock("../src/map/MapView.tsx", async () => {
 beforeEach(() => {
   stub.renders = 0;
   stub.fail = false;
+  stub.loadFails = false;
   stub.themes = [];
+  stub.pins = [];
+  stub.centers = [];
 });
 
 async function openMap(app: TestApp = testApp({ me: null })) {
@@ -167,4 +182,36 @@ test("an empty filter result shows the empty message instead of an empty map", a
   });
   expect(await screen.findByText(t("student.browse.empty"))).toBeTruthy();
   expect(stub.renders).toBe(0);
+});
+
+test("choosing a pin keeps the same pins and centre, so the map is not rebuilt", async () => {
+  await openMap();
+  const map = await screen.findByTestId("map");
+  const before = stub.renders;
+  fireEvent.click(within(map).getByRole("button", { name: /^SAC Lounge/ }));
+  await screen.findByRole("link", { name: t("student.map.open") });
+  expect(stub.renders).toBeGreaterThan(before);
+  // Every render after the first got the very same pins array and the same centre numbers.
+  expect(new Set(stub.pins).size).toBe(1);
+  expect(new Set(stub.centers).size).toBe(1);
+});
+
+test("a map chunk that fails to load offers a retry that loads it again", async () => {
+  stub.loadFails = true;
+  vi.spyOn(console, "error").mockImplementation(() => undefined);
+  await openMap();
+  expect(await screen.findByText(t("student.map.failed"))).toBeTruthy();
+  stub.loadFails = false;
+  fireEvent.click(screen.getByRole("button", { name: t("common.retry") }));
+  expect(await screen.findByTestId("map")).toBeTruthy();
+  vi.restoreAllMocks();
+});
+
+test("a map that fails to start can be retried too", async () => {
+  stub.fail = true;
+  await openMap();
+  expect(await screen.findByText(t("student.map.failed"))).toBeTruthy();
+  stub.fail = false;
+  fireEvent.click(screen.getByRole("button", { name: t("common.retry") }));
+  expect(await screen.findByTestId("map")).toBeTruthy();
 });

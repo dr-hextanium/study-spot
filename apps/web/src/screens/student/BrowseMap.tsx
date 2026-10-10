@@ -1,21 +1,27 @@
 import { type BundleBuilding, FULLNESS, type Fullness } from "@perch/core";
 import { type BrowseView, resolveScheme, t } from "@perch/ui-logic";
 import { Link } from "@tanstack/react-router";
+import { RotateCw } from "lucide-react";
 import {
   Component,
   lazy,
   type ReactNode,
   Suspense,
   useCallback,
+  useMemo,
   useState,
   useSyncExternalStore,
 } from "react";
 import { useOnline } from "../../hooks/useOnline.ts";
 import type { Pin } from "../../map/pin.ts";
+import { campusBounds } from "../../map/pinDiff.ts";
+import { Button } from "../../ui/Button.tsx";
+import { Icon } from "../../ui/Icon.tsx";
 import { useThemePref } from "../../ui/themePref.ts";
 
 // The only import of the map: its own chunk, fetched when Map is chosen, never precached.
-const MapView = lazy(() => import("../../map/MapView.tsx"));
+// React.lazy keeps a failed import, so a retry makes a new one.
+const loadMap = () => lazy(() => import("../../map/MapView.tsx"));
 
 const BUCKET_WORD = {
   empty: "student.bucket.empty",
@@ -69,7 +75,11 @@ function Legend() {
 }
 
 /** The Browse map: pins by busyness bucket, a legend, and a card for the chosen pin. */
-export function BrowseMap(props: { view: BrowseView; from: BundleBuilding | null }) {
+export function BrowseMap(props: {
+  view: BrowseView;
+  from: BundleBuilding | null;
+  buildings: readonly BundleBuilding[];
+}) {
   const online = useOnline();
   const [pref] = useThemePref();
   const dark = useSyncExternalStore(subscribeDark, systemDark, () => false);
@@ -77,27 +87,52 @@ export function BrowseMap(props: { view: BrowseView; from: BundleBuilding | null
   const [selected, setSelected] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const onError = useCallback(() => setFailed(true), []);
+  // A new attempt is a new lazy component and a fresh boundary.
+  const [attempt, setAttempt] = useState(0);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt is the reason to load again
+  const MapView = useMemo(loadMap, [attempt]);
+  const retry = useCallback(() => {
+    setFailed(false);
+    setAttempt((n) => n + 1);
+  }, []);
 
   const rows = props.view.rows;
-  const pins: Pin[] = rows.map((r) => ({
-    id: r.spot.id,
-    slug: r.spot.slug,
-    lat: r.spot.lat,
-    lng: r.spot.lng,
-    bucket: r.bucket,
-    label: t("student.map.pin_label", { spot: r.name, busy: r.busyLong }),
-  }));
+  // The same pins for the same rows, so choosing a pin does not redraw the map.
+  const pins = useMemo(
+    (): Pin[] =>
+      rows.map((r) => ({
+        id: r.spot.id,
+        slug: r.spot.slug,
+        lat: r.spot.lat,
+        lng: r.spot.lng,
+        bucket: r.bucket,
+        label: t("student.map.pin_label", { spot: r.name, busy: r.busyLong }),
+      })),
+    [rows],
+  );
+  const maxBounds = useMemo(() => campusBounds(props.buildings), [props.buildings]);
   const first = pins[0];
   const center = props.from ?? first;
   const chosen = rows.find((r) => r.spot.id === selected) ?? null;
 
   const note = (text: string) => <p className="lede">{text}</p>;
+  const failedNote = (
+    <div className="map-failed">
+      {note(t("student.map.failed"))}
+      <div className="inline-action">
+        <Button variant="quiet" icon={<Icon icon={RotateCw} />} onClick={retry}>
+          {t("common.retry")}
+        </Button>
+      </div>
+    </div>
+  );
   if (!online) return note(t("student.map.offline"));
-  if (failed || center === undefined) return note(t("student.map.failed"));
+  if (center === undefined) return note(t("student.map.failed"));
+  if (failed) return failedNote;
 
   return (
     <>
-      <MapBoundary fallback={note(t("student.map.failed"))}>
+      <MapBoundary key={attempt} fallback={failedNote}>
         <Suspense
           fallback={
             <div className="map map--loading" aria-busy="true">
@@ -107,7 +142,9 @@ export function BrowseMap(props: { view: BrowseView; from: BundleBuilding | null
         >
           <MapView
             pins={pins}
-            center={{ lat: center.lat, lng: center.lng }}
+            centerLat={center.lat}
+            centerLng={center.lng}
+            maxBounds={maxBounds}
             selected={selected}
             onSelect={setSelected}
             theme={theme}
