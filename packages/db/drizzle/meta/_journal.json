@@ -29,6 +29,13 @@
       "when": 1791132935550,
       "tag": "0003_surveyor_tooling",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791616342320,
+      "tag": "0004_photo_offload",
+      "breakpoints": true
     }
   ]
 }

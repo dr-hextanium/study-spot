@@ -192,7 +192,9 @@ test("photo blobs round-trip bytes exactly and photos must reference a blob", as
     .insert(photo_blob)
     .values({ sha256: "f".repeat(64), bytes, content_type: "image/jpeg", byte_size: 8 });
   const [blob] = await db.select().from(photo_blob);
-  expect(blob ? Array.from(blob.bytes) : []).toEqual(Array.from(bytes));
+  expect(blob?.bytes ? Array.from(blob.bytes) : []).toEqual(Array.from(bytes));
+  expect(blob?.pages_hash).toBeNull();
+  expect(blob?.offloaded_at).toBeNull();
 
   await db
     .insert(spot_photo)
@@ -204,6 +206,26 @@ test("photo blobs round-trip bytes exactly and photos must reference a blob", as
         .values({ spot_id: row.id, blob_sha256: "0".repeat(64), taken_at: new Date() }),
     ),
   ).rejects.toThrow();
+});
+
+test("an offloaded blob keeps its hash and row with no bytes", async () => {
+  const { db, row } = await withSpot();
+  const offloadedAt = new Date("2026-10-13T18:00:00Z");
+  await db.insert(photo_blob).values({
+    sha256: "e".repeat(64),
+    bytes: null,
+    content_type: "image/jpeg",
+    byte_size: 8,
+    pages_hash: "a".repeat(32),
+    offloaded_at: offloadedAt,
+  });
+  await db
+    .insert(spot_photo)
+    .values({ spot_id: row.id, blob_sha256: "e".repeat(64), taken_at: new Date() });
+  const [blob] = await db.select().from(photo_blob);
+  expect(blob?.bytes).toBeNull();
+  expect(blob?.pages_hash).toBe("a".repeat(32));
+  expect(blob?.offloaded_at?.toISOString()).toBe(offloadedAt.toISOString());
 });
 
 test("write receipts store a json response", async () => {

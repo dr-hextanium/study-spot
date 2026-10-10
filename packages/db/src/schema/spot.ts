@@ -196,12 +196,20 @@ export const spot_amenity = pgTable(
   ],
 );
 
-/** Photo bytes keyed by content hash. Published as photos/<sha256>.jpg on the data site. */
+/**
+ * Photo bytes keyed by content hash. Published as photos/<sha256>.jpg on the data site.
+ * Once the publisher has read the published file back from the data site and its
+ * sha256 matched, bytes is cleared and offloaded_at set: the data site is then the
+ * only copy. pages_hash is the Cloudflare Pages asset key of photos/<sha256>.jpg, so
+ * a deploy can list a cleared photo in its manifest without its bytes.
+ */
 export const photo_blob = pgTable("photo_blob", {
   sha256: text().primaryKey(),
-  bytes: bytea().notNull(),
+  bytes: bytea(),
   content_type: text().notNull(),
   byte_size: integer().notNull(),
+  pages_hash: text(),
+  offloaded_at: timestamp({ withTimezone: true }),
   created_at: createdAt(),
 });
 
