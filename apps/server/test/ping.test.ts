@@ -3,11 +3,14 @@ import { pick_daily, pick_ping } from "@perch/db";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { buildApp } from "../src/app.ts";
+import { postgresPhotoStore } from "../src/photos/store.ts";
 import { createPingCounter, type PingRow } from "../src/ping/counter.ts";
 import { flushPicks } from "../src/ping/flush.ts";
 import { createKnownSpots } from "../src/ping/knownSpots.ts";
 import { createRateLimiter } from "../src/ping/rateLimit.ts";
-import { manualTimers, setup, testClock, WEB_ORIGIN } from "./helpers.ts";
+import { createPublisher } from "../src/publish/publisher.ts";
+import { fakePages, target } from "./fakePages.ts";
+import { DATA_BASE_URL, manualTimers, setup, testClock, WEB_ORIGIN } from "./helpers.ts";
 
 const SPOT_A = "11111111-1111-4111-8111-111111111111";
 const SPOT_B = "22222222-2222-4222-8222-222222222222";
@@ -525,4 +528,48 @@ test("the retained-key cap drops the oldest hour, not the first inserted", async
     "2026-10-13T19:00:00.000Z",
     "2026-10-13T20:00:00.000Z",
   ]);
+});
+
+test("a successful publish invalidates the known spots, a failed one does not", async () => {
+  const pages = fakePages();
+  const ctx = await setup({ target: target(pages), dataSite: pages.site });
+  let loads = 0;
+  const known = createKnownSpots({
+    clock: ctx.clock,
+    load: async () => {
+      loads += 1;
+      return [SPOT_A];
+    },
+  });
+  const publisherWith = (t: ReturnType<typeof target>) =>
+    createPublisher({
+      db: ctx.db,
+      campusId: "sbu",
+      target: t,
+      photos: postgresPhotoStore(ctx.db, pages.site),
+      dataSite: pages.site,
+      dataBaseUrl: DATA_BASE_URL,
+      clock: ctx.clock,
+      timers: manualTimers(),
+      knownSpots: known,
+    });
+  await known.has(SPOT_A);
+  await known.has(SPOT_A);
+  expect(loads).toBe(1);
+
+  const failing = publisherWith({
+    deploy: async () => {
+      throw new Error("deploy down");
+    },
+  });
+  expect((await failing.runNow()).ok).toBe(false);
+  failing.close();
+  await known.has(SPOT_A);
+  expect(loads).toBe(1);
+
+  const working = publisherWith(target(pages));
+  expect((await working.runNow()).ok).toBe(true);
+  working.close();
+  await known.has(SPOT_A);
+  expect(loads).toBe(2);
 });

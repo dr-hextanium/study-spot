@@ -72,6 +72,8 @@ export type PublisherDeps = {
   retryMs?: readonly number[];
   leaseMs?: number;
   log?: (message: string, error?: unknown) => void;
+  /** Told after each successful publish, so newly published spots count for pick pings at once. */
+  knownSpots?: { invalidate(): void };
   /** Test seam: runs after the file set is built and before the lease renewal and deploy. */
   beforeDeploy?: () => Promise<void>;
 };
@@ -446,6 +448,7 @@ export function createPublisher(deps: PublisherDeps): Publisher {
         publisher.schedule();
       }
       failures = 0;
+      deps.knownSpots?.invalidate();
       return { ok: true, hash, warnings, uploaded, offloaded };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
