@@ -38,6 +38,7 @@ import { createFetch } from "../adapters/fetch.ts";
 import { createFetchHttp } from "../adapters/http.ts";
 import { openStores } from "../adapters/idb.ts";
 import { createWebLiveness, createWebLock, type LockApi } from "../adapters/locks.ts";
+import { createWebShare } from "../adapters/share.ts";
 import { browserImageKit, type ImageKit } from "../lib/photo.ts";
 import { type AuthState, createAuthState } from "./authState.ts";
 import { createPersistStorage } from "./persistStorage.ts";
@@ -72,6 +73,8 @@ export type AppDeps = {
   /** Decoding and encoding for the photo resize; a seam so tests need no canvas. */
   imageKit: ImageKit;
   share: Share;
+  /** Student sharing: the share sheet first, the link copied as a fallback. */
+  webShare: Share;
   clock: Clock;
   /** API origin, for the photo image route that the typed client does not cover. */
   apiBaseUrl: string;
@@ -264,6 +267,7 @@ function buildAppDeps(env: AppEnv): AppDeps {
     geolocation: createGeolocation(),
     imageKit: browserImageKit,
     share: createShare(),
+    webShare: createWebShare(),
     clock: systemClock,
     apiBaseUrl: env.apiBaseUrl,
     dataBaseUrl: env.dataBaseUrl,
