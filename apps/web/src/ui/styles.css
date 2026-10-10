@@ -1955,8 +1955,8 @@ span.editor-meta {
   inset: auto 0 0;
   z-index: 10;
   padding-bottom: env(safe-area-inset-bottom);
-  background: color-mix(in oklab, var(--color-paper) 88%, transparent);
-  backdrop-filter: blur(12px);
+  /* Opaque: the muted labels are small, and red passing under a see-through bar fails contrast. */
+  background: var(--color-paper);
   border-top: 1px solid var(--color-line);
 }
 
