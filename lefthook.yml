@@ -8,3 +8,9 @@ pre-commit:
       run: bunx biome check --no-errors-on-unmatched {staged_files}
     secrets:
       run: gitleaks git --pre-commit --staged --redact --no-banner
+
+pre-push:
+  commands:
+    free-tier-push-limit:
+      run: node scripts/push-guard.ts
+      use_stdin: true

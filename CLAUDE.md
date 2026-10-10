@@ -39,6 +39,18 @@ When a decision changes, update the relevant context file and append to the deci
 - No `Bun.*` APIs in `apps/server` or `packages/*`; code must also run on Node.
 - UX honesty: never show a forecast as live; every spot shows a last-verified date.
 
+## Free-tier limits (strict, never exceed)
+
+The stack must stay free. No card is on file anywhere; never add one, and stop and tell the owner if any service asks for one.
+
+- **Pushes to `main`: at most 10 per local day.** Each one builds the PWA on Cloudflare Pages (500 builds a month). Batch commits and push once per working session, not after each commit. A lefthook pre-push guard (`scripts/push-guard.ts`) blocks the 11th; only the owner may override one push with `PERCH_PUSH_OVERRIDE=1`. Work on branches freely; pushing other branches does not count.
+- **Render:** one free web service only (750 instance hours a month per workspace; one service running all month uses about 744). Never create a second service, a cron job, a worker, or Render Postgres (it is deleted after 30 days). Never use "Deploy latest commit": releases go only through a `v*` tag and the migrate workflow.
+- **No uptime pingers or keep-alive jobs** against the API or database. They keep Neon awake and burn its 100 compute-hours a month. The server sleeping after 15 minutes is expected.
+- **Neon:** 1 GB per project. Photo bytes must not pile up in Postgres (see the roadmap task "Photo bytes off Neon"); check storage in the Neon dashboard before any bulk import. One project, one branch for production; delete drill branches after use.
+- **Cloudflare Pages:** 500 builds a month, 25 MiB per file, 20,000 files per site. Never upload large or generated files to either site. Plan photo cleanup on `perch-data` before about 15,000 photos. R2, Workers paid features, and anything needing a card are off limits.
+- **GitHub:** keep the repo public (free Actions minutes and free environment reviewers depend on it). No new scheduled workflows beyond the weekly backup. Do not raise artifact retention past 90 days.
+- **Secrets:** tokens, database URLs, and hooks live in GitHub secrets, Render env, and the password manager; never in the repo or in output.
+
 ## Tool use
 
 - Preplan your tool calls, and group independent ones into one batch where it makes sense. Wait for the whole batch to return before reading any result. Every turn re-reads the full context, so fewer turns means fewer tokens.
