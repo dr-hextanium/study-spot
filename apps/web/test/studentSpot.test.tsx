@@ -60,6 +60,17 @@ test("a locked spot says who it is for", async () => {
   expect(await screen.findByText("Residents of Kelly Quad only")).toBeTruthy();
 });
 
+test("the access Me saved unlocks a spot", async () => {
+  const a = app();
+  a.deps.prefs.setItem(
+    "student:access",
+    JSON.stringify({ residence: null, quad: "kelly-quad", grad: false }),
+  );
+  renderRoute(a, "/spot/kelly-rcc");
+  await screen.findByRole("heading", { level: 1, name: "Kelly RCC" });
+  expect(screen.queryByText("Residents of Kelly Quad only")).toBeNull();
+});
+
 test("an unverified spot says so", async () => {
   renderRoute(app(), "/spot/unverified-room");
   expect(await screen.findByText("Access not confirmed yet")).toBeTruthy();

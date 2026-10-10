@@ -1,7 +1,9 @@
 import {
   ARRIVE,
   type Arrive,
-  browseDataAge,
+  BROWSE_FILTER_GROUP,
+  BROWSE_FILTERS,
+  dataAgeView,
   hiddenLockedText,
   searchBrowse,
   t,
@@ -11,6 +13,7 @@ import { useState } from "react";
 import { useBrowse } from "../../hooks/useBrowse.ts";
 import { Banner } from "../../ui/Banner.tsx";
 import { Button } from "../../ui/Button.tsx";
+import { Check } from "../../ui/Check.tsx";
 import { FilterChips } from "../../ui/FilterChips.tsx";
 import { Icon } from "../../ui/Icon.tsx";
 import { Row } from "../../ui/Row.tsx";
@@ -18,8 +21,8 @@ import { Meta, Screen } from "../../ui/Screen.tsx";
 import { Search } from "../../ui/Search.tsx";
 import { Segmented } from "../../ui/Segmented.tsx";
 import { Loading, Skel, SkelRows } from "../../ui/Skeleton.tsx";
-import { BrowseFilters } from "./BrowseFilters.tsx";
 import { BrowseMap } from "./BrowseMap.tsx";
+import { FiltersSheet } from "./FiltersSheet.tsx";
 import "./browse.css";
 
 const ARRIVE_LABEL = {
@@ -52,14 +55,14 @@ export function Browse() {
       <Screen title={title}>
         <p className="lede" role="status">
           {b.unavailable === "update_required"
-            ? t("student.browse.data.update_required")
-            : t("student.browse.data.unavailable")}
+            ? t("student.data.update_required")
+            : t("student.data.unavailable")}
         </p>
       </Screen>
     );
   }
 
-  const age = browseDataAge(b.ageDays, b.checkFailed);
+  const age = dataAgeView(b.ageDays, b.checkFailed);
   const shown = searchBrowse(b.view, query);
   const hidden = hiddenLockedText(b.view.hiddenLocked);
   const filterCount =
@@ -77,7 +80,7 @@ export function Browse() {
         <Meta>
           <span className="meta__item">{shown.count}</span>
           <span className="meta__item">{age.line}</span>
-          {age.offline === null ? null : <span className="meta__item">{age.offline}</span>}
+          {age.offline ? <span className="meta__item">{t("student.data.offline")}</span> : null}
         </Meta>
       }
     >
@@ -135,7 +138,7 @@ export function Browse() {
               end={
                 <span className="browse__end">
                   <span>{row.busy}</span>
-                  <span>{row.checked}</span>
+                  {row.checked === null ? null : <span>{row.checked}</span>}
                 </span>
               }
               link={{ to: "/spot/$slug", params: { slug: row.spot.slug } }}
@@ -150,14 +153,27 @@ export function Browse() {
         </Button>
       )}
 
-      <BrowseFilters
+      <FiltersSheet
         open={sheet}
+        title={t("student.browse.filters.title")}
+        groups={BROWSE_FILTER_GROUP}
+        filters={BROWSE_FILTERS}
         extra={b.prefs.extra}
-        openOnly={b.prefs.openOnly}
-        showLocked={b.prefs.showLocked}
-        onChange={(next) => b.set(next)}
+        onChange={(extra) => b.set({ extra })}
+        onClear={() => b.set({ extra: [], openOnly: false, showLocked: false })}
         onClose={() => setSheet(false)}
-      />
+      >
+        <Check
+          label={t("student.browse.open_only")}
+          checked={b.prefs.openOnly}
+          onChange={(openOnly) => b.set({ openOnly })}
+        />
+        <Check
+          label={t("student.browse.show_locked")}
+          checked={b.prefs.showLocked}
+          onChange={(showLocked) => b.set({ showLocked })}
+        />
+      </FiltersSheet>
     </Screen>
   );
 }

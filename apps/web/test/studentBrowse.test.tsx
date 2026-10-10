@@ -111,10 +111,23 @@ test("no match says so, and Clear filters brings the rows back", async () => {
   const sheet = await openSheet();
   fireEvent.click(within(sheet).getByRole("checkbox", { name: "Silent only" }));
   fireEvent.click(within(sheet).getByRole("checkbox", { name: "Talking is fine" }));
-  fireEvent.click(within(sheet).getByRole("button", { name: t("student.browse.filters.done") }));
+  fireEvent.click(within(sheet).getByRole("button", { name: t("student.home.filters.done") }));
   expect(await screen.findByText(t("student.browse.empty"))).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: t("student.browse.clear") }));
   await waitFor(() => expect(titles()).toHaveLength(6));
+});
+
+test("Clear in the sheet also turns off both switches", async () => {
+  const { app } = await open();
+  const sheet = await openSheet();
+  fireEvent.click(within(sheet).getByRole("checkbox", { name: t("student.browse.show_locked") }));
+  fireEvent.click(within(sheet).getByRole("checkbox", { name: t("student.browse.open_only") }));
+  fireEvent.click(within(sheet).getByRole("checkbox", { name: "USB outlets" }));
+  await waitFor(() => expect(stored(app).extra).toHaveLength(1));
+  fireEvent.click(within(sheet).getByRole("button", { name: t("student.home.filters.clear") }));
+  await waitFor(() =>
+    expect(stored(app)).toMatchObject({ extra: [], openOnly: false, showLocked: false }),
+  );
 });
 
 test("search narrows by name and building", async () => {

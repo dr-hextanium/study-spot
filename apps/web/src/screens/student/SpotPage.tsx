@@ -1,16 +1,11 @@
-import {
-  type AccessProfile,
-  accessFor,
-  type Bundle,
-  type BundleSpot,
-  DEFAULT_ACCESS,
-} from "@perch/core";
+import { type AccessProfile, accessFor, type Bundle, type BundleSpot } from "@perch/core";
 import {
   checkedView,
   dayForecast,
   directionsUrl,
   lockText,
   placeText,
+  readAccess,
   spotName,
   t,
   weekHours,
@@ -18,7 +13,6 @@ import {
 import { Link } from "@tanstack/react-router";
 import { Lock, Navigation, Share2 } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
-import { z } from "zod";
 import { useDeps } from "../../app/AppProvider.tsx";
 import { useBundle } from "../../hooks/useBundle.ts";
 import { useCampusNow } from "../../hooks/useCampusNow.ts";
@@ -35,26 +29,10 @@ import { ForecastBars } from "./ForecastBars.tsx";
 import { SpotPhoto } from "./SpotPhoto.tsx";
 import "./spotPage.css";
 
-/** The access profile Me stores on this phone (key shared with Me). A bad value reads as no profile. */
-const ACCESS_KEY = "student:access";
-const StoredAccess = z.object({
-  residence: z.string().min(1).nullable(),
-  quad: z.string().min(1).nullable(),
-  grad: z.boolean(),
-});
-
+/** The access profile Me stores on this phone. A bad value reads as no profile. */
 function useAccessProfile(): AccessProfile {
   const { prefs } = useDeps();
-  return useMemo(() => {
-    try {
-      const raw = prefs.getItem(ACCESS_KEY);
-      if (raw === null) return DEFAULT_ACCESS;
-      const parsed = StoredAccess.safeParse(JSON.parse(raw));
-      return parsed.success ? parsed.data : DEFAULT_ACCESS;
-    } catch {
-      return DEFAULT_ACCESS;
-    }
-  }, [prefs]);
+  return useMemo(() => readAccess(prefs).value, [prefs]);
 }
 
 /** `/spot/$slug`: one spot, from the offline bundle only. */

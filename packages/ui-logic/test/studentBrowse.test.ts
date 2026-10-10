@@ -3,17 +3,19 @@ import { DEFAULT_ACCESS } from "@perch/core";
 import { makeScoringBundle } from "../../core/test/fixtures/scoring-bundle.ts";
 import {
   arrivalAt,
+  BROWSE_FILTER_GROUP,
   BROWSE_FILTERS,
   BROWSE_PREFS_KEY,
   type BrowsePrefs,
-  browseDataAge,
   browseView,
   DEFAULT_BROWSE_PREFS,
+  FILTER_ID,
+  FILTERS,
   hiddenLockedText,
-  isBrowseFilterOn,
+  isOn,
   readBrowsePrefs,
   searchBrowse,
-  toggleBrowseFilter,
+  toggle,
   writeBrowsePrefs,
 } from "../src/index.ts";
 import { MemoryStorage } from "./fakes.ts";
@@ -147,6 +149,14 @@ test("browse prefs: corrupt storage reads as defaults, good values round trip", 
 test("the filter list covers every filterable v0 attribute, once each", () => {
   const ids = BROWSE_FILTERS.map((f) => f.id);
   expect(new Set(ids).size).toBe(ids.length);
+  // Browse shows every shared filter, and Home's short list is a part of it.
+  expect([...ids].sort()).toEqual([...FILTER_ID].sort());
+  for (const f of FILTERS) {
+    expect(BROWSE_FILTERS.find((b) => b.id === f.id)?.criterion).toEqual(f.criterion);
+  }
+  for (const g of BROWSE_FILTER_GROUP) {
+    expect(BROWSE_FILTERS.some((f) => f.group === g)).toBe(true);
+  }
   const flags = new Set(
     BROWSE_FILTERS.flatMap((f) => (f.criterion.attr === "flag" ? [f.criterion.flag] : [])),
   );
@@ -201,10 +211,10 @@ test("the filter list covers every filterable v0 attribute, once each", () => {
 });
 
 test("toggling a filter adds and removes its exact criterion", () => {
-  const on = toggleBrowseFilter([], "outlets");
-  expect(isBrowseFilterOn(on, "outlets")).toBe(true);
-  expect(toggleBrowseFilter(on, "outlets")).toEqual([]);
-  expect(isBrowseFilterOn(toggleBrowseFilter(on, "carrels"), "outlets")).toBe(true);
+  const on = toggle([], "outlets");
+  expect(isOn(on, "outlets")).toBe(true);
+  expect(toggle(on, "outlets")).toEqual([]);
+  expect(isOn(toggle(on, "carrels"), "outlets")).toBe(true);
 });
 
 test("search narrows by name or building, and the count follows", () => {
@@ -218,18 +228,8 @@ test("search narrows by name or building, and the count follows", () => {
   expect(searchBrowse(v, "library lounge").rows).toHaveLength(0);
 });
 
-test("hidden locked note and data age wording", () => {
+test("hidden locked note wording", () => {
   expect(hiddenLockedText(0)).toBeNull();
   expect(hiddenLockedText(1)).toBe("1 spot hidden for access");
   expect(hiddenLockedText(2)).toBe("2 spots hidden for access");
-  expect(browseDataAge(0, false)).toEqual({
-    line: "Spots updated today",
-    prominent: null,
-    offline: null,
-  });
-  expect(browseDataAge(1, false).line).toBe("Spots updated yesterday");
-  const old = browseDataAge(5, true);
-  expect(old.line).toBe("Spots updated 5 days ago");
-  expect(old.prominent).toBe("These spots are 5 days old. Hours and busyness may have changed.");
-  expect(old.offline).toBe("Offline. Using spots saved on this phone.");
 });

@@ -78,7 +78,25 @@ test("filters toggle exact criteria", () => {
   expect(isOn(on, "outlets")).toBe(true);
   expect(isOn(on, "calls")).toBe(false);
   expect(toggle(on, "outlets")).toEqual([]);
-  expect(FILTERS.map((f) => f.id)).toEqual([...FILTER_ID]);
+  expect(FILTERS.map((f) => f.id)).toEqual([
+    "silent",
+    "quiet",
+    "talking",
+    "outlets",
+    "calls",
+    "food",
+    "drinks",
+    "group_ok",
+    "whiteboard",
+    "big_room",
+    "natural_light",
+    "step_free",
+    "elevator",
+    "open_late",
+    "printer",
+    "coffee",
+  ]);
+  for (const f of FILTERS) expect(FILTER_ID).toContain(f.id);
   for (const g of FILTER_GROUP) {
     expect(filterGroupLabel(g).length).toBeGreaterThan(0);
     expect(FILTERS.some((f) => f.group === g)).toBe(true);

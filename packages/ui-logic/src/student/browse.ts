@@ -1,5 +1,4 @@
 import {
-  type Access,
   type AccessProfile,
   accessFor,
   type Bundle,
@@ -21,7 +20,9 @@ import {
 } from "@perch/core";
 import { z } from "zod";
 import type { KeyValueStorage } from "../adapters.ts";
-import { type CopyId, plural, t } from "../copy/index.ts";
+import { plural, t } from "../copy/index.ts";
+import { slotWhen } from "./format.ts";
+import { busyLine, checkedText, closesText, lockText, rowBusy, spotName } from "./present.ts";
 
 export const ARRIVE = ["now", "1", "2", "4", "tonight"] as const;
 export const Arrive = z.enum(ARRIVE);
@@ -97,7 +98,8 @@ export type BrowseRow = {
   busyLong: string;
   bucket: Fullness | "none";
   locked: boolean;
-  checked: string;
+  /** "Checked Oct 6", or null when no group was ever checked. */
+  checked: string | null;
 };
 export type BrowseView = {
   rows: BrowseRow[];
@@ -105,109 +107,6 @@ export type BrowseView = {
   caption: string;
   count: string;
 };
-
-// Formatting and honest busyness wording, kept private to Browse.
-const fmtCache = new Map<string, Intl.DateTimeFormat>();
-function fmt(tz: string, key: string, opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
-  const k = `${tz}|${key}`;
-  let f = fmtCache.get(k);
-  if (f === undefined) {
-    f = new Intl.DateTimeFormat("en-US", { timeZone: tz, ...opts });
-    fmtCache.set(k, f);
-  }
-  return f;
-}
-const part = (parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes): string =>
-  parts.find((p) => p.type === type)?.value ?? "";
-
-/** "Tue 2 PM". */
-function slotWhen(at: Date, tz: string): string {
-  const p = fmt(tz, "when", { weekday: "short", hour: "numeric", hourCycle: "h12" }).formatToParts(
-    at,
-  );
-  return `${part(p, "weekday")} ${part(p, "hour")} ${part(p, "dayPeriod")}`;
-}
-/** "2:00 AM". */
-function clockText(at: Date, tz: string): string {
-  const p = fmt(tz, "clock", {
-    hour: "numeric",
-    minute: "2-digit",
-    hourCycle: "h12",
-  }).formatToParts(at);
-  return `${part(p, "hour")}:${part(p, "minute")} ${part(p, "dayPeriod")}`;
-}
-/** "Oct 6". */
-function shortDay(iso: string, tz: string): string {
-  return fmt(tz, "day", { month: "short", day: "numeric" }).format(new Date(iso));
-}
-
-const BUSY_TYPICAL = {
-  empty: "student.browse.busy.typical.empty",
-  some: "student.browse.busy.typical.some",
-  filling: "student.browse.busy.typical.filling",
-  nearly_full: "student.browse.busy.typical.nearly_full",
-  full: "student.browse.busy.typical.full",
-} as const satisfies Record<Fullness, CopyId>;
-const BUSY_ESTIMATE = {
-  empty: "student.browse.busy.estimate.empty",
-  some: "student.browse.busy.estimate.some",
-  filling: "student.browse.busy.estimate.filling",
-  nearly_full: "student.browse.busy.estimate.nearly_full",
-  full: "student.browse.busy.estimate.full",
-} as const satisfies Record<Fullness, CopyId>;
-const BUSY_ROW = {
-  empty: "student.browse.busy.row.empty",
-  some: "student.browse.busy.row.some",
-  filling: "student.browse.busy.row.filling",
-  nearly_full: "student.browse.busy.row.nearly_full",
-  full: "student.browse.busy.row.full",
-} as const satisfies Record<Fullness, CopyId>;
-const BUSY_ROW_ESTIMATE = {
-  empty: "student.browse.busy.row_estimate.empty",
-  some: "student.browse.busy.row_estimate.some",
-  filling: "student.browse.busy.row_estimate.filling",
-  nearly_full: "student.browse.busy.row_estimate.nearly_full",
-  full: "student.browse.busy.row_estimate.full",
-} as const satisfies Record<Fullness, CopyId>;
-
-/** The one sentence for a forecast slot: typical, estimate, or no data. Never live. */
-function busyLine(reading: SlotReading, at: Date, tz: string): string {
-  if (reading.confidence === "none") return t("student.browse.busy.none");
-  const bucket = busyBucket(reading.ratio);
-  if (reading.confidence === "estimated") return t(BUSY_ESTIMATE[bucket]);
-  return t(BUSY_TYPICAL[bucket], { when: slotWhen(at, tz) });
-}
-
-function rowBusy(reading: SlotReading): string {
-  if (reading.confidence === "none") return t("student.browse.busy.row_none");
-  const bucket = busyBucket(reading.ratio);
-  return t(reading.confidence === "estimated" ? BUSY_ROW_ESTIMATE[bucket] : BUSY_ROW[bucket]);
-}
-
-function closesText(closesAt: Date, at: Date, tz: string): string {
-  const left = closesAt.getTime() - at.getTime();
-  if (left >= 20 * HOUR_MS) return t("student.browse.open_all_day");
-  if (left < HOUR_MS) {
-    return t("student.browse.closes_in", { minutes: Math.max(0, Math.round(left / 60_000)) });
-  }
-  return t("student.browse.open_till", { closes: clockText(closesAt, tz) });
-}
-
-function lockText(access: Access): string | null {
-  if (access.kind === "open") return null;
-  if (access.kind === "unverified") return t("student.browse.lock.unverified");
-  const { eligibility, scope } = access;
-  if (eligibility === "grad_only") return t("student.browse.lock.grad");
-  if (eligibility === "department") {
-    return scope === null
-      ? t("student.browse.lock.department_unknown")
-      : t("student.browse.lock.department", { scope });
-  }
-  if (scope === null) return t("student.browse.lock.residents_unknown");
-  return eligibility === "residents_quad"
-    ? t("student.browse.lock.quad", { scope })
-    : t("student.browse.lock.building", { scope });
-}
 
 function hoursBySpot(bundle: Bundle): Map<string, BundleHours[]> {
   const m = new Map<string, BundleHours[]>();
@@ -217,17 +116,6 @@ function hoursBySpot(bundle: Bundle): Map<string, BundleHours[]> {
     else list.push(h);
   }
   return m;
-}
-
-const spotName = (spot: BundleSpot): string => spot.common_name ?? spot.official_name;
-
-/** The newest date any group of the spot was checked, as "Checked Oct 6". */
-function checkedText(spot: BundleSpot, tz: string): string {
-  const newest = Object.values(spot.verified)
-    .filter((v): v is string => v !== undefined)
-    .sort()
-    .at(-1);
-  return newest === undefined ? "" : t("student.browse.checked", { date: shortDay(newest, tz) });
 }
 
 /**
@@ -325,22 +213,4 @@ export function hiddenLockedText(count: number): string | null {
   return count === 0
     ? null
     : plural(count, "student.browse.hidden_locked_one", "student.browse.hidden_locked");
-}
-
-/** How old the bundle is, in words, and a note when it is old enough to matter. */
-export function browseDataAge(
-  ageDays: number,
-  checkFailed: boolean,
-): { line: string; prominent: string | null; offline: string | null } {
-  const line =
-    ageDays <= 0
-      ? t("student.browse.data.today")
-      : ageDays === 1
-        ? t("student.browse.data.yesterday")
-        : t("student.browse.data.days", { days: ageDays });
-  return {
-    line,
-    prominent: ageDays > 3 ? t("student.browse.data.old", { days: ageDays }) : null,
-    offline: checkFailed ? t("student.browse.data.offline") : null,
-  };
 }
