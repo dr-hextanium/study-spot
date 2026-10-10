@@ -42,6 +42,7 @@ const SAMPLE: Readonly<Record<string, string>> = {
   scope: "Kelly Quad",
   section: "Power and signal",
   spot: "SAC Lounge",
+  status: "Open till 2:00 AM",
   term: "Fall 2026",
   time: "Oct 15, 3:40 PM",
   total: "6",

@@ -35,6 +35,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,woff2,webmanifest}"],
+        // The map (MapLibre, about 1 MB) loads on demand and needs a connection for its tiles
+        // anyway, so it stays out of the offline precache. scripts/check-chunks.ts guards this.
+        globIgnores: ["**/MapView-*.js", "**/MapView-*.css"],
         navigateFallback: "/index.html",
         cleanupOutdatedCaches: true,
         runtimeCaching: [
@@ -53,8 +56,9 @@ export default defineConfig({
       },
     }),
   ],
-  // One chunk on purpose: the service worker precaches it, so every survey screen opens offline.
-  build: { chunkSizeWarningLimit: 900 },
+  // One app chunk on purpose: the service worker precaches it, so every screen opens offline.
+  // The map is the exception: its own lazy chunk (about 1 MB), listed in globIgnores above.
+  build: { chunkSizeWarningLimit: 1100 },
   server: { port: 5173, strictPort: true },
   preview: { port: 4173, strictPort: true },
 });

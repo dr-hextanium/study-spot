@@ -1,0 +1,22 @@
+/* Only what the map library itself needs; loaded with the map chunk. */
+
+.map .maplibregl-ctrl-attrib {
+  font-family: var(--font-body);
+  font-size: var(--fontSize-caption);
+}
+
+/* The attribution links are small inline text; their hit areas still reach 44 px. */
+.map .maplibregl-ctrl-attrib a {
+  position: relative;
+}
+
+.map .maplibregl-ctrl-attrib a::before {
+  content: "";
+  position: absolute;
+  inset: -15px -2px;
+}
+
+.map .maplibregl-marker {
+  /* Pins are buttons: let them take the pointer and the focus ring. */
+  pointer-events: auto;
+}

@@ -1,7 +1,4 @@
-import { t } from "@perch/ui-logic";
 import { createFileRoute } from "@tanstack/react-router";
-import { Placeholder } from "../screens/student/Placeholder.tsx";
+import { Browse } from "../screens/student/Browse.tsx";
 
-export const Route = createFileRoute("/_student/browse")({
-  component: () => <Placeholder title={t("student.browse.title")} />,
-});
+export const Route = createFileRoute("/_student/browse")({ component: Browse });

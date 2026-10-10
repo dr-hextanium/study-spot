@@ -1,0 +1,129 @@
+/* Browse: layout glue only, from the existing tokens. */
+
+.browse__tools {
+  display: flex;
+  margin-top: var(--space-xxs);
+}
+
+.browse__caption {
+  margin: var(--space-xs) 0 var(--space-sm);
+}
+
+/* The row's end: the busyness word over the check date, both Small and muted. */
+.browse__end {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  color: var(--color-muted);
+  font-size: var(--fontSize-small);
+  text-align: right;
+}
+
+.browse__lock {
+  flex: none;
+  color: var(--color-muted);
+}
+
+.browse__empty {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-xs);
+}
+
+/* The map: its frame and the pins. Pins use only the four palette colors and their mixes. */
+.map {
+  height: min(60vh, 520px);
+  min-height: 320px;
+  margin-top: var(--space-xs);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  background: var(--color-mist);
+}
+
+.map--loading {
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  font-size: var(--fontSize-label);
+}
+
+.pin {
+  display: inline-block;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--color-edge);
+  border-radius: var(--radius-pill);
+}
+
+button.pin {
+  cursor: pointer;
+}
+
+/* The 44 px hit area, on the map's pin buttons only (the legend's swatches are not controls). */
+button.pin::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+
+.pin--empty {
+  background: var(--color-paper);
+}
+
+.pin--some {
+  background: var(--color-mist);
+}
+
+.pin--filling {
+  background: color-mix(in oklab, var(--color-ink) 45%, var(--color-paper));
+}
+
+.pin--nearly_full {
+  background: color-mix(in oklab, var(--color-ink) 75%, var(--color-paper));
+}
+
+.pin--full {
+  background: var(--color-ink);
+}
+
+.pin--none {
+  border-style: dashed;
+  background: var(--color-paper);
+}
+
+.pin[aria-pressed="true"],
+.pin:focus-visible {
+  outline: 3px solid var(--color-red);
+  outline-offset: 2px;
+}
+
+.map-legend {
+  margin-top: var(--space-sm);
+}
+
+.map-legend__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-md);
+  margin: var(--space-xs) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fontSize-small);
+}
+
+.map-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.map-legend .pin {
+  width: 16px;
+  height: 16px;
+}
+
+.map-card {
+  margin-top: var(--space-sm);
+}
