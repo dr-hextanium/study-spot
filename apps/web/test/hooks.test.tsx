@@ -1,10 +1,11 @@
 import { buildSpotView } from "@study-spot/ui-logic";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";
-import { identity } from "../../../packages/ui-logic/test/builders.ts";
+import { identity, POWER, SPOT_A } from "../../../packages/ui-logic/test/builders.ts";
 import { AppProvider } from "../src/app/AppProvider.tsx";
+import { useCalmSyncHeader, useSyncHeader } from "../src/hooks/useOutbox.ts";
 import { fieldsCleared, useSectionForm } from "../src/hooks/useSectionForm.ts";
 import { useSpotView } from "../src/hooks/useSpotView.ts";
 import { ME, testApp } from "./harness.tsx";
@@ -126,4 +127,44 @@ test("before the queue is read from disk the view is loading, not missing", asyn
     for (const l of listeners) l();
   });
   await waitFor(() => expect(view.result.current.kind).toBe("ready"));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+test("the calm sync label waits before Syncing and holds it before All synced", async () => {
+  const app = testApp({ spots: [surveySpotFixture({ id: SPOT_A, version: 3 })] });
+  await app.deps.started;
+  app.network.set(false);
+  await app.deps.outbox.enqueue({ kind: "spot.section", spot_id: SPOT_A, payload: POWER }, 3);
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+  const view = renderHook(() => ({ calm: useCalmSyncHeader(), raw: useSyncHeader() }), {
+    wrapper: wrap(app),
+  });
+  expect(view.result.current.calm).toEqual({ kind: "offline" });
+
+  const gate = app.server.inner.holdNext();
+  await act(async () => {
+    app.network.set(true);
+    await gate.arrived;
+  });
+  expect(view.result.current.raw).toEqual({ kind: "syncing", count: 1 });
+  expect(view.result.current.calm).toEqual({ kind: "pending", count: 1 });
+  // Past the 400 ms delay, waiting still holds out its one second before the swap.
+  act(() => vi.advanceTimersByTime(999));
+  expect(view.result.current.calm.kind).toBe("pending");
+  act(() => vi.advanceTimersByTime(1));
+  expect(view.result.current.calm).toEqual({ kind: "syncing", count: 1 });
+
+  await act(async () => {
+    gate.release();
+    await app.deps.outbox.idle();
+  });
+  expect(view.result.current.raw).toEqual({ kind: "all_synced" });
+  expect(view.result.current.calm.kind).toBe("syncing");
+  act(() => vi.advanceTimersByTime(799));
+  expect(view.result.current.calm.kind).toBe("syncing");
+  act(() => vi.advanceTimersByTime(1));
+  expect(view.result.current.calm).toEqual({ kind: "all_synced" });
 });

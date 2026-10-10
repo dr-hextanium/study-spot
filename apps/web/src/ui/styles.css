@@ -1145,6 +1145,48 @@ body:has(.update) .toast-region {
   }
 }
 
+/* Crossfade: the old and new content share one grid cell while the old fades out. */
+.xfade {
+  display: inline-grid;
+  grid-template-columns: minmax(0, auto);
+  min-width: 0;
+}
+
+.xfade__layer {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.xfade__layer--in {
+  animation: xfade-in var(--duration-base) var(--easing-standard);
+}
+
+.xfade__layer--out {
+  animation: xfade-out var(--duration-base) var(--easing-standard) forwards;
+  pointer-events: none;
+}
+
+@keyframes xfade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes xfade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xfade__layer--out {
+    display: none;
+  }
+}
+
 .row-list {
   list-style: none;
   margin: 0;

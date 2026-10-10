@@ -11,11 +11,12 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
-import { useOutboxSnapshot, useSyncHeader } from "../hooks/useOutbox.ts";
+import { useCalmSyncHeader, useOutboxSnapshot } from "../hooks/useOutbox.ts";
 import { useSpotList } from "../hooks/useQueries.ts";
 import { headerLong, whatOf } from "../lib/format.ts";
 import { spotNames } from "../lib/names.ts";
 import { Button } from "../ui/Button.tsx";
+import { Crossfade } from "../ui/Crossfade.tsx";
 import { Icon } from "../ui/Icon.tsx";
 import { ConfirmSheet, Sheet } from "../ui/Sheet.tsx";
 
@@ -44,7 +45,7 @@ function headerIcon(kind: SyncHeader["kind"]): LucideIcon {
 export function SyncSheet(props: { open: boolean; onClose: () => void }) {
   const { outbox } = useDeps();
   const snapshot = useOutboxSnapshot();
-  const header = useSyncHeader();
+  const header = useCalmSyncHeader();
   const list = useSpotList();
   const names = spotNames(list.data, snapshot.records);
   const [unreadable, setUnreadable] = useState<string[]>([]);
@@ -75,8 +76,10 @@ export function SyncSheet(props: { open: boolean; onClose: () => void }) {
         onClose={props.onClose}
       >
         <p className="sync-status">
-          <Icon icon={headerIcon(header.kind)} />
-          <span>{headerLong(header)}</span>
+          <Crossfade id={headerLong(header)}>
+            <Icon icon={headerIcon(header.kind)} />
+            <span>{headerLong(header)}</span>
+          </Crossfade>
         </p>
         {empty ? <p className="empty">{t("sync.sheet.empty")}</p> : null}
         {snapshot.records.length > 0 ? (
