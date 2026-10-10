@@ -15,7 +15,8 @@ export function photoCacheRule(dataOrigin: string) {
     urlPattern: new RegExp(`^${escapeRegExp(origin)}/photos/[^/]+$`),
     handler: "CacheFirst" as const,
     options: {
-      cacheName: "perch-photos",
+      // Not "perch-photos": that cache holds opaque no-cors entries from before photos used CORS.
+      cacheName: "perch-photos-cors",
       expiration: { maxEntries: 80, maxAgeSeconds: 30 * 24 * 60 * 60 },
       cacheableResponse: { statuses: [200] },
     },

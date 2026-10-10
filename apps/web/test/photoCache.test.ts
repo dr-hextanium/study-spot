@@ -13,6 +13,12 @@ test("only the data site's photos are cached", () => {
   expect(match("https://perch-data.pages.dev/x/photos/a.jpg")).toBe(false);
 });
 
+test("CORS photos get their own cache, apart from the old opaque entries", () => {
+  // The old rule kept no-cors (opaque) responses in "perch-photos". CacheFirst matches by URL,
+  // so reusing that name would answer a crossOrigin request with an opaque entry: a load error.
+  expect(rule.options.cacheName).toBe("perch-photos-cors");
+});
+
 test("only full 200 responses are kept, never an opaque one", () => {
   expect(rule.options.cacheableResponse.statuses).toEqual([200]);
   expect(rule.handler).toBe("CacheFirst");
