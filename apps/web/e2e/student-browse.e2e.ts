@@ -92,8 +92,26 @@ test.describe("map", () => {
     await expect(page.getByText("Typical busyness, not live")).toBeVisible();
 
     const pin = page.locator("button.pin").first();
+    // Mark this exact button: a tap must keep it (no rebuilt markers) and keep the view.
+    await pin.evaluate((el) => {
+      el.dataset.probe = "kept";
+    });
+    const before = await pin.boundingBox();
     await pin.click();
-    await expect(pin).toHaveAttribute("aria-pressed", "true");
+    const kept = page.locator('button.pin[data-probe="kept"]');
+    await expect(kept).toHaveAttribute("aria-pressed", "true");
+    expect(await kept.boundingBox()).toEqual(before);
+    // From the keyboard, choosing another pin keeps focus on that pin.
+    const second = page.locator("button.pin").nth(1);
+    await second.evaluate((el) => {
+      el.dataset.probe = "keyed";
+    });
+    await second.focus();
+    await page.keyboard.press("Enter");
+    const keyed = page.locator('button.pin[data-probe="keyed"]');
+    await expect(keyed).toHaveAttribute("aria-pressed", "true");
+    await expect(keyed).toBeFocused();
+    expect(await kept.boundingBox()).toEqual(before);
     const open = page.getByRole("link", { name: "Open spot" });
     await expect(open).toBeVisible();
     await expect(open).toHaveAttribute("href", /\/spot\//);
