@@ -751,6 +751,7 @@ Every Home string, including the presenters Home shares with the spot page and B
 | student.home.from.locating | Finding you | 16 | |
 | student.home.from.denied | Location is off. Pick a building instead. | 48 | |
 | student.home.from.imprecise | Location too rough. Pick a building instead. | 48 | |
+| student.home.from.far | You're over 2 km from campus. From stays put. | 48 | fix farther than 2 km from every building |
 | student.home.from.located | Nearest building: {building} | 48 | |
 | student.home.from.privacy | Used once to find the nearest building. Never saved or sent. | 64 | |
 | student.home.from.search | Search buildings | 20 | |

@@ -99,6 +99,21 @@ test("a refused or rough fix says to pick a building", async () => {
   ).toBeTruthy();
 });
 
+test("a fix far from campus keeps the current From and says so", async () => {
+  const app = testApp({ me: null });
+  app.deps.geolocation = {
+    current: async () => ({ lat: 40.9465, lng: -73.0693, accuracyMeters: 20 }),
+  };
+  await home(app);
+  fireEvent.click(fromRow());
+  const sheet = screen.getByRole("dialog", { name: t("student.home.from.sheet") });
+  await act(async () => {
+    fireEvent.click(within(sheet).getByRole("button", { name: t("student.home.from.locate") }));
+  });
+  expect(await within(sheet).findByText(t("student.home.from.far"))).toBeTruthy();
+  expect(fromRow().textContent).toContain("Melville Library");
+});
+
 test("a building from the list becomes From and closes the sheet", async () => {
   const { app } = await home();
   fireEvent.click(fromRow());

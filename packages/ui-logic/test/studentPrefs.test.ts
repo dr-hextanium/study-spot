@@ -8,6 +8,7 @@ import {
   FILTERS,
   filterGroupLabel,
   isOn,
+  MAX_BUILDING_METERS,
   nearestBuilding,
   PICK_PREFS_KEY,
   PickPrefs,
@@ -103,15 +104,23 @@ test("filters toggle exact criteria", () => {
   }
 });
 
-test("nearest building snaps a fix and refuses a rough one", () => {
+test("nearest building snaps a fix, refuses a rough one, and one far from campus", () => {
   const { buildings } = makeScoringBundle();
-  expect(nearestBuilding(buildings, { lat: 40.9146, lng: -73.1242, accuracyMeters: 20 })?.id).toBe(
-    "sac",
+  const near = nearestBuilding(buildings, { lat: 40.9146, lng: -73.1242, accuracyMeters: 20 });
+  expect(near.kind === "near" ? near.building.id : null).toBe("sac");
+  expect(nearestBuilding(buildings, { lat: 40.9146, lng: -73.1242, accuracyMeters: 5000 })).toEqual(
+    { kind: "rough" },
   );
+  // Port Jefferson, about 8 km away: no building is close enough to stand in for it.
+  expect(nearestBuilding(buildings, { lat: 40.9465, lng: -73.0693, accuracyMeters: 20 })).toEqual({
+    kind: "far",
+  });
+  // Just inside the limit still snaps.
   expect(
-    nearestBuilding(buildings, { lat: 40.9146, lng: -73.1242, accuracyMeters: 5000 }),
-  ).toBeNull();
-  expect(nearestBuilding([], { lat: 0, lng: 0, accuracyMeters: 1 })).toBeNull();
+    nearestBuilding(buildings, { lat: 40.9154 + 0.017, lng: -73.1222, accuracyMeters: 20 }).kind,
+  ).toBe("near");
+  expect(MAX_BUILDING_METERS).toBe(2000);
+  expect(nearestBuilding([], { lat: 0, lng: 0, accuracyMeters: 1 })).toEqual({ kind: "far" });
 });
 
 test("directions carry only the spot's point", () => {

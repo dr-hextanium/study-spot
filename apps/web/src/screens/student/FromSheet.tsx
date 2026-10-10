@@ -14,6 +14,7 @@ type Status =
   | { kind: "pending" }
   | { kind: "denied" }
   | { kind: "imprecise" }
+  | { kind: "far" }
   | { kind: "located"; name: string };
 
 /**
@@ -38,13 +39,18 @@ export function FromSheet(props: {
       setStatus({ kind: "denied" });
       return;
     }
-    const building = nearestBuilding(props.buildings, fix);
-    if (building === null) {
+    const near = nearestBuilding(props.buildings, fix);
+    if (near.kind === "rough") {
       setStatus({ kind: "imprecise" });
       return;
     }
-    props.onChoose(building.id);
-    setStatus({ kind: "located", name: building.name });
+    // Off campus: a far-away building would be a wrong walk, so the From stays.
+    if (near.kind === "far") {
+      setStatus({ kind: "far" });
+      return;
+    }
+    props.onChoose(near.building.id);
+    setStatus({ kind: "located", name: near.building.name });
   }
 
   const close = () => {
@@ -87,9 +93,11 @@ export function FromSheet(props: {
             ? t("student.home.from.denied")
             : status.kind === "imprecise"
               ? t("student.home.from.imprecise")
-              : status.kind === "located"
-                ? t("student.home.from.located", { building: status.name })
-                : ""}
+              : status.kind === "far"
+                ? t("student.home.from.far")
+                : status.kind === "located"
+                  ? t("student.home.from.located", { building: status.name })
+                  : ""}
         </p>
       </div>
     </BuildingSheet>
