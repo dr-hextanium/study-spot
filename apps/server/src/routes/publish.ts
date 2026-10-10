@@ -1,4 +1,4 @@
-import { PublishStatus } from "@study-spot/core";
+import { PublishStatus } from "@perch/core";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import type { AppDeps } from "../app.ts";
 import { requireAdmin } from "../auth/guards.ts";

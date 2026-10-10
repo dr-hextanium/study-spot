@@ -1,4 +1,4 @@
-import type { SurveySection, V0Field } from "@study-spot/core";
+import type { SurveySection, V0Field } from "@perch/core";
 import {
   fieldList,
   isLocalId,
@@ -9,7 +9,7 @@ import {
   stepProgress,
   t,
   walkNext,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import { useBlocker, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, CalendarCheck } from "lucide-react";
 import { type ReactNode, useContext, useRef, useState } from "react";

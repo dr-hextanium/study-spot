@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { BundleSpot } from "@study-spot/core";
+import { BundleSpot } from "@perch/core";
 import type { SpotRow, VerificationRow } from "../src/bundle/spot.ts";
 import { toBundleSpot } from "../src/bundle/spot.ts";
 

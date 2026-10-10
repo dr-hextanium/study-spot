@@ -1,4 +1,4 @@
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { Screen } from "../ui/Screen.tsx";
 
 /** Every survey route when this phone has no working sign-in. Queued changes are kept. */

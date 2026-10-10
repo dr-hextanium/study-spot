@@ -4,7 +4,7 @@ import {
   THEME_STORAGE_KEY,
   type ThemePref,
   tokens,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import { useSyncExternalStore } from "react";
 
 const DARK = "(prefers-color-scheme: dark)";

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { parseBundle } from "@perch/core";
 import type { Page } from "@playwright/test";
-import { parseBundle } from "@study-spot/core";
 import { completeSpot, getSpot, tokenOf } from "./api.ts";
 import { expect, serverState, signIn, test } from "./fixtures.ts";
 import { bigJpeg } from "./photo.ts";

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import "fake-indexeddb/auto";
-import type { HttpRequest } from "@study-spot/ui-logic";
+import type { HttpRequest } from "@perch/ui-logic";
 import { openDB } from "idb";
 import { expect, test, vi } from "vitest";
 import { createBroadcastSignal } from "../src/adapters/browser.ts";

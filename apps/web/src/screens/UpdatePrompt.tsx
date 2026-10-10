@@ -1,5 +1,5 @@
 import { useRegisterSW } from "virtual:pwa-register/react";
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { RefreshCw } from "lucide-react";
 import { Icon } from "../ui/Icon.tsx";
 

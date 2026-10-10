@@ -1,5 +1,5 @@
-import type { SpotList } from "@study-spot/core";
-import { bySeq, type WriteRecord } from "@study-spot/ui-logic";
+import type { SpotList } from "@perch/core";
+import { bySeq, type WriteRecord } from "@perch/ui-logic";
 
 /** Spot id to the name a surveyor last saw or typed, for the sync sheet. */
 export function spotNames(

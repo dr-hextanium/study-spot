@@ -1,4 +1,4 @@
-import { BUNDLE_SCHEMA_MAJOR, type Bundle, BundlePointer, parseBundle } from "@study-spot/core";
+import { BUNDLE_SCHEMA_MAJOR, type Bundle, BundlePointer, parseBundle } from "@perch/core";
 import { z } from "zod";
 import type { Clock, Fetch, KeyValueCache } from "./adapters.ts";
 

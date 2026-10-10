@@ -1,5 +1,5 @@
-import { PHOTO_MAX_BYTES } from "@study-spot/core";
-import { t } from "@study-spot/ui-logic";
+import { PHOTO_MAX_BYTES } from "@perch/core";
+import { t } from "@perch/ui-logic";
 import { expect, test } from "vitest";
 import { cellsOf, nextBucket, toGrid } from "../src/lib/estimates.ts";
 import { fieldValueText, valueText } from "../src/lib/fields.ts";

@@ -1,5 +1,5 @@
-import { type AcceptInviteResponse, OpaqueToken } from "@study-spot/core";
-import { t } from "@study-spot/ui-logic";
+import { type AcceptInviteResponse, OpaqueToken } from "@perch/core";
+import { t } from "@perch/ui-logic";
 import { useNavigate } from "@tanstack/react-router";
 import { Smartphone, User } from "lucide-react";
 import { useState } from "react";

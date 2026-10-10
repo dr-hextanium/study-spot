@@ -1,5 +1,5 @@
 import cors from "@fastify/cors";
-import type { Db } from "@study-spot/db";
+import type { Db } from "@perch/db";
 import Fastify from "fastify";
 import {
   hasZodFastifySchemaValidationErrors,

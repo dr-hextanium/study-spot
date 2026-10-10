@@ -1,4 +1,4 @@
-import { SurveySpot } from "@study-spot/core";
+import { SurveySpot } from "@perch/core";
 import type { AppDeps } from "../app.ts";
 import type { AuthedSurveyor } from "../auth/sessions.ts";
 import { currentTerm } from "../spots/load.ts";

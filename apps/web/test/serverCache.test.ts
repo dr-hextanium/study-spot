@@ -1,4 +1,4 @@
-import type { SpotList, SurveySpot } from "@study-spot/core";
+import type { SpotList, SurveySpot } from "@perch/core";
 import { QueryClient } from "@tanstack/react-query";
 import { expect, test } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";

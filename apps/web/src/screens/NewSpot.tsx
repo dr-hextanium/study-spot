@@ -1,5 +1,5 @@
-import type { IdentitySection } from "@study-spot/core";
-import { localIdFor, t } from "@study-spot/ui-logic";
+import type { IdentitySection } from "@perch/core";
+import { localIdFor, t } from "@perch/ui-logic";
 import { useNavigate } from "@tanstack/react-router";
 import { Layers, Signpost, Tag, Type } from "lucide-react";
 import { useState } from "react";

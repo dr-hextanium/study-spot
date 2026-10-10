@@ -1,5 +1,5 @@
-import { SURVEY_SECTION, type SurveySection } from "@study-spot/core";
-import { SpotRef, t } from "@study-spot/ui-logic";
+import { SURVEY_SECTION, type SurveySection } from "@perch/core";
+import { SpotRef, t } from "@perch/ui-logic";
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";

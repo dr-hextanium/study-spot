@@ -1,5 +1,5 @@
-import type { SurveyorPublic, SurveyorRole } from "@study-spot/core";
-import { auth_session, type Db, invite, surveyor } from "@study-spot/db";
+import type { SurveyorPublic, SurveyorRole } from "@perch/core";
+import { auth_session, type Db, invite, surveyor } from "@perch/db";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import { HttpError } from "../http.ts";
 import { createSession } from "./sessions.ts";

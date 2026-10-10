@@ -4,7 +4,7 @@ import type {
   SectionWrite,
   SurveyorRole,
   SurveySpot,
-} from "@study-spot/core";
+} from "@perch/core";
 import {
   building,
   type Db,
@@ -17,7 +17,7 @@ import {
   spot_verification,
   type TermRow,
   term,
-} from "@study-spot/db";
+} from "@perch/db";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { HttpError } from "../http.ts";
 import type { WriteOutcome } from "../writes/withWrite.ts";

@@ -1,4 +1,4 @@
-import type { Ids, Liveness, Lock } from "@study-spot/ui-logic";
+import type { Ids, Liveness, Lock } from "@perch/ui-logic";
 
 /** The part of the Web Locks API the outbox needs; navigator.locks satisfies it. */
 export type LockApi = {

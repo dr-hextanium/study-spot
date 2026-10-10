@@ -22,7 +22,7 @@ import {
   type VerifyRequest,
   VersionConflict,
   type WriteRequest,
-} from "@study-spot/core";
+} from "@perch/core";
 import { z } from "zod";
 import type { Http, HttpBody, HttpMethod } from "../adapters.ts";
 

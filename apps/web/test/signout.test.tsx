@@ -1,4 +1,4 @@
-import type { SpotList } from "@study-spot/core";
+import type { SpotList } from "@perch/core";
 import { persistQueryClientSave } from "@tanstack/react-query-persist-client";
 import { expect, test } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";

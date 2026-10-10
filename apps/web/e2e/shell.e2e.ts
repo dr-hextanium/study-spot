@@ -1,4 +1,4 @@
-import { tokens } from "@study-spot/ui-logic";
+import { tokens } from "@perch/ui-logic";
 import { draftSpot, tokenOf } from "./api.ts";
 import { expect, pinClock, signIn, test } from "./fixtures.ts";
 

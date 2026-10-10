@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
-import { buildBundle } from "@study-spot/db";
-import { seed } from "@study-spot/db/seed";
-import { createTestDb } from "@study-spot/db/testing";
+import { buildBundle } from "@perch/db";
+import { seed } from "@perch/db/seed";
+import { createTestDb } from "@perch/db/testing";
 import {
   type CheckOptions,
   type CheckResult,

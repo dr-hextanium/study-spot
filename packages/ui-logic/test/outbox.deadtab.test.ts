@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { SurveySpot } from "@study-spot/core";
+import type { SurveySpot } from "@perch/core";
 import { surveySpotFixture } from "../../core/test/fixtures/survey-spot.ts";
 import { createOutbox, createSurveyApi, HELD_RECHECK_MS } from "../src/index.ts";
 import { POWER, SEATING, SPOT_A } from "./builders.ts";

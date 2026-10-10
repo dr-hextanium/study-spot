@@ -1,4 +1,4 @@
-import { paletteVariables, sharedVariables, type Tokens } from "@study-spot/ui-logic";
+import { paletteVariables, sharedVariables, type Tokens } from "@perch/ui-logic";
 
 function block(selector: string, vars: Record<string, string>, indent = ""): string {
   const lines = Object.entries(vars).map(([name, value]) => `${indent}  ${name}: ${value};`);

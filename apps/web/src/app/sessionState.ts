@@ -1,4 +1,4 @@
-import { SESSION_KEY, type SessionStore, type StoredSession } from "@study-spot/ui-logic";
+import { SESSION_KEY, type SessionStore, type StoredSession } from "@perch/ui-logic";
 
 /** The stored session as an external store, so screens re-render when it changes in any tab. */
 export type SessionState = {

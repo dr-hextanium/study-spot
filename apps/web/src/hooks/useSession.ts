@@ -1,4 +1,4 @@
-import type { AcceptInviteResponse, SurveyorPublic } from "@study-spot/core";
+import type { AcceptInviteResponse, SurveyorPublic } from "@perch/core";
 import { useSyncExternalStore } from "react";
 import { useDeps } from "../app/AppProvider.tsx";
 import { useOutboxSnapshot } from "./useOutbox.ts";

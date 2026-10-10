@@ -1,4 +1,4 @@
-import { createSessionStore } from "@study-spot/ui-logic";
+import { createSessionStore } from "@perch/ui-logic";
 import { expect, test } from "vitest";
 import { MemoryStorage } from "../../../packages/ui-logic/test/fakes.ts";
 import { createSessionState } from "../src/app/sessionState.ts";

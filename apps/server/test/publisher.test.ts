@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { BundlePointer, PublishStatus, parseBundle, SurveySpot } from "@study-spot/core";
-import { building, bundle_state, campus, spot, spot_photo } from "@study-spot/db";
+import { BundlePointer, PublishStatus, parseBundle, SurveySpot } from "@perch/core";
+import { building, bundle_state, campus, spot, spot_photo } from "@perch/db";
 import { eq } from "drizzle-orm";
 import { postgresPhotoStore, sha256Hex } from "../src/photos/store.ts";
 import { fsTarget } from "../src/publish/fsTarget.ts";

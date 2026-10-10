@@ -1,4 +1,4 @@
-import { openDb } from "@study-spot/db";
+import { openDb } from "@perch/db";
 import { buildApp } from "./app.ts";
 import { systemClock } from "./clock.ts";
 import { parseEnv } from "./env.ts";

@@ -4,8 +4,8 @@ import {
   SpotList as SpotListSchema,
   type SpotSummary,
   SurveySpot,
-} from "@study-spot/core";
-import type { Outbox } from "@study-spot/ui-logic";
+} from "@perch/core";
+import type { Outbox } from "@perch/ui-logic";
 import type { QueryClient } from "@tanstack/react-query";
 import type { PersistedClient } from "@tanstack/react-query-persist-client";
 import { z } from "zod";

@@ -1,4 +1,4 @@
-import { fallbackWalkMinutes } from "@study-spot/core";
+import { fallbackWalkMinutes } from "@perch/core";
 import type { building, walk_matrix } from "../schema/index.ts";
 
 export type BuildingRow = typeof building.$inferSelect;

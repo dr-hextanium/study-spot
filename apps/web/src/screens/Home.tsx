@@ -7,7 +7,7 @@ import {
   type OutboxSnapshot,
   plural,
   t,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Ellipsis, History, Plus, Shield } from "lucide-react";
 import { useEffect, useState } from "react";

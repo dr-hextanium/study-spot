@@ -1,4 +1,4 @@
-import type { HoursRow } from "@study-spot/core";
+import type { HoursRow } from "@perch/core";
 
 /** Monday first, as the hours editor lists days; values are day_of_week (0 is Sunday). */
 export const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;

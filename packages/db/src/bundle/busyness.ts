@@ -6,7 +6,7 @@ import {
   SLOTS,
   type SlotConfidence,
   slotIndex,
-} from "@study-spot/core";
+} from "@perch/core";
 import type { forecast, spot_estimate } from "../schema/index.ts";
 
 export type ForecastRow = typeof forecast.$inferSelect;

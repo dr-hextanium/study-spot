@@ -1,4 +1,4 @@
-import { isLocalId, type SyncHeader, t, type WriteRecord } from "@study-spot/ui-logic";
+import { isLocalId, type SyncHeader, t, type WriteRecord } from "@perch/ui-logic";
 import { Link } from "@tanstack/react-router";
 import {
   Check,

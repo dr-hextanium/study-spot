@@ -8,7 +8,7 @@ import type {
   QueueSignal,
   Share,
   Timers,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 
 export const systemClock: Clock = { now: () => new Date() };
 

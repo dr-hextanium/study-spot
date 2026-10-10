@@ -1,4 +1,4 @@
-import { BundlePointer, parseBundle } from "@study-spot/core";
+import { BundlePointer, parseBundle } from "@perch/core";
 import { z } from "zod";
 
 export type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;

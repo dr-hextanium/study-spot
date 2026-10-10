@@ -1,4 +1,4 @@
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import type { LucideIcon } from "lucide-react";
 import { type Option, Segmented } from "./Segmented.tsx";
 

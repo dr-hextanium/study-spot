@@ -1,4 +1,4 @@
-import { t } from "@study-spot/ui-logic";
+import { t } from "@perch/ui-logic";
 import { CircleAlert, type LucideIcon, Minus, Plus } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Icon } from "./Icon.tsx";

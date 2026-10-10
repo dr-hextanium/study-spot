@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { CampusInfo, CreateInviteResponse } from "@study-spot/core";
+import { CampusInfo, CreateInviteResponse } from "@perch/core";
 import { body, setup, signIn, WEB_ORIGIN } from "./helpers.ts";
 
 test("a signed-in surveyor reads the campus and its buildings by name", async () => {

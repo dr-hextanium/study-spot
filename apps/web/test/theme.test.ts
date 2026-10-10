@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { tokens } from "@study-spot/ui-logic";
+import { tokens } from "@perch/ui-logic";
 import { expect, test } from "vitest";
 import { themeCss } from "../src/ui/theme.ts";
 

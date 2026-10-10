@@ -1,4 +1,4 @@
-import type { LatLngFix } from "@study-spot/ui-logic";
+import type { LatLngFix } from "@perch/ui-logic";
 
 /** Worse than this, the building's own point is the better guess (journey edge 10). */
 export const GOOD_FIX_METERS = 50;

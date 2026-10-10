@@ -1,4 +1,4 @@
-import { tokens } from "@study-spot/ui-logic";
+import { tokens } from "@perch/ui-logic";
 import { type ReactNode, useEffect, useState } from "react";
 
 type Layer = { id: string; node: ReactNode };

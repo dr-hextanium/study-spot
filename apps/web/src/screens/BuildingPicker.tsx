@@ -1,5 +1,5 @@
-import type { CampusInfo } from "@study-spot/core";
-import { t } from "@study-spot/ui-logic";
+import type { CampusInfo } from "@perch/core";
+import { t } from "@perch/ui-logic";
 import { Building2, Check } from "lucide-react";
 import { useId, useState } from "react";
 import { Icon } from "../ui/Icon.tsx";

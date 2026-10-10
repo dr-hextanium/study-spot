@@ -1,4 +1,4 @@
-import { HOME_FILTER } from "@study-spot/ui-logic";
+import { HOME_FILTER } from "@perch/ui-logic";
 import { useState } from "react";
 import { z } from "zod";
 

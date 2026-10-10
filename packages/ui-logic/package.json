@@ -1,5 +1,5 @@
 {
-  "name": "@study-spot/ui-logic",
+  "name": "@perch/ui-logic",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -7,7 +7,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@study-spot/core": "workspace:*",
+    "@perch/core": "workspace:*",
     "zod": "^4.6.5"
   }
 }

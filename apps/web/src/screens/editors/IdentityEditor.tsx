@@ -1,4 +1,4 @@
-import { isLocalId, type SpotView, t } from "@study-spot/ui-logic";
+import { isLocalId, type SpotView, t } from "@perch/ui-logic";
 import { Layers, Signpost, Snowflake, Tag, Trees, Type } from "lucide-react";
 import { useState } from "react";
 import { useCampus } from "../../hooks/useQueries.ts";

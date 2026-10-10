@@ -1,5 +1,5 @@
-import { PHOTO_CONTENT_TYPE } from "@study-spot/core";
-import { photoKey } from "@study-spot/ui-logic";
+import { PHOTO_CONTENT_TYPE } from "@perch/core";
+import { photoKey } from "@perch/ui-logic";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useDeps } from "../app/AppProvider.tsx";

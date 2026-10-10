@@ -1,9 +1,9 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { type Db, surveyor } from "@study-spot/db";
-import { type SeedIds, seed } from "@study-spot/db/seed";
-import { createTestDb } from "@study-spot/db/testing";
+import { type Db, surveyor } from "@perch/db";
+import { type SeedIds, seed } from "@perch/db/seed";
+import { createTestDb } from "@perch/db/testing";
 import type { LightMyRequestResponse } from "fastify";
 import { type App, buildApp } from "../src/app.ts";
 import { createSession } from "../src/auth/sessions.ts";

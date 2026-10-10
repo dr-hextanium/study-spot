@@ -1,4 +1,4 @@
-import type { IdentitySection, SectionWrite } from "@study-spot/core";
+import type { IdentitySection, SectionWrite } from "@perch/core";
 
 /** Identity for a new draft in a seed building. */
 export function identity(overrides: Partial<IdentitySection> = {}): IdentitySection {

@@ -22,7 +22,7 @@ import {
   TEMPERATURE,
   TIME_BLOCK,
   VERIFICATION_SOURCE,
-} from "@study-spot/core";
+} from "@perch/core";
 import { pgEnum } from "drizzle-orm/pg-core";
 
 export const eligibility = pgEnum("eligibility", ELIGIBILITY);

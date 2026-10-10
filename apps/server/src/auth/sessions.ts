@@ -1,5 +1,5 @@
-import { OpaqueToken, type SurveyorPublic } from "@study-spot/core";
-import { auth_session, type Db, surveyor } from "@study-spot/db";
+import { OpaqueToken, type SurveyorPublic } from "@perch/core";
+import { auth_session, type Db, surveyor } from "@perch/db";
 import { eq } from "drizzle-orm";
 import { hashToken, newToken } from "./tokens.ts";
 

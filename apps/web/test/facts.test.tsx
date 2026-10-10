@@ -1,5 +1,5 @@
-import type { SectionStatus } from "@study-spot/ui-logic";
-import { buildSpotView, type OverviewSection, t } from "@study-spot/ui-logic";
+import type { SectionStatus } from "@perch/ui-logic";
+import { buildSpotView, type OverviewSection, t } from "@perch/ui-logic";
 import { render, screen } from "@testing-library/react";
 import { expect, test } from "vitest";
 import { surveySpotFixture } from "../../../packages/core/test/fixtures/survey-spot.ts";

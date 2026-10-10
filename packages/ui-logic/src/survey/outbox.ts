@@ -1,4 +1,4 @@
-import type { IdentitySection, SurveySpot } from "@study-spot/core";
+import type { IdentitySection, SurveySpot } from "@perch/core";
 import type {
   BinaryCache,
   Clock,

@@ -1,5 +1,5 @@
-import type { SurveyorRole } from "@study-spot/core";
-import { plural, publishWarningText, t } from "@study-spot/ui-logic";
+import type { SurveyorRole } from "@perch/core";
+import { plural, publishWarningText, t } from "@perch/ui-logic";
 import { useIsFetching, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Ellipsis, Shield, TriangleAlert, UserCog } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";

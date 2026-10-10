@@ -1,4 +1,4 @@
-import { parseBundle } from "@study-spot/core";
+import { parseBundle } from "@perch/core";
 import { buildBundle } from "../src/bundle/buildBundle.ts";
 import { openDb } from "../src/client.ts";
 

@@ -1,8 +1,8 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { seed } from "@study-spot/db/seed";
-import { createTestDb } from "@study-spot/db/testing";
+import { seed } from "@perch/db/seed";
+import { createTestDb } from "@perch/db/testing";
 import { z } from "zod";
 import { buildApp } from "../src/app.ts";
 import { bootstrapAdminInvite } from "../src/auth/invites.ts";

@@ -1,4 +1,4 @@
-import type { SurveySpot } from "@study-spot/core";
+import type { SurveySpot } from "@perch/core";
 import {
   type BinaryCache,
   type Clock,
@@ -11,7 +11,7 @@ import {
   type Outbox,
   type Share,
   type SurveyApi,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { QueryClient } from "@tanstack/react-query";
 import type { Persister } from "@tanstack/react-query-persist-client";

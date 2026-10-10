@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { PHOTO_MAX_BYTES, SurveySpot } from "@study-spot/core";
-import { building, bundle_state, campus, photo_blob, spot, spot_photo } from "@study-spot/db";
+import { PHOTO_MAX_BYTES, SurveySpot } from "@perch/core";
+import { building, bundle_state, campus, photo_blob, spot, spot_photo } from "@perch/db";
 import { eq } from "drizzle-orm";
 import { sha256Hex } from "../src/photos/store.ts";
 import { body, NOW, type SignedIn, setup, signIn, type TestContext, writeId } from "./helpers.ts";

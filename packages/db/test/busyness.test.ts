@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { slotIndex } from "@study-spot/core";
+import { slotIndex } from "@perch/core";
 import { assembleBusyness, NO_DATA_RATIO } from "../src/bundle/busyness.ts";
 
 const SPOT = "8d0f7c1e-2b7a-4c39-9a51-3f6f4f0f2a11";

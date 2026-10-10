@@ -1,9 +1,4 @@
-import {
-  createCalmSync,
-  type OutboxSnapshot,
-  type SyncHeader,
-  syncHeader,
-} from "@study-spot/ui-logic";
+import { createCalmSync, type OutboxSnapshot, type SyncHeader, syncHeader } from "@perch/ui-logic";
 import { useSyncExternalStore } from "react";
 import { browserTimers } from "../adapters/browser.ts";
 import { useDeps } from "../app/AppProvider.tsx";

@@ -3,7 +3,7 @@ import {
   SectionWrite,
   type SurveySection,
   type SurveySpot,
-} from "@study-spot/core";
+} from "@perch/core";
 import type { WriteRecord } from "./writes.ts";
 
 /** A section's payload while being edited: any field may still be empty. */

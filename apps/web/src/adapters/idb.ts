@@ -1,4 +1,4 @@
-import type { BinaryCache, KeyValueCache } from "@study-spot/ui-logic";
+import type { BinaryCache, KeyValueCache } from "@perch/ui-logic";
 import { type DBSchema, type IDBPDatabase, openDB } from "idb";
 import { withTimeout } from "./timeout.ts";
 

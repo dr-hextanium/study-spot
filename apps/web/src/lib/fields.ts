@@ -12,8 +12,8 @@ import {
   type SeatType,
   type TableConfig,
   type Temperature,
-} from "@study-spot/core";
-import { COPY, type PlainCopyId, t } from "@study-spot/ui-logic";
+} from "@perch/core";
+import { COPY, type PlainCopyId, t } from "@perch/ui-logic";
 import type { Option } from "../ui/Segmented.tsx";
 
 // Object.keys widens to string[]; the keys of a Record<V, ...> are V.

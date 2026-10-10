@@ -1,5 +1,5 @@
-import type { Amenity, SeatType, TableConfig } from "@study-spot/core";
-import type { OverviewSection } from "@study-spot/ui-logic";
+import type { Amenity, SeatType, TableConfig } from "@perch/core";
+import type { OverviewSection } from "@perch/ui-logic";
 import {
   Accessibility,
   Armchair,

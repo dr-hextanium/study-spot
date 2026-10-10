@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { type SectionWrite, SpotList, SurveySpot, VersionConflict } from "@study-spot/core";
+import { type SectionWrite, SpotList, SurveySpot, VersionConflict } from "@perch/core";
 import {
   audit_log,
   buildBundle,
@@ -12,7 +12,7 @@ import {
   spot_photo,
   spot_verification,
   write_receipt,
-} from "@study-spot/db";
+} from "@perch/db";
 import { and, eq, sql } from "drizzle-orm";
 import { HttpError } from "../src/http.ts";
 import { currentTerm } from "../src/spots/load.ts";

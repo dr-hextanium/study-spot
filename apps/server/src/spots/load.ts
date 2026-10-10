@@ -6,7 +6,7 @@ import {
   type SpotList,
   type SurveyEstimate,
   type SurveySpot,
-} from "@study-spot/core";
+} from "@perch/core";
 import {
   building,
   campus,
@@ -23,7 +23,7 @@ import {
   surveyor,
   type TermRow,
   term,
-} from "@study-spot/db";
+} from "@perch/db";
 import { and, asc, desc, eq, inArray, isNotNull } from "drizzle-orm";
 
 /** The campus's current term, else the next one, else null (pickTerm in campus local time). */

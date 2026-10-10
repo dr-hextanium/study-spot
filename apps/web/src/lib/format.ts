@@ -5,7 +5,7 @@ import {
   type SyncHeader,
   t,
   type WriteRecord,
-} from "@study-spot/ui-logic";
+} from "@perch/ui-logic";
 
 /** "Oct 5", in the campus time zone. */
 export function shortDate(iso: string, tz: string): string {

@@ -5,8 +5,8 @@ import {
   PendingPhotoList,
   SurveyorList,
   SurveyorPublic,
-} from "@study-spot/core";
-import { building, spot, spot_photo, surveyor } from "@study-spot/db";
+} from "@perch/core";
+import { building, spot, spot_photo, surveyor } from "@perch/db";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import type { AppDeps } from "../app.ts";

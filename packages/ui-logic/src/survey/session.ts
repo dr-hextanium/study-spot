@@ -1,4 +1,4 @@
-import { OpaqueToken, SurveyorPublic } from "@study-spot/core";
+import { OpaqueToken, SurveyorPublic } from "@perch/core";
 import { z } from "zod";
 import type { KeyValueStorage } from "../adapters.ts";
 

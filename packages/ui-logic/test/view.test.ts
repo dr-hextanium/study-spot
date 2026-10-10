@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { SpotSummary, SurveyorPublic } from "@study-spot/core";
+import type { SpotSummary, SurveyorPublic } from "@perch/core";
 import { surveySpotFixture } from "../../core/test/fixtures/survey-spot.ts";
 import {
   buildSpotView,

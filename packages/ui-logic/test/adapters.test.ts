@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { ClientWriteId } from "@study-spot/core";
+import { ClientWriteId } from "@perch/core";
 import { FakeTimers, MemoryCache, sequentialIds } from "./fakes.ts";
 
 test("cache keys filter by prefix and delete removes", async () => {
