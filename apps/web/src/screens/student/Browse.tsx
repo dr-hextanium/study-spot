@@ -138,7 +138,7 @@ export function Browse() {
               end={
                 <span className="browse__end">
                   <span>{row.busy}</span>
-                  {row.checked === null ? null : <span>{row.checked}</span>}
+                  <span>{row.checked}</span>
                 </span>
               }
               link={{ to: "/spot/$slug", params: { slug: row.spot.slug } }}

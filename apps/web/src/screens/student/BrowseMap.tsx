@@ -123,7 +123,7 @@ export function BrowseMap(props: { view: BrowseView; from: BundleBuilding | null
             <span className="keep__name">{chosen.name}</span>
             <span className="keep__next">{chosen.busyLong}</span>
             <span className="keep__next">{chosen.sub}</span>
-            {chosen.checked === null ? null : <span className="keep__next">{chosen.checked}</span>}
+            <span className="keep__next">{chosen.checked}</span>
           </span>
           <Link className="btn btn--ink" to="/spot/$slug" params={{ slug: chosen.spot.slug }}>
             <span className="btn__label">{t("student.map.open")}</span>

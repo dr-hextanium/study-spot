@@ -136,11 +136,16 @@ export function placeText(spot: BundleSpot, bundle: Bundle): string {
   return t("student.pick.place", { building, floor: spot.floor });
 }
 
-/** "Checked Oct 6": the newest verified date of any group, or null when there is none. */
-export function checkedText(spot: Pick<BundleSpot, "verified">, tz: string): string | null {
+/**
+ * "Checked Oct 6": the newest verified date of any group. Every surface that names a spot
+ * (the pick, alternates, Browse rows, the map card, the spot page) shows this one line.
+ */
+export function checkedText(spot: Pick<BundleSpot, "verified">, tz: string): string {
   const dates = Object.values(spot.verified).filter((d): d is string => typeof d === "string");
   const newest = dates.sort().at(-1);
-  return newest === undefined ? null : t("student.pick.checked", { date: shortDay(newest, tz) });
+  // BundleSpot.verified is refined to be non-empty, so a spot without a date is a bug.
+  if (newest === undefined) throw new Error("spot has no verified date");
+  return t("student.spot.checked", { date: shortDay(newest, tz) });
 }
 
 export function lockText(access: Access): string | null {
@@ -170,7 +175,7 @@ export type PickCardView = {
   closes: string;
   reasons: string[];
   /** "Checked Oct 6": every spot shows its last-verified date. */
-  checked: string | null;
+  checked: string;
 };
 
 export function pickCardView(c: Candidate, bundle: Bundle, now: Date): PickCardView {

@@ -48,7 +48,7 @@ export function PickCard(props: {
             ))}
           </ul>
         )}
-        {view.checked === null ? null : <span className="keep__next">{view.checked}</span>}
+        <span className="keep__next">{view.checked}</span>
         <a
           className="btn btn--primary btn--wide pick-card__go"
           href={props.directions}
@@ -85,7 +85,7 @@ export function AltRows(props: { views: readonly PickCardView[] }) {
           <Row
             key={v.id}
             title={v.name}
-            sub={[v.walk, v.busy, ...(v.checked === null ? [] : [v.checked])].join(DOT)}
+            sub={[v.walk, v.busy, v.checked].join(DOT)}
             link={{ to: "/spot/$slug", params: { slug: v.slug }, search: { via: "pick" } }}
           />
         ))}

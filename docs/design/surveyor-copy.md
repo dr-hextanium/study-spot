@@ -649,7 +649,6 @@ Every Home string, including the presenters Home shares with the spot page and B
 | student.pick.closes_in | Closes in {minutes} min | 22 | under an hour |
 | student.pick.open_till | Open till {closes} | 20 | |
 | student.pick.open_all_day | Open all day | 14 | 20 h or more left |
-| student.pick.checked | Checked {date} | 16 | newest verified date |
 | student.reason.silent | Silent | 14 | |
 | student.reason.quiet | Quiet | 14 | |
 | student.reason.talking | Talking is fine | 18 | |
@@ -806,7 +805,7 @@ Every Home string, including the presenters Home shares with the spot page and B
 
 | id | text | max chars | notes |
 |---|---|---|---|
-| student.spot.checked | Checked {date} | 20 | meta line, newest verified date |
+| student.spot.checked | Checked {date} | 20 | newest verified date: pick, alternates, Browse, map, spot page |
 | student.spot.last_checked | Last checked | 16 | group heading |
 | student.spot.directions | Directions | 12 | primary |
 | student.spot.share | Share | 8 | |

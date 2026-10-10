@@ -3,7 +3,9 @@ import { DEFAULT_ACCESS, FULLNESS, presetById, rankSpots, type SlotConfidence } 
 import { makeScoringBundle } from "../../core/test/fixtures/scoring-bundle.ts";
 import {
   busyLine,
+  COPY,
   checkedText,
+  checkedView,
   clockText,
   closesText,
   dataAgeView,
@@ -80,11 +82,22 @@ test("pick card view for the golden top pick", () => {
   });
 });
 
-test("the check date is the newest verified date, or none", () => {
+test("the check date is the newest verified date, always set", () => {
   const spot = makeScoringBundle().spots[0];
   if (spot === undefined) throw new Error("no spot");
-  expect(checkedText(spot, NY)).toBe("Checked Oct 6");
-  expect(checkedText({ ...spot, verified: {} }, NY)).toBeNull();
+  const text: string = checkedText(spot, NY);
+  expect(text).toBe("Checked Oct 6");
+  // The bundle refuses a spot with no verified date, so this can only be a bug.
+  expect(() => checkedText({ ...spot, verified: {} }, NY)).toThrow();
+});
+
+test("one presenter and one copy id for the check date", () => {
+  const ids: readonly string[] = Object.keys(COPY);
+  expect(ids).toContain("student.spot.checked");
+  expect(ids).not.toContain("student.pick.checked");
+  const spot = makeScoringBundle().spots[0];
+  if (spot === undefined) throw new Error("no spot");
+  expect(checkedView(spot, NY).latest).toBe(checkedText(spot, NY));
 });
 
 test("lock labels", () => {

@@ -98,8 +98,8 @@ export type BrowseRow = {
   busyLong: string;
   bucket: Fullness | "none";
   locked: boolean;
-  /** "Checked Oct 6", or null when no group was ever checked. */
-  checked: string | null;
+  /** "Checked Oct 6": every spot has one. */
+  checked: string;
 };
 export type BrowseView = {
   rows: BrowseRow[];

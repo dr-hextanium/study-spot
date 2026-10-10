@@ -13,7 +13,7 @@ import {
 } from "@perch/core";
 import { type PlainCopyId, t } from "../copy/index.ts";
 import { dayShortName, hourText, shortDay, timeOfDayText, weekdayLong } from "./format.ts";
-import { busyLine } from "./present.ts";
+import { busyLine, checkedText } from "./present.ts";
 
 export type Bar = {
   hour: number;
@@ -116,13 +116,10 @@ export type CheckedView = {
 /** Every spot shows a last-verified date: the newest one, then each group's own. */
 export function checkedView(spot: BundleSpot, tz: string): CheckedView {
   const groups: CheckedView["groups"] = [];
-  let newest = "";
   for (const group of ATTRIBUTE_GROUP) {
     const iso = spot.verified[group];
     if (iso === undefined) continue;
-    if (iso > newest) newest = iso;
     groups.push({ group, name: t(GROUP_NAME[group]), date: shortDay(iso, tz) });
   }
-  // BundleSpot.verified is refined to be non-empty, so newest is set.
-  return { latest: t("student.spot.checked", { date: shortDay(newest, tz) }), groups };
+  return { latest: checkedText(spot, tz), groups };
 }
