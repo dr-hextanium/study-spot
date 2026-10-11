@@ -33,3 +33,4 @@ apps/web/e2e/.state/
 
 # Stray Playwright output from a run in the wrong directory
 /test-results/
+.superpowers/

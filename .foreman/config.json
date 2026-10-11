@@ -1,0 +1,28 @@
+{
+  "live_branch": "main",
+  "merge_gate": [
+    "bun run typecheck",
+    "bun run lint",
+    "bun test --timeout 60000",
+    "cd apps/web && bunx vitest run",
+    "cd apps/web && bunx playwright test"
+  ],
+  "headless_allow": [
+    "Read",
+    "Glob",
+    "Grep",
+    "Edit",
+    "Write",
+    "Bash(git add:*)",
+    "Bash(git commit:*)",
+    "Bash(git status:*)",
+    "Bash(git diff:*)",
+    "Bash(git log:*)",
+    "Bash(bun run typecheck)",
+    "Bash(bun run lint)",
+    "Bash(bun run fix)",
+    "Bash(bun test:*)"
+  ],
+  "cache_ttl_minutes": 60,
+  "cold_warn_tokens": 40000
+}
