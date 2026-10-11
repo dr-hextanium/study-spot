@@ -62,12 +62,13 @@ The stack must stay free. No card is on file anywhere; never add one, and stop a
 - **Feature** (new UI behavior, no data or sync logic): one sonnet implementer, test-first. Unit tests and the visual check for the touched routes; no separate review unless something looks risky.
 - **Logic** (outbox, sync, saving, auth, server, database, honesty rules): the full loop. Test-first implementer, then review, then fixes, then re-review. Use opus only here or when a change is genuinely tricky.
 - The full Playwright suite runs once per branch before merge, not after every fix. Run single specs only for the area you touched.
+- Foreman: these three tiers are Perch's; the foreman plugin maps them in `.foreman/tiers.md`. Its Critical tier (owner approval before merge) applies only to Perch's existing owner-only areas listed there: production migrations, deploy config, secrets, and the free-tier limits.
 
 ## Visual Verification
 
 Run after a batch of UI changes, not after every edit. `/verify-ui` runs the loop; the `visual-reviewer` agent reads the screenshots so images stay out of the main session.
 
-**Ports:** 5173 belongs to another local app and 5199/8790 are the owner's live preview; never touch them. Use 5299 (web), 8890 (API) and 8898 (data site). Stop only servers you started, by PID.
+**Ports:** 5173 belongs to another local app and 5199/8790 are the owner's live preview; never touch them. Use 5299 (web), 8890 (API) and 8898 (data site). Stop only servers you started, by PID. Portless is optional: `portless.json` names the app `perch`, but until the owner installs portless and runs `portless proxy start`, keep these ports (see `/foreman:dev-servers`).
 
 **Servers:**
 - API: `cd apps/server && E2E_PORT=8890 E2E_DATA_PORT=8898 E2E_PUBLISH_ON_BOOT=1 E2E_WEB_ORIGIN=http://localhost:5299 E2E_STATE=$CLAUDE_JOB_DIR/tmp/verify-state.json node scripts/e2e-server.ts` (in-memory seed data, single-use invite links in the state file, the published data site on 8898)
@@ -95,7 +96,7 @@ Run after a batch of UI changes, not after every edit. `/verify-ui` runs the loo
 
 Commit automatically while working. Do not wait to be asked.
 
-- **Branches:** day-to-day work lives on `dev` (or short feature branches merged into `dev`). Push `dev` freely; it never builds on Cloudflare. `main` is what is live: merge `dev` into `main` only to ship, at most 10 pushes to `main` a day (the pre-push guard enforces it), and only after the full Playwright suite passes on `dev`. Never commit directly on `main`.
+- **Branches:** day-to-day work lives on `dev` (or short feature branches merged into `dev`). Push `dev` freely; it never builds on Cloudflare. `main` is what is live: merge `dev` into `main` only to ship, at most 10 pushes to `main` a day (the pre-push guard enforces it), and only after the full Playwright suite passes on `dev` (run `/foreman:merge-gate`; the suite is `merge_gate` in `.foreman/config.json`). Never commit directly on `main`.
 
 - Follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/): `type(scope): description`.
   - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
@@ -110,14 +111,4 @@ Commit automatically while working. Do not wait to be asked.
 
 ## HANDOFF PROTOCOL
 
-When instructed to hand off or refresh the handoff, overwrite HANDOFF.md with:
-
-- Goal: one sentence, the overall objective
-- State: what is done, verified, and committed (with commit hashes)
-- In progress: exact file/function being changed and its current condition
-- Next steps: ordered, concrete, each independently executable
-- Decisions: choices made and why, including rejected approaches
-- Gotchas: failing tests, env quirks, commands that must be run
-- Verify: command(s) that prove the work is correct
-
-Write it for an agent with zero context. No narrative. HANDOFF.md is gitignored; never commit it. Writing the handoff does not mean stopping: keep working on the task unless told to stop. When all Next steps are done and verified, delete HANDOFF.md.
+Follow `/foreman:handoff`: the foreman plugin owns the format (Goal, State, In progress, Next steps, Decisions, Gotchas, Verify) and the refresh triggers, including a refresh after every big action. HANDOFF.md is gitignored; never commit it. Writing the handoff does not mean stopping: keep working on the task unless told to stop.
